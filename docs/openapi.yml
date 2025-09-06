@@ -1,0 +1,787 @@
+openapi: 3.0.3
+info:
+  title: Oriva Plugin Gateway API
+  description: |
+    RESTful API gateway for Oriva plugin developers. This API provides secure access to Oriva's core functionality including entries, templates, user management, UI interactions, and plugin storage.
+    
+    ## Authentication
+    
+    All requests require authentication using one of the following methods:
+    - **Plugin API Key**: Use `Authorization: Bearer <plugin-api-key>` header
+    - **JWT Token**: Use `Authorization: Bearer <jwt-token>` header for user-specific operations
+    
+    ## Rate Limiting
+    
+    API endpoints are rate-limited to ensure fair usage:
+    - General API: 1000 requests/hour per plugin
+    - Write operations: 200 requests/hour per plugin
+    - Storage operations: 500 requests/hour per plugin
+    - UI operations: 100 requests/hour per plugin
+    
+    ## Permissions
+    
+    Plugins must declare required permissions in their manifest. Available permissions:
+    - `read:public-repositories` - Access public repositories only
+    - `read:issues` - Read issues and comments
+    - `write:issues` - Create and update issues
+    - `read:pull-requests` - Read pull requests
+    - `write:pull-requests` - Create and update pull requests
+    - `read:notifications` - Read user notifications
+    - `write:notifications` - Mark notifications as read
+    - `app:data:read` - Read app-specific data (tables you create)
+    - `app:data:write` - Write app-specific data (tables you create)
+    - `ui:notifications` - Show notifications
+    - `ui:modals` - Display modals
+    - `ui:navigation` - Navigate between screens
+  version: 1.0.0
+  contact:
+    name: Oriva Developer Support
+    url: https://github.com/0riva/oriva-platform
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.oriva.io
+    description: Production server
+  - url: https://staging-api.oriva.io
+    description: Staging server
+  - url: http://localhost:3001
+    description: Development server
+
+security:
+  - PluginAPIKey: []
+  - JWTAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the API gateway is healthy and operational
+      tags:
+        - System
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptime:
+                    type: number
+                    description: Server uptime in seconds
+
+  /api/v1/repositories:
+    get:
+      summary: Get public repositories
+      description: Retrieve public repositories with filtering and pagination
+      tags:
+        - Repositories
+      security:
+        - PluginAPIKey: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of entries per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          description: Filter by entry status
+          schema:
+            type: string
+            enum: [draft, scheduled, published, all]
+        - name: audience
+          in: query
+          description: Filter by audience type
+          schema:
+            type: string
+            enum: [public, private, shared, all]
+        - name: search
+          in: query
+          description: Search in title and content
+          schema:
+            type: string
+            maxLength: 100
+        - name: templateId
+          in: query
+          description: Filter by template ID
+          schema:
+            type: string
+            format: uuid
+        - name: sortBy
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            enum: [created_at, updated_at, title]
+            default: created_at
+        - name: sortOrder
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Create entry
+      description: Create a new entry with optional sections
+      tags:
+        - Entries
+      security:
+        - PluginAPIKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntryRequest'
+      responses:
+        '201':
+          description: Entry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/app/data:
+    get:
+      summary: Get app-specific data
+      description: Retrieve data from your app's database tables
+      tags:
+        - App Data
+      security:
+        - PluginAPIKey: []
+      parameters:
+        - name: table
+          in: query
+          description: Table name to query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of records per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: App data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+        '403':
+          description: Insufficient permissions
+        '404':
+          description: Table not found
+    post:
+      summary: Create app-specific data
+      description: Insert data into your app's database tables
+      tags:
+        - App Data
+      security:
+        - PluginAPIKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                table:
+                  type: string
+                  description: Table name
+                data:
+                  type: object
+                  description: Data to insert
+      responses:
+        '201':
+          description: Data created successfully
+        '403':
+          description: Insufficient permissions
+        '400':
+          description: Invalid data format
+
+  /api/v1/repositories/{id}:
+    get:
+      summary: Get entry by ID
+      description: Retrieve a specific entry by its ID
+      tags:
+        - Entries
+      security:
+        - PluginAPIKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Entry ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Entry details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update entry
+      description: Update an existing entry
+      tags:
+        - Entries
+      security:
+        - PluginAPIKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Entry ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntryRequest'
+      responses:
+        '200':
+          description: Entry updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete entry
+      description: Delete an entry permanently
+      tags:
+        - Entries
+      security:
+        - PluginAPIKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Entry ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Entry deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/entries/stats:
+    get:
+      summary: Get entry statistics
+      description: Get entry statistics for the current user
+      tags:
+        - Entries
+      security:
+        - PluginAPIKey: []
+      responses:
+        '200':
+          description: Entry statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: Total number of entries
+                      published:
+                        type: integer
+                        description: Number of published entries
+                      drafts:
+                        type: integer
+                        description: Number of draft entries
+                      scheduled:
+                        type: integer
+                        description: Number of scheduled entries
+                  success:
+                    type: boolean
+                    example: true
+
+components:
+  securitySchemes:
+    PluginAPIKey:
+      type: http
+      scheme: bearer
+      bearerFormat: Plugin API Key
+      description: Plugin API key obtained from developer dashboard
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for user authentication
+
+  schemas:
+    Entry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique entry identifier
+        title:
+          type: string
+          description: Entry title
+          maxLength: 255
+        content:
+          type: string
+          description: Entry content
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'
+        template:
+          $ref: '#/components/schemas/Template'
+        audience:
+          type: string
+          enum: [public, private, shared]
+          description: Entry visibility
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+          description: Entry status
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who created the entry
+
+    Section:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique section identifier
+        type:
+          type: string
+          enum: [text, heading, body]
+          description: Section type
+        content:
+          type: string
+          description: Section content
+        order:
+          type: integer
+          minimum: 0
+          description: Section order within the entry
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique template identifier
+        name:
+          type: string
+          description: Template name
+          maxLength: 255
+        description:
+          type: string
+          description: Template description
+          maxLength: 1000
+        icon:
+          type: string
+          description: Template icon (emoji or URL)
+        category:
+          type: string
+          description: Template category
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateSection'
+        isBuiltIn:
+          type: boolean
+          description: Whether this is a built-in template
+        creator:
+          type: string
+          description: Template creator name
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+          description: Average rating
+        usageCount:
+          type: integer
+          minimum: 0
+          description: Number of times template has been used
+
+    TemplateSection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique template section identifier
+        type:
+          type: string
+          enum: [text, heading, body]
+          description: Section type
+        placeholder:
+          type: string
+          description: Placeholder text for the section
+        content:
+          type: string
+          description: Default content for the section
+        order:
+          type: integer
+          minimum: 0
+          description: Section order within the template
+
+    CreateEntryRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: Entry title
+          minLength: 1
+          maxLength: 255
+        content:
+          type: string
+          description: Entry content
+        sections:
+          type: array
+          items:
+            type: object
+            required:
+              - type
+              - content
+              - order
+            properties:
+              type:
+                type: string
+                enum: [text, heading, body]
+              content:
+                type: string
+              order:
+                type: integer
+                minimum: 0
+        templateId:
+          type: string
+          format: uuid
+          description: Template ID to use for this entry
+        audience:
+          type: string
+          enum: [public, private, shared]
+          default: private
+          description: Entry visibility
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+          default: draft
+          description: Entry status
+
+    UpdateEntryRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          description: Entry title
+          minLength: 1
+          maxLength: 255
+        content:
+          type: string
+          description: Entry content
+        sections:
+          type: array
+          items:
+            type: object
+            required:
+              - type
+              - content
+              - order
+            properties:
+              id:
+                type: string
+                format: uuid
+              type:
+                type: string
+                enum: [text, heading, body]
+              content:
+                type: string
+              order:
+                type: integer
+                minimum: 0
+        audience:
+          type: string
+          enum: [public, private, shared]
+          description: Entry visibility
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+          description: Entry status
+
+    EntryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Entry'
+        success:
+          type: boolean
+          example: true
+
+    EntryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+        success:
+          type: boolean
+          example: true
+        meta:
+          type: object
+          properties:
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  description: Current page number
+                limit:
+                  type: integer
+                  description: Number of items per page
+                total:
+                  type: integer
+                  description: Total number of items
+
+    SuccessResponse:
+      type: object
+      properties:
+        data:
+          nullable: true
+          description: Response data (null for delete operations)
+        success:
+          type: boolean
+          example: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+        details:
+          type: array
+          items:
+            type: string
+          description: Detailed error information
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Validation error"
+            details:
+              - "title is required"
+              - "content must be a string"
+
+    Unauthorized:
+      description: Unauthorized - invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "API key required"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Missing required permission: entries:write"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Entry not found"
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Too many API requests from this plugin. Please try again later."
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Internal server error"
+
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Entries
+    description: Entry management operations
+  - name: Templates
+    description: Template management operations
+  - name: Users
+    description: User information and profile management
+  - name: UI
+    description: User interface interactions
+  - name: Storage
+    description: Plugin data storage operations# sync test Thu Aug 14 16:18:21 CST 2025
+
+# sync trigger 2025-08-14T22:18:51Z
