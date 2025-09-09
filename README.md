@@ -55,6 +55,8 @@ Create powerful integrations that extend Oriva's functionality:
 
 ## 🚀 Quick Start
 
+> **📖 New to Oriva?** Start with our comprehensive **[Developer Start Guide](docs/START_GUIDE.md)** for step-by-step setup instructions!
+
 Ready to build your first Oriva integration? Follow our comprehensive [Start Guide](docs/START_GUIDE.md) to:
 
 - 📝 **Register your app** with the Oriva platform
@@ -62,7 +64,7 @@ Ready to build your first Oriva integration? Follow our comprehensive [Start Gui
 - 🛠️ **Build your integration** using our SDK
 - 📦 **Publish to marketplace** and reach users worldwide
 
-[**Get Started Now →**](docs/START_GUIDE.md)
+**[🚀 Get Started Now →](docs/START_GUIDE.md)**
 
 ## 🔗 API Endpoints
 
@@ -146,6 +148,7 @@ Build apps in these categories:
 ## 🛠️ Development Resources
 
 ### Documentation
+- **🚀 [Developer Start Guide](docs/START_GUIDE.md)** - Complete setup and integration guide
 - **API Reference**: [OpenAPI Specification](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)
 - **SDK Documentation**: [Plugin SDK](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)
 - **OAuth Guide**: [GitHub Repository](https://github.com/0riva/oriva-platform) (coming soon)
@@ -165,6 +168,7 @@ Build apps in these categories:
 ## 🆘 Support
 
 ### Getting Help
+- **🚀 [Start Guide](docs/START_GUIDE.md)**: Complete setup and integration instructions
 - **📧 Support**: Use the support system within Oriva Core
 - **🐛 Bug Reports**: [GitHub Issues](https://github.com/0riva/oriva-platform/issues)
 - **💡 Feature Requests**: [GitHub Discussions](https://github.com/0riva/oriva-platform/discussions)
