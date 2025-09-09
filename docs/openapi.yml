@@ -883,8 +883,8 @@ components:
           type: boolean
 
     UpdateUserRequest:
-          type: object
-          properties:
+      type: object
+      properties:
         username:
           type: string
         displayName:
@@ -897,14 +897,14 @@ components:
           type: string
 
     Pagination:
-              type: object
-              properties:
-                page:
-                  type: integer
-                limit:
-                  type: integer
-                total:
-                  type: integer
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
         totalPages:
           type: integer
 
