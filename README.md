@@ -146,91 +146,11 @@ GET    /api/v1/teams                         # User teams
 
 ## 🔐 Authentication
 
-### API Key Authentication
+Oriva uses API key authentication for secure access to the platform APIs.
 
-```bash
-# Use your API key in the Authorization header
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.oriva.io/api/v1/repositories
-```
+## 💻 SDK
 
-### Available Scopes
-
-| Scope | Description |
-|-------|-------------|
-| `read:public-repositories` | Access public repositories only |
-| `read:issues` | Read issues and comments |
-| `write:issues` | Create and update issues |
-| `read:pull-requests` | Read pull requests |
-| `write:pull-requests` | Create and update pull requests |
-| `read:notifications` | Read user notifications |
-| `write:notifications` | Mark notifications as read |
-| `app:data:read` | Read app-specific data (tables you create) |
-| `app:data:write` | Write app-specific data (tables you create) |
-
-## 💻 SDK Usage
-
-### Install the SDK
-
-```bash
-npm install @oriva/plugin-sdk
-```
-
-### Basic Usage
-
-```typescript
-import { OrivaPluginSDK } from '@oriva/plugin-sdk';
-
-const sdk = new OrivaPluginSDK({
-  pluginId: 'your-plugin-id',
-  version: '1.0.0',
-  userId: 'user-id',
-  permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.ORIVA_API_KEY,
-  baseUrl: process.env.ORIVA_API_URL,
-});
-
-// Get user's repositories
-const repositories = await sdk.repositories.list({
-  visibility: 'all',
-  sort: 'updated',
-  per_page: 20
-});
-
-// Create a new issue
-const issue = await sdk.issues.create({
-  repositoryId: 'repo-123',
-  title: 'Feature Request: Dark Mode',
-  description: 'Add dark mode support to the code editor',
-  labels: ['enhancement', 'ui']
-});
-
-// Get pull requests
-const pullRequests = await sdk.pullRequests.list({
-  repositoryId: 'repo-123',
-  state: 'open',
-  sort: 'created'
-});
-```
-
-### React Integration
-
-```typescript
-import { useOrivaSDK } from '@oriva/plugin-sdk/react';
-
-function MyOrivaApp() {
-  const { sdk, user, loading } = useOrivaSDK();
-
-  if (loading) return <div>Loading...</div>;
-
-  return (
-    <div>
-      <h1>Welcome, {user.name}!</h1>
-      <p>You have {user.public_repos} public repositories</p>
-    </div>
-  );
-}
-```
+The Oriva Plugin SDK provides a TypeScript interface for building integrations with React hooks and comprehensive APIs.
 
 ## 🧪 Development & Testing
 
