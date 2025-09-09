@@ -75,8 +75,6 @@ Create a `.env` file in your project root with your Oriva API credentials:
 ```bash
 # Oriva Platform Configuration
 ORIVA_API_URL=https://api.oriva.io
-ORIVA_GRAPHQL_URL=https://api.oriva.io/graphql
-ORIVA_WS_URL=wss://api.oriva.io/graphql
 ORIVA_API_KEY=your_api_key_here
 ```
 
@@ -412,8 +410,6 @@ npm run dev
 ```bash
 # .env file for local development
 ORIVA_API_URL=http://localhost:3001
-ORIVA_GRAPHQL_URL=http://localhost:3001/graphql
-ORIVA_WS_URL=ws://localhost:3001/graphql
 ORIVA_API_KEY=your_api_key_here
 ```
 
