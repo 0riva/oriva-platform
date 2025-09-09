@@ -265,8 +265,42 @@ Once approved, your app will be:
 
 ### Development Environment
 
-For development and testing, use the main API with these strategies:
+You have two options for development and testing:
 
+#### **Option 1: Local Development Server (Recommended)**
+- **API URL**: `http://localhost:3001`
+- **Setup**: Run the Oriva API locally for development
+- **Benefits**: No rate limits, full control, isolated testing
+- **Perfect for**: Development, testing, and debugging
+
+**Setting up Local Development:**
+```bash
+# Clone the Oriva platform repository
+git clone https://github.com/0riva/oriva-platform.git
+cd oriva-platform
+
+# Install dependencies
+cd api && npm install
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Start the local API server
+npm run dev
+# Server will be available at http://localhost:3001
+```
+
+**Update your environment variables for local development:**
+```bash
+# .env file for local development
+ORIVA_API_URL=http://localhost:3001
+ORIVA_GRAPHQL_URL=http://localhost:3001/graphql
+ORIVA_WS_URL=ws://localhost:3001/graphql
+ORIVA_API_KEY=your_api_key_here
+```
+
+#### **Option 2: Production API**
 - **API URL**: `https://api.oriva.io`
 - **Test Data**: Create dedicated test repositories and users
 - **Rate Limits**: Standard API rate limits apply

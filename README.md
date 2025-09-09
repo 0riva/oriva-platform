@@ -236,8 +236,14 @@ function MyOrivaApp() {
 
 ### Development Environment
 
-For development and testing, use the main API with these strategies:
+You have two options for development and testing:
 
+#### **Option 1: Local Development Server (Recommended)**
+- **API URL**: `http://localhost:3001`
+- **Benefits**: No rate limits, full control, isolated testing
+- **Setup**: Run `npm run dev` in the oriva-platform repository
+
+#### **Option 2: Production API**
 - **API URL**: `https://api.oriva.io`
 - **Test Data**: Create dedicated test repositories and users
 - **Rate Limits**: Standard API rate limits apply
