@@ -85,7 +85,7 @@ ORIVA_API_KEY=your_api_key_here
 Oriva uses simple API key authentication for plugin operations. Include your API key in the Authorization header:
 
 ```javascript
-const response = await fetch('https://api.oriva.io/api/v1/user/profile', {
+const response = await fetch('https://api.oriva.io/api/v1/user/me', {
   headers: {
     'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`,
     'Content-Type': 'application/json'
@@ -111,7 +111,7 @@ If you're getting "Invalid API key" errors:
 ```bash
 # Test your API key
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.oriva.io/api/v1/user/profile
+  https://api.oriva.io/api/v1/user/me
 ```
 
 ---
@@ -202,7 +202,7 @@ function MyOrivaApp() {
 ### 3.1 Get User Profile
 
 ```javascript
-const profile = await fetch('https://api.oriva.io/api/v1/user/profile', {
+const profile = await fetch('https://api.oriva.io/api/v1/user/me', {
   headers: {
     'Authorization': `Bearer ${access_token}`
   }
@@ -316,7 +316,7 @@ GET    /api/v1/repositories/:id/issues       # Repository issues
 POST   /api/v1/repositories/:id/issues       # Create issue
 GET    /api/v1/repositories/:id/pull-requests # Pull requests
 POST   /api/v1/repositories/:id/pull-requests # Create pull request
-GET    /api/v1/user/profile                  # User profile
+GET    /api/v1/user/me                  # User profile
 GET    /api/v1/teams                         # User teams
 ```
 
@@ -400,7 +400,7 @@ curl https://api.oriva.io/health
 
 # Test authentication
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.oriva.io/api/v1/user/profile
+  https://api.oriva.io/api/v1/user/me
 
 # List repositories (read-only)
 curl -H "Authorization: Bearer YOUR_API_KEY" \
@@ -450,7 +450,7 @@ const makeRequest = async (url, options, retries = 3) => {
 
 ```javascript
 // Use server-side proxy for sensitive operations
-const response = await fetch('/api/proxy/oriva/user/profile', {
+const response = await fetch('/api/proxy/oriva/user/me', {
   headers: { 'Authorization': `Bearer ${access_token}` }
 });
 ```
