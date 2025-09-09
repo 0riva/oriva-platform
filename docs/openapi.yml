@@ -40,13 +40,14 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: https://api.oriva.io
+  - url: https://oriva-9oe23kukl-orivas-projects.vercel.app
     description: Production server
   - url: http://localhost:3001
     description: Development server
 
 security:
   - ApiKeyAuth: []
+  - AdminTokenAuth: []
 
 paths:
   /health:
@@ -73,6 +74,152 @@ paths:
                   version:
                     type: string
                     example: 1.0.0
+
+  /api/v1/dev/generate-key:
+    post:
+      summary: Generate API key
+      description: Generate a new API key for development or production use
+      tags:
+        - Developer
+      security:
+        - AdminTokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - appName
+              properties:
+                appName:
+                  type: string
+                  description: Name of the application
+                  example: "My Awesome App"
+                type:
+                  type: string
+                  enum: [test, live]
+                  default: test
+                  description: Type of API key
+      responses:
+        '200':
+          description: API key generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      apiKey:
+                        type: string
+                        example: "oriva_pk_test_1234567890abcdef"
+                      appName:
+                        type: string
+                        example: "My Awesome App"
+                      type:
+                        type: string
+                        example: "test"
+                      createdAt:
+                        type: string
+                        format: date-time
+        '401':
+          description: Unauthorized - Invalid admin token
+        '429':
+          description: Rate limit exceeded
+
+  /api/v1/dev/keys:
+    get:
+      summary: List API keys
+      description: List all API keys (shows partial keys for security)
+      tags:
+        - Developer
+      security:
+        - AdminTokenAuth: []
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          example: "oriva_pk_test_1234567890..."
+                        appName:
+                          type: string
+                          example: "My Awesome App"
+                        type:
+                          type: string
+                          example: "test"
+                        createdAt:
+                          type: string
+                          format: date-time
+                        lastUsed:
+                          type: string
+                          format: date-time
+                        isActive:
+                          type: boolean
+                          example: true
+        '401':
+          description: Unauthorized - Invalid admin token
+        '429':
+          description: Rate limit exceeded
+
+  /api/v1/dev/revoke-key:
+    post:
+      summary: Revoke API key
+      description: Revoke an existing API key
+      tags:
+        - Developer
+      security:
+        - AdminTokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - apiKey
+              properties:
+                apiKey:
+                  type: string
+                  description: The API key to revoke
+                  example: "oriva_pk_test_1234567890abcdef"
+      responses:
+        '200':
+          description: API key revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "API key revoked successfully"
+        '401':
+          description: Unauthorized - Invalid admin token
+        '404':
+          description: API key not found
+        '429':
+          description: Rate limit exceeded
 
   /api/v1/entries:
     get:
@@ -986,6 +1133,8 @@ components:
 tags:
   - name: System
     description: System health and status
+  - name: Developer
+    description: Developer tools and API key management
   - name: Entries
     description: Entry management operations
   - name: Templates
@@ -996,3 +1145,16 @@ tags:
     description: User interface interactions
   - name: Storage
     description: App data storage operations
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: API key authentication using Bearer token
+    AdminTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
+      description: Admin token for developer endpoints
