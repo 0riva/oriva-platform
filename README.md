@@ -109,14 +109,15 @@ Build social apps for the Oriva network:
 
 | Category | Description | Examples |
 |----------|-------------|----------|
-| **🏠 Private Groups** | Communities, special interests, etc | Book clubs, hobby groups, lifestyle communities |
-| **🤝 Networking** | Dating, business, professional connections | Profile matching, career networking, business tools |
-| **📚 Learning** | Educational content, skill sharing | Language learning, study groups, tutorials |
-| **🎮 Gaming** | Games, challenges, competitions | Mini-games, tournaments, leaderboards |
-| **🏥 Wellness** | Health, fitness, mental wellness | Workout groups, meditation circles, support networks |
-| **🔧 Innovation** | Coding, engineering, tech development | Code reviews, tech meetups, developer tools |
-| **💰 Finance** | Payment solutions, DeFi, financial tools | Payment processing, crypto trading, financial planning |
-| **🌐 Decentralization** | Web3, encryption, blockchain | Web3 apps, encrypted messaging, decentralized storage |
+| **🏠 Private Groups** | Exclusive communities and interest-based groups | Book clubs, photography groups, local meetups |
+| **🤝 Networking** | Professional and personal relationship building | Dating apps, LinkedIn alternatives, mentorship platforms |
+| **📚 Learning** | Educational content and skill development | Online courses, study groups, certification programs |
+| **🎮 Gaming** | Interactive entertainment and competitive play | Puzzle games, esports tournaments, virtual worlds |
+| **🏥 Wellness** | Health, fitness, and mental well-being | Meditation apps, fitness tracking, therapy platforms |
+| **🔧 Innovation** | Technology development and engineering | Code collaboration, hackathons, tech incubators |
+| **💰 Finance** | Financial services and economic tools | Payment apps, investment platforms, budgeting tools |
+| **💬 Messaging** | Peer-to-peer private communication | Encrypted chat, voice calls, secure file sharing |
+| **🌐 Decentralization** | Blockchain and privacy-focused applications | DAOs, encrypted chat, decentralized social networks |
 
 ## 🛠️ Development Resources
 
