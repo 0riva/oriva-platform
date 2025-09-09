@@ -59,10 +59,10 @@ Create powerful integrations that extend Oriva's functionality:
 
 Ready to build your first Oriva integration? Follow our comprehensive [Start Guide](docs/START_GUIDE.md) to:
 
-- 📝 **Register your app** with the Oriva platform
-- 🔐 **Set up authentication** and API access
-- 🛠️ **Build your integration** using our SDK
-- 📦 **Publish to marketplace** and reach users worldwide
+- 📝 **[Register your app](docs/START_GUIDE.md#-step-1-register-your-app)** with the Oriva platform
+- 🔐 **[Set up authentication](docs/START_GUIDE.md#-step-2-set-up-authentication)** and API access
+- 🛠️ **[Build your integration](docs/START_GUIDE.md#-step-3-install-and-use-the-sdk)** using our SDK
+- 📦 **[Publish to marketplace](docs/START_GUIDE.md#-step-4-publish-to-marketplace)** and reach users worldwide
 
 **[🚀 Get Started Now →](docs/START_GUIDE.md)**
 
