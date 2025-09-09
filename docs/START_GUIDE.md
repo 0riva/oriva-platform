@@ -426,6 +426,7 @@ const response = await fetch('/api/proxy/oriva/user/profile', {
 ### Learn More
 
 - **📖 [API Reference](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)** - Complete API documentation
+- **🧪 [API Tester](api-tester.html)** - Interactive tool to test Oriva Platform APIs
 - **🔧 [SDK Documentation](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)** - SDK usage guide
 - **🔐 [OAuth Guide](https://github.com/0riva/oriva-platform)** - Authentication details (coming soon)
 - **🏪 [Marketplace Guide](https://github.com/0riva/oriva-platform)** - Publishing apps (coming soon)

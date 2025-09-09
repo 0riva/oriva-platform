@@ -149,6 +149,7 @@ Build apps in these categories:
 
 ### Documentation
 - **🚀 [Developer Start Guide](docs/START_GUIDE.md)** - Complete setup and integration guide
+- **🧪 [API Tester](docs/api-tester.html)** - Interactive tool to test Oriva Platform APIs
 - **API Reference**: [OpenAPI Specification](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)
 - **SDK Documentation**: [Plugin SDK](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)
 - **OAuth Guide**: [GitHub Repository](https://github.com/0riva/oriva-platform) (coming soon)
