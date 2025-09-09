@@ -74,9 +74,9 @@ Create a `.env` file in your project root with your Oriva API credentials:
 
 ```bash
 # Oriva Platform Configuration
-ORIVA_API_URL=https://oriva-9oe23kukl-orivas-projects.vercel.app
-ORIVA_GRAPHQL_URL=https://oriva-9oe23kukl-orivas-projects.vercel.app/graphql
-ORIVA_WS_URL=wss://oriva-9oe23kukl-orivas-projects.vercel.app/graphql
+ORIVA_API_URL=https://api.oriva.io
+ORIVA_GRAPHQL_URL=https://api.oriva.io/graphql
+ORIVA_WS_URL=wss://api.oriva.io/graphql
 ORIVA_API_KEY=your_api_key_here
 ```
 
@@ -85,7 +85,7 @@ ORIVA_API_KEY=your_api_key_here
 Oriva uses simple API key authentication for plugin operations. Include your API key in the Authorization header:
 
 ```javascript
-const response = await fetch('https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/user/me', {
+const response = await fetch('https://api.oriva.io/api/v1/user/me', {
   headers: {
     'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`,
     'Content-Type': 'application/json'
@@ -104,14 +104,14 @@ If you're getting "Invalid API key" errors:
 
 1. **Check the format**: API keys should start with `oriva_pk_live_` or `oriva_pk_test_`
 2. **Verify environment**: Make sure you're using the correct API URL:
-   - All API keys use: `https://oriva-9oe23kukl-orivas-projects.vercel.app`
+   - All API keys use: `https://api.oriva.io`
 3. **Check for typos**: Ensure the key is copied correctly without extra spaces
 4. **Verify key is active**: Check your developer dashboard to ensure the key is not revoked
 
 ```bash
 # Test your API key
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/user/me
+  https://api.oriva.io/api/v1/user/me
 ```
 
 ---
@@ -122,7 +122,7 @@ For generating and managing API keys, use these protected endpoints:
 
 ### Generate API Key
 ```bash
-curl -X POST https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/dev/generate-key \
+curl -X POST https://api.oriva.io/api/v1/dev/generate-key \
   -H "Content-Type: application/json" \
   -H "X-Admin-Token: YOUR_ADMIN_TOKEN" \
   -d '{"appName": "My App", "type": "test"}'
@@ -131,12 +131,12 @@ curl -X POST https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/dev/gener
 ### List API Keys
 ```bash
 curl -H "X-Admin-Token: YOUR_ADMIN_TOKEN" \
-  https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/dev/keys
+  https://api.oriva.io/api/v1/dev/keys
 ```
 
 ### Revoke API Key
 ```bash
-curl -X POST https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/dev/revoke-key \
+curl -X POST https://api.oriva.io/api/v1/dev/revoke-key \
   -H "Content-Type: application/json" \
   -H "X-Admin-Token: YOUR_ADMIN_TOKEN" \
   -d '{"apiKey": "oriva_pk_test_..."}'
@@ -232,7 +232,7 @@ function MyOrivaApp() {
 ### 3.1 Get User Profile
 
 ```javascript
-const profile = await fetch('https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/user/me', {
+const profile = await fetch('https://api.oriva.io/api/v1/user/me', {
   headers: {
     'Authorization': `Bearer ${access_token}`
   }
@@ -244,7 +244,7 @@ console.log('User:', profile.name);
 ### 3.2 List User Repositories
 
 ```javascript
-const repos = await fetch('https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/repositories', {
+const repos = await fetch('https://api.oriva.io/api/v1/repositories', {
   headers: {
     'Authorization': `Bearer ${access_token}`
   }
@@ -256,7 +256,7 @@ console.log('Repositories:', repos.data);
 ### 3.3 Create an Issue
 
 ```javascript
-const issue = await fetch('https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/repositories/123/issues', {
+const issue = await fetch('https://api.oriva.io/api/v1/repositories/123/issues', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${access_token}`,
@@ -418,7 +418,7 @@ ORIVA_API_KEY=your_api_key_here
 ```
 
 #### **Option 2: Production API**
-- **API URL**: `https://oriva-9oe23kukl-orivas-projects.vercel.app`
+- **API URL**: `https://api.oriva.io`
 - **Use for**: Final integration testing with real data
 - **Approach**: Use read-only operations and create test repositories
 
@@ -426,15 +426,15 @@ ORIVA_API_KEY=your_api_key_here
 
 ```bash
 # Test API connectivity
-curl https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/health
+curl https://api.oriva.io/api/v1/health
 
 # Test authentication
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/user/me
+  https://api.oriva.io/api/v1/user/me
 
 # List repositories (read-only)
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://oriva-9oe23kukl-orivas-projects.vercel.app/api/v1/repositories
+  https://api.oriva.io/api/v1/repositories
 ```
 
 ---
