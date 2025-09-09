@@ -343,8 +343,8 @@ GET    /api/v1/teams                         # User teams
 | Endpoint Type | Limit | Window |
 |---------------|-------|--------|
 | **Core API** | 5,000 requests | Per hour |
-| **OAuth** | 100 requests | Per hour |
 | **Marketplace** | 1,000 requests | Per hour |
+| **Webhooks** | 10,000 requests | Per hour |
 
 ---
 

@@ -88,9 +88,10 @@ For development setup and testing strategies, see the [Start Guide](docs/START_G
 | Endpoint Type | Limit | Window |
 |---------------|-------|--------|
 | **Core API** | 5,000 requests | Per hour |
-| **OAuth** | 100 requests | Per hour |
 | **Marketplace** | 1,000 requests | Per hour |
 | **Webhooks** | 10,000 requests | Per hour |
+
+> **Note:** Rate limits ensure fair usage and system stability. Since users are already authenticated in Oriva, these limits apply per API key rather than per user session.
 
 ### Usage Analytics
 
