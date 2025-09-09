@@ -1,0 +1,47 @@
+# GitHub Pages configuration for Oriva Platform API Documentation
+
+# Site settings
+title: "Oriva Platform API Documentation"
+description: "Comprehensive API documentation for the Oriva Platform - Build apps that extend user Oriva accounts"
+url: "https://0riva.github.io"
+baseurl: "/oriva-platform"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Exclude files from processing
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+# Include files
+include:
+  - _redirects
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# SEO
+author: "Oriva Team"
+twitter:
+  username: oriva_io
+github:
+  username: 0riva
+
+# Social links
+social:
+  name: Oriva Team
+  links:
+    - https://github.com/0riva/oriva-platform
+    - https://oriva.io
