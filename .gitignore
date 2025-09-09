@@ -26,3 +26,4 @@ logs/
 # Build artifacts
 build/
 out/
+.env*.local

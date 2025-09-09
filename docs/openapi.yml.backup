@@ -1,0 +1,998 @@
+openapi: 3.0.3
+info:
+  title: Oriva Platform API
+  description: |
+    RESTful API for the Oriva social network platform. This API provides secure access to Oriva's core functionality for building social apps and extensions.
+    
+    ## Authentication
+    
+    All requests require authentication using API key:
+    - **API Key**: Use `Authorization: Bearer <api-key>` header
+    
+    ## Rate Limiting
+    
+    API endpoints are rate-limited to ensure fair usage:
+    - **Core API**: 5,000 requests per hour
+    - **Marketplace**: 1,000 requests per hour
+    - **Webhooks**: 10,000 requests per hour
+    
+    ## Permissions
+    
+    Apps must declare required permissions in their manifest. Available permissions:
+    - `entries:read` - Read user entries
+    - `entries:write` - Create and update entries
+    - `entries:delete` - Delete entries
+    - `templates:read` - Read templates
+    - `templates:write` - Create and update templates
+    - `user:read` - Read user information
+    - `user:write` - Update user information
+    - `ui:notifications` - Show notifications
+    - `ui:modals` - Display modals
+    - `ui:navigation` - Navigate between screens
+    - `storage:read` - Read app-specific data
+    - `storage:write` - Write app-specific data
+  version: 1.0.0
+  contact:
+    name: Oriva Developer Support
+    url: https://github.com/0riva/oriva-platform
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.oriva.io
+    description: Production server
+  - url: http://localhost:3001
+    description: Development server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the API is healthy and operational
+      tags:
+        - System
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: 1.0.0
+
+  /api/v1/entries:
+    get:
+      summary: Get entries
+      description: Retrieve user entries with filtering and pagination
+      tags:
+        - Entries
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of entries per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          description: Filter by entry status
+          schema:
+            type: string
+            enum: [draft, scheduled, published, all]
+        - name: audience
+          in: query
+          description: Filter by audience type
+          schema:
+            type: string
+            enum: [public, private, shared, all]
+        - name: search
+          in: query
+          description: Search in title and content
+          schema:
+            type: string
+            maxLength: 100
+        - name: templateId
+          in: query
+          description: Filter by template ID
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            enum: [createdAt, updatedAt, title]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Entry'
+                  success:
+                    type: boolean
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      summary: Create entry
+      description: Create a new entry
+      tags:
+        - Entries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntryRequest'
+      responses:
+        '201':
+          description: Entry created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Entry'
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/entries/{id}:
+    get:
+      summary: Get entry by ID
+      description: Retrieve a specific entry by its ID
+      tags:
+        - Entries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Entry ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entry details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Entry'
+                  success:
+                    type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      summary: Update entry
+      description: Update an existing entry
+      tags:
+        - Entries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Entry ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntryRequest'
+      responses:
+        '200':
+          description: Entry updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Entry'
+                  success:
+                    type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      summary: Delete entry
+      description: Delete an entry permanently
+      tags:
+        - Entries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Entry ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entry deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: null
+                  success:
+                    type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/entries/stats:
+    get:
+      summary: Get entry statistics
+      description: Get entry statistics for the current user
+      tags:
+        - Entries
+      responses:
+        '200':
+          description: Entry statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      published:
+                        type: integer
+                      drafts:
+                        type: integer
+                      scheduled:
+                        type: integer
+                  success:
+                    type: boolean
+
+  /api/v1/templates:
+    get:
+      summary: Get templates
+      description: Retrieve available templates
+      tags:
+        - Templates
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of templates per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: category
+          in: query
+          description: Filter by template category
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search in template name and description
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+                  success:
+                    type: boolean
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create template
+      description: Create a new template
+      tags:
+        - Templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Template'
+                  success:
+                    type: boolean
+
+  /api/v1/templates/{id}:
+    get:
+      summary: Get template by ID
+      description: Retrieve a specific template by its ID
+      tags:
+        - Templates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Template'
+                  success:
+                    type: boolean
+
+    put:
+      summary: Update template
+      description: Update an existing template
+      tags:
+        - Templates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Template'
+                  success:
+                    type: boolean
+
+  /api/v1/user/me:
+    get:
+      summary: Get current user
+      description: Get current user information
+      tags:
+        - User
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  success:
+                    type: boolean
+
+    put:
+      summary: Update current user
+      description: Update current user information
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  success:
+                    type: boolean
+
+  /api/v1/user/preferences:
+    get:
+      summary: Get user preferences
+      description: Get user preferences for the current app
+      tags:
+        - User
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+                  success:
+                    type: boolean
+
+    put:
+      summary: Update user preferences
+      description: Update user preferences for the current app
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+                  success:
+                    type: boolean
+
+  /api/v1/ui/notifications:
+    post:
+      summary: Show notification
+      description: Display a notification to the user
+      tags:
+        - UI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, message]
+              properties:
+                title:
+                  type: string
+                  description: Notification title
+                message:
+                  type: string
+                  description: Notification message
+                type:
+                  type: string
+                  enum: [info, success, warning, error]
+                  default: info
+                duration:
+                  type: integer
+                  description: Duration in milliseconds
+                  default: 5000
+      responses:
+        '200':
+          description: Notification displayed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                  success:
+                    type: boolean
+
+  /api/v1/ui/modals:
+    post:
+      summary: Show modal
+      description: Display a modal dialog to the user
+      tags:
+        - UI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title:
+                  type: string
+                  description: Modal title
+                content:
+                  type: string
+                  description: Modal content
+                type:
+                  type: string
+                  enum: [info, confirm, alert]
+                  default: info
+      responses:
+        '200':
+          description: Modal displayed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      result:
+                        type: string
+                  success:
+                    type: boolean
+
+  /api/v1/storage:
+    get:
+      summary: Get app data
+      description: Retrieve data from your app's storage
+      tags:
+        - Storage
+      parameters:
+        - name: key
+          in: query
+          required: true
+          description: Storage key
+          schema:
+            type: string
+      responses:
+        '200':
+          description: App data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+                  success:
+                    type: boolean
+
+    post:
+      summary: Set app data
+      description: Store data in your app's storage
+      tags:
+        - Storage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, value]
+              properties:
+                key:
+                  type: string
+                  description: Storage key
+                value:
+                  type: object
+                  description: Data to store
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Data stored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                  success:
+                    type: boolean
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: API key authentication using Bearer token
+
+  schemas:
+    Entry:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'
+        template:
+          $ref: '#/components/schemas/Template'
+        audience:
+          type: string
+          enum: [public, private, shared]
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+
+    Section:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        content:
+          type: string
+        order:
+          type: integer
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateSection'
+        isPublic:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+
+    TemplateSection:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        order:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+        website:
+          type: string
+        avatar:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateEntryRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content:
+          type: string
+        sections:
+          type: array
+          items:
+            type: object
+        templateId:
+          type: string
+        audience:
+          type: string
+          enum: [public, private, shared]
+          default: private
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+          default: draft
+
+    UpdateEntryRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content:
+          type: string
+        sections:
+          type: array
+          items:
+            type: object
+        audience:
+          type: string
+          enum: [public, private, shared]
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+
+    CreateTemplateRequest:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateSection'
+        isPublic:
+          type: boolean
+          default: false
+
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateSection'
+        isPublic:
+          type: boolean
+
+    UpdateUserRequest:
+          type: object
+          properties:
+        username:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+        website:
+          type: string
+
+    Pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                limit:
+                  type: integer
+                total:
+                  type: integer
+        totalPages:
+          type: integer
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+    Unauthorized:
+      description: Unauthorized - invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+              retryAfter:
+                type: integer
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+tags:
+  - name: System
+    description: System health and status
+  - name: Entries
+    description: Entry management operations
+  - name: Templates
+    description: Template management operations
+  - name: User
+    description: User information and profile management
+  - name: UI
+    description: User interface interactions
+  - name: Storage
+    description: App data storage operations
