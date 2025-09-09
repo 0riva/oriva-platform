@@ -11,6 +11,8 @@ Oriva is a collaboration network. External developers can build apps that integr
 
 ## 🌟 What is Oriva Core?
 
+Oriva is a collaboration platform for modern human to human coordination. Learn more at [https://oriva.io](https://oriva.io).
+
 ## 🎯 Build Apps for Oriva
 
 Create powerful integrations that extend Oriva's functionality:
@@ -107,16 +109,14 @@ Build social apps for the Oriva network:
 
 | Category | Description | Examples |
 |----------|-------------|----------|
-| **💕 Dating & Relationships** | Social connections, dating apps | Profile matching, chat features, relationship tools |
-| **💼 Professional Networking** | Career connections, job hunting | Resume builders, job matching, career coaching |
-| **🎮 Social Gaming** | Games, challenges, competitions | Mini-games, tournaments, leaderboards |
-| **📚 Learning Communities** | Educational content, skill sharing | Language learning, study groups, tutorials |
-| **🛒 Social Commerce** | Shopping, recommendations, reviews | Product catalogs, social shopping, peer reviews |
-| **🏥 Wellness Communities** | Health, fitness, mental wellness | Workout groups, meditation circles, support networks |
-| **🎨 Creative Communities** | Art, design, content creation | Photo sharing, design collaboration, creative challenges |
-| **🏠 Interest Groups** | Hobbies, lifestyle, personal interests | Book clubs, hobby groups, lifestyle communities |
-| **🔧 Developer Communities** | Code sharing, tech discussions | Code reviews, tech meetups, developer tools |
-| **📊 Business Networks** | Professional services, B2B connections | Service marketplaces, business networking, enterprise tools |
+| **🏠 Private Groups** | Communities, special interests, etc | Book clubs, hobby groups, lifestyle communities |
+| **🤝 Networking** | Dating, business, professional connections | Profile matching, career networking, business tools |
+| **📚 Learning** | Educational content, skill sharing | Language learning, study groups, tutorials |
+| **🎮 Gaming** | Games, challenges, competitions | Mini-games, tournaments, leaderboards |
+| **🏥 Wellness** | Health, fitness, mental wellness | Workout groups, meditation circles, support networks |
+| **🔧 Innovation** | Coding, engineering, tech development | Code reviews, tech meetups, developer tools |
+| **💰 Finance** | Payment solutions, DeFi, financial tools | Payment processing, crypto trading, financial planning |
+| **🌐 Decentralization** | Web3, encryption, blockchain | Web3 apps, encrypted messaging, decentralized storage |
 
 ## 🛠️ Development Resources
 
