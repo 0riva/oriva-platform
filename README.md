@@ -234,7 +234,7 @@ function MyOrivaApp() {
 
 ## 🧪 Development & Testing
 
-For development setup and testing strategies, see the [Quick Start Guide](docs/QUICKSTART.md).
+For development setup and testing strategies, see the [Start Guide](docs/START_GUIDE.md).
 
 
 ## 📊 Rate Limits & Usage

@@ -1,4 +1,4 @@
-# 🚀 Developer Quickstart Guide
+# 🚀 Developer Start Guide
 
 > **Build apps that extend the Oriva source code collaboration platform**
 

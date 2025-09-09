@@ -213,7 +213,7 @@ The platform uses a **granular permission system** with these scopes:
 
 ### **Available Documentation**
 - **OpenAPI Specification**: Complete API documentation in `docs/openapi.yml`
-- **Quickstart Guide**: Developer onboarding in `docs/QUICKSTART.md`
+- **Start Guide**: Developer onboarding in `docs/START_GUIDE.md`
 - **SDK Documentation**: TypeScript SDK usage in `packages/plugin-sdk/README.md`
 - **Internal Documentation**: Architecture decisions and requirements
 
@@ -243,7 +243,7 @@ The platform uses a **granular permission system** with these scopes:
 
 - **GitHub Repository**: [oriva-platform](https://github.com/0riva/oriva-platform)
 - **API Documentation**: [OpenAPI Spec](docs/openapi.yml)
-- **Developer Guide**: [Quickstart](docs/QUICKSTART.md)
+- **Developer Guide**: [Start Guide](docs/START_GUIDE.md)
 - **Plugin SDK**: [@oriva/plugin-sdk](packages/plugin-sdk/)
 
 ---

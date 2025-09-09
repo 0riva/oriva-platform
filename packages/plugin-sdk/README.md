@@ -18,7 +18,7 @@ npm install @oriva/plugin-sdk
 
 ## 🚀 Quick Start
 
-> **📋 Environment Setup**: See the [Quick Start Guide](../../docs/QUICKSTART.md) for environment variable configuration.
+> **📋 Environment Setup**: See the [Start Guide](../../docs/START_GUIDE.md) for environment variable configuration.
 
 ### 1. Initialize the SDK
 
