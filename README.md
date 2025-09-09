@@ -75,8 +75,8 @@ const sdk = new OrivaPluginSDK({
   version: '1.0.0',
   userId: 'user-id',
   permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.REACT_APP_ORIVA_API_KEY,
-  baseUrl: process.env.REACT_APP_ORIVA_API_URL,
+  apiKey: process.env.ORIVA_API_KEY,
+  baseUrl: process.env.ORIVA_API_URL,
 });
 
 // Access user repositories
@@ -186,8 +186,8 @@ const sdk = new OrivaPluginSDK({
   version: '1.0.0',
   userId: 'user-id',
   permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.REACT_APP_ORIVA_API_KEY,
-  baseUrl: process.env.REACT_APP_ORIVA_API_URL,
+  apiKey: process.env.ORIVA_API_KEY,
+  baseUrl: process.env.ORIVA_API_URL,
 });
 
 // Get user's repositories
@@ -266,10 +266,10 @@ npm install @oriva/plugin-sdk
 
 # Set up environment variables (see docs/QUICKSTART.md for details)
 # Create a .env file with:
-REACT_APP_ORIVA_API_URL=https://api.oriva.io
-REACT_APP_ORIVA_GRAPHQL_URL=https://api.oriva.io/graphql
-REACT_APP_ORIVA_WS_URL=wss://api.oriva.io/graphql
-REACT_APP_ORIVA_API_KEY=your_api_key_here
+ORIVA_API_URL=https://api.oriva.io
+ORIVA_GRAPHQL_URL=https://api.oriva.io/graphql
+ORIVA_WS_URL=wss://api.oriva.io/graphql
+ORIVA_API_KEY=your_api_key_here
 
 # Run your app
 npm start

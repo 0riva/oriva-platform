@@ -31,8 +31,8 @@ const context: PluginContext = {
   version: '1.0.0',
   userId: 'user-id',
   permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.REACT_APP_ORIVA_API_KEY,
-  baseUrl: process.env.REACT_APP_ORIVA_API_URL,
+  apiKey: process.env.ORIVA_API_KEY,
+  baseUrl: process.env.ORIVA_API_URL,
 };
 
 const sdk = new OrivaPluginSDK(context);
