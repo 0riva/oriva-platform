@@ -52,8 +52,9 @@ npm --version     # Should be 8+
    - **Category**: Choose from available categories
 
 3. **Get your API key:**
-   - **API Key**: Your app's authentication token
+   - **API Key**: Your app's authentication token (format: `oriva_pk_live_...` or `oriva_pk_test_...`)
    - Copy this key and add it to your `.env` file
+   - **Note**: Make sure you're using the correct environment (live vs test)
 
 > **🔐 Security Note:** Keep your API key secure and never expose it in client-side code in production!
 
@@ -90,6 +91,23 @@ console.log('User:', data.name);
 ```
 
 > **🔐 Security Note:** Never expose your API key in client-side code in production! Use environment variables and server-side proxies for sensitive operations.
+
+### 2.3 Troubleshooting API Key Issues
+
+If you're getting "Invalid API key" errors:
+
+1. **Check the format**: API keys should start with `oriva_pk_live_` or `oriva_pk_test_`
+2. **Verify environment**: Make sure you're using the correct API URL for your key:
+   - Live keys: `https://api.oriva.io`
+   - Test keys: `https://sandbox-api.oriva.io`
+3. **Check for typos**: Ensure the key is copied correctly without extra spaces
+4. **Verify key is active**: Check your developer dashboard to ensure the key is not revoked
+
+```bash
+# Test your API key
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/user/profile
+```
 
 ---
 
