@@ -218,9 +218,7 @@ The platform uses a **granular permission system** with these scopes:
 - **Internal Documentation**: Architecture decisions and requirements
 
 ### **Development Resources**
-- **Sandbox Environment**: `https://sandbox-api.oriva.io` for testing
 - **Production API**: `https://api.oriva.io`
-- **Staging API**: `https://staging-api.oriva.io`
 - **Local Development**: `http://localhost:3001`
 
 ---

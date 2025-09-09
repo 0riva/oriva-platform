@@ -97,9 +97,8 @@ console.log('User:', data.name);
 If you're getting "Invalid API key" errors:
 
 1. **Check the format**: API keys should start with `oriva_pk_live_` or `oriva_pk_test_`
-2. **Verify environment**: Make sure you're using the correct API URL for your key:
-   - Live keys: `https://api.oriva.io`
-   - Test keys: `https://sandbox-api.oriva.io`
+2. **Verify environment**: Make sure you're using the correct API URL:
+   - All API keys use: `https://api.oriva.io`
 3. **Check for typos**: Ensure the key is copied correctly without extra spaces
 4. **Verify key is active**: Check your developer dashboard to ensure the key is not revoked
 
@@ -264,23 +263,23 @@ Once approved, your app will be:
 
 ## 🧪 Testing Your Integration
 
-### Sandbox Environment
+### Development Environment
 
-Use our sandbox for development and testing:
+For development and testing, use the main API:
 
-- **Sandbox API**: `https://sandbox-api.oriva.io`
-- **Test Data**: Pre-populated with sample repositories and users
-- **No Rate Limits**: Unlimited API calls for development
+- **API URL**: `https://api.oriva.io`
+- **Test Data**: Use your own test repositories and data
+- **Rate Limits**: Standard API rate limits apply
 
 ### Test Your App
 
 ```bash
 # Test API connectivity
-curl https://sandbox-api.oriva.io/health
+curl https://api.oriva.io/health
 
 # Test authentication
-curl -H "Authorization: Bearer YOUR_SANDBOX_TOKEN" \
-  https://sandbox-api.oriva.io/api/v1/user/profile
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/user/profile
 ```
 
 ---

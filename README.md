@@ -234,28 +234,27 @@ function MyOrivaApp() {
 
 ## 🧪 Development & Testing
 
-### Sandbox Environment
+### Development Environment
 
-Use our sandbox environment for development and testing:
+For development and testing, use the main API:
 
-- **Sandbox API**: `https://sandbox-api.oriva.io`
-- **Test Data**: Pre-populated with sample repositories and users
-- **No Rate Limits**: Unlimited API calls for development
-- **Isolated Environment**: Your changes don't affect production
+- **API URL**: `https://api.oriva.io`
+- **Test Data**: Use your own test repositories and data
+- **Rate Limits**: Standard API rate limits apply
 
 ### Testing Your Integration
 
 ```bash
 # Test API connectivity
-curl https://sandbox-api.oriva.io/health
+curl https://api.oriva.io/health
 
 # Test authentication
-curl -H "Authorization: Bearer YOUR_SANDBOX_TOKEN" \
-  https://sandbox-api.oriva.io/api/v1/user/profile
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/user/profile
 
 # Test repository access
-curl -H "Authorization: Bearer YOUR_SANDBOX_TOKEN" \
-  https://sandbox-api.oriva.io/api/v1/repositories
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/repositories
 ```
 
 ### Local Development
