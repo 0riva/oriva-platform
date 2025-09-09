@@ -236,14 +236,18 @@ function MyOrivaApp() {
 
 ### Development Environment
 
-For development and testing, use the main API:
+For development and testing, use the main API with these strategies:
 
 - **API URL**: `https://api.oriva.io`
-- **Test Data**: Use your own test repositories and data
+- **Test Data**: Create dedicated test repositories and users
 - **Rate Limits**: Standard API rate limits apply
+- **Testing Approach**: Use read-only operations and test data
 
 ### Testing Your Integration
 
+#### **Recommended Testing Approach:**
+
+1. **Start with Read-Only Operations**
 ```bash
 # Test API connectivity
 curl https://api.oriva.io/health
@@ -252,10 +256,24 @@ curl https://api.oriva.io/health
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/user/profile
 
-# Test repository access
+# List repositories (safe, read-only)
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/repositories
 ```
+
+2. **Create Dedicated Test Data**
+```bash
+# Create test repository for development
+curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "myapp-test", "description": "Test repository"}' \
+  https://api.oriva.io/api/v1/repositories
+```
+
+3. **Use Separate API Keys**
+- Create development-specific API keys
+- Monitor usage in your developer dashboard
+- Use descriptive names like "MyApp-Development"
 
 ### Local Development
 
