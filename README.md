@@ -71,9 +71,12 @@ Use our comprehensive API to build apps that integrate with Oriva:
 import { OrivaPluginSDK } from '@oriva/plugin-sdk';
 
 const sdk = new OrivaPluginSDK({
-  clientId: 'your-app-client-id',
-  clientSecret: 'your-app-client-secret',
-  baseURL: 'https://api.oriva.io'
+  pluginId: 'your-plugin-id',
+  version: '1.0.0',
+  userId: 'user-id',
+  permissions: ['entries:read', 'entries:write'],
+  apiKey: process.env.REACT_APP_ORIVA_API_KEY,
+  baseUrl: process.env.REACT_APP_ORIVA_API_URL,
 });
 
 // Access user repositories
@@ -128,13 +131,6 @@ POST   /api/v1/developer/apps/:appId/submit  # Submit for review
 GET    /api/v1/developer/apps/:appId/analytics # App usage analytics
 ```
 
-### 🔐 **OAuth API**
-```bash
-GET    /api/oauth/authorize                  # Authorization endpoint
-POST   /api/oauth/token                      # Token exchange
-GET    /api/oauth/token/info                 # Token validation
-POST   /api/oauth/token/revoke               # Revoke token
-```
 
 ### 📚 **Core Platform API**
 ```bash
@@ -150,25 +146,11 @@ GET    /api/v1/teams                         # User teams
 
 ## 🔐 Authentication
 
-### OAuth 2.0 Flow
+### API Key Authentication
 
 ```bash
-# 1. Redirect user to authorization
-https://api.oriva.io/api/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT&response_type=code&scope=read:repositories,write:issues
-
-# 2. Exchange authorization code for token
-curl -X POST https://api.oriva.io/api/oauth/token \
-  -H "Content-Type: application/json" \
-  -d '{
-    "grant_type": "authorization_code",
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET",
-    "code": "AUTHORIZATION_CODE",
-    "redirect_uri": "YOUR_REDIRECT_URI"
-  }'
-
-# 3. Use access token in API calls
-curl -H "Authorization: Bearer ACCESS_TOKEN" \
+# Use your API key in the Authorization header
+curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/repositories
 ```
 
@@ -200,9 +182,12 @@ npm install @oriva/plugin-sdk
 import { OrivaPluginSDK } from '@oriva/plugin-sdk';
 
 const sdk = new OrivaPluginSDK({
-  clientId: 'your-app-client-id',
-  clientSecret: 'your-app-client-secret',
-  baseURL: 'https://api.oriva.io'
+  pluginId: 'your-plugin-id',
+  version: '1.0.0',
+  userId: 'user-id',
+  permissions: ['entries:read', 'entries:write'],
+  apiKey: process.env.REACT_APP_ORIVA_API_KEY,
+  baseUrl: process.env.REACT_APP_ORIVA_API_URL,
 });
 
 // Get user's repositories

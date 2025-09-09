@@ -154,9 +154,12 @@ npm install @oriva/plugin-sdk
 import { OrivaPluginSDK } from '@oriva/plugin-sdk';
 
 const sdk = new OrivaPluginSDK({
-  clientId: 'your-client-id',
-  clientSecret: 'your-client-secret',
-  baseURL: 'https://api.oriva.io'
+  pluginId: 'your-plugin-id',
+  version: '1.0.0',
+  userId: 'user-id',
+  permissions: ['entries:read', 'entries:write'],
+  apiKey: process.env.REACT_APP_ORIVA_API_KEY,
+  baseUrl: process.env.REACT_APP_ORIVA_API_URL,
 });
 ```
 
