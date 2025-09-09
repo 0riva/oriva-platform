@@ -103,17 +103,20 @@ Track your app's performance:
 
 ## 📋 App Categories
 
-Build apps in these categories:
+Build social apps for the Oriva network:
 
 | Category | Description | Examples |
 |----------|-------------|----------|
-| **🔧 Development** | Code quality, testing, CI/CD | Linters, test runners, deployment tools |
-| **📊 Analytics** | Metrics, reporting, insights | Code quality dashboards, team analytics |
-| **🔗 Integrations** | External service connections | Slack notifications, Jira sync, email alerts |
-| **🎨 UI/UX** | Interface enhancements | Themes, custom editors, accessibility tools |
-| **📚 Documentation** | Docs generation, wikis | Auto-docs, knowledge bases, tutorials |
-| **🛡️ Security** | Security scanning, compliance | Vulnerability scanners, audit tools |
-| **⚡ Automation** | Workflow automation | Auto-merge, branch management, notifications |
+| **💕 Dating & Relationships** | Social connections, dating apps | Profile matching, chat features, relationship tools |
+| **💼 Professional Networking** | Career connections, job hunting | Resume builders, job matching, career coaching |
+| **🎮 Social Gaming** | Games, challenges, competitions | Mini-games, tournaments, leaderboards |
+| **📚 Learning Communities** | Educational content, skill sharing | Language learning, study groups, tutorials |
+| **🛒 Social Commerce** | Shopping, recommendations, reviews | Product catalogs, social shopping, peer reviews |
+| **🏥 Wellness Communities** | Health, fitness, mental wellness | Workout groups, meditation circles, support networks |
+| **🎨 Creative Communities** | Art, design, content creation | Photo sharing, design collaboration, creative challenges |
+| **🏠 Interest Groups** | Hobbies, lifestyle, personal interests | Book clubs, hobby groups, lifestyle communities |
+| **🔧 Developer Communities** | Code sharing, tech discussions | Code reviews, tech meetups, developer tools |
+| **📊 Business Networks** | Professional services, B2B connections | Service marketplaces, business networking, enterprise tools |
 
 ## 🛠️ Development Resources
 
@@ -121,8 +124,9 @@ Build apps in these categories:
 - **🚀 [Developer Start Guide](docs/START_GUIDE.md)** - Complete setup and integration guide
 - **🧪 [API Tester](docs/api-tester.html)** - Interactive tool to test Oriva Platform APIs
 - **API Reference**: [OpenAPI Specification](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)
-- **SDK Documentation**: [Plugin SDK](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)
-- **OAuth Guide**: [GitHub Repository](https://github.com/0riva/oriva-platform) (coming soon)
+- **🎨 Components Library**: [Oriva UI Components](https://github.com/0riva/oriva-platform) (coming soon)
+- **🎭 Theme System**: [Custom Themes Guide](https://github.com/0riva/oriva-platform) (coming soon)
+- **🔌 Plugin SDK**: [Plugin SDK](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)
 - **Webhooks**: [GitHub Repository](https://github.com/0riva/oriva-platform) (coming soon)
 
 ### Developer Tools
