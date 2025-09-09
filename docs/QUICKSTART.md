@@ -50,13 +50,12 @@ npm --version     # Should be 8+
    - **Name**: Your app's display name
    - **Description**: What your app does
    - **Category**: Choose from available categories
-   - **Redirect URI**: Where users return after authorization
 
-3. **Get your credentials:**
-   - **Client ID**: Your app's public identifier
-   - **Client Secret**: Keep this secure!
+3. **Get your API key:**
+   - **API Key**: Your app's authentication token
+   - Copy this key and add it to your `.env` file
 
-> **🔐 Security Note:** Never expose your client secret in client-side code!
+> **🔐 Security Note:** Keep your API key secure and never expose it in client-side code in production!
 
 ---
 
