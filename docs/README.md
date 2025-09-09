@@ -48,17 +48,26 @@ The `api-tester.html` file provides an interactive tool for developers to test O
 ### Features
 - **Interactive endpoint testing** - Test all API endpoints with a single click
 - **Real-time response viewing** - See JSON responses with syntax highlighting
-- **API key management** - Secure input with localStorage persistence
+- **Secure API key handling** - Server-side proxy with environment variables
 - **Error handling** - Clear error messages and HTTP status codes
 - **Rate limit friendly** - Built-in delays between requests
 - **Professional UI** - Modern, responsive design with status badges
+- **Setup validation** - Automatic detection of local server status
 
-### How to Use
-1. **Open the tester**: Navigate to `docs/api-tester.html` in your browser
-2. **Enter your API key**: Paste your API key (format: `oriva_pk_live_...` or `oriva_pk_test_...`)
-3. **Test endpoints**: Click "🚀 Test All Endpoints" to test all available endpoints
-4. **View results**: Expand response data to see detailed JSON responses
-5. **Clear results**: Use "🗑️ Clear Results" to start fresh
+### How to Use (Secure Workflow)
+1. **Set up local server**: Create and run the provided test server (Node.js or Python)
+2. **Configure API key**: Set your API key in environment variables (`.env` file)
+3. **Start proxy server**: Run the local test server to proxy requests securely
+4. **Open the tester**: Navigate to `docs/api-tester.html` in your browser
+5. **Test endpoints**: Click "🚀 Test All Endpoints" to test all available endpoints
+6. **View results**: Expand response data to see detailed JSON responses
+7. **Clear results**: Use "🗑️ Clear Results" to start fresh
+
+### Security Features
+- 🔐 **Server-side proxy** - API key never exposed in browser/client-side code
+- 🔐 **Environment variables** - Uses proper `.env` file for API key storage
+- 🔐 **Local-only** - No API key transmission to external servers
+- 🔐 **CORS-enabled** - Secure cross-origin requests
 
 ### Available Endpoints
 - **Health Check** - `/api/v1/health`

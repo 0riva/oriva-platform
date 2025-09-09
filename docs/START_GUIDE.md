@@ -422,21 +422,28 @@ ORIVA_API_KEY=your_api_key_here
 
 #### Option 1: Interactive API Tester (Recommended)
 
-The easiest way to test your API integration is using our interactive API tester:
+The easiest way to test your API integration is using our secure interactive API tester:
 
-1. **Open the API Tester**: Navigate to `docs/api-tester.html` in your browser
-2. **Enter your API key**: Paste your API key in the "Your API Key" field
-3. **Test endpoints**: Click "🚀 Test All Endpoints" to test all available endpoints
-4. **View results**: See detailed responses, status codes, and error messages
-5. **Save your key**: The tester automatically saves your API key for future use
+1. **Set up local server**: Follow the setup instructions in the API tester
+2. **Configure API key**: Set your API key in environment variables (`.env` file)
+3. **Start proxy server**: Run the local test server to proxy requests securely
+4. **Open the API Tester**: Navigate to `docs/api-tester.html` in your browser
+5. **Test endpoints**: Click "🚀 Test All Endpoints" to test all available endpoints
+6. **View results**: See detailed responses, status codes, and error messages
 
-**Benefits of the API Tester:**
+**Benefits of the Secure API Tester:**
+- ✅ **Secure** - API key never exposed in browser/client-side code
 - ✅ **Visual interface** - Easy to use, no command line needed
 - ✅ **Real-time testing** - See responses immediately
 - ✅ **Error handling** - Clear error messages and status codes
 - ✅ **Response viewing** - Expandable JSON responses
-- ✅ **Key persistence** - Saves your API key for convenience
+- ✅ **Environment-based** - Uses proper `.env` file for API key storage
 - ✅ **Rate limit friendly** - Built-in delays between requests
+
+**Security Features:**
+- 🔐 **Server-side proxy** - API key stays on your machine
+- 🔐 **Environment variables** - No hardcoded secrets
+- 🔐 **Local-only** - No API key transmission to external servers
 
 #### Option 2: Command Line Testing
 
