@@ -62,58 +62,35 @@ npm --version     # Should be 8+
 
 ## 🔐 Step 2: Set Up Authentication
 
-### 2.1 OAuth Flow Overview
+### 2.1 Environment Configuration
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant App
-    participant Oriva
-    participant API
+Create a `.env` file in your project root with your Oriva API credentials:
 
-    User->>App: Click "Connect to Oriva"
-    App->>Oriva: Redirect to authorization
-    User->>Oriva: Approve permissions
-    Oriva->>App: Return auth code
-    App->>Oriva: Exchange code for token
-    Oriva->>App: Return access token
-    App->>API: API calls with token
+```bash
+# Oriva Platform Configuration
+REACT_APP_ORIVA_API_URL=https://api.oriva.io
+REACT_APP_ORIVA_GRAPHQL_URL=https://api.oriva.io/graphql
+REACT_APP_ORIVA_WS_URL=wss://api.oriva.io/graphql
+REACT_APP_ORIVA_API_KEY=your_api_key_here
 ```
 
-### 2.2 Build Authorization URL
+### 2.2 API Key Authentication
+
+Oriva uses simple API key authentication for plugin operations. Include your API key in the Authorization header:
 
 ```javascript
-const authUrl = `https://api.oriva.io/api/oauth/authorize?` +
-  `client_id=${CLIENT_ID}&` +
-  `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
-  `response_type=code&` +
-  `scope=read:repositories,write:issues&` +
-  `state=${randomState}`;
-
-// Redirect user to authUrl
-window.location.href = authUrl;
-```
-
-### 2.3 Exchange Code for Token
-
-```javascript
-// After user returns with authorization code
-const response = await fetch('https://api.oriva.io/api/oauth/token', {
-  method: 'POST',
+const response = await fetch('https://api.oriva.io/api/v1/user/profile', {
   headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    grant_type: 'authorization_code',
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
-    code: authorizationCode,
-    redirect_uri: REDIRECT_URI
-  })
+    'Authorization': `Bearer ${process.env.REACT_APP_ORIVA_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
 });
 
-const { access_token, refresh_token } = await response.json();
+const data = await response.json();
+console.log('User:', data.name);
 ```
+
+> **🔐 Security Note:** Never expose your API key in client-side code in production! Use environment variables and server-side proxies for sensitive operations.
 
 ---
 

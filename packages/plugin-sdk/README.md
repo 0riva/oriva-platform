@@ -18,6 +18,20 @@ npm install @oriva/plugin-sdk
 
 ## 🚀 Quick Start
 
+### 1. Environment Setup
+
+Create a `.env` file in your project root:
+
+```bash
+# Oriva Platform Configuration
+REACT_APP_ORIVA_API_URL=https://api.oriva.io
+REACT_APP_ORIVA_GRAPHQL_URL=https://api.oriva.io/graphql
+REACT_APP_ORIVA_WS_URL=wss://api.oriva.io/graphql
+REACT_APP_ORIVA_API_KEY=your_api_key_here
+```
+
+### 2. Initialize the SDK
+
 ```typescript
 import { OrivaPluginSDK, PluginContext } from '@oriva/plugin-sdk';
 
@@ -27,8 +41,8 @@ const context: PluginContext = {
   version: '1.0.0',
   userId: 'user-id',
   permissions: ['entries:read', 'entries:write'],
-  apiKey: 'your-api-key',
-  baseUrl: 'https://api.oriva.io',
+  apiKey: process.env.REACT_APP_ORIVA_API_KEY,
+  baseUrl: process.env.REACT_APP_ORIVA_API_URL,
 };
 
 const sdk = new OrivaPluginSDK(context);
