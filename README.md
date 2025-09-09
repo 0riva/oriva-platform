@@ -2,7 +2,7 @@
 
 > **Build powerful apps that extend the Oriva Core source code collaboration platform**
 
-Oriva Core is a private source code collaboration platform where teams manage repositories, track issues, and collaborate on code. External developers can build apps that integrate with Oriva Core to provide additional functionality and enhance the development workflow.
+Oriva is a collaboration network. External developers can build apps that integrate with Oriva Core to provide additional functionality via the Oriva Platform.
 
 [![API Version](https://img.shields.io/badge/API-v1.0-blue)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)]()
@@ -10,14 +10,6 @@ Oriva Core is a private source code collaboration platform where teams manage re
 [![License](https://img.shields.io/badge/License-MIT-green)]()
 
 ## 🌟 What is Oriva Core?
-
-Oriva Core is a comprehensive source code collaboration platform that provides:
-
-- **Repository Management** - Git repositories with advanced collaboration features
-- **Issue Tracking** - Project management and bug tracking
-- **Code Review** - Pull request workflows and code quality tools
-- **Team Collaboration** - User management, permissions, and team workflows
-- **Marketplace** - Extensible platform for third-party integrations
 
 ## 🎯 Build Apps for Oriva
 
@@ -59,45 +51,22 @@ Create powerful integrations that extend Oriva's functionality:
 
 Ready to build your first Oriva integration? Follow our comprehensive [Start Guide](docs/START_GUIDE.md) to:
 
-- 📝 **[Register your app](docs/START_GUIDE.md#-step-1-register-your-app)** with the Oriva platform
-- 🔐 **[Set up authentication](docs/START_GUIDE.md#-step-2-set-up-authentication)** and API access
-- 🛠️ **[Build your integration](docs/START_GUIDE.md#-step-3-install-and-use-the-sdk)** using our SDK
-- 📦 **[Publish to marketplace](docs/START_GUIDE.md#-step-4-publish-to-marketplace)** and reach users worldwide
+- 📝 **Register your app** with the Oriva platform
+- 🔐 **Set up authentication** and API access
+- 🛠️ **Build your integration** using our SDK
+- 📦 **Publish to marketplace** and reach users worldwide
 
 **[🚀 Get Started Now →](docs/START_GUIDE.md)**
 
-## 🔗 API Endpoints
+## 🔗 API Overview
 
-### 🏪 **Marketplace API**
-```bash
-GET    /api/v1/marketplace/apps              # Browse available apps
-GET    /api/v1/marketplace/apps/:appId       # Get app details
-POST   /api/v1/marketplace/apps/:appId/install # Install app
-DELETE /api/v1/marketplace/apps/:appId/install # Uninstall app
-GET    /api/v1/marketplace/installed         # User's installed apps
-```
+The Oriva Platform provides comprehensive APIs for:
 
-### 👨‍💻 **Developer API**
-```bash
-GET    /api/v1/developer/apps                # Your published apps
-POST   /api/v1/developer/apps                # Create new app
-PUT    /api/v1/developer/apps/:appId         # Update app
-POST   /api/v1/developer/apps/:appId/submit  # Submit for review
-GET    /api/v1/developer/apps/:appId/analytics # App usage analytics
-```
+- **🏪 Marketplace** - Browse, install, and manage apps
+- **👨‍💻 Developer** - Create, publish, and analyze your apps  
+- **📚 Core Platform** - Access repositories, issues, pull requests, and user data
 
-
-### 📚 **Core Platform API**
-```bash
-GET    /api/v1/repositories                  # User repositories
-POST   /api/v1/repositories                  # Create repository
-GET    /api/v1/repositories/:id/issues       # Repository issues
-POST   /api/v1/repositories/:id/issues       # Create issue
-GET    /api/v1/repositories/:id/pull-requests # Pull requests
-POST   /api/v1/repositories/:id/pull-requests # Create pull request
-GET    /api/v1/user/profile                  # User profile
-GET    /api/v1/teams                         # User teams
-```
+[**View Complete API Reference →**](docs/START_GUIDE.md#api-endpoints)
 
 ## 🔐 Authentication
 
@@ -214,6 +183,6 @@ We're building a **decentralized messaging system** and need your help! We're lo
 
 ---
 
-**Built with ❤️ by the Oriva Team**
+**Made with 🪄 by the Oriva Team**
 
 Ready to build the next generation of development tools? Get started with the Oriva Platform API today!

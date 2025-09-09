@@ -286,6 +286,42 @@ Once approved, your app will be:
 
 ---
 
+## 🔗 API Endpoints
+
+The Oriva Platform provides comprehensive APIs organized into three main categories:
+
+### 🏪 **Marketplace API**
+```bash
+GET    /api/v1/marketplace/apps              # Browse available apps
+GET    /api/v1/marketplace/apps/:appId       # Get app details
+POST   /api/v1/marketplace/apps/:appId/install # Install app
+DELETE /api/v1/marketplace/apps/:appId/install # Uninstall app
+GET    /api/v1/marketplace/installed         # User's installed apps
+```
+
+### 👨‍💻 **Developer API**
+```bash
+GET    /api/v1/developer/apps                # Your published apps
+POST   /api/v1/developer/apps                # Create new app
+PUT    /api/v1/developer/apps/:appId         # Update app
+POST   /api/v1/developer/apps/:appId/submit  # Submit for review
+GET    /api/v1/developer/apps/:appId/analytics # App usage analytics
+```
+
+### 📚 **Core Platform API**
+```bash
+GET    /api/v1/repositories                  # User repositories
+POST   /api/v1/repositories                  # Create repository
+GET    /api/v1/repositories/:id/issues       # Repository issues
+POST   /api/v1/repositories/:id/issues       # Create issue
+GET    /api/v1/repositories/:id/pull-requests # Pull requests
+POST   /api/v1/repositories/:id/pull-requests # Create pull request
+GET    /api/v1/user/profile                  # User profile
+GET    /api/v1/teams                         # User teams
+```
+
+---
+
 ## 🔧 Available Scopes
 
 | Scope | Description | Use Case |
