@@ -420,6 +420,26 @@ ORIVA_API_KEY=your_api_key_here
 
 ### Testing Your App
 
+#### Option 1: Interactive API Tester (Recommended)
+
+The easiest way to test your API integration is using our interactive API tester:
+
+1. **Open the API Tester**: Navigate to `docs/api-tester.html` in your browser
+2. **Enter your API key**: Paste your API key in the "Your API Key" field
+3. **Test endpoints**: Click "🚀 Test All Endpoints" to test all available endpoints
+4. **View results**: See detailed responses, status codes, and error messages
+5. **Save your key**: The tester automatically saves your API key for future use
+
+**Benefits of the API Tester:**
+- ✅ **Visual interface** - Easy to use, no command line needed
+- ✅ **Real-time testing** - See responses immediately
+- ✅ **Error handling** - Clear error messages and status codes
+- ✅ **Response viewing** - Expandable JSON responses
+- ✅ **Key persistence** - Saves your API key for convenience
+- ✅ **Rate limit friendly** - Built-in delays between requests
+
+#### Option 2: Command Line Testing
+
 ```bash
 # Test API connectivity
 curl https://api.oriva.io/api/v1/health
@@ -428,9 +448,9 @@ curl https://api.oriva.io/api/v1/health
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/user/me
 
-# List repositories (read-only)
+# List entries
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.oriva.io/api/v1/repositories
+  https://api.oriva.io/api/v1/entries
 ```
 
 ---

@@ -45,9 +45,29 @@ To view the documentation locally:
 
 The `api-tester.html` file provides an interactive tool for developers to test Oriva Platform APIs. It includes:
 
-- Secure API key handling via environment variables
-- Server-side proxy examples (Node.js, Python)
-- Interactive endpoint testing
-- Response visualization
+### Features
+- **Interactive endpoint testing** - Test all API endpoints with a single click
+- **Real-time response viewing** - See JSON responses with syntax highlighting
+- **API key management** - Secure input with localStorage persistence
+- **Error handling** - Clear error messages and HTTP status codes
+- **Rate limit friendly** - Built-in delays between requests
+- **Professional UI** - Modern, responsive design with status badges
+
+### How to Use
+1. **Open the tester**: Navigate to `docs/api-tester.html` in your browser
+2. **Enter your API key**: Paste your API key (format: `oriva_pk_live_...` or `oriva_pk_test_...`)
+3. **Test endpoints**: Click "🚀 Test All Endpoints" to test all available endpoints
+4. **View results**: Expand response data to see detailed JSON responses
+5. **Clear results**: Use "🗑️ Clear Results" to start fresh
+
+### Available Endpoints
+- **Health Check** - `/api/v1/health`
+- **User Profile** - `/api/v1/user/me`
+- **Entries** - `/api/v1/entries`
+- **Templates** - `/api/v1/templates`
+- **Storage** - `/api/v1/storage`
+- **Admin Tools** - `/api/v1/dev/*` (requires admin token)
+
+The tester automatically saves your API key for convenience and provides a much easier alternative to command-line testing.
 
 See the file for detailed setup instructions.
