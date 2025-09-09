@@ -15,7 +15,7 @@ Welcome to the Oriva Platform! This guide will help you build powerful integrati
 
 By the end of this guide, you'll have:
 - ✅ **Registered your app** with the Oriva platform
-- ✅ **Set up OAuth authentication** for your app
+- ✅ **Set up API authentication** for your app
 - ✅ **Made your first API calls** to Oriva
 - ✅ **Published your app** to the marketplace
 
@@ -51,10 +51,16 @@ npm --version     # Should be 8+
    - **Description**: What your app does
    - **Category**: Choose from available categories
 
-3. **Get your API key:**
+3. **Get your API credentials:**
    - **API Key**: Your app's authentication token (format: `oriva_pk_live_...` or `oriva_pk_test_...`)
-   - Copy this key and add it to your `.env` file
+   - **Client ID & Secret**: For OAuth authentication (if needed)
+   - Copy these credentials and add them to your `.env` file
    - **Note**: Make sure you're using the correct environment (live vs test)
+
+4. **Configure OAuth settings** (if using OAuth):
+   - Set redirect URIs for your application
+   - Define required scopes and permissions
+   - Test the OAuth flow in development
 
 > **🔐 Security Note:** Keep your API key secure and never expose it in client-side code in production!
 
@@ -132,28 +138,27 @@ const sdk = new OrivaPluginSDK({
   baseUrl: process.env.ORIVA_API_URL,
 });
 
-// Get user's repositories
-const repositories = await sdk.repositories.list({
+// Access user repositories
+const repos = await sdk.repositories.list({
   visibility: 'all',
-  sort: 'updated',
-  per_page: 20
+  sort: 'updated'
 });
 
-console.log('Found', repositories.length, 'repositories');
-
-// Create a new issue
+// Create issues
 const issue = await sdk.issues.create({
   repositoryId: 'repo-123',
-  title: 'Feature Request: Dark Mode',
-  description: 'Add dark mode support to the code editor',
-  labels: ['enhancement', 'ui']
+  title: 'Bug in authentication',
+  description: 'Users cannot log in with OAuth',
+  labels: ['bug', 'high-priority']
 });
 
-// Get pull requests
-const pullRequests = await sdk.pullRequests.list({
+// Manage pull requests
+const pr = await sdk.pullRequests.create({
   repositoryId: 'repo-123',
-  state: 'open',
-  sort: 'created'
+  title: 'Fix authentication bug',
+  head: 'feature/fix-auth',
+  base: 'main',
+  body: 'This PR fixes the OAuth authentication issue'
 });
 ```
 
@@ -239,81 +244,45 @@ console.log('Created issue:', issue.id);
 
 ---
 
-## 🛠️ Step 4: Use the SDK (Recommended)
+## 🏪 Step 4: Publish to Marketplace
 
-### 4.1 Install the SDK
+### 4.1 Prepare Your App
 
-```bash
-npm install @oriva/plugin-sdk
-```
-
-### 4.2 Initialize the SDK
-
-```javascript
-import { OrivaPluginSDK } from '@oriva/plugin-sdk';
-
-const sdk = new OrivaPluginSDK({
-  pluginId: 'your-plugin-id',
-  version: '1.0.0',
-  userId: 'user-id',
-  permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.ORIVA_API_KEY,
-  baseUrl: process.env.ORIVA_API_URL,
-});
-```
-
-### 4.3 SDK Usage Examples
-
-```javascript
-// Set access token after OAuth
-sdk.setAccessToken(access_token);
-
-// Get user's repositories
-const repositories = await sdk.repositories.list({
-  visibility: 'all',
-  sort: 'updated'
-});
-
-// Create a new issue
-const issue = await sdk.issues.create({
-  repositoryId: 'repo-123',
-  title: 'Feature Request: Dark Mode',
-  description: 'Add dark mode support to the code editor',
-  labels: ['enhancement', 'ui']
-});
-
-// Get pull requests
-const pullRequests = await sdk.pullRequests.list({
-  repositoryId: 'repo-123',
-  state: 'open'
-});
-```
-
-> **⭐ Why Use the SDK?** The SDK provides type safety, automatic token management, and simplified API calls!
-
----
-
-## 🏪 Step 5: Publish to Marketplace
-
-### 5.1 Prepare Your App
+Submit your app to the Oriva marketplace by completing these steps:
 
 1. **Complete your app description**
-2. **Add screenshots and demo videos**
-3. **Set your pricing** (free or paid)
-4. **Define required permissions**
+   - Write a compelling description of what your app does
+   - Highlight key features and benefits
+   - Include use cases and target audience
 
-### 5.2 Submit for Review
+2. **Add screenshots and demo videos**
+   - Show your app in action
+   - Demonstrate key workflows
+   - Provide visual proof of functionality
+
+3. **Set your pricing** (free or paid)
+   - Choose between free or paid tiers
+   - Define pricing structure if applicable
+   - Consider freemium models
+
+4. **Define required permissions**
+   - Specify which API scopes your app needs
+   - Justify permission requirements
+   - Minimize permissions to what's necessary
+
+### 4.2 Submit for Review
 
 1. **Go to your app dashboard**
 2. **Click "Submit for Review"**
 3. **Wait for approval** (typically 1-3 business days)
 
-### 5.3 Launch Your App
+### 4.3 Launch Your App
 
 Once approved, your app will be:
 - ✅ **Available in the marketplace**
 - ✅ **Discoverable by users**
 - ✅ **Ready for installations**
+- ✅ **Launch to Oriva users worldwide**
 
 ---
 
@@ -478,7 +447,7 @@ const response = await fetch('/api/proxy/oriva/user/profile', {
 
 You've successfully:
 - ✅ **Registered your app** with Oriva
-- ✅ **Set up OAuth authentication**
+- ✅ **Set up API authentication**
 - ✅ **Made API calls** to the platform
 - ✅ **Used the SDK** for easier development
 - ✅ **Published your app** to the marketplace

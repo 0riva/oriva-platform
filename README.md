@@ -55,61 +55,14 @@ Create powerful integrations that extend Oriva's functionality:
 
 ## 🚀 Quick Start
 
-### 1. 📝 Register Your App
+Ready to build your first Oriva integration? Follow our comprehensive [Start Guide](docs/START_GUIDE.md) to:
 
-1. **Log into your [Oriva Core account](https://oriva.io)**
-2. **Go to Settings** → **Developer Settings**
-3. **Click "Create New App"** and fill in your app details
-4. **Get your API credentials** (Client ID & Secret)
-5. **Configure OAuth settings** and redirect URIs
+- 📝 **Register your app** with the Oriva platform
+- 🔐 **Set up authentication** and API access
+- 🛠️ **Build your integration** using our SDK
+- 📦 **Publish to marketplace** and reach users worldwide
 
-### 2. 🛠️ Build Your Integration
-
-Use our comprehensive API to build apps that integrate with Oriva:
-
-```typescript
-import { OrivaPluginSDK } from '@oriva/plugin-sdk';
-
-const sdk = new OrivaPluginSDK({
-  pluginId: 'your-plugin-id',
-  version: '1.0.0',
-  userId: 'user-id',
-  permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.ORIVA_API_KEY,
-  baseUrl: process.env.ORIVA_API_URL,
-});
-
-// Access user repositories
-const repos = await sdk.repositories.list({
-  visibility: 'all',
-  sort: 'updated'
-});
-
-// Create issues
-const issue = await sdk.issues.create({
-  repositoryId: 'repo-123',
-  title: 'Bug in authentication',
-  description: 'Users cannot log in with OAuth',
-  labels: ['bug', 'high-priority']
-});
-
-// Manage pull requests
-const pr = await sdk.pullRequests.create({
-  repositoryId: 'repo-123',
-  title: 'Fix authentication bug',
-  head: 'feature/fix-auth',
-  base: 'main',
-  body: 'This PR fixes the OAuth authentication issue'
-});
-```
-
-### 3. 📦 Publish to Marketplace
-
-Submit your app to the Oriva marketplace:
-- Complete app review process
-- Set pricing and availability
-- Provide documentation and screenshots
-- Launch to Oriva users worldwide
+[**Get Started Now →**](docs/START_GUIDE.md)
 
 ## 🔗 API Endpoints
 
