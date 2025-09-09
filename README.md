@@ -280,8 +280,10 @@ curl -H "Authorization: Bearer YOUR_SANDBOX_TOKEN" \
 npm install @oriva/plugin-sdk
 
 # Set up environment variables (see docs/QUICKSTART.md for details)
-export REACT_APP_ORIVA_API_URL="https://sandbox-api.oriva.io"
-export REACT_APP_ORIVA_API_KEY="your-sandbox-api-key"
+export REACT_APP_ORIVA_API_URL="https://api.oriva.io"
+export REACT_APP_ORIVA_GRAPHQL_URL="https://api.oriva.io/graphql"
+export REACT_APP_ORIVA_WS_URL="wss://api.oriva.io/graphql"
+export REACT_APP_ORIVA_API_KEY="your_api_key_here"
 
 # Run your app
 npm start
