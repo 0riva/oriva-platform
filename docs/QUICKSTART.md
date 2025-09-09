@@ -302,14 +302,10 @@ ORIVA_API_KEY=your_api_key_here
 
 #### **Option 2: Production API**
 - **API URL**: `https://api.oriva.io`
-- **Test Data**: Create dedicated test repositories and users
-- **Rate Limits**: Standard API rate limits apply
-- **Testing Approach**: Use read-only operations and test data
+- **Use for**: Final integration testing with real data
+- **Approach**: Use read-only operations and create test repositories
 
-### Testing Strategies
-
-#### 1. **Read-Only Testing**
-Start with read-only operations to avoid affecting production data:
+### Testing Your App
 
 ```bash
 # Test API connectivity
@@ -322,41 +318,6 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 # List repositories (read-only)
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/repositories
-```
-
-#### 2. **Create Test Data**
-Set up dedicated test repositories and users:
-
-```bash
-# Create a test repository
-curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "test-repo", "description": "Test repository for development"}' \
-  https://api.oriva.io/api/v1/repositories
-```
-
-#### 3. **Use Test API Keys**
-- Create separate API keys for testing
-- Use descriptive names like "MyApp-Development"
-- Monitor usage in your developer dashboard
-
-#### 4. **Mock Responses for Development**
-For local development, consider mocking API responses:
-
-```javascript
-// Example: Mock API responses during development
-const isDevelopment = process.env.NODE_ENV === 'development';
-
-if (isDevelopment) {
-  // Use mock data instead of real API calls
-  const mockUser = { id: 'test-user', name: 'Test User' };
-  return mockUser;
-} else {
-  // Use real API in production
-  return fetch('https://api.oriva.io/api/v1/user/profile', {
-    headers: { 'Authorization': `Bearer ${process.env.ORIVA_API_KEY}` }
-  });
-}
 ```
 
 ---

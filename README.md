@@ -234,69 +234,8 @@ function MyOrivaApp() {
 
 ## 🧪 Development & Testing
 
-### Development Environment
+For development setup and testing strategies, see the [Quick Start Guide](docs/QUICKSTART.md).
 
-You have two options for development and testing:
-
-#### **Option 1: Local Development Server (Recommended)**
-- **API URL**: `http://localhost:3001`
-- **Benefits**: No rate limits, full control, isolated testing
-- **Setup**: Run `npm run dev` in the oriva-platform repository
-
-#### **Option 2: Production API**
-- **API URL**: `https://api.oriva.io`
-- **Test Data**: Create dedicated test repositories and users
-- **Rate Limits**: Standard API rate limits apply
-- **Testing Approach**: Use read-only operations and test data
-
-### Testing Your Integration
-
-#### **Recommended Testing Approach:**
-
-1. **Start with Read-Only Operations**
-```bash
-# Test API connectivity
-curl https://api.oriva.io/health
-
-# Test authentication
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.oriva.io/api/v1/user/profile
-
-# List repositories (safe, read-only)
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.oriva.io/api/v1/repositories
-```
-
-2. **Create Dedicated Test Data**
-```bash
-# Create test repository for development
-curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "myapp-test", "description": "Test repository"}' \
-  https://api.oriva.io/api/v1/repositories
-```
-
-3. **Use Separate API Keys**
-- Create development-specific API keys
-- Monitor usage in your developer dashboard
-- Use descriptive names like "MyApp-Development"
-
-### Local Development
-
-```bash
-# Install dependencies
-npm install @oriva/plugin-sdk
-
-# Set up environment variables (see docs/QUICKSTART.md for details)
-# Create a .env file with:
-ORIVA_API_URL=https://api.oriva.io
-ORIVA_GRAPHQL_URL=https://api.oriva.io/graphql
-ORIVA_WS_URL=wss://api.oriva.io/graphql
-ORIVA_API_KEY=your_api_key_here
-
-# Run your app
-npm start
-```
 
 ## 📊 Rate Limits & Usage
 
