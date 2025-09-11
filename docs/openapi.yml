@@ -4,6 +4,118 @@ info:
   description: |
     RESTful API for the Oriva social network platform. This API provides secure access to Oriva's core functionality for building social apps and extensions.
     
+    ## 🔒 Privacy-First Design
+    
+    Oriva's multi-profile and group system is built with **privacy by design** principles to protect user data and prevent cross-profile linking:
+    
+    ### 🛡️ Profile Privacy Protection
+    
+    **Data Isolation**: Each profile appears as a completely separate entity to extensions:
+    - **Sanitized IDs**: All profile IDs are prefixed with `ext_` and contain no internal Oriva Core identifiers
+    - **No Cross-Profile Linking**: Extensions cannot determine if two profiles belong to the same user
+    - **Minimal Data Exposure**: Only essential profile information is exposed (name, active status)
+    - **User-Controlled Access**: Users explicitly authorize which profiles each extension can access
+    
+    **Profile Switching**: When users switch profiles within an extension:
+    - **Complete Context Switch**: All profile data is immediately replaced
+    - **No Data Persistence**: Previous profile data is not accessible
+    - **Isolated Sessions**: Each profile operates in complete isolation
+    
+    ### 👥 Group Privacy Protection
+    
+    **Member Anonymization**: Group member data is carefully sanitized:
+    - **Sanitized Member IDs**: All member IDs use `ext_member_` prefix with no internal identifiers
+    - **Display Names Only**: Only display names are shown, no usernames or internal IDs
+    - **No User Linking**: Extensions cannot link group members to user accounts
+    - **Role-Based Access**: Only necessary role information is exposed
+    
+    **Group Visibility**: Extensions only see groups the user has explicitly authorized:
+    - **User Authorization Required**: Each group requires explicit user permission
+    - **Granular Control**: Users can authorize specific groups per extension
+    - **Revocable Access**: Users can revoke group access at any time
+    
+    ### 🔐 Technical Privacy Measures
+    
+    **ID Sanitization Process**:
+    1. **Internal IDs**: Oriva Core uses internal UUIDs for all entities
+    2. **Hash Generation**: Internal IDs are hashed with extension-specific salts
+    3. **External IDs**: Hashed values are prefixed (`ext_`, `ext_member_`) for external use
+    4. **No Reversibility**: External IDs cannot be reversed to internal IDs
+    
+    **Data Minimization**:
+    - **Only Required Fields**: Extensions receive only the minimum data necessary
+    - **No Metadata**: No creation dates, internal timestamps, or system metadata
+    - **No Relationships**: No information about relationships between entities
+    
+    **Access Control**:
+    - **Extension-Specific Permissions**: Each extension has isolated permission sets
+    - **User Consent**: All access requires explicit user authorization
+    - **Audit Trail**: All access is logged for privacy compliance
+    
+    ## 🔑 Requesting Profile and Group Access
+    
+    To access user profiles and groups, developers must follow Oriva's privacy-first authorization flow:
+    
+    ### 📋 Step 1: Declare Required Permissions
+    
+    In your app's manifest, declare the permissions you need:
+    
+    ```json
+    {
+      "permissions": [
+        "profiles:read",
+        "profiles:write", 
+        "groups:read",
+        "groups:write"
+      ]
+    }
+    ```
+    
+    ### 👤 Step 2: User Authorization Flow
+    
+    When a user installs your extension:
+    
+    1. **Permission Request**: Oriva Core shows the user what data your app wants to access
+    2. **Profile Selection**: User chooses which profiles your app can access (e.g., "Work Profile" but not "Dating Profile")
+    3. **Group Selection**: User chooses which groups your app can access
+    4. **Granular Control**: User can authorize different profiles/groups for different apps
+    
+    ### 🔄 Step 3: Dynamic Authorization
+    
+    Users can modify permissions at any time:
+    - **Add Access**: Grant access to additional profiles/groups
+    - **Revoke Access**: Remove access to specific profiles/groups
+    - **Complete Revocation**: Remove all access to your app
+    
+    ### 📱 Step 4: Using the API
+    
+    Once authorized, your app can:
+    
+    ```javascript
+    // Get available profiles (only those user authorized)
+    const profiles = await fetch('/api/v1/profiles/available', {
+      headers: { 'Authorization': 'Bearer your-api-key' }
+    });
+    
+    // Switch to a specific profile
+    await fetch('/api/v1/profiles/profile_123/activate', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer your-api-key' }
+    });
+    
+    // Get user's groups (only those user authorized)
+    const groups = await fetch('/api/v1/groups', {
+      headers: { 'Authorization': 'Bearer your-api-key' }
+    });
+    ```
+    
+    ### ⚠️ Important Privacy Notes
+    
+    - **No Cross-Profile Linking**: You cannot determine if two profiles belong to the same user
+    - **Sanitized Data**: All IDs are prefixed and cannot be linked to internal Oriva data
+    - **User Control**: Users can revoke access at any time
+    - **Audit Trail**: All access is logged for privacy compliance
+    
     ## Authentication
     
     All requests require authentication using API key:
@@ -26,6 +138,10 @@ info:
     - `templates:write` - Create and update templates
     - `user:read` - Read user information
     - `user:write` - Update user information
+    - `profiles:read` - Read authorized user profiles
+    - `profiles:write` - Switch between authorized profiles
+    - `groups:read` - Read user group memberships
+    - `groups:write` - Access group member information
     - `ui:notifications` - Show notifications
     - `ui:modals` - Display modals
     - `ui:navigation` - Navigate between screens
@@ -684,6 +800,215 @@ paths:
                   success:
                     type: boolean
 
+  # =============================================================================
+  # PROFILE ENDPOINTS
+  # =============================================================================
+
+  /api/v1/profiles/available:
+    get:
+      summary: Get available profiles
+      description: |
+        Get list of profiles that the extension is authorized to access.
+        
+        **🔒 Privacy Protection**: 
+        - Only profiles explicitly authorized by the user are returned
+        - All profile IDs are sanitized with `ext_` prefix to prevent internal ID exposure
+        - No information is provided that could link profiles to the same user
+        - Each profile appears as a completely separate entity
+      tags:
+        - Profiles
+      responses:
+        '200':
+          description: List of authorized profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Profile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/profiles/active:
+    get:
+      summary: Get active profile
+      description: |
+        Get the currently active profile for this extension session.
+        
+        **🔒 Privacy Protection**:
+        - Returns only the currently active profile, not all profiles
+        - Profile ID is sanitized and cannot be linked to internal Oriva Core data
+        - No historical information about profile switches is exposed
+        - Returns null if no profile is currently active
+      tags:
+        - Profiles
+      responses:
+        '200':
+          description: Currently active profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/Profile'
+                      - type: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/profiles/{profileId}/activate:
+    post:
+      summary: Activate profile
+      description: |
+        Switch to a different authorized profile.
+        
+        **🔒 Privacy Protection**:
+        - Only works with profiles the user has explicitly authorized for this extension
+        - Complete context switch - all previous profile data becomes inaccessible
+        - No information about other profiles is exposed during the switch
+        - Profile switching is logged for audit purposes but not exposed to extensions
+        - Returns 403 Forbidden if attempting to access unauthorized profiles
+      tags:
+        - Profiles
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          description: Profile ID to activate
+          schema:
+            type: string
+            pattern: '^profile_\d+$'
+            example: 'profile_123'
+      responses:
+        '200':
+          description: Profile successfully activated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      activeProfile:
+                        type: string
+                        example: 'profile_123'
+                      switchedAt:
+                        type: string
+                        format: date-time
+                        example: '2024-01-15T10:30:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # =============================================================================
+  # GROUP ENDPOINTS
+  # =============================================================================
+
+  /api/v1/groups:
+    get:
+      summary: Get user groups
+      description: |
+        Get list of groups that the user is a member of.
+        
+        **🔒 Privacy Protection**:
+        - Only returns groups the user has explicitly authorized for this extension
+        - All group IDs are sanitized with `ext_` prefix to prevent internal ID exposure
+        - No information about group ownership or creation is exposed
+        - Member counts are provided but individual member details are not included
+        - Users can revoke group access at any time through Oriva Core settings
+      tags:
+        - Groups
+      responses:
+        '200':
+          description: List of user groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/groups/{groupId}/members:
+    get:
+      summary: Get group members
+      description: |
+        Get list of members in a specific group.
+        
+        **🔒 Privacy Protection**:
+        - Only works with groups the user has explicitly authorized for this extension
+        - All member IDs are sanitized with `ext_member_` prefix to prevent internal ID exposure
+        - Only display names are shown, no usernames or internal identifiers
+        - No information is provided that could link members to user accounts
+        - Member roles are shown but no administrative privileges are exposed
+        - Returns 403 Forbidden if attempting to access unauthorized groups
+      tags:
+        - Groups
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID to get members for
+          schema:
+            type: string
+            pattern: '^group_\d+$'
+            example: 'group_123'
+      responses:
+        '200':
+          description: List of group members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroupMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/v1/ui/notifications:
     post:
       summary: Show notification
@@ -1055,6 +1380,130 @@ components:
         totalPages:
           type: integer
 
+    # Profile schemas
+    Profile:
+      type: object
+      description: |
+        **🔒 Privacy-Protected Profile Data**
+        
+        Profile data is carefully sanitized to protect user privacy:
+        - `profileId`: Sanitized ID with `ext_` prefix, cannot be linked to internal Oriva Core data
+        - `profileName`: User-defined display name only, no internal identifiers
+        - `isActive`: Current active status, no historical information
+        - No creation dates, internal IDs, or linking information is exposed
+      properties:
+        profileId:
+          type: string
+          pattern: '^ext_[a-f0-9]{16}$'
+          description: |
+            Sanitized profile ID for external use. 
+            **Privacy**: Cannot be reversed to internal Oriva Core ID, prefixed with `ext_` for security
+          example: 'ext_1234567890abcdef'
+        profileName:
+          type: string
+          description: |
+            Display name of the profile as defined by the user.
+            **Privacy**: Only user-defined display name, no internal usernames or identifiers
+          example: 'Dating Profile'
+        isActive:
+          type: boolean
+          description: |
+            Whether this profile is currently active for this extension session.
+            **Privacy**: Current status only, no historical switching information
+          example: true
+      required:
+        - profileId
+        - profileName
+        - isActive
+
+    # Group schemas
+    Group:
+      type: object
+      description: |
+        **🔒 Privacy-Protected Group Data**
+        
+        Group data is carefully sanitized to protect user privacy:
+        - `groupId`: Sanitized ID with `ext_` prefix, cannot be linked to internal Oriva Core data
+        - `groupName`: User-defined display name only, no internal identifiers
+        - `memberCount`: Total count only, no individual member information
+        - No ownership, creation dates, or administrative information is exposed
+      properties:
+        groupId:
+          type: string
+          pattern: '^ext_[a-f0-9]{16}$'
+          description: |
+            Sanitized group ID for external use.
+            **Privacy**: Cannot be reversed to internal Oriva Core ID, prefixed with `ext_` for security
+          example: 'ext_9876543210fedcba'
+        groupName:
+          type: string
+          description: |
+            Display name of the group as defined by the group creator.
+            **Privacy**: Only user-defined display name, no internal identifiers
+          example: 'Work Team Alpha'
+        memberCount:
+          type: integer
+          description: |
+            Total number of members in the group.
+            **Privacy**: Count only, no individual member information or identities
+          example: 5
+        isActive:
+          type: boolean
+          description: |
+            Whether the group is currently active and accessible.
+            **Privacy**: Current status only, no historical information
+          example: true
+      required:
+        - groupId
+        - groupName
+        - memberCount
+        - isActive
+
+    GroupMember:
+      type: object
+      description: |
+        **🔒 Privacy-Protected Group Member Data**
+        
+        Group member data is carefully sanitized to protect user privacy:
+        - `memberId`: Sanitized ID with `ext_member_` prefix, cannot be linked to user accounts
+        - `displayName`: Only display name shown, no usernames or internal identifiers
+        - `role`: Group role only, no administrative privileges or permissions
+        - `joinedAt`: Join date only, no other temporal information
+        - No information that could link members to user accounts or other profiles
+      properties:
+        memberId:
+          type: string
+          pattern: '^ext_member_[a-f0-9]{10}$'
+          description: |
+            Sanitized member ID for external use.
+            **Privacy**: Cannot be linked to user accounts or internal Oriva Core data, prefixed with `ext_member_` for security
+          example: 'ext_member_1234567890'
+        displayName:
+          type: string
+          description: |
+            Display name of the member as shown in the group.
+            **Privacy**: Only display name, no usernames, emails, or internal identifiers
+          example: 'Alex Johnson'
+        role:
+          type: string
+          enum: [admin, moderator, member]
+          description: |
+            Role of the member in the group.
+            **Privacy**: Group role only, no administrative privileges or system permissions
+          example: 'admin'
+        joinedAt:
+          type: string
+          format: date-time
+          description: |
+            When the member joined the group.
+            **Privacy**: Join date only, no other temporal information or activity data
+          example: '2024-01-15T10:00:00Z'
+      required:
+        - memberId
+        - displayName
+        - role
+        - joinedAt
+
   responses:
     BadRequest:
       description: Bad request - invalid input data
@@ -1141,6 +1590,10 @@ tags:
     description: Template management operations
   - name: User
     description: User information and profile management
+  - name: Profiles
+    description: Multi-profile management for privacy-first extensions
+  - name: Groups
+    description: Group membership and management operations
   - name: UI
     description: User interface interactions
   - name: Storage
