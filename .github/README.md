@@ -1,10 +1,17 @@
-# CI/CD Pipeline
+# GitHub Actions Workflows
 
-This directory contains GitHub Actions workflows for automated testing and deployment.
+This directory contains GitHub Actions workflows for the Oriva Platform API.
 
-## Workflows
+## Available Workflows
 
-### `ci-cd.yml`
+- **`ci-cd.yml`** - Main CI/CD pipeline for testing and deployment
+- **`api-ci.yml`** - API-specific continuous integration
+- **`sdk-ci.yml`** - Plugin SDK continuous integration  
+- **`pages.yml`** - Documentation site deployment
+
+## Workflow Details
+
+### CI/CD Pipeline (`ci-cd.yml`)
 - **Triggers**: Push to `main` or `develop` branches, Pull Requests
 - **Jobs**:
   - **Test**: Runs tests on Node.js 18.x and 20.x
@@ -44,3 +51,7 @@ npm run lint
 Current test coverage: **24.92%** (70 tests passing)
 
 The coverage is intentionally low as we're focusing on core functionality first. Coverage will increase as we implement more features.
+
+---
+
+**Note**: This is a technical documentation file for GitHub Actions. For the main project documentation, see the root [README.md](../README.md).
