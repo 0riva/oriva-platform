@@ -60,47 +60,81 @@ Your Oriva Platform API is a **plugin-based system** designed to extend Oriva Co
   - Batch operations (setMany, deleteMany)
 - **Storage Management**: Usage statistics, quota management
 
-#### **6. App Data API** (`/api/v1/app/data`)
-- **Isolated Data Access**: Apps can only access their own data tables
-- **Dynamic Tables**: Create and manage app-specific database tables
-- **Secure Access**: Complete isolation from user profile data
+### **🔒 Privacy-First API Services**
+
+#### **6. Multi-Profile Management API** (`/api/v1/profiles`)
+- **Privacy-Protected Profile Access**: Complete ID sanitization with `ext_` prefixes
+- **User-Controlled Authorization**: Users explicitly authorize which profiles each extension can access
+- **Profile Switching**: Secure context switching between authorized profiles
+- **Data Isolation**: Each profile appears as completely separate entity to extensions
+- **Cross-Profile Protection**: Extensions cannot determine if profiles belong to same user
+
+#### **7. Group Management API** (`/api/v1/groups`)
+- **Privacy-Protected Group Access**: Sanitized group IDs with `ext_` prefixes
+- **Member Data Sanitization**: All member IDs use `ext_member_` prefix with no internal identifiers
+- **Display Names Only**: Only display names shown, no usernames or internal identifiers
+- **Role-Based Access**: Only necessary role information exposed
+- **User Authorization**: Each group requires explicit user permission per extension
+
+#### **8. Marketplace API** (`/api/v1/marketplace`)
+- **App Discovery**: Browse, search, and filter marketplace apps
+- **Trending & Featured**: Get trending and featured app collections
+- **Category Management**: Browse apps by category with usage statistics
+- **App Details**: Comprehensive app information with version history
+
+#### **9. Developer API** (`/api/v1/developer`)
+- **App Management**: Create, update, delete, and manage developer apps
+- **Review Process**: Submit apps for review and handle approval workflow
+- **Analytics**: Track app usage, installations, and performance metrics
+- **Version Control**: Manage app versions and release notes
 
 ---
 
 ## 🔐 **Authentication & Plugin Systems**
 
 ### **Authentication Methods**
-1. **Plugin API Key**: `Authorization: Bearer <plugin-api-key>`
-2. **JWT Token**: `Authorization: Bearer <jwt-token>` for user-specific operations
+1. **API Key Authentication**: `Authorization: Bearer <api-key>` with Supabase validation
+2. **Admin Token**: `X-Admin-Token: <admin-token>` for developer endpoints
+3. **Usage Tracking**: Automatic API key usage statistics and monitoring
 
 ### **Permission System**
 The platform uses a **granular permission system** with these scopes:
 
-#### **Repository Access**
-- `read:public-repositories` - Access public repositories only
-- `read:issues` - Read issues and comments  
-- `write:issues` - Create and update issues
-- `read:pull-requests` - Read pull requests
-- `write:pull-requests` - Create and update pull requests
+#### **Content Management**
+- `entries:read` - Read user entries
+- `entries:write` - Create and update entries
+- `entries:delete` - Delete entries
+- `templates:read` - Read templates
+- `templates:write` - Create and update templates
 
-#### **Notification Management**
-- `read:notifications` - Read user notifications
-- `write:notifications` - Mark notifications as read
+#### **User & Profile Access**
+- `user:read` - Read user information
+- `user:write` - Update user information
+- `profiles:read` - Read authorized user profiles
+- `profiles:write` - Switch between authorized profiles
 
-#### **App Data Access**
-- `app:data:read` - Read app-specific data (tables you create)
-- `app:data:write` - Write app-specific data (tables you create)
+#### **Group Management**
+- `groups:read` - Read user group memberships
+- `groups:write` - Access group member information
 
 #### **UI Interactions**
 - `ui:notifications` - Show notifications
 - `ui:modals` - Display modals
 - `ui:navigation` - Navigate between screens
 
+#### **Data Storage**
+- `storage:read` - Read app-specific data
+- `storage:write` - Write app-specific data
+
 ### **Security Model**
-- **Data Isolation**: Apps can only access their own data and public repositories
-- **No User Profile Access**: Complete isolation from user profile data
-- **Permission Validation**: All endpoints validate required permissions
-- **Audit Logging**: Comprehensive security audit trails
+- **Privacy-First Design**: Complete ID sanitization with `ext_` prefixes prevents internal data exposure
+- **User-Controlled Authorization**: Users explicitly authorize which profiles/groups each extension can access
+- **Data Isolation**: Apps can only access their own data and authorized user profiles/groups
+- **Cross-Profile Protection**: Extensions cannot determine if profiles belong to the same user
+- **Permission Validation**: All endpoints validate required permissions with comprehensive error handling
+- **Audit Logging**: Comprehensive security audit trails with Winston-based structured logging
+- **Rate Limiting**: Global and per-extension rate limiting with configurable limits
+- **Input Validation**: Comprehensive request validation and sanitization with express-validator
 
 ---
 
@@ -141,10 +175,10 @@ The platform uses a **granular permission system** with these scopes:
 
 | Endpoint Type | Limit | Window |
 |---------------|-------|--------|
-| **General API** | 1,000 requests | Per hour |
-| **Write operations** | 200 requests | Per hour |
-| **Storage operations** | 500 requests | Per hour |
-| **UI operations** | 100 requests | Per hour |
+| **Core API** | 1,000 requests | Per 15 minutes |
+| **Marketplace** | 1,000 requests | Per hour |
+| **Admin Endpoints** | 30 requests | Per minute |
+| **Webhooks** | 10,000 requests | Per hour |
 
 ---
 
@@ -152,9 +186,15 @@ The platform uses a **granular permission system** with these scopes:
 
 ### **Current Implementation Status**
 - ✅ **Core API Endpoints**: Fully implemented and documented
+- ✅ **Privacy-First Features**: Complete ID sanitization and user-controlled permissions
+- ✅ **Multi-Profile Management**: Secure profile switching with data isolation
+- ✅ **Group Management**: Privacy-protected group access with sanitized member data
+- ✅ **Marketplace API**: Complete app discovery and management system
+- ✅ **Developer API**: Full app lifecycle management with review process
+- ✅ **Security Model**: Production-ready security with rate limiting and audit logging
 - ✅ **Plugin SDK**: Complete TypeScript SDK with all APIs
-- ✅ **Security Model**: Secure app data isolation implemented
 - ✅ **Documentation**: Comprehensive OpenAPI spec and guides
+- ✅ **Testing**: 70 passing tests with comprehensive coverage
 
 ### **Upcoming Features (2025 Roadmap)**
 

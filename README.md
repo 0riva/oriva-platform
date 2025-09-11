@@ -67,12 +67,27 @@ The Oriva Platform provides comprehensive APIs for:
 - **🏪 Marketplace** - Browse, install, and manage apps
 - **👨‍💻 Developer** - Create, publish, and analyze your apps  
 - **📚 Core Platform** - Access repositories, issues, pull requests, and user data
+- **🔒 Privacy-First Features** - Multi-profile management with complete data isolation
+- **👥 Group Management** - Secure group access with sanitized member data
 
 [**View Complete API Reference →**](docs/START_GUIDE.md#api-endpoints)
 
-## 🔐 Authentication
+## 🔐 Authentication & Privacy
 
-Oriva uses API key authentication for secure access to the platform APIs.
+Oriva uses **API key authentication** with **privacy-first design** for secure access to the platform APIs.
+
+### 🔒 **Privacy-First Features**
+- **Complete ID Sanitization** - All internal IDs are sanitized with `ext_` prefixes
+- **User-Controlled Permissions** - Users explicitly authorize which profiles/groups each extension can access
+- **Minimal Data Exposure** - Only display names and essential data, no personal information
+- **Cross-Profile Protection** - Extensions cannot link profiles to the same user
+- **Secure External IDs** - Configurable salt-based ID generation prevents internal data exposure
+
+### 🔑 **API Key Authentication**
+- **Bearer Token Format**: `Authorization: Bearer <api-key>`
+- **Supabase Integration**: Real-time validation against database
+- **Usage Tracking**: Automatic usage statistics and monitoring
+- **Key Prefix Validation**: Supports `oriva_pk_live_` and `oriva_pk_test_` keys
 
 ## 💻 SDK
 
@@ -89,11 +104,19 @@ For development setup and testing strategies, see the [Start Guide](docs/START_G
 
 | Endpoint Type | Limit | Window |
 |---------------|-------|--------|
-| **Core API** | 5,000 requests | Per hour |
+| **Core API** | 1,000 requests | Per 15 minutes |
 | **Marketplace** | 1,000 requests | Per hour |
 | **Webhooks** | 10,000 requests | Per hour |
+| **Admin Endpoints** | 30 requests | Per minute |
 
-> **Note:** Rate limits ensure fair usage and system stability. Since users are already authenticated in Oriva, these limits apply per API key rather than per user session.
+> **Note:** Rate limits ensure fair usage and system stability. Limits apply per API key with comprehensive monitoring and logging.
+
+### 🔒 **Security Features**
+- **Rate Limiting**: Global and per-extension rate limiting
+- **CORS Protection**: Origin validation with configurable allowed origins
+- **Security Headers**: CSP, HSTS, and other security headers
+- **Input Validation**: Comprehensive request validation and sanitization
+- **Structured Logging**: Winston-based logging for security events and monitoring
 
 ### Usage Analytics
 
@@ -125,6 +148,7 @@ Build social apps for the Oriva network:
 - **🚀 [Developer Start Guide](docs/START_GUIDE.md)** - Complete setup and integration guide
 - **🧪 [API Tester](docs/api-tester.html)** - Interactive tool to test Oriva Platform APIs
 - **API Reference**: [OpenAPI Specification](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)
+- **🔒 [Privacy Protection Guide](docs/PRIVACY_GUIDE.md)** - Comprehensive privacy-first development guide
 - **🎨 Components Library**: [Oriva UI Components](https://github.com/0riva/oriva-platform) (coming soon)
 - **🎭 Theme System**: [Custom Themes Guide](https://github.com/0riva/oriva-platform) (coming soon)
 - **🔌 Plugin SDK**: [Plugin SDK](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)

@@ -316,15 +316,15 @@ Once approved, your app will be:
 
 ## 🔗 API Endpoints
 
-The Oriva Platform provides comprehensive APIs organized into three main categories:
+The Oriva Platform provides comprehensive APIs organized into five main categories:
 
 ### 🏪 **Marketplace API**
 ```bash
 GET    /api/v1/marketplace/apps              # Browse available apps
 GET    /api/v1/marketplace/apps/:appId       # Get app details
-POST   /api/v1/marketplace/apps/:appId/install # Install app
-DELETE /api/v1/marketplace/apps/:appId/install # Uninstall app
-GET    /api/v1/marketplace/installed         # User's installed apps
+GET    /api/v1/marketplace/trending          # Get trending apps
+GET    /api/v1/marketplace/featured          # Get featured apps
+GET    /api/v1/marketplace/categories        # Get app categories
 ```
 
 ### 👨‍💻 **Developer API**
@@ -332,20 +332,31 @@ GET    /api/v1/marketplace/installed         # User's installed apps
 GET    /api/v1/developer/apps                # Your published apps
 POST   /api/v1/developer/apps                # Create new app
 PUT    /api/v1/developer/apps/:appId         # Update app
+DELETE /api/v1/developer/apps/:appId         # Delete app (draft only)
 POST   /api/v1/developer/apps/:appId/submit  # Submit for review
-GET    /api/v1/developer/apps/:appId/analytics # App usage analytics
+POST   /api/v1/developer/apps/:appId/resubmit # Resubmit after rejection
+```
+
+### 🔒 **Privacy-First Profile API**
+```bash
+GET    /api/v1/profiles/available            # Get authorized profiles
+GET    /api/v1/profiles/active               # Get currently active profile
+POST   /api/v1/profiles/:profileId/activate  # Switch to different profile
+```
+
+### 👥 **Privacy-First Group API**
+```bash
+GET    /api/v1/groups                        # Get authorized groups
+GET    /api/v1/groups/:groupId/members       # Get group members (sanitized)
 ```
 
 ### 📚 **Core Platform API**
 ```bash
-GET    /api/v1/repositories                  # User repositories
-POST   /api/v1/repositories                  # Create repository
-GET    /api/v1/repositories/:id/issues       # Repository issues
-POST   /api/v1/repositories/:id/issues       # Create issue
-GET    /api/v1/repositories/:id/pull-requests # Pull requests
-POST   /api/v1/repositories/:id/pull-requests # Create pull request
-GET    /api/v1/user/me                  # User profile
-GET    /api/v1/teams                         # User teams
+GET    /api/v1/user/me                       # User profile
+GET    /api/v1/entries                       # User entries
+GET    /api/v1/templates                     # Available templates
+GET    /api/v1/storage                       # App storage
+POST   /api/v1/ui/notifications              # Show notifications
 ```
 
 ---
@@ -354,15 +365,22 @@ GET    /api/v1/teams                         # User teams
 
 | Scope | Description | Use Case |
 |-------|-------------|----------|
-| `read:public-repositories` | Access public repositories only | Repository browsing |
-| `read:issues` | Read issues | Issue tracking |
-| `write:issues` | Create/update issues | Issue management |
-| `read:pull-requests` | Read pull requests | Code review tools |
-| `write:pull-requests` | Create/update pull requests | PR automation |
-| `read:notifications` | Read notifications | Notification management |
-| `write:notifications` | Mark notifications as read | Notification cleanup |
-| `app:data:read` | Read app-specific data | Access your app's database |
-| `app:data:write` | Write app-specific data | Store data in your app's database |
+| `entries:read` | Read user entries | Content browsing |
+| `entries:write` | Create and update entries | Content management |
+| `entries:delete` | Delete entries | Content cleanup |
+| `templates:read` | Read templates | Template browsing |
+| `templates:write` | Create and update templates | Template management |
+| `user:read` | Read user information | User profile access |
+| `user:write` | Update user information | Profile management |
+| `profiles:read` | Read authorized user profiles | Multi-profile access |
+| `profiles:write` | Switch between authorized profiles | Profile switching |
+| `groups:read` | Read user group memberships | Group access |
+| `groups:write` | Access group member information | Group management |
+| `ui:notifications` | Show notifications | User interface |
+| `ui:modals` | Display modals | User interface |
+| `ui:navigation` | Navigate between screens | User interface |
+| `storage:read` | Read app-specific data | Data persistence |
+| `storage:write` | Write app-specific data | Data storage |
 
 ---
 
@@ -370,9 +388,96 @@ GET    /api/v1/teams                         # User teams
 
 | Endpoint Type | Limit | Window |
 |---------------|-------|--------|
-| **Core API** | 5,000 requests | Per hour |
+| **Core API** | 1,000 requests | Per 15 minutes |
 | **Marketplace** | 1,000 requests | Per hour |
+| **Admin Endpoints** | 30 requests | Per minute |
 | **Webhooks** | 10,000 requests | Per hour |
+
+---
+
+## 🔒 Privacy-First Development
+
+Oriva's API is built with **privacy by design** principles. Here's how to work with the privacy-first features:
+
+### 🛡️ **Profile Management**
+
+```javascript
+// Get available profiles (only those user authorized for your app)
+const profiles = await fetch('/api/v1/profiles/available', {
+  headers: { 'Authorization': 'Bearer your-api-key' }
+});
+
+// Example response:
+// {
+//   "success": true,
+//   "data": [
+//     {
+//       "profileId": "ext_1234567890abcdef",
+//       "profileName": "Work Profile",
+//       "isActive": true
+//     },
+//     {
+//       "profileId": "ext_fedcba0987654321", 
+//       "profileName": "Personal Profile",
+//       "isActive": false
+//     }
+//   ]
+// }
+
+// Switch to a different profile
+await fetch('/api/v1/profiles/ext_1234567890abcdef/activate', {
+  method: 'POST',
+  headers: { 'Authorization': 'Bearer your-api-key' }
+});
+```
+
+### 👥 **Group Management**
+
+```javascript
+// Get user's groups (only those user authorized for your app)
+const groups = await fetch('/api/v1/groups', {
+  headers: { 'Authorization': 'Bearer your-api-key' }
+});
+
+// Example response:
+// {
+//   "success": true,
+//   "data": [
+//     {
+//       "groupId": "ext_9876543210fedcba",
+//       "groupName": "Work Team Alpha",
+//       "memberCount": 5,
+//       "isActive": true
+//     }
+//   ]
+// }
+
+// Get group members (sanitized data only)
+const members = await fetch('/api/v1/groups/ext_9876543210fedcba/members', {
+  headers: { 'Authorization': 'Bearer your-api-key' }
+});
+
+// Example response:
+// {
+//   "success": true,
+//   "data": [
+//     {
+//       "memberId": "ext_member_1234567890",
+//       "displayName": "Alex Johnson",
+//       "role": "admin",
+//       "joinedAt": "2024-01-15T10:00:00Z"
+//     }
+//   ]
+// }
+```
+
+### 🔐 **Privacy Protection Features**
+
+- **ID Sanitization**: All IDs are prefixed (`ext_`, `ext_member_`) and cannot be linked to internal Oriva data
+- **User Authorization**: Users explicitly choose which profiles/groups each app can access
+- **Minimal Data**: Only display names and essential information, no personal details
+- **Cross-Profile Protection**: Apps cannot determine if profiles belong to the same user
+- **Audit Trail**: All access is logged for privacy compliance
 
 ---
 
