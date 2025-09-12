@@ -1449,6 +1449,143 @@ app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, async (req, res
 });
 
 // =============================================================================
+// ORIVA CORE COMPATIBILITY ENDPOINTS
+// =============================================================================
+
+// Install app (Oriva Core expected path)
+app.post('/api/v1/marketplace/apps/:appId/install', validateAuth, async (req, res) => {
+  try {
+    const { appId } = req.params;
+    const { settings = {} } = req.body;
+    
+    // First check if the app exists and is approved
+    const { data: app, error: appError } = await supabase
+      .from('plugin_marketplace_apps')
+      .select('id, name, status')
+      .eq('id', appId)
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .single();
+    
+    if (appError || !app) {
+      return res.status(404).json({
+        success: false,
+        error: 'App not found or not available for installation'
+      });
+    }
+    
+    // Check if user already has this app installed
+    const { data: existingInstall, error: checkError } = await supabase
+      .from('user_app_installs')
+      .select('id')
+      .eq('user_id', req.keyInfo.userId)
+      .eq('app_id', appId)
+      .eq('is_active', true)
+      .single();
+    
+    if (existingInstall) {
+      return res.status(409).json({
+        success: false,
+        error: 'App is already installed'
+      });
+    }
+    
+    // Install the app
+    const { data: installation, error: installError } = await supabase
+      .from('user_app_installs')
+      .insert([{
+        user_id: req.keyInfo.userId,
+        app_id: appId,
+        installed_at: new Date().toISOString(),
+        is_active: true,
+        app_settings: settings
+      }])
+      .select()
+      .single();
+    
+    if (installError) {
+      console.error('Failed to install app:', installError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to install app'
+      });
+    }
+    
+    // Update app install count
+    await supabase.rpc('increment_install_count', { app_id_in: appId });
+    
+    res.json({
+      success: true,
+      data: {
+        installationId: installation.id,
+        appId: appId,
+        installedAt: installation.installed_at,
+        message: `Successfully installed ${app.name}`
+      }
+    });
+  } catch (error) {
+    console.error('Install app endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// Uninstall app (Oriva Core expected path)
+app.delete('/api/v1/marketplace/apps/:appId/install', validateAuth, async (req, res) => {
+  try {
+    const { appId } = req.params;
+    
+    // Check if user has this app installed
+    const { data: installation, error: checkError } = await supabase
+      .from('user_app_installs')
+      .select('id, plugin_marketplace_apps(name)')
+      .eq('user_id', req.keyInfo.userId)
+      .eq('app_id', appId)
+      .eq('is_active', true)
+      .single();
+    
+    if (checkError || !installation) {
+      return res.status(404).json({
+        success: false,
+        error: 'App is not installed'
+      });
+    }
+    
+    // Mark as uninstalled (soft delete)
+    const { error: uninstallError } = await supabase
+      .from('user_app_installs')
+      .update({ is_active: false, uninstalled_at: new Date().toISOString() })
+      .eq('id', installation.id);
+    
+    if (uninstallError) {
+      console.error('Failed to uninstall app:', uninstallError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to uninstall app'
+      });
+    }
+    
+    // Update app install count
+    await supabase.rpc('decrement_install_count', { app_id_in: appId });
+    
+    res.json({
+      success: true,
+      data: {
+        message: `Successfully uninstalled ${installation.plugin_marketplace_apps.name}`
+      }
+    });
+  } catch (error) {
+    console.error('Uninstall app endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// =============================================================================
 // ADMIN ENDPOINTS FOR APP APPROVAL
 // =============================================================================
 
