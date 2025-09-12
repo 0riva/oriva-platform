@@ -887,14 +887,6 @@ app.post('/api/v1/developer/apps/:appId/resubmit', validateApiKey, async (req, r
   }
 });
 
-// Catch-all for undefined routes
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint not found'
-  });
-});
-
 // =============================================================================
 // MARKETPLACE ENDPOINTS
 // =============================================================================
