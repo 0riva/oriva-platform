@@ -1207,6 +1207,16 @@ app.post('/api/v1/admin/apps/:appId/review', validateApiKey, requireAdminToken, 
   }
 });
 
+// 404 handler for unmatched routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
+
 // Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -1216,8 +1226,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Export for Vercel
-module.exports = app;
+// Export for Vercel (serverless function format)
+module.exports = (req, res) => {
+  // Handle the request with Express app
+  app(req, res);
+};
 
 // For local development
 if (require.main === module) {
