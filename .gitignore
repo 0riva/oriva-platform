@@ -6,7 +6,7 @@ dist
 internal-docs/
 
 # Security - Internal implementation files
-api/
+# api/ - Commented out to allow API deployment
 archive/
 
 # Environment files
