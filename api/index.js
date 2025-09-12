@@ -1375,10 +1375,7 @@ app.post('/api/v1/marketplace/install/:appId', validateAuth, async (req, res) =>
     }
     
     // Update app install count
-    await supabase
-      .from('plugin_marketplace_apps')
-      .update({ install_count: supabase.sql`install_count + 1` })
-      .eq('id', appId);
+    await supabase.rpc('increment_install_count', { app_id_in: appId });
     
     res.json({
       success: true,
@@ -1434,10 +1431,7 @@ app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, async (req, res
     }
     
     // Update app install count
-    await supabase
-      .from('plugin_marketplace_apps')
-      .update({ install_count: supabase.sql`install_count - 1` })
-      .eq('id', appId);
+    await supabase.rpc('decrement_install_count', { app_id_in: appId });
     
     res.json({
       success: true,
