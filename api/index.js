@@ -1261,7 +1261,7 @@ app.get('/api/v1/marketplace/installed', validateAuth, async (req, res) => {
         installed_at,
         is_active,
         app_settings,
-        plugin_marketplace_apps (
+        plugin_marketplace_apps!fk_user_app_installs_app (
           id,
           name,
           slug,
