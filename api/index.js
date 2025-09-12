@@ -132,7 +132,123 @@ const hashAPIKey = async (key) => {
   return Array.from(hashArray, byte => byte.toString(16).padStart(2, '0')).join('');
 };
 
-// API Key validation middleware
+// Dual authentication middleware (API keys + Supabase auth tokens)
+const validateAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authorization required'
+    });
+  }
+  
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  
+  if (!token || typeof token !== 'string') {
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid token format'
+    });
+  }
+
+  // Check if it's an API key (starts with oriva_pk_)
+  const validApiKeyPrefixes = ['oriva_pk_live_', 'oriva_pk_test_'];
+  const isApiKey = validApiKeyPrefixes.some(prefix => token.startsWith(prefix));
+  
+  if (isApiKey) {
+    // Handle API key authentication
+    try {
+      const keyHash = await hashAPIKey(token);
+      const { data: keyData, error } = await supabase
+        .from('developer_api_keys')
+        .select('id, user_id, name, permissions, is_active, usage_count')
+        .eq('key_hash', keyHash)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !keyData) {
+        console.log('API key validation failed:', { error: error?.message, hasKey: !!keyData });
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid API key'
+        });
+      }
+
+      // Update usage statistics (fire and forget)
+      supabase
+        .from('developer_api_keys')
+        .update({
+          usage_count: (keyData.usage_count || 0) + 1,
+          last_used_at: new Date().toISOString()
+        })
+        .eq('id', keyData.id)
+        .then(() => {
+          console.log('API key usage updated:', { keyId: keyData.id });
+        })
+        .catch((err) => {
+          console.warn('Failed to update API key usage:', { error: err.message, keyId: keyData.id });
+        });
+
+      // Add key info to request
+      req.apiKey = token;
+      req.keyInfo = {
+        id: keyData.id,
+        userId: keyData.user_id,
+        name: keyData.name,
+        permissions: keyData.permissions,
+        usageCount: keyData.usage_count,
+        authType: 'api_key'
+      };
+      
+      console.log('API key validated successfully:', { keyId: keyData.id, userId: keyData.user_id });
+      return next();
+
+    } catch (error) {
+      console.error('API key validation error:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid API key'
+      });
+    }
+  } else {
+    // Handle Supabase auth token
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      
+      if (error || !user) {
+        console.log('Supabase auth validation failed:', { error: error?.message, hasUser: !!user });
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid authentication token'
+        });
+      }
+
+      // Add user info to request
+      req.apiKey = token;
+      req.keyInfo = {
+        id: user.id,
+        userId: user.id,
+        name: user.email || user.user_metadata?.name || 'User',
+        permissions: ['read', 'write'],
+        usageCount: 0,
+        authType: 'supabase_auth'
+      };
+      
+      console.log('Supabase auth validated successfully:', { userId: user.id });
+      return next();
+
+    } catch (error) {
+      console.error('Supabase auth validation error:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid authentication token'
+      });
+    }
+  }
+};
+
+// Legacy API Key validation middleware (for backward compatibility)
 const validateApiKey = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   
@@ -1132,7 +1248,7 @@ app.get('/api/v1/marketplace/apps/:appId', validateApiKey, async (req, res) => {
 });
 
 // Get user's installed apps
-app.get('/api/v1/marketplace/installed', validateApiKey, async (req, res) => {
+app.get('/api/v1/marketplace/installed', validateAuth, async (req, res) => {
   try {
     const { limit = 50, offset = 0 } = req.query;
     
@@ -1200,7 +1316,7 @@ app.get('/api/v1/marketplace/installed', validateApiKey, async (req, res) => {
 });
 
 // Install an app
-app.post('/api/v1/marketplace/install/:appId', validateApiKey, async (req, res) => {
+app.post('/api/v1/marketplace/install/:appId', validateAuth, async (req, res) => {
   try {
     const { appId } = req.params;
     const { settings = {} } = req.body;
@@ -1283,7 +1399,7 @@ app.post('/api/v1/marketplace/install/:appId', validateApiKey, async (req, res) 
 });
 
 // Uninstall an app
-app.delete('/api/v1/marketplace/uninstall/:appId', validateApiKey, async (req, res) => {
+app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, async (req, res) => {
   try {
     const { appId } = req.params;
     
