@@ -1254,7 +1254,7 @@ app.get('/api/v1/marketplace/installed', validateAuth, async (req, res) => {
     
     // Get user's installed apps from the database
     const { data: installedApps, error } = await supabase
-      .from('user_installed_apps')
+      .from('user_app_installs')
       .select(`
         id,
         app_id,
@@ -1339,7 +1339,7 @@ app.post('/api/v1/marketplace/install/:appId', validateAuth, async (req, res) =>
     
     // Check if user already has this app installed
     const { data: existingInstall, error: checkError } = await supabase
-      .from('user_installed_apps')
+      .from('user_app_installs')
       .select('id')
       .eq('user_id', req.keyInfo.userId)
       .eq('app_id', appId)
@@ -1355,7 +1355,7 @@ app.post('/api/v1/marketplace/install/:appId', validateAuth, async (req, res) =>
     
     // Install the app
     const { data: installation, error: installError } = await supabase
-      .from('user_installed_apps')
+      .from('user_app_installs')
       .insert([{
         user_id: req.keyInfo.userId,
         app_id: appId,
@@ -1377,7 +1377,7 @@ app.post('/api/v1/marketplace/install/:appId', validateAuth, async (req, res) =>
     // Update app install count
     await supabase
       .from('plugin_marketplace_apps')
-      .update({ install_count: supabase.raw('install_count + 1') })
+      .update({ install_count: supabase.sql`install_count + 1` })
       .eq('id', appId);
     
     res.json({
@@ -1405,7 +1405,7 @@ app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, async (req, res
     
     // Check if user has this app installed
     const { data: installation, error: checkError } = await supabase
-      .from('user_installed_apps')
+      .from('user_app_installs')
       .select('id, plugin_marketplace_apps(name)')
       .eq('user_id', req.keyInfo.userId)
       .eq('app_id', appId)
@@ -1421,7 +1421,7 @@ app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, async (req, res
     
     // Mark as uninstalled (soft delete)
     const { error: uninstallError } = await supabase
-      .from('user_installed_apps')
+      .from('user_app_installs')
       .update({ is_active: false, uninstalled_at: new Date().toISOString() })
       .eq('id', installation.id);
     
@@ -1436,7 +1436,7 @@ app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, async (req, res
     // Update app install count
     await supabase
       .from('plugin_marketplace_apps')
-      .update({ install_count: supabase.raw('install_count - 1') })
+      .update({ install_count: supabase.sql`install_count - 1` })
       .eq('id', appId);
     
     res.json({
