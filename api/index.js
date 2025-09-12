@@ -1131,6 +1131,213 @@ app.get('/api/v1/marketplace/apps/:appId', validateApiKey, async (req, res) => {
   }
 });
 
+// Get user's installed apps
+app.get('/api/v1/marketplace/installed', validateApiKey, async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+    
+    // Get user's installed apps from the database
+    const { data: installedApps, error } = await supabase
+      .from('user_installed_apps')
+      .select(`
+        id,
+        app_id,
+        installed_at,
+        is_active,
+        app_settings,
+        plugin_marketplace_apps (
+          id,
+          name,
+          slug,
+          tagline,
+          description,
+          category,
+          icon_url,
+          version,
+          developer_name,
+          install_count
+        )
+      `)
+      .eq('user_id', req.keyInfo.userId)
+      .eq('is_active', true)
+      .order('installed_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) {
+      console.error('Failed to fetch installed apps:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch installed apps'
+      });
+    }
+    
+    // Transform the data to include app details
+    const apps = installedApps.map(install => ({
+      installationId: install.id,
+      installedAt: install.installed_at,
+      isActive: install.is_active,
+      settings: install.app_settings,
+      app: install.plugin_marketplace_apps
+    }));
+    
+    res.json({
+      success: true,
+      data: apps,
+      pagination: {
+        total: apps.length,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: apps.length === parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Installed apps endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// Install an app
+app.post('/api/v1/marketplace/install/:appId', validateApiKey, async (req, res) => {
+  try {
+    const { appId } = req.params;
+    const { settings = {} } = req.body;
+    
+    // First check if the app exists and is approved
+    const { data: app, error: appError } = await supabase
+      .from('plugin_marketplace_apps')
+      .select('id, name, status')
+      .eq('id', appId)
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .single();
+    
+    if (appError || !app) {
+      return res.status(404).json({
+        success: false,
+        error: 'App not found or not available for installation'
+      });
+    }
+    
+    // Check if user already has this app installed
+    const { data: existingInstall, error: checkError } = await supabase
+      .from('user_installed_apps')
+      .select('id')
+      .eq('user_id', req.keyInfo.userId)
+      .eq('app_id', appId)
+      .eq('is_active', true)
+      .single();
+    
+    if (existingInstall) {
+      return res.status(409).json({
+        success: false,
+        error: 'App is already installed'
+      });
+    }
+    
+    // Install the app
+    const { data: installation, error: installError } = await supabase
+      .from('user_installed_apps')
+      .insert([{
+        user_id: req.keyInfo.userId,
+        app_id: appId,
+        installed_at: new Date().toISOString(),
+        is_active: true,
+        app_settings: settings
+      }])
+      .select()
+      .single();
+    
+    if (installError) {
+      console.error('Failed to install app:', installError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to install app'
+      });
+    }
+    
+    // Update app install count
+    await supabase
+      .from('plugin_marketplace_apps')
+      .update({ install_count: supabase.raw('install_count + 1') })
+      .eq('id', appId);
+    
+    res.json({
+      success: true,
+      data: {
+        installationId: installation.id,
+        appId: appId,
+        installedAt: installation.installed_at,
+        message: `Successfully installed ${app.name}`
+      }
+    });
+  } catch (error) {
+    console.error('Install app endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// Uninstall an app
+app.delete('/api/v1/marketplace/uninstall/:appId', validateApiKey, async (req, res) => {
+  try {
+    const { appId } = req.params;
+    
+    // Check if user has this app installed
+    const { data: installation, error: checkError } = await supabase
+      .from('user_installed_apps')
+      .select('id, plugin_marketplace_apps(name)')
+      .eq('user_id', req.keyInfo.userId)
+      .eq('app_id', appId)
+      .eq('is_active', true)
+      .single();
+    
+    if (checkError || !installation) {
+      return res.status(404).json({
+        success: false,
+        error: 'App is not installed'
+      });
+    }
+    
+    // Mark as uninstalled (soft delete)
+    const { error: uninstallError } = await supabase
+      .from('user_installed_apps')
+      .update({ is_active: false, uninstalled_at: new Date().toISOString() })
+      .eq('id', installation.id);
+    
+    if (uninstallError) {
+      console.error('Failed to uninstall app:', uninstallError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to uninstall app'
+      });
+    }
+    
+    // Update app install count
+    await supabase
+      .from('plugin_marketplace_apps')
+      .update({ install_count: supabase.raw('install_count - 1') })
+      .eq('id', appId);
+    
+    res.json({
+      success: true,
+      data: {
+        message: `Successfully uninstalled ${installation.plugin_marketplace_apps.name}`
+      }
+    });
+  } catch (error) {
+    console.error('Uninstall app endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
 // =============================================================================
 // ADMIN ENDPOINTS FOR APP APPROVAL
 // =============================================================================
