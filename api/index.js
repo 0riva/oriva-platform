@@ -241,8 +241,9 @@ app.get('/api/v1/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: '1.0.1',
-    features: ['marketplace', 'profiles', 'groups', 'privacy-first']
+    version: '1.0.2',
+    features: ['marketplace', 'profiles', 'groups', 'privacy-first'],
+    deployment: 'fixed-routing'
   });
 });
 
