@@ -6,12 +6,22 @@ The API logic was not properly querying or joining database tables, causing the 
 
 ## Root Cause Analysis
 
-The issue was **NOT** with the API logic itself, but with the **incomplete database schema**. The API code was trying to query tables that didn't exist in the database:
+The issue was with **problematic Supabase foreign key constraint syntax** in the API query. The `/api/v1/marketplace/installed` endpoint was using explicit constraint naming that didn't match the actual database schema.
 
-1. `developer_api_keys` - for API key validation
-2. `plugin_marketplace_apps` - for marketplace app data
-3. `user_app_installs` - for user app installation tracking
-4. `plugin_versions` - for app version history
+**The Problem:**
+```javascript
+plugin_marketplace_apps!user_app_installs_app_id_fkey (
+```
+
+**The Solution:**
+```javascript
+plugin_marketplace_apps (
+```
+
+**What was happening:**
+- The original query assumed a foreign key constraint named `user_app_installs_app_id_fkey` existed
+- If this constraint doesn't exist or has a different name, the JOIN fails silently
+- This caused the API to return 200 success but with empty data: `[]` arrays
 
 ## Debug Process
 
@@ -27,36 +37,36 @@ The issue was **NOT** with the API logic itself, but with the **incomplete datab
 
 ## Solution Implemented
 
-### 1. Complete Database Schema
+### The Fix
 
-Updated `internal-docs/supabase-schema.sql` with all required tables:
+**Updated the Supabase query syntax** in `/api/v1/marketplace/installed` endpoint:
 
-- **`developer_api_keys`**: API key management with proper user_id references
-- **`plugin_marketplace_apps`**: Complete marketplace app data structure
-- **`user_app_installs`**: User app installation tracking with foreign key relationships
-- **`plugin_versions`**: App version history
-- **`api_key_usage`**: API usage logging
+**Before (problematic):**
+```javascript
+plugin_marketplace_apps!user_app_installs_app_id_fkey (
+  id,
+  name,
+  slug,
+  // ... other fields
+)
+```
 
-### 2. Database Functions and Triggers
+**After (fixed):**
+```javascript
+plugin_marketplace_apps (
+  id,
+  name,
+  slug,
+  // ... other fields
+)
+```
 
-Added essential database functions:
-- `increment_install_count()` - Updates app install counts
-- `decrement_install_count()` - Decrements app install counts
-- `update_updated_at_column()` - Automatic timestamp updates
+### Why This Works
 
-### 3. Proper Indexing and Constraints
-
-- Foreign key relationships between tables
-- Unique constraints to prevent duplicate installations
-- Proper indexing for performance
-- Row Level Security (RLS) policies
-
-### 4. Sample Data
-
-Included sample data to ensure the API works immediately:
-- Test app: "Video Work Buddy"
-- Test user installation
-- Proper user_id relationships
+1. **Automatic Relationship Detection**: Supabase automatically detects foreign key relationships based on the actual database schema
+2. **No Constraint Name Dependency**: Doesn't rely on specific constraint naming conventions
+3. **More Robust**: Works regardless of how the foreign key constraints are named in the database
+4. **Silent Failure Prevention**: Eliminates the silent JOIN failures that caused empty results
 
 ## Verification Results
 
