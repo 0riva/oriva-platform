@@ -259,9 +259,19 @@ app.get('/api/v1/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: '1.0.2',
+    version: '1.0.3',
     features: ['marketplace', 'profiles', 'groups', 'privacy-first'],
-    deployment: 'fixed-routing'
+    deployment: 'fixed-routing',
+    test: 'routing-fix'
+  });
+});
+
+// Test endpoint to verify routing
+app.get('/api/v1/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API routing is working!',
+    timestamp: new Date().toISOString()
   });
 });
 
