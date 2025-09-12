@@ -312,6 +312,52 @@ Once approved, your app will be:
 - ✅ **Ready for installations**
 - ✅ **Launch to Oriva users worldwide**
 
+### 4.4 Using the Marketplace Installation API
+
+Your app can also interact with the marketplace to manage app installations:
+
+#### Get User's Installed Apps
+```javascript
+const installedApps = await fetch('https://api.oriva.io/api/v1/marketplace/installed', {
+  headers: {
+    'Authorization': `Bearer ${apiKey}`
+  }
+}).then(r => r.json());
+
+console.log('Installed apps:', installedApps.data);
+```
+
+#### Install an App
+```javascript
+const installation = await fetch('https://api.oriva.io/api/v1/marketplace/install/app-123', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    settings: {
+      theme: 'dark',
+      notifications: true
+    }
+  })
+}).then(r => r.json());
+
+console.log('Installation result:', installation.data);
+```
+
+#### Uninstall an App
+```javascript
+const result = await fetch('https://api.oriva.io/api/v1/marketplace/uninstall/app-123', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${apiKey}`
+  }
+}).then(r => r.json());
+
+console.log('Uninstall result:', result.data);
+```
+
 ---
 
 ## 🔗 API Endpoints
@@ -325,6 +371,9 @@ GET    /api/v1/marketplace/apps/:appId       # Get app details
 GET    /api/v1/marketplace/trending          # Get trending apps
 GET    /api/v1/marketplace/featured          # Get featured apps
 GET    /api/v1/marketplace/categories        # Get app categories
+GET    /api/v1/marketplace/installed         # Get user's installed apps
+POST   /api/v1/marketplace/install/:appId    # Install an app
+DELETE /api/v1/marketplace/uninstall/:appId  # Uninstall an app
 ```
 
 ### 👨‍💻 **Developer API**
