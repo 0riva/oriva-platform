@@ -1261,7 +1261,7 @@ app.get('/api/v1/marketplace/installed', validateAuth, async (req, res) => {
         installed_at,
         is_active,
         app_settings,
-        plugin_marketplace_apps (
+        plugin_marketplace_apps!user_app_installs_app_id_fkey (
           id,
           name,
           slug,
@@ -1556,7 +1556,17 @@ module.exports = (req, res) => {
 // For local development
 if (require.main === module) {
   const PORT = process.env.PORT || 3001;
+  const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
   app.listen(PORT, () => {
-    console.log(`API server running on port ${PORT}`);
+    console.log('🚀 Oriva Platform API');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📍 Base URL: ${BASE_URL}`);
+    console.log(`❤️  Health Check: ${BASE_URL}/health`);
+    console.log(`🔧 API Test: ${BASE_URL}/api/v1/test`);
+    console.log(`👤 User API: ${BASE_URL}/api/v1/user/me`);
+    console.log(`🏪 Marketplace: ${BASE_URL}/api/v1/marketplace/apps`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`🌟 Ready for development! Try: curl ${BASE_URL}/health`);
   });
 }
