@@ -27,3 +27,13 @@ logs/
 build/
 out/
 .env*.local
+
+# Security - Debug and temporary files
+debug-*.js
+temp-*.js
+*-debug.js
+test-credentials.js
+api/debug-*.js
+
+# Coverage reports
+coverage/
