@@ -107,7 +107,40 @@ When deploying your app, you'll need to configure these environment variables in
 
 > **🔐 Security**: Never commit your `.env` file to version control. Always use your hosting platform's environment variable settings for production deployments.
 
-### 2.3 API Key Authentication
+### 2.3 Configure iframe Embedding (Required)
+
+**🚨 Important**: For your app to work in the Oriva app launcher, you must configure iframe embedding headers.
+
+Add this configuration to allow your app to be embedded:
+
+**Vercel** (`vercel.json`):
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Netlify** (`netlify.toml`):
+```toml
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+```
+
+> **📖 Need help?** See our complete [X-Frame-Options Configuration Guide](./developer-guides/x-frame-options.md) for other hosting platforms and advanced configuration.
+
+### 2.4 API Key Authentication
 
 Oriva uses simple API key authentication for plugin operations. Include your API key in the Authorization header:
 
