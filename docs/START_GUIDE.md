@@ -70,22 +70,51 @@ npm --version     # Should be 8+
 
 ### 2.1 Environment Configuration
 
-Create a `.env` file in your project root with your Oriva API credentials:
+Create a `.env` file in your project root with your Oriva API credentials using the standard naming convention:
 
 ```bash
-# Oriva Platform Configuration
-ORIVA_API_URL=https://api.oriva.io
-ORIVA_API_KEY=your_api_key_here
+# Oriva Platform Configuration (Required)
+EXPO_PUBLIC_ORIVA_API_URL=https://api.oriva.io/api/v1
+EXPO_PUBLIC_ORIVA_API_KEY=your_oriva_api_key_here
+EXPO_PUBLIC_ORIVA_CLIENT_ID=work-buddy-app
 ```
 
-### 2.2 API Key Authentication
+> **📝 Note**: Use the `EXPO_PUBLIC_` prefix for variables that need to be accessible in your client-side code. Variables without this prefix remain server-side only.
+
+### 2.2 Hosting Environment Setup
+
+When deploying your app, you'll need to configure these environment variables in your hosting platform:
+
+#### **Option 1: Vercel (Recommended)**
+
+1. **Connect your repository** to Vercel
+2. **Go to Project Settings** → Environment Variables
+3. **Add the following variables:**
+   ```
+   EXPO_PUBLIC_ORIVA_API_URL = https://api.oriva.io/api/v1
+   EXPO_PUBLIC_ORIVA_API_KEY = your_oriva_api_key_here
+   EXPO_PUBLIC_ORIVA_CLIENT_ID = work-buddy-app
+   ```
+4. **Set Environment** to "Production, Preview, and Development"
+5. **Deploy** your changes
+
+#### **Option 2: Netlify**
+
+1. **Connect your repository** to Netlify
+2. **Go to Site settings** → Environment variables
+3. **Add the same variables** as listed above
+4. **Deploy** your site
+
+> **🔐 Security**: Never commit your `.env` file to version control. Always use your hosting platform's environment variable settings for production deployments.
+
+### 2.3 API Key Authentication
 
 Oriva uses simple API key authentication for plugin operations. Include your API key in the Authorization header:
 
 ```javascript
-const response = await fetch('https://api.oriva.io/api/v1/user/me', {
+const response = await fetch(process.env.EXPO_PUBLIC_ORIVA_API_URL + '/user/me', {
   headers: {
-    'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`,
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
     'Content-Type': 'application/json'
   }
 });
@@ -96,7 +125,7 @@ console.log('User:', data.name);
 
 > **🔐 Security Note:** Never expose your API key in client-side code in production! Use environment variables and server-side proxies for sensitive operations.
 
-### 2.3 Troubleshooting API Key Issues
+### 2.4 Troubleshooting API Key Issues
 
 If you're getting "Invalid API key" errors:
 
@@ -158,12 +187,12 @@ npm install @oriva/plugin-sdk
 import { OrivaPluginSDK } from '@oriva/plugin-sdk';
 
 const sdk = new OrivaPluginSDK({
-  pluginId: 'your-plugin-id',
+  pluginId: process.env.EXPO_PUBLIC_ORIVA_CLIENT_ID,
   version: '1.0.0',
   userId: 'user-id',
   permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.ORIVA_API_KEY,
-  baseUrl: process.env.ORIVA_API_URL,
+  apiKey: process.env.EXPO_PUBLIC_ORIVA_API_KEY,
+  baseUrl: process.env.EXPO_PUBLIC_ORIVA_API_URL,
 });
 
 // Access user repositories
@@ -563,8 +592,9 @@ npm run dev
 **Update your environment variables for local development:**
 ```bash
 # .env file for local development
-ORIVA_API_URL=http://localhost:3001
-ORIVA_API_KEY=your_api_key_here
+EXPO_PUBLIC_ORIVA_API_URL=http://localhost:3001/api/v1
+EXPO_PUBLIC_ORIVA_API_KEY=your_oriva_api_key_here
+EXPO_PUBLIC_ORIVA_CLIENT_ID=work-buddy-app
 ```
 
 #### **Option 2: Production API**
