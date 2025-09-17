@@ -949,6 +949,104 @@ const response = await fetch('/api/proxy/oriva/user/me', {
 
 **Action**: No action needed from developers - this was an Oriva platform issue that has been fixed.
 
+### 5. Missing Build Script Error on Vercel
+
+**Problem**: Vercel deployment fails with error `npm error Missing script: "vercel-build"`
+**Cause**: Your vercel.json references a build script that doesn't exist in package.json
+
+**Solution**: Add the missing build script to your package.json:
+
+```json
+{
+  "scripts": {
+    "vercel-build": "expo export -p web && node scripts/postexport-csp.js || echo 'CSP script not available, continuing...'"
+  }
+}
+```
+
+**Alternative**: Update your vercel.json to use an existing build script:
+```json
+{
+  "buildCommand": "npm run build"
+}
+```
+
+### 6. X-Frame-Options Blocking Iframe Embedding
+
+**Problem**: Console shows "Refused to display in a frame because it set 'X-Frame-Options' to 'SAMEORIGIN'"
+**Root Cause**: Your app has conflicting frame protection headers
+
+**Solution**: Choose one approach:
+
+**Option 1 (Recommended)**: Remove X-Frame-Options entirely, use CSP only
+```json
+// vercel.json - Remove X-Frame-Options from main pages
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        // ❌ Remove this line:
+        // { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+
+        // ✅ Keep CSP with frame-ancestors:
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://app.oriva.io; ..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Option 2**: Use X-Frame-Options ALLOWALL (less secure)
+```json
+{
+  "key": "X-Frame-Options",
+  "value": "ALLOWALL"
+}
+```
+
+## 🧪 Integration Testing
+
+Before submitting your app, test these critical integration points:
+
+### 1. Test Iframe Embedding
+```javascript
+// Create test iframe to verify embedding works
+const testFrame = document.createElement('iframe');
+testFrame.src = 'https://your-app.vercel.app';
+testFrame.onload = () => console.log('✅ Embedding works');
+testFrame.onerror = () => console.log('❌ Check CSP headers');
+document.body.appendChild(testFrame);
+```
+
+### 2. Check CSP Headers
+Use browser dev tools Network tab to verify headers are being sent correctly:
+- Look for `Content-Security-Policy` header
+- Verify `frame-ancestors` includes Oriva domains
+- Confirm no conflicting `X-Frame-Options` headers
+
+### 3. Validate Build Process
+```bash
+# Test your build locally
+npm run build
+# or
+npm run vercel-build
+
+# Verify no errors in build output
+```
+
+### 4. Pre-Submission Checklist
+- [ ] App loads in iframe without console errors
+- [ ] CSP headers configured with `frame-ancestors` directive
+- [ ] X-Frame-Options removed or set to allow embedding
+- [ ] Build process completes successfully
+- [ ] HTTPS enabled for production deployment
+- [ ] App responds within 3 seconds
+- [ ] Mobile responsive design implemented
+
 ---
 
 ## 📚 Next Steps
