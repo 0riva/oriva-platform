@@ -16,8 +16,9 @@ Welcome to the Oriva Platform! This guide will help you build powerful integrati
 By the end of this guide, you'll have:
 - ✅ **Registered your app** with the Oriva platform
 - ✅ **Set up API authentication** for your app
+- ✅ **Configured app launcher integration** with proper CSP headers
 - ✅ **Made your first API calls** to Oriva
-- ✅ **Published your app** to the marketplace
+- ✅ **Submitted your app** for admin review and marketplace approval
 
 ---
 
@@ -382,17 +383,24 @@ function MyOrivaApp() {
 
 ### 3.4 Available Scopes
 
-| Scope | Description |
-|-------|-------------|
-| `user:read` | Read user profile information |
-| `profiles:read` | Read authorized user profiles |
-| `profiles:write` | Switch between authorized profiles |
-| `groups:read` | Read user group memberships |
-| `groups:write` | Access group member information |
-| `marketplace:read` | Browse and view marketplace apps |
-| `marketplace:write` | Install and manage apps |
-| `storage:read` | Read app-specific data |
-| `storage:write` | Write app-specific data |
+| Scope | Description | Security Level |
+|-------|-------------|----------------|
+| `user:read` | Read user profile information | 🟡 Requires user consent |
+| `profiles:read` | Read authorized user profiles | 🟡 User-controlled access |
+| `profiles:write` | Switch between authorized profiles | 🟡 User-controlled access |
+| `groups:read` | Read user group memberships | 🟡 User-controlled access |
+| `groups:write` | Access group member information | 🟡 User-controlled access |
+| `marketplace:read` | Browse public marketplace apps | 🟢 Public access |
+| `storage:read` | Read app-specific data only | 🟢 Isolated to your app |
+| `storage:write` | Write app-specific data only | 🟢 Isolated to your app |
+| `ui:notifications` | Show notifications to user | 🟡 Requires permission |
+| `ui:navigation` | Navigate within Oriva interface | 🟢 Standard integration |
+
+**🔐 Security Notes:**
+- No scope allows installing/uninstalling apps
+- No scope allows seeing other installed apps
+- Profile/group access requires explicit user authorization
+- All data access is isolated per app
 
 ---
 
@@ -439,88 +447,101 @@ console.log('Available profiles:', profiles.data);
 
 ## 🏪 Step 5: Publish to Marketplace
 
-### 5.1 Prepare Your App
+### 5.1 App Submission Process
 
-Submit your app to the Oriva marketplace by completing these steps:
+**📝 Developer Flow:**
+1. **Developer** creates app in Developer Settings
+2. **Developer** submits app for marketplace approval
+3. **Oriva Admin** reviews and approves/rejects app
+4. **Approved apps** appear in marketplace
+5. **Oriva Users** discover and install approved apps
 
-1. **Complete your app description**
-   - Write a compelling description of what your app does
-   - Highlight key features and benefits
-   - Include use cases and target audience
+### 5.2 Prepare Your App Submission
 
-2. **Add screenshots and demo videos**
-   - Show your app in action
-   - Demonstrate key workflows
-   - Provide visual proof of functionality
+Before submitting, ensure your app meets all requirements:
 
-3. **Set your pricing** (free or paid)
-   - Choose between free or paid tiers
-   - Define pricing structure if applicable
-   - Consider freemium models
+#### **Technical Requirements:**
+- ✅ **CSP headers configured** for iframe embedding
+- ✅ **HTTPS enabled** for production deployment
+- ✅ **Integration tested** with Oriva launcher
+- ✅ **Performance optimized** (loads within 3 seconds)
+- ✅ **Mobile responsive** design implemented
 
-4. **Define required permissions**
-   - Specify which API scopes your app needs
-   - Justify permission requirements
-   - Minimize permissions to what's necessary
+#### **Content Requirements:**
+- ✅ **App description** - Clear explanation of functionality
+- ✅ **Screenshots/videos** - Demonstrate key features
+- ✅ **Use cases** - Show real-world applications
+- ✅ **Privacy policy** - Data handling transparency
+- ✅ **Support documentation** - User help resources
 
-### 5.2 Submit for Review
+#### **Security Requirements:**
+- ✅ **Minimal permissions** - Only request necessary scopes
+- ✅ **Data isolation** - No access to other apps' data
+- ✅ **User consent** - Clear permission explanations
+- ✅ **Secure coding** - Follow security best practices
 
-1. **Go to your app dashboard**
-2. **Click "Submit for Review"**
-3. **Wait for approval** (typically 1-3 business days)
+### 5.3 Submit for Admin Review
 
-### 5.3 Launch Your App
+1. **Complete app registration** in Developer Settings
+2. **Add all required information** (description, screenshots, etc.)
+3. **Test integration thoroughly**
+4. **Click "Submit for Review"**
+5. **Wait for Oriva Admin approval** (typically 3-7 business days)
 
-Once approved, your app will be:
-- ✅ **Available in the marketplace**
-- ✅ **Discoverable by users**
-- ✅ **Ready for installations**
-- ✅ **Launch to Oriva users worldwide**
+### 5.4 Admin Review Process
 
-### 5.4 Using the Marketplace Installation API
+**🔍 Oriva Admin reviews for:**
+- Security compliance and user safety
+- Technical integration quality
+- Content appropriateness and accuracy
+- Performance and reliability standards
+- Privacy and data protection compliance
 
-Your app can also interact with the marketplace to manage app installations:
+### 5.5 App Goes Live
 
-#### Get User's Installed Apps
+Once **Oriva Admin approves** your app:
+- ✅ **Listed in marketplace** for user discovery
+- ✅ **Users can install** your app from marketplace
+- ✅ **App launches** in Oriva's full-screen launcher
+- ✅ **Analytics available** in your developer dashboard
+
+### 5.6 Security & Privacy Model
+
+**🔐 Third-party apps have limited, secure access to protect Oriva users:**
+
+#### What Third-Party Apps CAN Do:
+- ✅ **Read user profile** (with user consent)
+- ✅ **Access authorized profiles/groups** (user-controlled)
+- ✅ **Store app-specific data** (isolated storage)
+- ✅ **Display notifications** (with permission)
+- ✅ **Navigate within Oriva** (user interface integration)
+
+#### What Third-Party Apps CANNOT Do:
+- ❌ **Install other apps** (user must install manually)
+- ❌ **See other installed apps** (privacy protection)
+- ❌ **Access unauthorized profiles** (explicit consent required)
+- ❌ **Modify other apps' data** (strict isolation)
+- ❌ **Bypass user permissions** (security enforcement)
+
+#### App Installation Flow
+Apps cannot programmatically install other apps. Instead, use secure user-controlled flows:
+
 ```javascript
-const installedApps = await fetch('https://api.oriva.io/api/v1/marketplace/installed', {
-  headers: {
-    'Authorization': `Bearer ${apiKey}`
+// ✅ SECURE: Redirect to Oriva marketplace for user-controlled installation
+function suggestApp(targetAppId) {
+  const installUrl = `https://app.oriva.io/marketplace/app/${targetAppId}`;
+
+  // Option 1: Open in new tab
+  window.open(installUrl, '_blank');
+
+  // Option 2: Navigate within iframe (if in Oriva launcher)
+  if (window.parent !== window) {
+    window.parent.postMessage({
+      type: 'navigate',
+      url: `/marketplace/app/${targetAppId}`
+    }, 'https://app.oriva.io');
   }
-}).then(r => r.json());
-
-console.log('Installed apps:', installedApps.data);
-```
-
-#### Install an App
-```javascript
-const installation = await fetch('https://api.oriva.io/api/v1/marketplace/install/app-123', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    settings: {
-      theme: 'dark',
-      notifications: true
-    }
-  })
-}).then(r => r.json());
-
-console.log('Installation result:', installation.data);
-```
-
-#### Uninstall an App
-```javascript
-const result = await fetch('https://api.oriva.io/api/v1/marketplace/uninstall/app-123', {
-  method: 'DELETE',
-  headers: {
-    'Authorization': `Bearer ${apiKey}`
-  }
-}).then(r => r.json());
-
-console.log('Uninstall result:', result.data);
+}
 ```
 
 ---
@@ -529,16 +550,14 @@ console.log('Uninstall result:', result.data);
 
 The Oriva Platform provides comprehensive APIs organized into five main categories:
 
-### 🏪 **Marketplace API**
+### 🏪 **Marketplace API** (Read-Only)
 ```bash
-GET    /api/v1/marketplace/apps              # Browse available apps
-GET    /api/v1/marketplace/apps/:appId       # Get app details
-GET    /api/v1/marketplace/trending          # Get trending apps
-GET    /api/v1/marketplace/featured          # Get featured apps
-GET    /api/v1/marketplace/categories        # Get app categories
-GET    /api/v1/marketplace/installed         # Get user's installed apps
-POST   /api/v1/marketplace/install/:appId    # Install an app
-DELETE /api/v1/marketplace/uninstall/:appId  # Uninstall an app
+GET    /api/v1/marketplace/apps              # Browse available apps (public)
+GET    /api/v1/marketplace/apps/:appId       # Get app details (public)
+GET    /api/v1/marketplace/trending          # Get trending apps (public)
+GET    /api/v1/marketplace/featured          # Get featured apps (public)
+GET    /api/v1/marketplace/categories        # Get app categories (public)
+# Note: Third-party apps cannot see user's installed apps or install/uninstall apps
 ```
 
 ### 👨‍💻 **Developer API**
