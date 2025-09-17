@@ -107,16 +107,11 @@ When deploying your app, you'll need to configure these environment variables in
 
 > **🔐 Security**: Never commit your `.env` file to version control. Always use your hosting platform's environment variable settings for production deployments.
 
-### 2.3 Check iframe Embedding Compatibility
+### 2.3 Configure iframe Embedding (Required)
 
-**ℹ️ Most apps work by default**: If your app doesn't set X-Frame-Options headers, it will work in Oriva without any configuration.
+**🚨 Important**: For your app to work in the Oriva marketplace, it must allow iframe embedding from Oriva domains.
 
-**🔍 Check if you need configuration**: Test your app URL with this command:
-```bash
-curl -I https://your-app.vercel.app | grep -i x-frame-options
-```
-
-**If you see X-Frame-Options in the response, choose one of these options:**
+**Choose one of these configuration options:**
 
 **Option 1: Allow Oriva domains (Recommended)**
 
