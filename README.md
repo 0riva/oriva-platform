@@ -49,43 +49,6 @@ Create powerful integrations that extend Oriva's functionality:
 
 ## 🚀 Quick Start
 
-### 🛠️ Local Development
-
-Get your Oriva Platform API running locally in minutes:
-
-1. **Clone & Install**:
-   ```bash
-   git clone https://github.com/0riva/oriva-platform.git
-   cd oriva-platform
-   npm install
-   ```
-
-2. **Configure Environment**:
-   ```bash
-   cp env.example .env
-   # Edit .env with your Supabase credentials
-   ```
-
-3. **Start Development Server**:
-   ```bash
-   npm start
-   # ✅ API server running on port 3001
-   ```
-
-4. **Test Your Setup**:
-   - **Base URL**: http://localhost:3001
-   - **Health Check**: http://localhost:3001/health
-   - **API Test**: http://localhost:3001/api/v1/test
-   - **User Endpoint**: http://localhost:3001/api/v1/user/me (requires API key)
-
-5. **Verify It's Working**:
-   ```bash
-   curl http://localhost:3001/health
-   # Should return: {"status":"healthy",...}
-   ```
-
-### 🔑 Get API Keys
-
 Ready to build your first Oriva integration? Follow our comprehensive [Start Guide](docs/START_GUIDE.md) to:
 
 - 📝 **Register your app** with the Oriva platform
@@ -130,63 +93,7 @@ The Oriva Plugin SDK provides a TypeScript interface for building integrations w
 
 ## 🧪 Development & Testing
 
-### Available Scripts
-
-```bash
-# Start the API server
-npm start                    # Production mode
-npm run dev                  # Development mode (same as start)
-
-# Testing
-npm test                     # Run test suite
-npm run test:watch          # Watch mode for development
-npm run test:coverage       # Generate coverage report
-
-# Code Quality
-npm run lint                # Check code style
-npm run lint:fix            # Auto-fix linting issues
-npm run security:audit      # Security vulnerability check
-```
-
-### Environment Configuration
-
-Your `.env` file should include:
-```bash
-# Database
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
-
-# API Configuration
-NODE_ENV=development
-PORT=3001
-LOG_LEVEL=info
-
-# Security
-CORS_ORIGIN=http://localhost:8081,https://oriva.io
-ORIVA_ADMIN_TOKEN=your_admin_token_for_dev_endpoints
-```
-
-### Troubleshooting
-
-**🚨 Common Issues**:
-
-- **"Missing Supabase configuration" error**:
-  - Check your `.env` file has valid `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
-  - Verify credentials in your Supabase project settings
-
-- **Port already in use**:
-  - Change the port: `PORT=3002 npm start`
-  - Or find and kill the process using port 3001
-
-- **API key validation fails**:
-  - Ensure you have valid API keys in your Supabase `developer_api_keys` table
-  - Check the API key format: `oriva_pk_live_` or `oriva_pk_test_` prefix
-
-- **CORS issues**:
-  - Update `CORS_ORIGIN` in your `.env` file
-  - Add your frontend URL to the allowed origins
-
-For complete development setup and testing strategies, see the [Start Guide](docs/START_GUIDE.md).
+For complete development setup, testing strategies, and troubleshooting, see the [Start Guide](docs/START_GUIDE.md).
 
 
 ## 📊 Rate Limits & Usage
@@ -248,28 +155,13 @@ Build social apps for the Oriva network:
 
 ### Developer Tools
 
-**🏠 Local Development**:
-- **Health Check**: http://localhost:3001/health - Verify your API is running
-- **API Test Endpoint**: http://localhost:3001/api/v1/test - Test routing and connectivity
-- **Available Endpoints**: http://localhost:3001/health - Lists all API endpoint categories
-
 **🌐 Production Tools**:
 - **Interactive API Docs**: [https://api.oriva.io/docs](https://api.oriva.io/docs) _(coming soon)_
 - **Developer Portal**: Use the developer settings within Oriva Core
 - **Status Page**: [https://status.oriva.io](https://status.oriva.io) _(coming soon)_
 
-**🧪 Testing Your API**:
-```bash
-# Test health endpoint
-curl http://localhost:3001/health
-
-# Test API routing
-curl http://localhost:3001/api/v1/test
-
-# Test authenticated endpoint (requires API key)
-curl -H "Authorization: Bearer your-api-key" \
-     http://localhost:3001/api/v1/user/me
-```
+**🧪 Local Development & Testing**:
+- See the [Start Guide](docs/START_GUIDE.md) for complete setup and testing instructions
 
 ### Community
 - **Developer Discord**: [https://discord.gg/oriva-developers](https://discord.gg/oriva-developers)
