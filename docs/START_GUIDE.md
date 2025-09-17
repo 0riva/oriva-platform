@@ -109,9 +109,9 @@ When deploying your app, you'll need to configure these environment variables in
 
 ### 2.3 Configure iframe Embedding (Required)
 
-**🚨 Important**: For your app to work in the Oriva app launcher, you must configure iframe embedding headers.
+**🚨 Important**: For your app to work in the Oriva app launcher, you must allow iframe embedding from Oriva domains.
 
-Add this configuration to allow your app to be embedded:
+**Option 1: Allow Oriva domains (Recommended)**
 
 **Vercel** (`vercel.json`):
 ```json
@@ -121,8 +121,8 @@ Add this configuration to allow your app to be embedded:
       "source": "/(.*)",
       "headers": [
         {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://apps.oriva.io"
         }
       ]
     }
@@ -135,7 +135,19 @@ Add this configuration to allow your app to be embedded:
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
+    Content-Security-Policy = "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://apps.oriva.io"
+```
+
+**Option 2: Use Oriva's Proxy Service**
+
+If your app already has X-Frame-Options: DENY or SAMEORIGIN, configure your app registration to use the proxy:
+
+```javascript
+{
+  "iframe_options": {
+    "bypass_xframe_protection": true
+  }
+}
 ```
 
 > **📖 Need help?** See our complete [X-Frame-Options Configuration Guide](./developer-guides/x-frame-options.md) for other hosting platforms and advanced configuration.

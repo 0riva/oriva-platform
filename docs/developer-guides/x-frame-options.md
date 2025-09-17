@@ -1,18 +1,20 @@
 # X-Frame-Options Configuration Guide
 
-When deploying apps to the Oriva marketplace, your application needs to be embeddable in iframes for the app launcher to work properly. This guide helps you configure the correct headers.
+When deploying apps to the Oriva marketplace, your application needs to be embeddable in iframes for the app launcher to work properly. This guide helps you configure the correct headers to **allow** Oriva domains.
 
 ## 1. Understanding X-Frame-Options
 
-| Option | Description | Use Case |
-|--------|-------------|----------|
-| `DENY` | Never allow iframe embedding (most restrictive) | Banking, admin panels, auth pages |
-| `SAMEORIGIN` | Allow embedding only from same origin/domain | General web apps, dashboards |
-| `ALLOWALL` | Allow embedding from any domain (least secure) | Public widgets, embeddable tools |
+| Option | Description | Oriva Compatibility |
+|--------|-------------|-------------|
+| `DENY` | Never allow iframe embedding (most restrictive) | ❌ **Blocks Oriva** - Use proxy service |
+| `SAMEORIGIN` | Allow embedding only from same origin/domain | ❌ **Blocks Oriva** - Use proxy service |
+| `ALLOWALL` | Allow embedding from any domain (least secure) | ✅ **Works** - But not recommended |
+| No header | Allow embedding (default browser behavior) | ✅ **Works** - Simple solution |
+| CSP frame-ancestors | Modern, granular control | ✅ **Recommended** - Secure & compatible |
 
 ## 2. Platform-Specific Configuration
 
-### Vercel
+### Vercel (Recommended: CSP frame-ancestors)
 
 Create or update `vercel.json` in your project root:
 
@@ -23,8 +25,8 @@ Create or update `vercel.json` in your project root:
       "source": "/(.*)",
       "headers": [
         {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://apps.oriva.io"
         }
       ]
     }
@@ -32,7 +34,7 @@ Create or update `vercel.json` in your project root:
 }
 ```
 
-### Netlify
+### Netlify (Recommended: CSP frame-ancestors)
 
 Add to your `netlify.toml`:
 
@@ -40,7 +42,7 @@ Add to your `netlify.toml`:
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
+    Content-Security-Policy = "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://apps.oriva.io"
 ```
 
 ### Express.js/Node.js
@@ -179,12 +181,22 @@ curl -I https://your-app.vercel.app
 For apps deployed to the Oriva marketplace, we recommend:
 
 ```javascript
-// Option 1: SAMEORIGIN (simplest)
-"X-Frame-Options": "SAMEORIGIN"
+// Option 1: CSP with Oriva domains (Recommended)
+"Content-Security-Policy": "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://apps.oriva.io"
 
-// Option 2: CSP with Oriva domains (more secure)
-"Content-Security-Policy": "frame-ancestors 'self' https://app.oriva.io https://oriva.io"
+// Option 2: Remove X-Frame-Options entirely (if you control the hosting)
+// Simply don't set X-Frame-Options header
+
+// Option 3: Use Oriva's proxy service (if you have existing X-Frame-Options)
+// Configure in your app registration:
+{
+  "iframe_options": {
+    "bypass_xframe_protection": true
+  }
+}
 ```
+
+**⚠️ Important**: Setting `X-Frame-Options: SAMEORIGIN` or `X-Frame-Options: DENY` will **prevent** your app from loading in Oriva's app launcher. Use the CSP `frame-ancestors` directive instead for better control.
 
 ## Need Help?
 
