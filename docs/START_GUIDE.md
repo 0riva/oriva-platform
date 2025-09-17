@@ -448,6 +448,37 @@ POST   /api/v1/developer/apps/:appId/submit  # Submit for review
 POST   /api/v1/developer/apps/:appId/resubmit # Resubmit after rejection
 ```
 
+#### 🚀 **App Launcher Configuration**
+When creating or updating apps, configure display modes and security settings:
+
+```javascript
+// POST /api/v1/developer/apps
+{
+  "name": "My Awesome App",
+  "url": "https://myapp.example.com",
+  "display_config": {
+    "preferred_mode": "panel",        // panel | fullscreen | overlay
+    "supports_panel": true,
+    "supports_fullscreen": true,
+    "min_width": 400,
+    "min_height": 300,
+    "responsive": true
+  },
+  "iframe_options": {
+    "allow_frame_ancestors": false,
+    "custom_sandbox": ["allow-scripts", "allow-same-origin", "allow-forms"],
+    "bypass_xframe_protection": false  // Set true for X-Frame-Options bypass
+  }
+}
+```
+
+**Display Modes:**
+- **Panel**: Embedded within Oriva's layout (400px+ width recommended)
+- **Fullscreen**: Full-screen takeover with floating controls (800px+ recommended)
+- **Overlay**: Modal overlay display (coming soon)
+
+> 📖 **[Complete App Launcher Integration Guide](./developer-guides/app-launcher-integration.md)**
+
 ### 🔒 **Privacy-First Profile API**
 ```bash
 GET    /api/v1/profiles/available            # Get authorized profiles
