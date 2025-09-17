@@ -220,66 +220,111 @@ curl -X POST https://api.oriva.io/api/v1/dev/revoke-key \
 
 ---
 
-## 📚 Step 3: Install and Use the SDK
+## 📚 Step 3: API Integration
 
-### 3.1 Install the SDK
+### 3.1 Making API Calls
 
-```bash
-npm install @oriva/plugin-sdk
-```
-
-### 3.2 Basic SDK Usage
+Use your preferred HTTP client to call the Oriva Platform API directly:
 
 ```typescript
-import { OrivaPluginSDK } from '@oriva/plugin-sdk';
-
-const sdk = new OrivaPluginSDK({
-  pluginId: process.env.EXPO_PUBLIC_ORIVA_CLIENT_ID,
-  version: '1.0.0',
-  userId: 'user-id',
-  permissions: ['entries:read', 'entries:write'],
-  apiKey: process.env.EXPO_PUBLIC_ORIVA_API_KEY,
-  baseUrl: process.env.EXPO_PUBLIC_ORIVA_API_URL,
+// Get current user information
+const response = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/user/me`, {
+  headers: {
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
 });
+const user = await response.json();
 
-// Access user repositories
-const repos = await sdk.repositories.list({
-  visibility: 'all',
-  sort: 'updated'
+// Create an entry
+const entryResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/entries`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: 'My First Entry',
+    content: 'Entry content here...',
+    audience: 'public'
+  })
 });
+const entry = await entryResponse.json();
 
-// Create issues
-const issue = await sdk.issues.create({
-  repositoryId: 'repo-123',
-  title: 'Bug in authentication',
-  description: 'Users cannot log in with OAuth',
-  labels: ['bug', 'high-priority']
+// List entries with filtering
+const entriesResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/entries?status=published&limit=10`, {
+  headers: {
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
 });
+const entries = await entriesResponse.json();
+```
 
-// Manage pull requests
-const pr = await sdk.pullRequests.create({
-  repositoryId: 'repo-123',
-  title: 'Fix authentication bug',
-  head: 'feature/fix-auth',
-  base: 'main',
-  body: 'This PR fixes the OAuth authentication issue'
-});
+### 3.2 Error Handling
+
+```typescript
+async function makeApiCall(endpoint: string, options: RequestInit = {}) {
+  try {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorData.message || 'Unknown error'}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('API call failed:', error);
+    throw error;
+  }
+}
+
+// Usage examples
+const user = await makeApiCall('/user/me');
+const entries = await makeApiCall('/entries?limit=10');
 ```
 
 ### 3.3 React Integration
 
 ```typescript
-import { useOrivaSDK } from '@oriva/plugin-sdk/react';
+import { useState, useEffect } from 'react';
 
 function MyOrivaApp() {
-  const { sdk, user, loading } = useOrivaSDK();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const userData = await makeApiCall('/user/me');
+        setUser(userData);
+      } catch (err) {
+        setError(err.message);
+        console.error('Failed to fetch user:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUser();
+  }, []);
 
   if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div>
-      <h1>Welcome, {user.name}!</h1>
-      <p>You have {user.public_repos} public repositories</p>
+      <h1>Welcome, {user?.displayName}!</h1>
+      <p>Your Oriva integration is working!</p>
     </div>
   );
 }
@@ -778,7 +823,7 @@ const response = await fetch('/api/proxy/oriva/user/me', {
 
 - **📖 [API Reference](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)** - Complete API documentation
 - **🧪 [API Tester](api-tester.html)** - Interactive tool to test Oriva Platform APIs
-- **🔧 [SDK Documentation](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)** - SDK usage guide
+- **🔧 [API Examples](https://github.com/0riva/oriva-platform/tree/main/examples)** - Integration examples (coming soon)
 - **🔐 [OAuth Guide](https://github.com/0riva/oriva-platform)** - Authentication details (coming soon)
 - **🏪 [Marketplace Guide](https://github.com/0riva/oriva-platform)** - Publishing apps (coming soon)
 
@@ -801,7 +846,7 @@ You've successfully:
 - ✅ **Registered your app** with Oriva
 - ✅ **Set up API authentication**
 - ✅ **Made API calls** to the platform
-- ✅ **Used the SDK** for easier development
+- ✅ **Integrated with the API** for seamless functionality
 - ✅ **Published your app** to the marketplace
 
 **Ready to build the next generation of development tools?** Start building with the Oriva Platform API today!

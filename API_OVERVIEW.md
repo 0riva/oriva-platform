@@ -20,14 +20,14 @@ These environment variables follow the standard Oriva naming conventions for:
 ## 🎯 **API Overview**
 
 ### **Core Architecture**
-Your Oriva Platform API is a **plugin-based system** designed to extend Oriva Core's functionality. It's built as a RESTful API gateway that provides secure access to Oriva's core features through a comprehensive plugin SDK.
+Your Oriva Platform API is a **plugin-based system** designed to extend Oriva Core's functionality. It's built as a RESTful API gateway that provides secure access to Oriva's core features through comprehensive REST endpoints.
 
 ### **Key Architectural Decisions**
 
 1. **Plugin-First Architecture**: The entire system is designed around plugins that can extend Oriva Core functionality
 2. **Security-First Design**: Implements granular permission system with app data isolation
-3. **TypeScript-First SDK**: Full TypeScript support with comprehensive type definitions
-4. **Multi-Platform Support**: Web, iOS, Android compatibility through unified SDK
+3. **TypeScript-First Design**: Full TypeScript support with comprehensive type definitions
+4. **Multi-Platform Support**: Web, iOS, Android compatibility through standard REST API
 
 ---
 
@@ -155,8 +155,8 @@ The platform uses a **granular permission system** with these scopes:
 
 ## 🏗️ **Key Architectural Decisions**
 
-### **1. Plugin SDK Architecture**
-- **Modular Design**: Separate API classes for different functionalities
+### **1. Plugin API Architecture**
+- **Modular Design**: Separate REST endpoints for different functionalities
 - **Type Safety**: Full TypeScript support with comprehensive type definitions
 - **Error Handling**: Robust error handling with retry logic and exponential backoff
 - **Rate Limiting**: Built-in rate limiting with different limits per operation type
@@ -168,7 +168,7 @@ The platform uses a **granular permission system** with these scopes:
 - **Audit Logging**: All security-sensitive operations are logged
 
 ### **3. Multi-Platform Support**
-- **Unified SDK**: Single SDK works across web, iOS, and Android
+- **Unified API**: Single REST API works across web, iOS, and Android
 - **Platform-Specific Features**: Haptic feedback, navigation, etc.
 - **Responsive Design**: UI components adapt to different platforms
 
@@ -207,7 +207,7 @@ The platform uses a **granular permission system** with these scopes:
 - ✅ **Marketplace API**: Complete app discovery and management system
 - ✅ **Developer API**: Full app lifecycle management with review process
 - ✅ **Security Model**: Production-ready security with rate limiting and audit logging
-- ✅ **Plugin SDK**: Complete TypeScript SDK with all APIs
+- ✅ **REST API**: Complete REST API with all endpoints
 - ✅ **Documentation**: Comprehensive OpenAPI spec and guides
 - ✅ **Testing**: 70 passing tests with comprehensive coverage
 
@@ -220,11 +220,11 @@ The platform uses a **granular permission system** with these scopes:
 - 📈 Rate limiting improvements with dynamic scaling
 
 #### **Q2 2025: Developer Experience**
-- 🛠️ SDK improvements with better TypeScript support
+- 🛠️ Client library improvements with better TypeScript support
 - 📚 Interactive API documentation with live examples
 - 🧪 Testing framework for API integrations
 - 🔧 Developer tools and debugging utilities
-- 📱 Mobile SDKs for iOS and Android
+- 📱 Mobile client libraries for iOS and Android
 
 #### **Q3 2025: Advanced Features**
 - 💬 **Decentralized messaging system** (Major feature)
@@ -250,9 +250,9 @@ The platform uses a **granular permission system** with these scopes:
 - **Caching**: Redis for theme caching and session management
 - **File Storage**: Theme assets and widget bundles
 
-### **Frontend SDK**
+### **Frontend Integration**
 - **Language**: TypeScript with full type definitions
-- **HTTP Client**: Axios with interceptors for error handling
+- **HTTP Client**: Standard fetch API or preferred HTTP client
 - **Platform Support**: Web, iOS, Android
 - **Package Manager**: npm with comprehensive package.json
 
@@ -269,7 +269,7 @@ The platform uses a **granular permission system** with these scopes:
 ### **Available Documentation**
 - **OpenAPI Specification**: Complete API documentation in `docs/openapi.yml`
 - **Start Guide**: Developer onboarding in `docs/START_GUIDE.md`
-- **SDK Documentation**: TypeScript SDK usage in `packages/plugin-sdk/README.md`
+- **API Documentation**: REST API usage in `docs/START_GUIDE.md`
 - **Internal Documentation**: Architecture decisions and requirements
 
 ### **Development Resources**
@@ -284,7 +284,7 @@ The platform uses a **granular permission system** with these scopes:
 - **API usage growth**: 200% year-over-year target
 - **Active developers**: 10K+ by end of 2025
 - **Apps built**: 500+ by end of 2025
-- **SDK downloads**: 100K+ per month
+- **API requests**: 100K+ per month
 
 ### **Platform Performance**
 - **API uptime**: 99.99% availability target
@@ -299,7 +299,7 @@ The platform uses a **granular permission system** with these scopes:
 - **GitHub Repository**: [oriva-platform](https://github.com/0riva/oriva-platform)
 - **API Documentation**: [OpenAPI Spec](docs/openapi.yml)
 - **Developer Guide**: [Start Guide](docs/START_GUIDE.md)
-- **Plugin SDK**: [@oriva/plugin-sdk](packages/plugin-sdk/)
+- **API Integration**: [Start Guide](docs/START_GUIDE.md)
 
 ---
 

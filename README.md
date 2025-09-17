@@ -53,7 +53,7 @@ Ready to build your first Oriva integration? Follow our comprehensive [Start Gui
 
 - 📝 **Register your app** with the Oriva platform
 - 🔐 **Set up authentication** and API access
-- 🛠️ **Build your integration** using our SDK
+- 🛠️ **Build your integration** using our REST API
 - 📦 **Publish to marketplace** and reach users worldwide
 
 **[🚀 Get Started Now →](docs/START_GUIDE.md)**
@@ -87,9 +87,9 @@ Oriva uses **API key authentication** with **privacy-first design** for secure a
 - **Usage Tracking**: Automatic usage statistics and monitoring
 - **Key Prefix Validation**: Supports `oriva_pk_live_` and `oriva_pk_test_` keys
 
-## 💻 SDK
+## 💻 API Integration
 
-The Oriva Plugin SDK provides a TypeScript interface for building integrations with React hooks and comprehensive APIs.
+The Oriva Platform provides a comprehensive REST API for building integrations with comprehensive endpoints and authentication.
 
 ## 🧪 Development & Testing
 
@@ -150,7 +150,7 @@ Build social apps for the Oriva network:
 - **🚀 [Deployment Management](DEPLOYMENT_MANAGEMENT.md)** - Best practices for API deployments
 - **🎨 Components Library**: [Oriva UI Components](https://github.com/0riva/oriva-platform) (coming soon)
 - **🎭 Theme System**: [Custom Themes Guide](https://github.com/0riva/oriva-platform) (coming soon)
-- **🔌 Plugin SDK**: [Plugin SDK](https://github.com/0riva/oriva-platform/tree/main/packages/plugin-sdk)
+- **🔌 API Examples**: [Integration Examples](https://github.com/0riva/oriva-platform/tree/main/examples) (coming soon)
 - **Webhooks**: [GitHub Repository](https://github.com/0riva/oriva-platform) (coming soon)
 
 ### Developer Tools
@@ -178,7 +178,7 @@ Build social apps for the Oriva network:
 
 ### Documentation Issues
 - **📖 API Docs**: [Report documentation issues](https://github.com/0riva/oriva-platform/issues)
-- **🔧 SDK Issues**: [Plugin SDK issues](https://github.com/0riva/oriva-platform/issues)
+- **🔧 API Issues**: [API integration issues](https://github.com/0riva/oriva-platform/issues)
 - **📚 General Questions**: [GitHub Discussions](https://github.com/0riva/oriva-platform/discussions)
 
 ## 📄 License
@@ -187,7 +187,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🤝 Contributing
 
-We welcome contributions to improve the Oriva Platform API and SDK:
+We welcome contributions to improve the Oriva Platform API and documentation:
 
 1. **Fork the repository**
 2. **Create feature branch**: `git checkout -b feature/amazing-feature`
