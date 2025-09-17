@@ -107,13 +107,19 @@ When deploying your app, you'll need to configure these environment variables in
 
 > **🔐 Security**: Never commit your `.env` file to version control. Always use your hosting platform's environment variable settings for production deployments.
 
-### 2.3 Configure iframe Embedding (Required)
+### 2.3 Configure App Integration for Oriva Launcher (Required)
 
-**🚨 Important**: For your app to work in the Oriva marketplace, it must allow iframe embedding from Oriva domains.
+**🚨 Critical Requirement**: For your app to work in the Oriva marketplace, it must properly integrate with the Oriva app launcher system.
 
-**Choose one of these configuration options:**
+#### **Step 1: Allow iframe Embedding**
 
-**Option 1: Allow Oriva domains (Recommended)**
+Your app **MUST** include the following Content Security Policy (CSP) directive:
+
+```http
+Content-Security-Policy: frame-ancestors 'self' https://oriva.io https://*.oriva.io https://app.oriva.io
+```
+
+**Implementation by Platform:**
 
 **Vercel** (`vercel.json`):
 ```json
@@ -124,7 +130,7 @@ When deploying your app, you'll need to configure these environment variables in
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://apps.oriva.io"
+          "value": "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://app.oriva.io; default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
         }
       ]
     }
@@ -137,22 +143,72 @@ When deploying your app, you'll need to configure these environment variables in
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://apps.oriva.io"
+    Content-Security-Policy = "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://app.oriva.io; default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
 ```
 
-**Option 2: Use Oriva's Proxy Service**
+**Express.js Server**:
+```javascript
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://app.oriva.io"
+  );
+  next();
+});
+```
 
-If your app already has X-Frame-Options: DENY or SAMEORIGIN, configure your app registration to use the proxy:
+#### **Step 2: Remove X-Frame-Options (If Present)**
+
+If your app currently uses X-Frame-Options headers, you must either:
+
+1. **Remove them entirely** (recommended), OR
+2. **Change to `ALLOWALL`** (less secure)
 
 ```javascript
-{
-  "iframe_options": {
-    "bypass_xframe_protection": true
-  }
+// Remove this line from your server configuration:
+res.setHeader('X-Frame-Options', 'DENY'); // ❌ Remove this
+res.setHeader('X-Frame-Options', 'SAMEORIGIN'); // ❌ Remove this
+
+// CSP frame-ancestors is the modern replacement
+```
+
+#### **Step 3: Handle Oriva Integration Parameters**
+
+Your app will receive these URL parameters when launched from Oriva:
+
+```javascript
+// Parse Oriva launch parameters
+const urlParams = new URLSearchParams(window.location.search);
+const sessionId = urlParams.get('session_id');
+const appId = urlParams.get('app_id');
+const userId = urlParams.get('user_id');
+const permissions = JSON.parse(urlParams.get('permissions') || '[]');
+const origin = urlParams.get('origin'); // 'oriva_web' or 'oriva_mobile'
+
+// Validate session and initialize your app for Oriva context
+if (sessionId && appId) {
+  initializeOrivaIntegration({ sessionId, appId, userId, permissions });
 }
 ```
 
-> **📖 Need help?** See our complete [X-Frame-Options Configuration Guide](./developer-guides/x-frame-options.md) for other hosting platforms and advanced configuration.
+#### **Step 4: Test Your Integration**
+
+1. **Deploy with CSP headers** configured
+2. **Test iframe embedding** using this validator:
+   ```javascript
+   // Test if your app can be embedded
+   const testFrame = document.createElement('iframe');
+   testFrame.src = 'https://your-app.example.com';
+   testFrame.style.display = 'none';
+   document.body.appendChild(testFrame);
+
+   testFrame.onload = () => console.log('✅ App can be embedded');
+   testFrame.onerror = () => console.log('❌ CSP blocking iframe');
+   ```
+
+3. **Verify in Oriva launcher** by installing your app in development
+
+> **📖 Complete Integration Guide**: See [App Integration Requirements](./developer-guides/app-integration-requirements.md) for comprehensive technical specifications.
 
 ### 2.4 API Key Authentication
 
@@ -236,29 +292,23 @@ const response = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/user/me`,
 });
 const user = await response.json();
 
-// Create an entry
-const entryResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/entries`, {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    title: 'My First Entry',
-    content: 'Entry content here...',
-    audience: 'public'
-  })
-});
-const entry = await entryResponse.json();
-
-// List entries with filtering
-const entriesResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/entries?status=published&limit=10`, {
+// Get user's installed apps
+const appsResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/marketplace/installed`, {
   headers: {
     'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
     'Content-Type': 'application/json'
   }
 });
-const entries = await entriesResponse.json();
+const installedApps = await appsResponse.json();
+
+// Get available profiles
+const profilesResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/profiles/available`, {
+  headers: {
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+const profiles = await profilesResponse.json();
 ```
 
 ### 3.2 Error Handling
@@ -334,68 +384,62 @@ function MyOrivaApp() {
 
 | Scope | Description |
 |-------|-------------|
-| `read:public-repositories` | Access public repositories only |
-| `read:issues` | Read issues and comments |
-| `write:issues` | Create and update issues |
-| `read:pull-requests` | Read pull requests |
-| `write:pull-requests` | Create and update pull requests |
-| `read:notifications` | Read user notifications |
-| `write:notifications` | Mark notifications as read |
-| `app:data:read` | Read app-specific data (tables you create) |
-| `app:data:write` | Write app-specific data (tables you create) |
+| `user:read` | Read user profile information |
+| `profiles:read` | Read authorized user profiles |
+| `profiles:write` | Switch between authorized profiles |
+| `groups:read` | Read user group memberships |
+| `groups:write` | Access group member information |
+| `marketplace:read` | Browse and view marketplace apps |
+| `marketplace:write` | Install and manage apps |
+| `storage:read` | Read app-specific data |
+| `storage:write` | Write app-specific data |
 
 ---
 
-## 📚 Step 4: Make Your First API Calls
+## 📚 Step 4: Test Your Integration
 
-### 3.1 Get User Profile
+### 4.1 Get User Profile
 
 ```javascript
 const profile = await fetch('https://api.oriva.io/api/v1/user/me', {
   headers: {
-    'Authorization': `Bearer ${access_token}`
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`
   }
 }).then(r => r.json());
 
-console.log('User:', profile.name);
+console.log('User:', profile.displayName);
 ```
 
-### 3.2 List User Repositories
+### 4.2 List Installed Apps
 
 ```javascript
-const repos = await fetch('https://api.oriva.io/api/v1/repositories', {
+const apps = await fetch('https://api.oriva.io/api/v1/marketplace/installed', {
   headers: {
-    'Authorization': `Bearer ${access_token}`
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`
   }
 }).then(r => r.json());
 
-console.log('Repositories:', repos.data);
+console.log('Installed apps:', apps.data);
 ```
 
-### 3.3 Create an Issue
+### 4.3 Get Available Profiles
 
 ```javascript
-const issue = await fetch('https://api.oriva.io/api/v1/repositories/123/issues', {
-  method: 'POST',
+const profiles = await fetch('https://api.oriva.io/api/v1/profiles/available', {
   headers: {
-    'Authorization': `Bearer ${access_token}`,
+    'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
     'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    title: 'Bug in authentication',
-    description: 'Users cannot log in with OAuth',
-    labels: ['bug', 'high-priority']
-  })
+  }
 }).then(r => r.json());
 
-console.log('Created issue:', issue.id);
+console.log('Available profiles:', profiles.data);
 ```
 
 ---
 
-## 🏪 Step 4: Publish to Marketplace
+## 🏪 Step 5: Publish to Marketplace
 
-### 4.1 Prepare Your App
+### 5.1 Prepare Your App
 
 Submit your app to the Oriva marketplace by completing these steps:
 
@@ -419,13 +463,13 @@ Submit your app to the Oriva marketplace by completing these steps:
    - Justify permission requirements
    - Minimize permissions to what's necessary
 
-### 4.2 Submit for Review
+### 5.2 Submit for Review
 
 1. **Go to your app dashboard**
 2. **Click "Submit for Review"**
 3. **Wait for approval** (typically 1-3 business days)
 
-### 4.3 Launch Your App
+### 5.3 Launch Your App
 
 Once approved, your app will be:
 - ✅ **Available in the marketplace**
@@ -433,7 +477,7 @@ Once approved, your app will be:
 - ✅ **Ready for installations**
 - ✅ **Launch to Oriva users worldwide**
 
-### 4.4 Using the Marketplace Installation API
+### 5.4 Using the Marketplace Installation API
 
 Your app can also interact with the marketplace to manage app installations:
 
@@ -508,15 +552,16 @@ POST   /api/v1/developer/apps/:appId/resubmit # Resubmit after rejection
 ```
 
 #### 🚀 **App Launcher Configuration**
-When creating or updating apps, configure display modes and security settings:
+
+**The Oriva App Launcher** provides a professional, full-screen experience for apps with floating navigation controls. Configure your app's display modes and integration settings:
 
 ```javascript
 // POST /api/v1/developer/apps
 {
   "name": "My Awesome App",
-  "url": "https://myapp.example.com",
+  "execution_url": "https://myapp.example.com/oriva-entry",
   "display_config": {
-    "preferred_mode": "panel",        // panel | fullscreen | overlay
+    "preferred_mode": "fullscreen",     // fullscreen | panel | overlay
     "supports_panel": true,
     "supports_fullscreen": true,
     "min_width": 400,
@@ -524,19 +569,69 @@ When creating or updating apps, configure display modes and security settings:
     "responsive": true
   },
   "iframe_options": {
-    "allow_frame_ancestors": false,
-    "custom_sandbox": ["allow-scripts", "allow-same-origin", "allow-forms"],
-    "bypass_xframe_protection": false  // Set true for X-Frame-Options bypass
+    "allow_frame_ancestors": true,      // ✅ Required for Oriva embedding
+    "custom_sandbox": [
+      "allow-scripts",
+      "allow-same-origin",
+      "allow-forms",
+      "allow-popups",
+      "allow-modals",
+      "allow-top-navigation-by-user-activation"
+    ],
+    "bypass_xframe_protection": false   // Only use if CSP cannot be configured
+  },
+  "sandbox_config": {
+    "allowStorage": true,
+    "allowNetworking": true,
+    "allowLocation": false,
+    "maxMemoryMB": 500,
+    "maxExecutionTime": 300000
   }
 }
 ```
 
-**Display Modes:**
-- **Panel**: Embedded within Oriva's layout (400px+ width recommended)
-- **Fullscreen**: Full-screen takeover with floating controls (800px+ recommended)
-- **Overlay**: Modal overlay display (coming soon)
+#### **Display Modes**
 
-> 📖 **[Complete App Launcher Integration Guide](./developer-guides/app-launcher-integration.md)**
+**🎯 Fullscreen Mode (Recommended)**
+- **Full browser viewport** with floating navigation controls
+- **Auto-hiding controls** after 3 seconds of inactivity
+- **Touch-to-show** controls on mobile
+- **Professional experience** for productivity apps
+- **Best for**: Video apps, document editors, design tools, dashboards
+
+**📱 Panel Mode**
+- **Embedded within** Oriva's interface layout
+- **Fixed header** with app controls provided by Oriva
+- **400px minimum width** recommended
+- **Best for**: Utilities, simple tools, widgets, calculators
+
+**📋 Overlay Mode** *(Coming Soon)*
+- **Modal overlay** display over Oriva interface
+- **Best for**: Quick actions, notifications, simple forms
+
+#### **App Launcher Features**
+
+✅ **Full-Screen Experience** - Maximum app real estate
+✅ **Floating Navigation** - Unobtrusive controls that auto-hide
+✅ **Touch Controls** - Mobile-optimized interaction
+✅ **Security Sandboxing** - Configurable permission system
+✅ **Performance Monitoring** - Resource usage tracking
+✅ **Error Handling** - Helpful integration error messages
+✅ **Cross-Browser Support** - Works in Chrome, Firefox, Safari, Edge
+
+#### **Integration Requirements Checklist**
+
+Before submitting your app, ensure:
+
+- [ ] **CSP configured** with `frame-ancestors` directive for Oriva domains
+- [ ] **X-Frame-Options removed** or set to allow embedding
+- [ ] **App handles** Oriva URL parameters (session_id, app_id, user_id)
+- [ ] **HTTPS enabled** for production deployment
+- [ ] **Performance tested** - loads within 3 seconds
+- [ ] **Mobile responsive** design implemented
+- [ ] **Error handling** for integration failures
+
+> 📖 **[Complete App Integration Requirements](./developer-guides/app-integration-requirements.md)** - Full technical specifications and examples
 
 ### 🔒 **Privacy-First Profile API**
 ```bash
