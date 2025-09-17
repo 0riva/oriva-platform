@@ -929,6 +929,26 @@ const response = await fetch('/api/proxy/oriva/user/me', {
 });
 ```
 
+### 4. Iframe Sandbox Errors
+
+**Problem**: Console errors like "Error while parsing the 'sandbox' attribute: 'allow-orientation-lock', 'allow-presentation' are invalid"
+**Solution**: This is a known issue that has been resolved in Oriva's app launcher system
+
+```javascript
+// ❌ Invalid sandbox attributes (fixed in Oriva)
+<iframe sandbox="allow-orientation-lock allow-presentation ...">
+
+// ✅ Valid sandbox attributes (now implemented)
+<iframe sandbox="allow-scripts allow-same-origin allow-forms allow-popups ...">
+```
+
+**Note**: If you encounter these errors, they are on Oriva's side and have been resolved. Your CSP implementation is correct. The errors typically show:
+- "Error while parsing the 'sandbox' attribute: ... are invalid"
+- Your app URL being accessed correctly (e.g., `https://your-app.vercel.app`)
+- CSP `frame-ancestors` directive working properly
+
+**Action**: No action needed from developers - this was an Oriva platform issue that has been fixed.
+
 ---
 
 ## 📚 Next Steps
