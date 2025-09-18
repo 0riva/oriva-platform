@@ -312,7 +312,29 @@ const profilesResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/p
 const profiles = await profilesResponse.json();
 ```
 
-### 3.2 Error Handling
+### 3.2 Dynamic CORS Support ✨
+
+**🎉 Great News!** The Oriva Platform API now supports **automatic CORS approval** for registered marketplace apps.
+
+**How it works:**
+1. **Register your app** in the Oriva Developer Settings
+2. **Submit for marketplace approval** with your `execution_url`
+3. **Once approved**, your domain is automatically allowed to make API calls
+4. **No additional configuration needed** - it just works!
+
+**Benefits:**
+- ✅ **Zero CORS configuration** - automatic domain allowlist
+- ✅ **Real-time updates** - new apps get access immediately upon approval
+- ✅ **High performance** - cached allowlist with 5-minute refresh
+- ✅ **Secure by default** - only approved marketplace apps get access
+- ✅ **Developer friendly** - follows standard web development patterns
+
+**Supported Domains:**
+- **Core Oriva**: `oriva.io`, `app.oriva.io` (always allowed)
+- **Approved Apps**: Any domain from your app's `execution_url` after marketplace approval
+- **Development**: `localhost` domains (development mode only)
+
+### 3.3 Error Handling
 
 ```typescript
 async function makeApiCall(endpoint: string, options: RequestInit = {}) {
@@ -917,15 +939,28 @@ const makeRequest = async (url, options, retries = 3) => {
 };
 ```
 
-### 3. CORS Issues
+### 3. CORS Issues (Resolved for Marketplace Apps! ✅)
 
-**Problem**: Browser blocks API requests
-**Solution**: Use server-side proxy or configure CORS
+**Old Problem**: Browser blocked API requests with CORS errors
+**New Solution**: **Automatic CORS approval** for registered marketplace apps!
 
+**If you're still getting CORS errors:**
+
+1. **Check app status**: Ensure your app is **approved** in the marketplace
+2. **Verify execution_url**: Make sure your domain matches the registered `execution_url`
+3. **Wait for cache**: New approvals take up to 5 minutes to propagate
+4. **Development mode**: Use `localhost` for local development (automatically allowed)
+
+**Legacy server-side proxy approach** (no longer needed for approved apps):
 ```javascript
-// Use server-side proxy for sensitive operations
+// ❌ Old approach - not needed for approved marketplace apps
 const response = await fetch('/api/proxy/oriva/user/me', {
   headers: { 'Authorization': `Bearer ${access_token}` }
+});
+
+// ✅ New approach - direct API calls work automatically
+const response = await fetch('https://api.oriva.io/api/v1/user/me', {
+  headers: { 'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}` }
 });
 ```
 

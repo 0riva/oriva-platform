@@ -31,9 +31,104 @@ const logger = winston.createLogger({
   ]
 });
 
-// Middleware
+// Helper function to refresh CORS cache
+async function refreshCorsCache() {
+  try {
+    const { data: apps, error } = await supabase
+      .from('plugin_marketplace_apps')
+      .select('execution_url')
+      .eq('status', 'approved')
+      .not('execution_url', 'is', null);
+
+    if (error) {
+      logger.error('CORS: Failed to refresh app origins cache', { error });
+      return false;
+    }
+
+    // Extract domains from execution URLs
+    const appDomains = apps
+      .map(app => {
+        try {
+          const url = new URL(app.execution_url);
+          return url.origin;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    // Update cache
+    corsOriginCache.data = new Set([
+      // Core Oriva domains
+      ...process.env.CORS_ORIGIN?.split(',') || [
+        'https://oriva.io',
+        'https://www.oriva.io',
+        'https://app.oriva.io'
+      ],
+      // Registered 3rd party app domains
+      ...appDomains
+    ]);
+    corsOriginCache.lastUpdated = Date.now();
+
+    logger.info('CORS: Cache refreshed', {
+      totalOrigins: corsOriginCache.data.size,
+      appOrigins: appDomains.length
+    });
+    return true;
+  } catch (error) {
+    logger.error('CORS: Error refreshing cache', { error });
+    return false;
+  }
+}
+
+// Dynamic CORS configuration that supports 3rd party developer apps
+const dynamicCorsOrigin = async (origin, callback) => {
+  try {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    // Development: Allow localhost for testing
+    if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
+      logger.info('CORS: Allowing localhost in development', { origin });
+      return callback(null, true);
+    }
+
+    // Check if cache needs refresh
+    const cacheAge = Date.now() - corsOriginCache.lastUpdated;
+    if (cacheAge > corsOriginCache.CACHE_TTL) {
+      logger.debug('CORS: Refreshing cache', { cacheAge });
+      await refreshCorsCache();
+    }
+
+    // Check if origin is in cache
+    if (corsOriginCache.data.has(origin)) {
+      logger.debug('CORS: Allowing cached origin', { origin });
+      return callback(null, true);
+    }
+
+    // Block unregistered origins
+    logger.warn('CORS: Blocking unregistered origin', {
+      origin,
+      registeredOrigins: Array.from(corsOriginCache.data).length
+    });
+    callback(new Error('Not allowed by CORS'));
+
+  } catch (error) {
+    logger.error('CORS: Error in dynamic origin check', { error, origin });
+    callback(new Error('CORS configuration error'));
+  }
+};
+
+// Initialize CORS cache on startup
+refreshCorsCache().then(() => {
+  console.log('✅ CORS cache initialized with registered app domains');
+}).catch(error => {
+  console.warn('⚠️ Failed to initialize CORS cache:', error.message);
+});
+
+// Middleware with dynamic CORS
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['https://oriva.io'],
+  origin: dynamicCorsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Extension-ID'],
   credentials: true
@@ -81,6 +176,13 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 console.log('✅ Supabase client initialized for API key validation');
+
+// CORS cache for performance optimization
+let corsOriginCache = {
+  data: new Set(),
+  lastUpdated: 0,
+  CACHE_TTL: 5 * 60 * 1000 // 5 minutes
+};
 
 // Admin token from environment (used to protect dev-only endpoints)
 const ADMIN_TOKEN = process.env.ORIVA_ADMIN_TOKEN || '';
