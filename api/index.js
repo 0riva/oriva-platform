@@ -603,14 +603,84 @@ const validateRequest = (req, res, next) => {
   next();
 };
 
+// Helper function to generate API keys
+const generateAPIKey = (prefix = 'oriva_pk_live_') => {
+  const randomBytes = crypto.randomBytes(32);
+  const keyString = randomBytes.toString('hex');
+  return prefix + keyString;
+};
+
 // API Key Management endpoints (for developer dashboard)
-// Note: API key generation is now handled by the frontend via Supabase
-// This endpoint is kept for backward compatibility but no longer creates keys
+// Generate live API key endpoint - fixes confusing test key naming
+app.post('/api/v1/dev/generate-live-key', devRateLimiter, requireAdminToken, async (req, res) => {
+  try {
+    const { name = 'Live API Key' } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User authentication required'
+      });
+    }
+
+    // Generate live API key
+    const apiKey = generateAPIKey('oriva_pk_live_');
+    const keyHash = await hashAPIKey(apiKey);
+    const keyPrefix = apiKey.substring(0, 20); // Store first 20 chars for display
+
+    // Store in database
+    const { data: keyData, error } = await supabase
+      .from('developer_api_keys')
+      .insert({
+        user_id: userId,
+        name: name,
+        key_hash: keyHash,
+        key_prefix: keyPrefix,
+        is_active: true,
+        permissions: ['profiles', 'groups', 'marketplace'],
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to store API key:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to create API key'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: keyData.id,
+        name: keyData.name,
+        key: apiKey, // Return full key only once
+        keyPrefix: keyPrefix,
+        type: 'live',
+        permissions: keyData.permissions,
+        createdAt: keyData.created_at
+      },
+      message: 'Live API key generated successfully. Store this key securely - it will not be shown again.'
+    });
+
+  } catch (error) {
+    console.error('API key generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error during key generation'
+    });
+  }
+});
+
+// Legacy endpoint - now redirects to live key generation
 app.post('/api/v1/dev/generate-key', devRateLimiter, requireAdminToken, (req, res) => {
   res.status(501).json({
     success: false,
-    error: 'API key generation is now handled through the developer dashboard frontend. Please use the web interface to create API keys.',
-    redirect: '/developer/api-keys'
+    error: 'This endpoint has been deprecated. Use /api/v1/dev/generate-live-key for production keys.',
+    redirect: '/api/v1/dev/generate-live-key'
   });
 });
 

@@ -173,7 +173,8 @@ Failed to load resource: the server responded with a status of 401 ()
 1. **Get Your API Key** from Oriva Developer Settings:
    - Log into your Oriva account
    - Go to Developer Settings → Apps → Your App
-   - Copy your API key (starts with `oriva_pk_live_` or `oriva_pk_test_`)
+   - **Generate a live key** using the "Generate Live API Key" button (recommended for production)
+   - Copy your API key (should start with `oriva_pk_live_` for production use)
 
 2. **Verify API Key Format**:
    ```javascript
