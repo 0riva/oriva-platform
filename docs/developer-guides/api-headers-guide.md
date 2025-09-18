@@ -157,10 +157,69 @@ If you see CORS errors in the browser console:
 2. **Verify headers**: Ensure you're only using allowed headers from the list above
 3. **Test preflight**: OPTIONS requests should return proper CORS headers
 
-### Authentication Errors
-- Verify your API key is valid and has the `oriva_pk_live_` prefix
-- Check that your API key has the necessary permissions
-- Ensure the `Authorization` header format is exactly: `Bearer your_key`
+### Authentication Errors (401 Unauthorized)
+
+**Most Common Issue**: Missing or invalid API key
+
+#### ❌ **Symptoms:**
+```javascript
+// Browser console shows:
+Failed to get Oriva profiles: - "HTTP 401: "
+Failed to load resource: the server responded with a status of 401 ()
+```
+
+#### ✅ **Solutions:**
+
+1. **Get Your API Key** from Oriva Developer Settings:
+   - Log into your Oriva account
+   - Go to Developer Settings → Apps → Your App
+   - Copy your API key (starts with `oriva_pk_live_` or `oriva_pk_test_`)
+
+2. **Verify API Key Format**:
+   ```javascript
+   // ✅ Correct formats (both work in production)
+   const apiKey = 'oriva_pk_live_abcd1234...';  // Live key
+   const apiKey = 'oriva_pk_test_abcd1234...';  // Test key (also works in production!)
+
+   // ❌ Wrong format
+   const apiKey = 'pk_live_abcd1234...'; // Missing 'oriva_' prefix
+   ```
+
+   > **💡 Important:** Both `oriva_pk_test_` and `oriva_pk_live_` keys work in production. The "test" prefix doesn't restrict functionality.
+
+3. **Include Authorization Header**:
+   ```javascript
+   // ✅ Correct implementation
+   fetch('https://api.oriva.io/api/v1/profiles/available', {
+     headers: {
+       'Authorization': 'Bearer oriva_pk_live_your_key_here',
+       'Content-Type': 'application/json',
+       'X-Client-ID': 'your-app-name'
+     }
+   });
+
+   // ❌ Common mistakes
+   fetch('https://api.oriva.io/api/v1/profiles/available', {
+     headers: {
+       // Missing Authorization header entirely
+       'Content-Type': 'application/json'
+     }
+   });
+   ```
+
+4. **Test Your API Key**:
+   ```bash
+   # Test in terminal/command line
+   curl -H "Authorization: Bearer oriva_pk_live_your_key_here" \
+        https://api.oriva.io/api/v1/profiles/available
+
+   # Should return 200 with profile data, not 401
+   ```
+
+#### 🚨 **Still Getting 401?**
+- **Check API key permissions**: Your key might not have access to profiles endpoint
+- **Verify key is active**: Key might be disabled or expired
+- **Contact support**: Include your app name and the API key prefix (first 20 characters only)
 
 ### Need Help?
 - Create a GitHub issue with your specific error
