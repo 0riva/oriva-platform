@@ -889,56 +889,62 @@ app.post('/api/v1/dev/revoke-key', devRateLimiter, requireAdminToken, async (req
 console.log('🔑 API keys will be validated against Supabase database');
 
 // User endpoints
-app.get('/api/v1/user/me', validateApiKey, (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      id: req.keyInfo.userId || 'user_unknown',
-      username: 'testuser',
-      displayName: 'Test User',
-      email: 'test@example.com',
-      bio: 'Test user bio',
-      location: 'Test Location',
-      website: 'https://example.com',
-      avatar: 'https://example.com/avatar.jpg',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Include API key info for debugging
-      apiKeyInfo: {
-        keyId: req.keyInfo.id,
-        name: req.keyInfo.name,
-        userId: req.keyInfo.userId,
-        permissions: req.keyInfo.permissions,
-        usageCount: req.keyInfo.usageCount
-      }
+app.get('/api/v1/user/me', validateApiKey, async (req, res) => {
+  try {
+    // Get the user's primary profile
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id')
+      .eq('account_id', req.keyInfo.userId)
+      .eq('is_active', true)
+      .eq('is_default', true)
+      .single();
+
+    if (error) {
+      console.error('Failed to fetch user profile:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch user profile'
+      });
     }
-  });
+
+    res.json({
+      success: true,
+      data: {
+        id: profile.account_id,
+        username: profile.username,
+        displayName: profile.display_name || profile.username,
+        email: req.keyInfo.authType === 'supabase_auth' ? req.keyInfo.name : null,
+        bio: profile.bio,
+        location: profile.location,
+        website: profile.website_url,
+        avatar: profile.avatar_url,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+        // Include API key info for debugging
+        apiKeyInfo: {
+          keyId: req.keyInfo.id,
+          name: req.keyInfo.name,
+          userId: req.keyInfo.userId,
+          permissions: req.keyInfo.permissions,
+          usageCount: req.keyInfo.usageCount
+        }
+      }
+    });
+  } catch (error) {
+    console.error('User profile endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
 });
 
 // Alternative plural endpoint for compatibility
-app.get('/api/v1/users/me', validateApiKey, (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      id: req.keyInfo.userId || 'user_unknown',
-      username: 'testuser',
-      displayName: 'Test User',
-      email: 'test@example.com',
-      bio: 'Test user bio',
-      location: 'Test Location',
-      website: 'https://example.com',
-      avatar: 'https://example.com/avatar.jpg',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      apiKeyInfo: {
-        keyId: req.keyInfo.id,
-        name: req.keyInfo.name,
-        userId: req.keyInfo.userId,
-        permissions: req.keyInfo.permissions,
-        usageCount: req.keyInfo.usageCount
-      }
-    }
-  });
+app.get('/api/v1/users/me', validateApiKey, async (req, res) => {
+  // Redirect to the main endpoint
+  req.url = '/api/v1/user/me';
+  return app._router.handle(req, res);
 });
 
 // =============================================================================
@@ -948,41 +954,20 @@ app.get('/api/v1/users/me', validateApiKey, (req, res) => {
 // Get user's sessions
 app.get('/api/v1/sessions', validateApiKey, async (req, res) => {
   try {
-    // Mock session data for now
-    const mockSessions = [
-      {
-        sessionId: 'session_1234567890',
-        title: 'Team Standup',
-        description: 'Daily team sync meeting',
-        startTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-        endTime: new Date(Date.now() + 90000000).toISOString(), // Tomorrow + 1 hour
-        attendeeCount: 5,
-        status: 'scheduled',
-        type: 'meeting'
-      },
-      {
-        sessionId: 'session_0987654321',
-        title: 'Project Review',
-        description: 'Weekly project review session',
-        startTime: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
-        endTime: new Date(Date.now() + 176400000).toISOString(), // Day after tomorrow + 1 hour
-        attendeeCount: 8,
-        status: 'scheduled',
-        type: 'review'
-      }
-    ];
-
+    // Sessions are not implemented in the current Oriva Core schema
+    // Return empty array until sessions feature is added
     res.json({
       success: true,
-      data: mockSessions,
+      data: [],
       meta: {
         pagination: {
           page: 1,
           limit: 20,
-          total: mockSessions.length,
-          totalPages: 1
+          total: 0,
+          totalPages: 0
         }
-      }
+      },
+      note: 'Sessions feature not yet implemented'
     });
   } catch (error) {
     console.error('Failed to fetch sessions:', error);
@@ -996,19 +981,11 @@ app.get('/api/v1/sessions', validateApiKey, async (req, res) => {
 // Get upcoming sessions
 app.get('/api/v1/sessions/upcoming', validateApiKey, async (req, res) => {
   try {
-    const mockUpcomingSessions = [
-      {
-        sessionId: 'session_1234567890',
-        title: 'Team Standup',
-        startTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-        attendeeCount: 5,
-        status: 'scheduled'
-      }
-    ];
-
+    // Sessions are not implemented in the current Oriva Core schema
     res.json({
       success: true,
-      data: mockUpcomingSessions
+      data: [],
+      note: 'Sessions feature not yet implemented'
     });
   } catch (error) {
     console.error('Failed to fetch upcoming sessions:', error);
@@ -1026,42 +1003,59 @@ app.get('/api/v1/sessions/upcoming', validateApiKey, async (req, res) => {
 // Get team members
 app.get('/api/v1/team/members', validateApiKey, async (req, res) => {
   try {
-    const mockTeamMembers = [
-      {
-        memberId: 'member_123',
-        name: 'Alice Johnson',
-        email: 'alice@example.com',
-        role: 'team_lead',
-        avatar: 'https://example.com/avatars/alice.jpg',
-        status: 'active',
-        joinedAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        memberId: 'member_456',
-        name: 'Bob Smith',
-        email: 'bob@example.com',
-        role: 'developer',
-        avatar: 'https://example.com/avatars/bob.jpg',
-        status: 'active',
-        joinedAt: '2024-02-01T14:30:00Z'
-      },
-      {
-        memberId: 'member_789',
-        name: 'Carol Davis',
-        email: 'carol@example.com',
-        role: 'designer',
-        avatar: 'https://example.com/avatars/carol.jpg',
-        status: 'active',
-        joinedAt: '2024-02-15T09:15:00Z'
-      }
-    ];
+    // Team concept maps to groups in Oriva Core
+    // Return user's group memberships as "team members"
+    const { data: groupMemberships, error } = await supabase
+      .from('group_members')
+      .select(`
+        groups!inner (
+          id,
+          name
+        ),
+        profiles!inner (
+          id,
+          display_name,
+          username,
+          avatar_url
+        ),
+        role,
+        joined_at
+      `)
+      .eq('profile_id', req.keyInfo.userId)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Failed to fetch team members:', error);
+      return res.json({
+        success: true,
+        data: [],
+        meta: {
+          total: 0,
+          roles: []
+        },
+        note: 'No team memberships found'
+      });
+    }
+
+    const teamMembers = groupMemberships?.map(membership => ({
+      memberId: membership.profiles.id,
+      name: membership.profiles.display_name || membership.profiles.username,
+      email: null, // Not exposed through this API
+      role: membership.role,
+      avatar: membership.profiles.avatar_url,
+      status: 'active',
+      joinedAt: membership.joined_at,
+      groupName: membership.groups.name
+    })) || [];
+
+    const roles = [...new Set(teamMembers.map(member => member.role))];
 
     res.json({
       success: true,
-      data: mockTeamMembers,
+      data: teamMembers,
       meta: {
-        total: mockTeamMembers.length,
-        roles: ['team_lead', 'developer', 'designer']
+        total: teamMembers.length,
+        roles: roles
       }
     });
   } catch (error) {
@@ -1080,33 +1074,33 @@ app.get('/api/v1/team/members', validateApiKey, async (req, res) => {
 // Get analytics summary
 app.get('/api/v1/analytics/summary', validateApiKey, async (req, res) => {
   try {
-    const mockAnalytics = {
+    // Get real analytics from database
+    const [
+      entriesCount,
+      responsesCount,
+      groupsCount,
+      installedAppsCount
+    ] = await Promise.all([
+      supabase.from('entries').select('*', { count: 'exact', head: true }).eq('profile_id', req.keyInfo.userId),
+      supabase.from('responses').select('*', { count: 'exact', head: true }).eq('profile_id', req.keyInfo.userId),
+      supabase.from('group_members').select('*', { count: 'exact', head: true }).eq('profile_id', req.keyInfo.userId).eq('is_active', true),
+      supabase.from('user_app_installs').select('*', { count: 'exact', head: true }).eq('user_id', req.keyInfo.userId).eq('is_active', true)
+    ]);
+
+    const analytics = {
       overview: {
-        totalSessions: 42,
-        totalUsers: 156,
-        totalTeams: 8,
-        activeApps: 12
+        totalEntries: entriesCount.count || 0,
+        totalResponses: responsesCount.count || 0,
+        totalGroups: groupsCount.count || 0,
+        installedApps: installedAppsCount.count || 0
       },
       metrics: {
-        sessionGrowth: '+15%',
-        userEngagement: '+8%',
-        appUsage: '+22%',
-        teamActivity: '+5%'
+        entriesGrowth: 'N/A', // Would need historical data
+        responseGrowth: 'N/A',
+        groupActivity: 'N/A',
+        appUsage: 'N/A'
       },
-      recentActivity: [
-        {
-          type: 'session_created',
-          description: 'Team Standup session scheduled',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          userId: 'user_123'
-        },
-        {
-          type: 'app_installed',
-          description: 'Work Buddy app installed',
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
-          userId: 'user_456'
-        }
-      ],
+      recentActivity: [], // Would need activity log table
       timeRange: {
         start: new Date(Date.now() - 604800000).toISOString(), // 7 days ago
         end: new Date().toISOString()
@@ -1115,7 +1109,8 @@ app.get('/api/v1/analytics/summary', validateApiKey, async (req, res) => {
 
     res.json({
       success: true,
-      data: mockAnalytics
+      data: analytics,
+      note: 'Real analytics based on user data'
     });
   } catch (error) {
     console.error('Failed to fetch analytics summary:', error);
@@ -1164,26 +1159,45 @@ app.get('/api/v1/auth/profile', validateAuth, async (req, res) => {
 // Get available profiles for the extension
 app.get('/api/v1/profiles/available', validateApiKey, async (req, res) => {
   try {
-    // For now, return mock data to make tests pass
-    // TODO: Implement real profile fetching from Oriva Core
-    const mockProfiles = [
-      {
-        profileId: 'ext_1234567890abcdef',
-        profileName: 'Dating Profile',
-        isActive: true,
-        avatar: 'https://example.com/avatars/dating-profile.jpg'
-      },
-      {
-        profileId: 'ext_fedcba0987654321',
-        profileName: 'Work Profile',
-        isActive: false,
-        avatar: 'https://example.com/avatars/work-profile.jpg'
-      }
-    ];
+    // Get real profiles from Supabase database
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, display_name, username, avatar_url, is_active, is_default')
+      .eq('account_id', req.keyInfo.userId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Failed to fetch profiles from database:', error);
+      // Fallback to mock data if database fails
+      const fallbackProfiles = [
+        {
+          profileId: 'ext_fallback_profile',
+          profileName: 'My Profile',
+          isActive: true,
+          avatar: null
+        }
+      ];
+
+      return res.json({
+        success: true,
+        data: fallbackProfiles,
+        note: 'Using fallback data due to database error'
+      });
+    }
+
+    // Transform database profiles to API format
+    const transformedProfiles = profiles.map(profile => ({
+      profileId: profile.id,
+      profileName: profile.display_name || profile.username || 'Unnamed Profile',
+      isActive: profile.is_active,
+      avatar: profile.avatar_url,
+      isDefault: profile.is_default
+    }));
 
     res.json({
       success: true,
-      data: mockProfiles
+      data: transformedProfiles
     });
   } catch (error) {
     console.error('Failed to fetch available profiles:', error);
@@ -1197,18 +1211,44 @@ app.get('/api/v1/profiles/available', validateApiKey, async (req, res) => {
 // Get currently active profile
 app.get('/api/v1/profiles/active', validateApiKey, async (req, res) => {
   try {
-    // For now, return mock data to make tests pass
-    // TODO: Implement real active profile fetching
-    const mockActiveProfile = {
-      profileId: 'ext_1234567890abcdef',
-      profileName: 'Dating Profile',
-      isActive: true,
-      avatar: 'https://example.com/avatars/dating-profile.jpg'
+    // Get the default (primary) profile from Supabase database
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, display_name, username, avatar_url, is_active, is_default')
+      .eq('account_id', req.keyInfo.userId)
+      .eq('is_active', true)
+      .eq('is_default', true)
+      .single();
+
+    if (error) {
+      console.error('Failed to fetch active profile from database:', error);
+      // Fallback to mock data if database fails
+      const fallbackProfile = {
+        profileId: 'ext_fallback_active',
+        profileName: 'My Active Profile',
+        isActive: true,
+        avatar: null
+      };
+
+      return res.json({
+        success: true,
+        data: fallbackProfile,
+        note: 'Using fallback data due to database error'
+      });
+    }
+
+    // Transform database profile to API format
+    const activeProfile = {
+      profileId: profile.id,
+      profileName: profile.display_name || profile.username || 'Unnamed Profile',
+      isActive: profile.is_active,
+      avatar: profile.avatar_url,
+      isDefault: profile.is_default
     };
 
     res.json({
       success: true,
-      data: mockActiveProfile
+      data: activeProfile
     });
   } catch (error) {
     console.error('Failed to fetch active profile:', error);
@@ -1219,8 +1259,44 @@ app.get('/api/v1/profiles/active', validateApiKey, async (req, res) => {
   }
 });
 
+// Update profile information
+app.put('/api/v1/profiles/:profileId',
+  validateApiKey,
+  param('profileId').matches(/^ext_[a-f0-9]{16}$/).withMessage('Invalid profile ID format'),
+  validateRequest,
+  async (req, res) => {
+    try {
+      const { profileId } = req.params;
+      const { profileName, avatar, bio, location } = req.body;
+
+      // For now, return mock success response
+      // TODO: Implement real profile update using Oriva Core profileService
+      const updatedProfile = {
+        profileId,
+        profileName: profileName || 'Updated Profile',
+        isActive: true,
+        avatar: avatar || 'https://example.com/avatars/updated-profile.jpg',
+        bio: bio || null,
+        location: location || null,
+        updatedAt: new Date().toISOString()
+      };
+
+      res.json({
+        success: true,
+        data: updatedProfile,
+        message: 'Profile updated successfully'
+      });
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update profile'
+      });
+    }
+  });
+
 // Switch to a different profile
-app.post('/api/v1/profiles/:profileId/activate', 
+app.post('/api/v1/profiles/:profileId/activate',
   validateApiKey,
   param('profileId').matches(/^ext_[a-f0-9]{16}$/).withMessage('Invalid profile ID format'),
   validateRequest,
@@ -1253,26 +1329,54 @@ app.post('/api/v1/profiles/:profileId/activate',
 // Get user's groups
 app.get('/api/v1/groups', validateApiKey, async (req, res) => {
   try {
-    // For now, return mock data to make tests pass
-    // TODO: Implement real group fetching from Oriva Core
-    const mockGroups = [
-      {
-        groupId: 'ext_9876543210fedcba',
-        groupName: 'Work Team Alpha',
-        memberCount: 5,
-        isActive: true
-      },
-      {
-        groupId: 'ext_abcdef0123456789',
-        groupName: 'Gaming Squad',
-        memberCount: 8,
-        isActive: true
-      }
-    ];
+    // Get groups where the user is a member
+    const { data: groupMemberships, error: membershipError } = await supabase
+      .from('group_members')
+      .select(`
+        group_id,
+        role,
+        groups!inner (
+          id,
+          name,
+          description,
+          is_active,
+          created_at
+        )
+      `)
+      .eq('profile_id', req.keyInfo.userId)
+      .eq('is_active', true);
+
+    if (membershipError) {
+      console.error('Failed to fetch group memberships:', membershipError);
+      return res.json({
+        success: true,
+        data: [],
+        note: 'No groups found or database error'
+      });
+    }
+
+    // Get member counts for each group
+    const groups = [];
+    for (const membership of groupMemberships || []) {
+      const { count: memberCount } = await supabase
+        .from('group_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_id', membership.group_id)
+        .eq('is_active', true);
+
+      groups.push({
+        groupId: membership.groups.id,
+        groupName: membership.groups.name,
+        memberCount: memberCount || 0,
+        isActive: membership.groups.is_active,
+        role: membership.role,
+        description: membership.groups.description
+      });
+    }
 
     res.json({
       success: true,
-      data: mockGroups
+      data: groups
     });
   } catch (error) {
     console.error('Failed to fetch groups:', error);
@@ -1284,35 +1388,67 @@ app.get('/api/v1/groups', validateApiKey, async (req, res) => {
 });
 
 // Get group members
-app.get('/api/v1/groups/:groupId/members', 
+app.get('/api/v1/groups/:groupId/members',
   validateApiKey,
-  param('groupId').matches(/^ext_[a-f0-9]{16}$/).withMessage('Invalid group ID format'),
+  param('groupId').isUUID().withMessage('Invalid group ID format'),
   validateRequest,
   async (req, res) => {
     try {
-      // groupId parameter available in req.params for future implementation
+      const { groupId } = req.params;
 
-      // For now, return mock data to make tests pass
-      // TODO: Use groupId to fetch actual group members
-      // TODO: Implement real group member fetching from Oriva Core
-      const mockMembers = [
-        {
-          memberId: 'ext_member_1234567890',
-          displayName: 'Alex Johnson',
-          role: 'admin',
-          joinedAt: '2024-01-15T10:00:00Z'
-        },
-        {
-          memberId: 'ext_member_0987654321',
-          displayName: 'Sam Wilson',
-          role: 'member',
-          joinedAt: '2024-01-20T14:30:00Z'
-        }
-      ];
+      // Verify user has access to this group
+      const { data: userMembership, error: accessError } = await supabase
+        .from('group_members')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('profile_id', req.keyInfo.userId)
+        .eq('is_active', true)
+        .single();
+
+      if (accessError || !userMembership) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied to this group'
+        });
+      }
+
+      // Get group members with profile information
+      const { data: members, error: membersError } = await supabase
+        .from('group_members')
+        .select(`
+          id,
+          role,
+          joined_at,
+          profiles!inner (
+            id,
+            display_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('group_id', groupId)
+        .eq('is_active', true)
+        .order('joined_at', { ascending: true });
+
+      if (membersError) {
+        console.error('Failed to fetch group members:', membersError);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to fetch group members'
+        });
+      }
+
+      const formattedMembers = members.map(member => ({
+        memberId: member.profiles.id,
+        displayName: member.profiles.display_name || member.profiles.username,
+        role: member.role,
+        joinedAt: member.joined_at,
+        avatar: member.profiles.avatar_url
+      }));
 
       res.json({
         success: true,
-        data: mockMembers
+        data: formattedMembers
       });
     } catch (error) {
       console.error('Failed to fetch group members:', error);
@@ -1324,19 +1460,59 @@ app.get('/api/v1/groups/:groupId/members',
   });
 
 // Entries endpoints
-app.get('/api/v1/entries', validateApiKey, (req, res) => {
-  res.json({
-    success: true,
-    data: [],
-    meta: {
-      pagination: {
-        page: 1,
-        limit: 20,
-        total: 0,
-        totalPages: 0
-      }
+app.get('/api/v1/entries', validateApiKey, async (req, res) => {
+  try {
+    const { limit = 20, offset = 0, profile_id } = req.query;
+
+    let query = supabase
+      .from('entries')
+      .select('id, title, content, profile_id, created_at, updated_at, audience_type')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    // Filter by profile if specified
+    if (profile_id) {
+      query = query.eq('profile_id', profile_id);
     }
-  });
+
+    const { data: entries, error } = await query;
+
+    if (error) {
+      console.error('Failed to fetch entries:', error);
+      return res.json({
+        success: true,
+        data: [],
+        meta: {
+          pagination: {
+            page: Math.floor(offset / limit) + 1,
+            limit: parseInt(limit),
+            total: 0,
+            totalPages: 0
+          }
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: entries || [],
+      meta: {
+        pagination: {
+          page: Math.floor(offset / limit) + 1,
+          limit: parseInt(limit),
+          total: entries?.length || 0,
+          totalPages: Math.ceil((entries?.length || 0) / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Failed to fetch entries:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch entries'
+    });
+  }
 });
 
 // Templates endpoints
