@@ -53,10 +53,10 @@ npm --version     # Should be 8+
    - **Category**: Choose from available categories
 
 3. **Get your API credentials:**
-   - **API Key**: Your app's authentication token (format: `oriva_pk_live_...` or `oriva_pk_test_...`)
+   - **API Key**: Generate a live production key using the "Generate Live API Key" button (format: `oriva_pk_live_...`)
    - **Client ID & Secret**: For OAuth authentication (if needed)
    - Copy these credentials and add them to your `.env` file
-   - **Note**: Make sure you're using the correct environment (live vs test)
+   - **Important**: Use live keys for production apps - test keys are only for development
 
 4. **Configure OAuth settings** (if using OAuth):
    - Set redirect URIs for your application
@@ -233,11 +233,12 @@ console.log('User:', data.name);
 
 If you're getting "Invalid API key" errors:
 
-1. **Check the format**: API keys should start with `oriva_pk_live_` or `oriva_pk_test_`
-2. **Verify environment**: Make sure you're using the correct API URL:
+1. **Generate a live key**: Click "Generate Live API Key" in your developer settings (not test keys)
+2. **Check the format**: Production keys should start with `oriva_pk_live_...`
+3. **Verify environment**: Make sure you're using the correct API URL:
    - All API keys use: `https://api.oriva.io`
-3. **Check for typos**: Ensure the key is copied correctly without extra spaces
-4. **Verify key is active**: Check your developer dashboard to ensure the key is not revoked
+4. **Check for typos**: Ensure the key is copied correctly without extra spaces
+5. **Verify key is active**: Check your developer dashboard to ensure the key is not revoked
 
 ```bash
 # Test your API key
@@ -251,7 +252,15 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 For generating and managing API keys, use these protected endpoints:
 
-### Generate API Key
+### Generate Live API Key (Recommended)
+```bash
+curl -X POST https://api.oriva.io/api/v1/dev/generate-live-key \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Token: YOUR_ADMIN_TOKEN" \
+  -d '{"appName": "My App"}'
+```
+
+### Generate Test API Key (Development Only)
 ```bash
 curl -X POST https://api.oriva.io/api/v1/dev/generate-key \
   -H "Content-Type: application/json" \
