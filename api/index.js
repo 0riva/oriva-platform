@@ -165,6 +165,38 @@ app.use(cors({
   ],
   credentials: true
 }));
+
+// CORS Monitoring Middleware - Track blocked headers for developer support
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    const requestedHeaders = req.headers['access-control-request-headers'];
+    const origin = req.headers.origin;
+
+    if (requestedHeaders && origin) {
+      const currentAllowedHeaders = [
+        'content-type', 'authorization', 'x-extension-id', 'x-client-id',
+        'x-api-key', 'user-agent', 'x-user-id', 'x-request-id'
+      ];
+
+      const requestedHeadersArray = requestedHeaders.toLowerCase().split(',').map(h => h.trim());
+      const blockedHeaders = requestedHeadersArray.filter(header =>
+        !currentAllowedHeaders.includes(header)
+      );
+
+      if (blockedHeaders.length > 0) {
+        logger.warn('CORS: Blocked headers detected', {
+          origin,
+          requestedHeaders: requestedHeadersArray,
+          blockedHeaders,
+          timestamp: new Date().toISOString(),
+          userAgent: req.headers['user-agent']
+        });
+      }
+    }
+  }
+  next();
+});
+
 app.use(express.json());
 
 // Rate limiting
