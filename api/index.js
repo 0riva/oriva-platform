@@ -498,6 +498,58 @@ app.get('/api/v1/test', (req, res) => {
   });
 });
 
+// Debug endpoint to check CORS cache state (admin only)
+app.get('/api/v1/debug/cors', requireAdminToken, async (req, res) => {
+  try {
+    // Test Supabase connection
+    const { data: testQuery, error: testError } = await supabase
+      .from('plugin_marketplace_apps')
+      .select('count')
+      .limit(1);
+
+    // Get cache info
+    const cacheAge = Date.now() - corsOriginCache.lastUpdated;
+    const cacheOrigins = Array.from(corsOriginCache.data);
+
+    // Test Work Buddy specifically
+    const { data: workBuddyApps, error: workBuddyError } = await supabase
+      .from('plugin_marketplace_apps')
+      .select('name, execution_url, status')
+      .ilike('name', '%work%buddy%');
+
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      supabase: {
+        connected: !testError,
+        error: testError?.message || null
+      },
+      corsCache: {
+        size: corsOriginCache.data.size,
+        lastUpdated: new Date(corsOriginCache.lastUpdated).toISOString(),
+        ageMs: cacheAge,
+        origins: cacheOrigins
+      },
+      workBuddy: {
+        found: workBuddyApps?.length || 0,
+        apps: workBuddyApps || [],
+        error: workBuddyError?.message || null
+      },
+      environment: {
+        hasSupabaseUrl: !!process.env.SUPABASE_URL || !!process.env.EXPO_PUBLIC_SUPABASE_URL,
+        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        nodeEnv: process.env.NODE_ENV
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // =============================================================================
 // INPUT VALIDATION MIDDLEWARE
 // =============================================================================
