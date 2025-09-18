@@ -277,18 +277,49 @@ curl -X POST https://api.oriva.io/api/v1/dev/revoke-key \
 
 ---
 
+## 📚 Developer Resources & Specialized Guides
+
+**Before diving into integration, familiarize yourself with these specialized guides:**
+
+### 🔗 **API Headers & CORS**
+- **📖 [API Headers Guide](./developer-guides/api-headers-guide.md)** - Complete guide to required, recommended, and optional headers
+- **🌐 CORS Support** - Automatic CORS approval for approved marketplace apps
+- **🎯 Quick Reference** - Copy-paste examples for JavaScript, cURL, Python
+- **🚨 Need Help?** - Use our [GitHub issue template](../.github/ISSUE_TEMPLATE/cors-header-request.md) for new header requests
+
+### 🎮 **App Integration & Launcher**
+- **📖 [App Integration Requirements](./developer-guides/app-integration-requirements.md)** - Complete technical specifications
+- **🔧 [X-Frame-Options Guide](./developer-guides/x-frame-options.md)** - Iframe embedding configuration
+- **🚀 [App Launcher Migration](./developer-guides/app-launcher-migration.md)** - Upgrading to the new launcher system
+
+### 🔧 **Technical Specifications**
+- **📋 [App Launcher Integration](./developer-guides/app-launcher-integration.md)** - Advanced launcher features and configuration
+- **🔒 Content Security Policy** - CSP configuration for iframe embedding
+- **📱 Responsive Design** - Mobile optimization requirements
+
+### 💡 **Quick Links**
+- **🐛 Report Issues**: [GitHub Issues](https://github.com/0riva/oriva-platform/issues)
+- **🌐 Request CORS Headers**: [Use our template](../.github/ISSUE_TEMPLATE/cors-header-request.md)
+- **💬 Community**: [GitHub Discussions](https://github.com/0riva/oriva-platform/discussions)
+
+---
+
 ## 📚 Step 3: API Integration
 
 ### 3.1 Making API Calls
 
 Use your preferred HTTP client to call the Oriva Platform API directly:
 
+> **📖 Complete Headers Guide**: See [API Headers Guide](./developer-guides/api-headers-guide.md) for comprehensive header documentation, including required, recommended, and optional headers for different use cases.
+
 ```typescript
 // Get current user information
 const response = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/user/me`, {
   headers: {
     'Authorization': `Bearer ${process.env.EXPO_PUBLIC_ORIVA_API_KEY}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'User-Agent': 'your-app-name/1.0.0 (web)',  // Recommended for debugging
+    'X-Client-ID': 'your-app-name'              // Recommended for support
   }
 });
 const user = await response.json();
@@ -316,6 +347,8 @@ const profiles = await profilesResponse.json();
 
 **🎉 Great News!** The Oriva Platform API now supports **automatic CORS approval** for registered marketplace apps.
 
+> **📖 Detailed Headers Documentation**: See [API Headers Guide](./developer-guides/api-headers-guide.md) for complete CORS policy, allowed headers, and troubleshooting guidance.
+
 **How it works:**
 1. **Register your app** in the Oriva Developer Settings
 2. **Submit for marketplace approval** with your `execution_url`
@@ -333,6 +366,8 @@ const profiles = await profilesResponse.json();
 - **Core Oriva**: `oriva.io`, `app.oriva.io` (always allowed)
 - **Approved Apps**: Any domain from your app's `execution_url` after marketplace approval
 - **Development**: `localhost` domains (development mode only)
+
+**Need Additional Headers?** Use our streamlined [CORS Header Request Template](../.github/ISSUE_TEMPLATE/cors-header-request.md) to request new headers.
 
 ### 3.3 Error Handling
 
