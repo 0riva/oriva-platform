@@ -49,7 +49,7 @@ async function refreshCorsCache() {
     const appDomains = apps
       .map(app => {
         try {
-          const url = new URL(app.execution_url);
+          const url = new globalThis.URL(app.execution_url);
           return url.origin;
         } catch {
           return null;
@@ -89,59 +89,11 @@ const CORE_ORIGINS = [
   'https://work-buddy-expo.vercel.app'
 ];
 
-// Dynamic CORS configuration with robust fallback strategy
-const dynamicCorsOrigin = async (origin, callback) => {
-  try {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-
-    // Development: Allow localhost for testing
-    if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
-      logger.info('CORS: Allowing localhost in development', { origin });
-      return callback(null, true);
-    }
-
-    // ALWAYS allow core origins - no database dependency
-    if (CORE_ORIGINS.includes(origin)) {
-      logger.info('CORS: Allowing core origin', { origin });
-      return callback(null, true);
-    }
-
-    // Try to check marketplace apps cache (with timeout protection)
-    try {
-      // Check if cache needs refresh
-      const cacheAge = Date.now() - corsOriginCache.lastUpdated;
-      if (cacheAge > corsOriginCache.CACHE_TTL || corsOriginCache.data.size === 0) {
-        // Only refresh if we can do it quickly
-        const refreshPromise = refreshCorsCache();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Cache refresh timeout')), 2000)
-        );
-
-        await Promise.race([refreshPromise, timeoutPromise]);
-      }
-
-      // Check if origin is in cache
-      if (corsOriginCache.data.has(origin)) {
-        logger.info('CORS: Allowing marketplace origin', { origin });
-        return callback(null, true);
-      }
-
-    } catch (error) {
-      logger.warn('CORS: Cache check failed, checking core origins only', { error: error.message, origin });
-    }
-
-    // Not found anywhere - block
-    logger.warn('CORS: Blocking unregistered origin', {
-      origin,
-      cacheSize: corsOriginCache.data.size
-    });
-    callback(new Error('Not allowed by CORS'));
-
-  } catch (error) {
-    logger.error('CORS: Critical error in origin check', { error: error.message, origin });
-    callback(new Error('CORS configuration error'));
-  }
+// CORS cache for marketplace apps (loaded at startup)
+const corsOriginCache = {
+  data: new Set(),
+  lastUpdated: 0,
+  CACHE_TTL: 5 * 60 * 1000 // 5 minutes
 };
 
 // Initialize CORS cache on startup
@@ -230,12 +182,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 console.log('✅ Supabase client initialized for API key validation');
 
-// CORS cache for performance optimization
-let corsOriginCache = {
-  data: new Set(),
-  lastUpdated: 0,
-  CACHE_TTL: 5 * 60 * 1000 // 5 minutes
-};
+// CORS cache defined above
 
 // Admin token from environment (used to protect dev-only endpoints)
 const ADMIN_TOKEN = process.env.ORIVA_ADMIN_TOKEN || '';
