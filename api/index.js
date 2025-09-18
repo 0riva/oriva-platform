@@ -81,6 +81,14 @@ async function refreshCorsCache() {
   }
 }
 
+// Fallback origins when dynamic CORS fails
+const FALLBACK_ORIGINS = [
+  'https://oriva.io',
+  'https://www.oriva.io',
+  'https://app.oriva.io',
+  'https://work-buddy-expo.vercel.app' // Ensure Work Buddy always works
+];
+
 // Dynamic CORS configuration that supports 3rd party developer apps
 const dynamicCorsOrigin = async (origin, callback) => {
   try {
@@ -93,10 +101,16 @@ const dynamicCorsOrigin = async (origin, callback) => {
       return callback(null, true);
     }
 
+    // Check fallback origins first (always allow these)
+    if (FALLBACK_ORIGINS.includes(origin)) {
+      logger.info('CORS: Allowing fallback origin', { origin });
+      return callback(null, true);
+    }
+
     // Check if cache needs refresh
     const cacheAge = Date.now() - corsOriginCache.lastUpdated;
-    if (cacheAge > corsOriginCache.CACHE_TTL) {
-      logger.debug('CORS: Refreshing cache', { cacheAge });
+    if (cacheAge > corsOriginCache.CACHE_TTL || corsOriginCache.data.size === 0) {
+      logger.debug('CORS: Refreshing cache', { cacheAge, cacheSize: corsOriginCache.data.size });
       await refreshCorsCache();
     }
 
@@ -114,7 +128,15 @@ const dynamicCorsOrigin = async (origin, callback) => {
     callback(new Error('Not allowed by CORS'));
 
   } catch (error) {
-    logger.error('CORS: Error in dynamic origin check', { error, origin });
+    logger.error('CORS: Error in dynamic origin check, checking fallbacks', { error, origin });
+
+    // Fallback: allow known safe origins even when DB is down
+    if (FALLBACK_ORIGINS.includes(origin)) {
+      logger.warn('CORS: Allowing fallback origin due to error', { origin, error: error.message });
+      return callback(null, true);
+    }
+
+    // Still block unknown origins
     callback(new Error('CORS configuration error'));
   }
 };
