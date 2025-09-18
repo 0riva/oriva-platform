@@ -917,7 +917,7 @@ app.get('/api/v1/groups/:groupId/members',
   validateRequest,
   async (req, res) => {
     try {
-      const { groupId: _groupId } = req.params;
+      // groupId parameter available in req.params for future implementation
 
       // For now, return mock data to make tests pass
       // TODO: Use groupId to fetch actual group members
@@ -1355,7 +1355,8 @@ app.get('/api/v1/marketplace/apps', validateApiKey, async (req, res) => {
 // Get trending apps
 app.get('/api/v1/marketplace/trending', validateApiKey, async (req, res) => {
   try {
-    const { days_back: _days_back = 7, limit = 10 } = req.query;
+    const { limit = 10 } = req.query;
+    // days_back parameter available in req.query for future implementation
     
     // Get apps with high install growth in the past X days
     const { data: apps, error } = await supabase
@@ -1617,7 +1618,7 @@ app.post('/api/v1/marketplace/install/:appId', validateAuth, async (req, res) =>
     }
     
     // Check if user already has this app installed
-    const { data: existingInstall, error: _checkError } = await supabase
+    const { data: existingInstall } = await supabase
       .from('user_app_installs')
       .select('id')
       .eq('user_id', req.keyInfo.userId)

@@ -21,7 +21,7 @@ jest.mock('@supabase/supabase-js', () => ({
     from: jest.fn((table) => ({
       select: jest.fn(() => ({
         eq: jest.fn((column, value) => ({
-          eq: jest.fn((column2, value2) => ({
+          eq: jest.fn((_column2, _value2) => ({
             single: jest.fn(() => {
               // Mock API key lookup with chained .eq() calls
               if (table === 'developer_api_keys' && column === 'key_hash') {

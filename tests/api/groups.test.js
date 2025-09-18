@@ -3,7 +3,7 @@
  * Tests the new group management endpoints with TDD approach
  */
 
-const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
+const { createTestRequest } = require('../utils/testHelpers');
 
 describe('Group Endpoints', () => {
   describe('GET /api/v1/groups', () => {

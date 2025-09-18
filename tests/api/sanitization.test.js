@@ -3,7 +3,7 @@
  * Tests that all data returned by the API is properly sanitized for privacy protection
  */
 
-const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
+const { createTestRequest } = require('../utils/testHelpers');
 
 describe('Data Sanitization', () => {
   describe('Profile Data Sanitization', () => {

@@ -3,7 +3,7 @@
  * Tests the developer endpoints for app management and submission
  */
 
-const { createTestRequest, withAuth, testData, mockSupabaseResponse } = require('../utils/testHelpers');
+const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
 
 describe('Developer API', () => {
   describe('GET /api/v1/developer/apps', () => {

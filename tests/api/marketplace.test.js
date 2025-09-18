@@ -3,7 +3,7 @@
  * Tests the marketplace endpoints for app discovery and management
  */
 
-const { createTestRequest, withAuth, testData, mockSupabaseResponse } = require('../utils/testHelpers');
+const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
 
 describe('Marketplace API', () => {
   describe('GET /api/v1/marketplace/apps', () => {

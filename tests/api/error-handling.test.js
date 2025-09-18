@@ -3,7 +3,7 @@
  * Tests comprehensive error scenarios and proper HTTP status codes
  */
 
-const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
+const { createTestRequest } = require('../utils/testHelpers');
 
 describe('Error Handling', () => {
   describe('Authentication Errors', () => {

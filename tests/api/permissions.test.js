@@ -3,7 +3,7 @@
  * Tests that the permission system correctly restricts access to profiles and groups
  */
 
-const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
+const { createTestRequest } = require('../utils/testHelpers');
 
 describe('Permission Validation', () => {
   describe('Profile Access Permissions', () => {
