@@ -114,7 +114,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Core origins - ALWAYS allowed (static, no dependencies)
+    // Core origins - ALWAYS allowed (static, no dependencies, bulletproof)
     const coreOrigins = [
       'https://oriva.io',
       'https://www.oriva.io',
@@ -123,15 +123,22 @@ app.use(cors({
     ];
 
     if (coreOrigins.includes(origin)) {
+      logger.info('CORS: Core origin allowed', { origin });
       return callback(null, true);
     }
 
     // Check marketplace cache (synchronous only)
     if (corsOriginCache.data && corsOriginCache.data.has(origin)) {
+      logger.info('CORS: Marketplace origin allowed', { origin });
       return callback(null, true);
     }
 
-    // Block unknown origins
+    // Log rejected origins for debugging
+    logger.warn('CORS: Origin rejected', {
+      origin,
+      cacheSize: corsOriginCache.data?.size || 0,
+      cacheAge: Date.now() - corsOriginCache.lastUpdated
+    });
     return callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
