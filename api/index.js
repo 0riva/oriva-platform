@@ -915,6 +915,248 @@ app.get('/api/v1/user/me', validateApiKey, (req, res) => {
   });
 });
 
+// Alternative plural endpoint for compatibility
+app.get('/api/v1/users/me', validateApiKey, (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      id: req.keyInfo.userId || 'user_unknown',
+      username: 'testuser',
+      displayName: 'Test User',
+      email: 'test@example.com',
+      bio: 'Test user bio',
+      location: 'Test Location',
+      website: 'https://example.com',
+      avatar: 'https://example.com/avatar.jpg',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      apiKeyInfo: {
+        keyId: req.keyInfo.id,
+        name: req.keyInfo.name,
+        userId: req.keyInfo.userId,
+        permissions: req.keyInfo.permissions,
+        usageCount: req.keyInfo.usageCount
+      }
+    }
+  });
+});
+
+// =============================================================================
+// SESSION ENDPOINTS
+// =============================================================================
+
+// Get user's sessions
+app.get('/api/v1/sessions', validateApiKey, async (req, res) => {
+  try {
+    // Mock session data for now
+    const mockSessions = [
+      {
+        sessionId: 'session_1234567890',
+        title: 'Team Standup',
+        description: 'Daily team sync meeting',
+        startTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+        endTime: new Date(Date.now() + 90000000).toISOString(), // Tomorrow + 1 hour
+        attendeeCount: 5,
+        status: 'scheduled',
+        type: 'meeting'
+      },
+      {
+        sessionId: 'session_0987654321',
+        title: 'Project Review',
+        description: 'Weekly project review session',
+        startTime: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
+        endTime: new Date(Date.now() + 176400000).toISOString(), // Day after tomorrow + 1 hour
+        attendeeCount: 8,
+        status: 'scheduled',
+        type: 'review'
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: mockSessions,
+      meta: {
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: mockSessions.length,
+          totalPages: 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Failed to fetch sessions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch sessions'
+    });
+  }
+});
+
+// Get upcoming sessions
+app.get('/api/v1/sessions/upcoming', validateApiKey, async (req, res) => {
+  try {
+    const mockUpcomingSessions = [
+      {
+        sessionId: 'session_1234567890',
+        title: 'Team Standup',
+        startTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+        attendeeCount: 5,
+        status: 'scheduled'
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: mockUpcomingSessions
+    });
+  } catch (error) {
+    console.error('Failed to fetch upcoming sessions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch upcoming sessions'
+    });
+  }
+});
+
+// =============================================================================
+// TEAM ENDPOINTS
+// =============================================================================
+
+// Get team members
+app.get('/api/v1/team/members', validateApiKey, async (req, res) => {
+  try {
+    const mockTeamMembers = [
+      {
+        memberId: 'member_123',
+        name: 'Alice Johnson',
+        email: 'alice@example.com',
+        role: 'team_lead',
+        avatar: 'https://example.com/avatars/alice.jpg',
+        status: 'active',
+        joinedAt: '2024-01-15T10:00:00Z'
+      },
+      {
+        memberId: 'member_456',
+        name: 'Bob Smith',
+        email: 'bob@example.com',
+        role: 'developer',
+        avatar: 'https://example.com/avatars/bob.jpg',
+        status: 'active',
+        joinedAt: '2024-02-01T14:30:00Z'
+      },
+      {
+        memberId: 'member_789',
+        name: 'Carol Davis',
+        email: 'carol@example.com',
+        role: 'designer',
+        avatar: 'https://example.com/avatars/carol.jpg',
+        status: 'active',
+        joinedAt: '2024-02-15T09:15:00Z'
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: mockTeamMembers,
+      meta: {
+        total: mockTeamMembers.length,
+        roles: ['team_lead', 'developer', 'designer']
+      }
+    });
+  } catch (error) {
+    console.error('Failed to fetch team members:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch team members'
+    });
+  }
+});
+
+// =============================================================================
+// ANALYTICS ENDPOINTS
+// =============================================================================
+
+// Get analytics summary
+app.get('/api/v1/analytics/summary', validateApiKey, async (req, res) => {
+  try {
+    const mockAnalytics = {
+      overview: {
+        totalSessions: 42,
+        totalUsers: 156,
+        totalTeams: 8,
+        activeApps: 12
+      },
+      metrics: {
+        sessionGrowth: '+15%',
+        userEngagement: '+8%',
+        appUsage: '+22%',
+        teamActivity: '+5%'
+      },
+      recentActivity: [
+        {
+          type: 'session_created',
+          description: 'Team Standup session scheduled',
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          userId: 'user_123'
+        },
+        {
+          type: 'app_installed',
+          description: 'Work Buddy app installed',
+          timestamp: new Date(Date.now() - 7200000).toISOString(),
+          userId: 'user_456'
+        }
+      ],
+      timeRange: {
+        start: new Date(Date.now() - 604800000).toISOString(), // 7 days ago
+        end: new Date().toISOString()
+      }
+    };
+
+    res.json({
+      success: true,
+      data: mockAnalytics
+    });
+  } catch (error) {
+    console.error('Failed to fetch analytics summary:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch analytics summary'
+    });
+  }
+});
+
+// =============================================================================
+// AUTH ENDPOINTS
+// =============================================================================
+
+// Get auth profile (similar to user/me but focused on auth data)
+app.get('/api/v1/auth/profile', validateAuth, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        id: req.keyInfo.userId,
+        email: 'test@example.com',
+        displayName: 'Test User',
+        avatar: 'https://example.com/avatar.jpg',
+        authType: req.keyInfo.authType,
+        permissions: req.keyInfo.permissions,
+        lastLogin: new Date().toISOString(),
+        accountStatus: 'active',
+        twoFactorEnabled: false,
+        emailVerified: true
+      }
+    });
+  } catch (error) {
+    console.error('Failed to fetch auth profile:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch auth profile'
+    });
+  }
+});
+
 // =============================================================================
 // PROFILE ENDPOINTS
 // =============================================================================
