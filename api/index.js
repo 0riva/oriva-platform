@@ -103,7 +103,7 @@ refreshCorsCache().then(() => {
   console.warn('⚠️ Failed to initialize CORS cache:', error.message);
 });
 
-// Bulletproof CORS: Static core origins + marketplace cache
+// ULTRA-BULLETPROOF CORS: Guaranteed Work Buddy support
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, etc.)
@@ -114,30 +114,41 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Core origins - ALWAYS allowed (static, no dependencies, bulletproof)
+    // CRITICAL: Work Buddy MUST ALWAYS be allowed (highest priority)
+    if (origin === 'https://work-buddy-expo.vercel.app') {
+      console.log('✅ CORS: Work Buddy origin allowed (critical path)');
+      return callback(null, true);
+    }
+
+    // Other core origins - ALWAYS allowed (static, no dependencies)
     const coreOrigins = [
       'https://oriva.io',
       'https://www.oriva.io',
-      'https://app.oriva.io',
-      'https://work-buddy-expo.vercel.app'
+      'https://app.oriva.io'
     ];
 
     if (coreOrigins.includes(origin)) {
-      logger.info('CORS: Core origin allowed', { origin });
+      console.log('✅ CORS: Core origin allowed:', origin);
       return callback(null, true);
     }
 
-    // Check marketplace cache (synchronous only)
-    if (corsOriginCache.data && corsOriginCache.data.has(origin)) {
-      logger.info('CORS: Marketplace origin allowed', { origin });
-      return callback(null, true);
+    // Check marketplace cache (synchronous only) - with safety checks
+    try {
+      if (corsOriginCache && corsOriginCache.data && corsOriginCache.data.has && corsOriginCache.data.has(origin)) {
+        console.log('✅ CORS: Marketplace origin allowed:', origin);
+        return callback(null, true);
+      }
+    } catch (error) {
+      console.error('❌ CORS: Cache check failed:', error.message);
     }
 
     // Log rejected origins for debugging
-    logger.warn('CORS: Origin rejected', {
+    console.warn('❌ CORS: Origin rejected:', {
       origin,
-      cacheSize: corsOriginCache.data?.size || 0,
-      cacheAge: Date.now() - corsOriginCache.lastUpdated
+      cacheExists: !!corsOriginCache,
+      cacheDataExists: !!corsOriginCache?.data,
+      cacheSize: corsOriginCache?.data?.size || 0,
+      cacheAge: corsOriginCache?.lastUpdated ? Date.now() - corsOriginCache.lastUpdated : 'unknown'
     });
     return callback(new Error('Not allowed by CORS'));
   },
