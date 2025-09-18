@@ -225,6 +225,15 @@ app.use((req, res, next) => {
 const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// DEBUG: Log environment variable status
+console.log('🔍 Environment Variables Debug:', {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasServiceKey: !!supabaseServiceKey,
+  supabaseUrlSource: process.env.SUPABASE_URL ? 'SUPABASE_URL' : (process.env.EXPO_PUBLIC_SUPABASE_URL ? 'EXPO_PUBLIC_SUPABASE_URL' : 'MISSING'),
+  nodeEnv: process.env.NODE_ENV,
+  supabaseUrlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING'
+});
+
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('❌ Missing Supabase configuration. Required environment variables:');
   console.error('   - SUPABASE_URL or EXPO_PUBLIC_SUPABASE_URL');
@@ -281,11 +290,27 @@ const requireAdminToken = (req, res, next) => {
 
 // API Key validation using Supabase
 const hashAPIKey = async (key) => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(key);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = new Uint8Array(hashBuffer);
-  return Array.from(hashArray, byte => byte.toString(16).padStart(2, '0')).join('');
+  try {
+    console.log('🔐 DEBUG: Starting hashAPIKey', { keyLength: key.length, keyPrefix: key.substring(0, 20) });
+
+    // Check if crypto.subtle is available
+    if (!crypto.subtle) {
+      console.error('❌ crypto.subtle not available');
+      throw new Error('crypto.subtle not available');
+    }
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(key);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = new Uint8Array(hashBuffer);
+    const hash = Array.from(hashArray, byte => byte.toString(16).padStart(2, '0')).join('');
+
+    console.log('✅ DEBUG: hashAPIKey success', { hashLength: hash.length, hashPrefix: hash.substring(0, 16) });
+    return hash;
+  } catch (error) {
+    console.error('❌ DEBUG: hashAPIKey failed', { error: error.message });
+    throw error;
+  }
 };
 
 // Dual authentication middleware (API keys + Supabase auth tokens)
@@ -324,12 +349,26 @@ const validateAuth = async (req, res, next) => {
         .single();
 
       if (error || !keyData) {
-        console.log('API key validation failed:', { error: error?.message, hasKey: !!keyData });
+        console.log('❌ API key validation failed:', {
+          error: error?.message,
+          errorCode: error?.code,
+          errorDetails: error?.details,
+          hasKey: !!keyData,
+          keyHash: keyHash.substring(0, 16) + '...',
+          timestamp: new Date().toISOString()
+        });
         return res.status(401).json({
           success: false,
           error: 'Invalid API key'
         });
       }
+
+      console.log('✅ API key validation succeeded:', {
+        keyId: keyData.id,
+        userId: keyData.user_id,
+        name: keyData.name,
+        timestamp: new Date().toISOString()
+      });
 
       // Update usage statistics (fire and forget)
       supabase
@@ -528,6 +567,95 @@ app.get('/api/v1/test', (req, res) => {
     message: 'API routing is working!',
     timestamp: new Date().toISOString()
   });
+});
+
+// Debug endpoint for Work Buddy API key
+app.get('/api/v1/debug/workbuddy', async (req, res) => {
+  try {
+    const WORK_BUDDY_API_KEY = 'oriva_pk_live_b7d127a91ff32d58044492ab89a72e52976f65143178fda8f2d808e967b2a9d9';
+
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        hasSupabaseUrl: !!supabaseUrl,
+        hasServiceKey: !!supabaseServiceKey,
+        supabaseUrlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING',
+        cryptoSubtleAvailable: !!crypto.subtle
+      },
+      keyTest: {}
+    };
+
+    // Test key hashing
+    try {
+      const keyHash = await hashAPIKey(WORK_BUDDY_API_KEY);
+      debugInfo.keyTest.hashSuccess = true;
+      debugInfo.keyTest.hash = keyHash.substring(0, 16) + '...';
+
+      // Test database query
+      const { data: keyData, error } = await supabase
+        .from('developer_api_keys')
+        .select('id, user_id, name, permissions, is_active, usage_count')
+        .eq('key_hash', keyHash)
+        .eq('is_active', true)
+        .single();
+
+      debugInfo.keyTest.dbQuerySuccess = !error;
+      debugInfo.keyTest.keyFound = !!keyData;
+      debugInfo.keyTest.error = error?.message || null;
+
+      if (error) {
+        debugInfo.keyTest.dbError = {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        };
+      }
+
+      if (keyData) {
+        debugInfo.keyTest.keyData = {
+          id: keyData.id,
+          name: keyData.name,
+          permissions: keyData.permissions,
+          isActive: keyData.is_active
+        };
+      }
+
+    } catch (error) {
+      debugInfo.keyTest.hashSuccess = false;
+      debugInfo.keyTest.error = error.message;
+    }
+
+    // Test basic Supabase connection
+    try {
+      const { data: connectionTest, error: connectionError } = await supabase
+        .from('developer_api_keys')
+        .select('count')
+        .limit(1);
+
+      debugInfo.connectionTest = {
+        success: !connectionError,
+        error: connectionError?.message || null
+      };
+    } catch (error) {
+      debugInfo.connectionTest = {
+        success: false,
+        error: error.message
+      };
+    }
+
+    res.json({
+      success: true,
+      debug: debugInfo
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Debug endpoint to check CORS cache state (admin only)
