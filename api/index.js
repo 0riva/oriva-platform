@@ -151,9 +151,32 @@ refreshCorsCache().then(() => {
   console.warn('⚠️ Failed to initialize CORS cache:', error.message);
 });
 
-// Middleware with dynamic CORS
+// Hybrid CORS: Static core origins + dynamic marketplace
 app.use(cors({
-  origin: dynamicCorsOrigin,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    // Development: Allow localhost
+    if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+
+    // Core origins - ALWAYS allowed (static, no dependencies)
+    const coreOrigins = [
+      'https://oriva.io',
+      'https://www.oriva.io',
+      'https://app.oriva.io',
+      'https://work-buddy-expo.vercel.app'
+    ];
+
+    if (coreOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Dynamic marketplace lookup (only for non-core origins)
+    dynamicCorsOrigin(origin, callback);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Extension-ID'],
   credentials: true
