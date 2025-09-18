@@ -148,6 +148,7 @@ Build social apps for the Oriva network:
 - **API Reference**: [OpenAPI Specification](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)
 - **🔒 [Privacy Protection Guide](docs/PRIVACY_GUIDE.md)** - Comprehensive privacy-first development guide
 - **🚀 [Deployment Management](DEPLOYMENT_MANAGEMENT.md)** - Best practices for API deployments
+- **🔮 [Future Requirements & Roadmap](docs/3-design/future-requirements-overview.md)** - SDK, WebSocket API, and platform enhancements
 - **🎨 Components Library**: [Oriva UI Components](https://github.com/0riva/oriva-platform) (coming soon)
 - **🎭 Theme System**: [Custom Themes Guide](https://github.com/0riva/oriva-platform) (coming soon)
 - **🔌 API Examples**: [Integration Examples](https://github.com/0riva/oriva-platform/tree/main/examples) (coming soon)
