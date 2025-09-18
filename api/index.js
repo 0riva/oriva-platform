@@ -153,7 +153,16 @@ app.use(cors({
     return callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Extension-ID'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Extension-ID',
+    'X-Client-ID',
+    'X-API-Key',
+    'User-Agent',
+    'X-User-ID',
+    'X-Request-ID'
+  ],
   credentials: true
 }));
 app.use(express.json());
