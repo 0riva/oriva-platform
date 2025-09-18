@@ -319,6 +319,8 @@ curl -X POST https://api.oriva.io/api/v1/dev/revoke-key \
 
 Use your preferred HTTP client to call the Oriva Platform API directly:
 
+> **📖 Complete API Reference**: See [API Reference Guide](./developer-guides/api-reference-guide.md) for detailed endpoint documentation with complete property lists, response schemas, and discovery guidance.
+
 > **📖 Complete Headers Guide**: See [API Headers Guide](./developer-guides/api-headers-guide.md) for comprehensive header documentation, including required, recommended, and optional headers for different use cases.
 
 ```typescript
@@ -1132,7 +1134,9 @@ npm run vercel-build
 
 ### Learn More
 
-- **📖 [API Reference](https://github.com/0riva/oriva-platform/blob/main/docs/openapi.yml)** - Complete API documentation
+- **📖 [API Reference Guide](./developer-guides/api-reference-guide.md)** - Complete API documentation with property lists and discovery guidance
+- **🔗 [API Headers Guide](./developer-guides/api-headers-guide.md)** - Comprehensive header documentation and troubleshooting
+- **🎮 [App Integration Requirements](./developer-guides/app-integration-requirements.md)** - Technical integration specifications
 - **🧪 [API Tester](api-tester.html)** - Interactive tool to test Oriva Platform APIs
 - **🔧 [API Examples](https://github.com/0riva/oriva-platform/tree/main/examples)** - Integration examples (coming soon)
 - **🔐 [OAuth Guide](https://github.com/0riva/oriva-platform)** - Authentication details (coming soon)

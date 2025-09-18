@@ -1170,12 +1170,14 @@ app.get('/api/v1/profiles/available', validateApiKey, async (req, res) => {
       {
         profileId: 'ext_1234567890abcdef',
         profileName: 'Dating Profile',
-        isActive: true
+        isActive: true,
+        avatar: 'https://example.com/avatars/dating-profile.jpg'
       },
       {
         profileId: 'ext_fedcba0987654321',
         profileName: 'Work Profile',
-        isActive: false
+        isActive: false,
+        avatar: 'https://example.com/avatars/work-profile.jpg'
       }
     ];
 
@@ -1200,7 +1202,8 @@ app.get('/api/v1/profiles/active', validateApiKey, async (req, res) => {
     const mockActiveProfile = {
       profileId: 'ext_1234567890abcdef',
       profileName: 'Dating Profile',
-      isActive: true
+      isActive: true,
+      avatar: 'https://example.com/avatars/dating-profile.jpg'
     };
 
     res.json({

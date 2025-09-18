@@ -2,6 +2,8 @@
 
 **Complete guide for integrating with Oriva Platform APIs**
 
+> **📖 Looking for complete API documentation?** See [API Reference Guide](./api-reference-guide.md) for detailed endpoint documentation with complete property lists, response schemas, and discovery guidance.
+
 ## 📋 Quick Start Checklist
 
 ✅ Use `Authorization: Bearer` header with your API key
