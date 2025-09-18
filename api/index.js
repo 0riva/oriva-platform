@@ -1724,3 +1724,4 @@ if (require.main === module) {
     console.log(`🌟 Ready for development! Try: curl ${BASE_URL}/health`);
   });
 }
+// Force deployment trigger - Wed Sep 17 19:54:21 CST 2025
