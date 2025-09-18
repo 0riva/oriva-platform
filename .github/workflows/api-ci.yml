@@ -151,7 +151,7 @@ jobs:
     
     environment:
       name: production
-      url: https://platform.oriva.com
+      url: https://api.oriva.io
     
     steps:
     - name: Checkout code
@@ -179,7 +179,7 @@ jobs:
     - name: Health check
       run: |
         sleep 30  # Wait for deployment to complete
-        curl -f https://platform.oriva.com/healthz || exit 1
+        curl -f https://api.oriva.io/health || exit 1
 
   notify:
     name: Notify Team
