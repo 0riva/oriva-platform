@@ -190,7 +190,7 @@ describe('Authentication', () => {
 
   describe('Edge Cases and Error Handling', () => {
     test('should handle extremely long authorization headers', async () => {
-      const longToken = 'Bearer ' + 'a'.repeat(10000);
+      const longToken = `Bearer ${  'a'.repeat(10000)}`;
       const response = await createTestRequest('/api/v1/user/me')
         .set('Authorization', longToken);
 
@@ -225,7 +225,7 @@ describe('Authentication', () => {
 
     test('should handle authorization header with extra whitespace', async () => {
       const response = await createTestRequest('/api/v1/user/me')
-        .set('Authorization', '  Bearer  ' + testData.validApiKey + '  ');
+        .set('Authorization', `  Bearer  ${  testData.validApiKey  }  `);
 
       // The middleware parses the key but it has extra spaces, so fails validation
       expect(response.status).toBe(401);

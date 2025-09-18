@@ -9,7 +9,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const rateLimit = require('express-rate-limit');
-const { body, param, validationResult } = require('express-validator');
+const { param, validationResult } = require('express-validator');
 const winston = require('winston');
 
 const app = express();
@@ -82,12 +82,7 @@ async function refreshCorsCache() {
 }
 
 // Core origins that must always work (high-trust domains)
-const CORE_ORIGINS = [
-  'https://oriva.io',
-  'https://www.oriva.io',
-  'https://app.oriva.io',
-  'https://work-buddy-expo.vercel.app'
-];
+// Currently using dynamic CORS from database
 
 // CORS cache for marketplace apps (loaded at startup)
 const corsOriginCache = {
@@ -205,7 +200,7 @@ const limiter = rateLimit({
   max: process.env.RATE_LIMIT_MAX_REQUESTS || 1000, // limit each IP to 1000 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: false
 });
 app.use('/api/', limiter);
 
@@ -539,7 +534,7 @@ app.get('/api/v1/test', (req, res) => {
 app.get('/api/v1/debug/cors', requireAdminToken, async (req, res) => {
   try {
     // Test Supabase connection
-    const { data: testQuery, error: testError } = await supabase
+    const { error: testError } = await supabase
       .from('plugin_marketplace_apps')
       .select('count')
       .limit(1);
@@ -857,26 +852,26 @@ app.post('/api/v1/profiles/:profileId/activate',
   param('profileId').matches(/^ext_[a-f0-9]{16}$/).withMessage('Invalid profile ID format'),
   validateRequest,
   async (req, res) => {
-  try {
-    const { profileId } = req.params;
+    try {
+      const { profileId } = req.params;
 
-    // For now, return mock success response
-    // TODO: Implement real profile switching
-    res.json({
-      success: true,
-      data: {
-        activeProfile: profileId,
-        switchedAt: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    console.error('Failed to switch profile:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to switch profile'
-    });
-  }
-});
+      // For now, return mock success response
+      // TODO: Implement real profile switching
+      res.json({
+        success: true,
+        data: {
+          activeProfile: profileId,
+          switchedAt: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('Failed to switch profile:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to switch profile'
+      });
+    }
+  });
 
 // =============================================================================
 // GROUP ENDPOINTS
@@ -921,38 +916,39 @@ app.get('/api/v1/groups/:groupId/members',
   param('groupId').matches(/^ext_[a-f0-9]{16}$/).withMessage('Invalid group ID format'),
   validateRequest,
   async (req, res) => {
-  try {
-    const { groupId } = req.params;
+    try {
+      const { groupId: _groupId } = req.params;
 
-    // For now, return mock data to make tests pass
-    // TODO: Implement real group member fetching from Oriva Core
-    const mockMembers = [
-      {
-        memberId: 'ext_member_1234567890',
-        displayName: 'Alex Johnson',
-        role: 'admin',
-        joinedAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        memberId: 'ext_member_0987654321',
-        displayName: 'Sam Wilson',
-        role: 'member',
-        joinedAt: '2024-01-20T14:30:00Z'
-      }
-    ];
+      // For now, return mock data to make tests pass
+      // TODO: Use groupId to fetch actual group members
+      // TODO: Implement real group member fetching from Oriva Core
+      const mockMembers = [
+        {
+          memberId: 'ext_member_1234567890',
+          displayName: 'Alex Johnson',
+          role: 'admin',
+          joinedAt: '2024-01-15T10:00:00Z'
+        },
+        {
+          memberId: 'ext_member_0987654321',
+          displayName: 'Sam Wilson',
+          role: 'member',
+          joinedAt: '2024-01-20T14:30:00Z'
+        }
+      ];
 
-    res.json({
-      success: true,
-      data: mockMembers
-    });
-  } catch (error) {
-    console.error('Failed to fetch group members:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch group members'
-    });
-  }
-});
+      res.json({
+        success: true,
+        data: mockMembers
+      });
+    } catch (error) {
+      console.error('Failed to fetch group members:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch group members'
+      });
+    }
+  });
 
 // Entries endpoints
 app.get('/api/v1/entries', validateApiKey, (req, res) => {
@@ -1359,7 +1355,7 @@ app.get('/api/v1/marketplace/apps', validateApiKey, async (req, res) => {
 // Get trending apps
 app.get('/api/v1/marketplace/trending', validateApiKey, async (req, res) => {
   try {
-    const { days_back = 7, limit = 10 } = req.query;
+    const { days_back: _days_back = 7, limit = 10 } = req.query;
     
     // Get apps with high install growth in the past X days
     const { data: apps, error } = await supabase
@@ -1621,7 +1617,7 @@ app.post('/api/v1/marketplace/install/:appId', validateAuth, async (req, res) =>
     }
     
     // Check if user already has this app installed
-    const { data: existingInstall, error: checkError } = await supabase
+    const { data: existingInstall, error: _checkError } = await supabase
       .from('user_app_installs')
       .select('id')
       .eq('user_id', req.keyInfo.userId)
@@ -1822,7 +1818,7 @@ app.use('*', (req, res) => {
 });
 
 // Error handling
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
