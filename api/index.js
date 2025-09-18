@@ -81,15 +81,15 @@ async function refreshCorsCache() {
   }
 }
 
-// Fallback origins when dynamic CORS fails
-const FALLBACK_ORIGINS = [
+// Core origins that must always work (high-trust domains)
+const CORE_ORIGINS = [
   'https://oriva.io',
   'https://www.oriva.io',
   'https://app.oriva.io',
-  'https://work-buddy-expo.vercel.app' // Ensure Work Buddy always works
+  'https://work-buddy-expo.vercel.app'
 ];
 
-// Dynamic CORS configuration that supports 3rd party developer apps
+// Dynamic CORS configuration with robust fallback strategy
 const dynamicCorsOrigin = async (origin, callback) => {
   try {
     // Allow requests with no origin (mobile apps, curl, etc.)
@@ -101,42 +101,45 @@ const dynamicCorsOrigin = async (origin, callback) => {
       return callback(null, true);
     }
 
-    // Check fallback origins first (always allow these)
-    if (FALLBACK_ORIGINS.includes(origin)) {
-      logger.info('CORS: Allowing fallback origin', { origin });
+    // ALWAYS allow core origins - no database dependency
+    if (CORE_ORIGINS.includes(origin)) {
+      logger.info('CORS: Allowing core origin', { origin });
       return callback(null, true);
     }
 
-    // Check if cache needs refresh
-    const cacheAge = Date.now() - corsOriginCache.lastUpdated;
-    if (cacheAge > corsOriginCache.CACHE_TTL || corsOriginCache.data.size === 0) {
-      logger.debug('CORS: Refreshing cache', { cacheAge, cacheSize: corsOriginCache.data.size });
-      await refreshCorsCache();
+    // Try to check marketplace apps cache (with timeout protection)
+    try {
+      // Check if cache needs refresh
+      const cacheAge = Date.now() - corsOriginCache.lastUpdated;
+      if (cacheAge > corsOriginCache.CACHE_TTL || corsOriginCache.data.size === 0) {
+        // Only refresh if we can do it quickly
+        const refreshPromise = refreshCorsCache();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Cache refresh timeout')), 2000)
+        );
+
+        await Promise.race([refreshPromise, timeoutPromise]);
+      }
+
+      // Check if origin is in cache
+      if (corsOriginCache.data.has(origin)) {
+        logger.info('CORS: Allowing marketplace origin', { origin });
+        return callback(null, true);
+      }
+
+    } catch (error) {
+      logger.warn('CORS: Cache check failed, checking core origins only', { error: error.message, origin });
     }
 
-    // Check if origin is in cache
-    if (corsOriginCache.data.has(origin)) {
-      logger.debug('CORS: Allowing cached origin', { origin });
-      return callback(null, true);
-    }
-
-    // Block unregistered origins
+    // Not found anywhere - block
     logger.warn('CORS: Blocking unregistered origin', {
       origin,
-      registeredOrigins: Array.from(corsOriginCache.data).length
+      cacheSize: corsOriginCache.data.size
     });
     callback(new Error('Not allowed by CORS'));
 
   } catch (error) {
-    logger.error('CORS: Error in dynamic origin check, checking fallbacks', { error, origin });
-
-    // Fallback: allow known safe origins even when DB is down
-    if (FALLBACK_ORIGINS.includes(origin)) {
-      logger.warn('CORS: Allowing fallback origin due to error', { origin, error: error.message });
-      return callback(null, true);
-    }
-
-    // Still block unknown origins
+    logger.error('CORS: Critical error in origin check', { error: error.message, origin });
     callback(new Error('CORS configuration error'));
   }
 };
