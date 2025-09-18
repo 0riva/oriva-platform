@@ -151,7 +151,7 @@ refreshCorsCache().then(() => {
   console.warn('⚠️ Failed to initialize CORS cache:', error.message);
 });
 
-// Hybrid CORS: Static core origins + dynamic marketplace
+// Bulletproof CORS: Static core origins + marketplace cache
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, etc.)
@@ -174,8 +174,13 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Dynamic marketplace lookup (only for non-core origins)
-    dynamicCorsOrigin(origin, callback);
+    // Check marketplace cache (synchronous only)
+    if (corsOriginCache.data && corsOriginCache.data.has(origin)) {
+      return callback(null, true);
+    }
+
+    // Block unknown origins
+    return callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Extension-ID'],
