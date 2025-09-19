@@ -252,12 +252,28 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 For generating and managing API keys, use these protected endpoints:
 
+### Get Available Permissions
+```bash
+curl https://api.oriva.io/api/v1/dev/permissions
+```
+
 ### Generate Live API Key (Recommended)
 ```bash
 curl -X POST https://api.oriva.io/api/v1/dev/generate-live-key \
   -H "Content-Type: application/json" \
   -H "X-Admin-Token: YOUR_ADMIN_TOKEN" \
   -d '{"appName": "My App"}'
+```
+
+### Generate API Key with Custom Permissions
+```bash
+curl -X POST https://api.oriva.io/api/v1/dev/generate-live-key \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Token: YOUR_ADMIN_TOKEN" \
+  -d '{
+    "name": "My App",
+    "permissions": ["user:read", "profiles:read", "entries:read"]
+  }'
 ```
 
 ### Generate Test API Key (Development Only)
