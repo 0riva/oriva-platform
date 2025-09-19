@@ -1159,12 +1159,13 @@ app.get('/api/v1/auth/profile', validateAuth, async (req, res) => {
 // Get available profiles for the extension
 app.get('/api/v1/profiles/available', validateApiKey, async (req, res) => {
   try {
-    // Get real profiles from Supabase database
+    // Get real profiles from Supabase database (excluding anonymous profiles for third-party apps)
     const { data: profiles, error } = await supabase
       .from('profiles')
       .select('id, display_name, username, avatar_url, is_active, is_default')
       .eq('account_id', req.keyInfo.userId)
       .eq('is_active', true)
+      .eq('is_anonymous', false)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -1211,13 +1212,14 @@ app.get('/api/v1/profiles/available', validateApiKey, async (req, res) => {
 // Get currently active profile
 app.get('/api/v1/profiles/active', validateApiKey, async (req, res) => {
   try {
-    // Get the default (primary) profile from Supabase database
+    // Get the default (primary) profile from Supabase database (excluding anonymous profiles for third-party apps)
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('id, display_name, username, avatar_url, is_active, is_default')
       .eq('account_id', req.keyInfo.userId)
       .eq('is_active', true)
       .eq('is_default', true)
+      .eq('is_anonymous', false)
       .single();
 
     if (error) {

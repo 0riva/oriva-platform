@@ -3,7 +3,6 @@ node_modules
 .env
 dist
 .vercel
-internal-docs/
 
 # Security - Internal implementation files
 # api/ - Commented out to allow API deployment
