@@ -733,12 +733,68 @@ const generateAPIKey = (prefix = 'oriva_pk_live_') => {
   return prefix + keyString;
 };
 
+// Available permissions list for developer UI
+const AVAILABLE_PERMISSIONS = [
+  // User permissions
+  { scope: 'user:read', description: 'Read user profile information', category: 'User' },
+  { scope: 'user:write', description: 'Update user information', category: 'User' },
+
+  // Profile permissions
+  { scope: 'profiles:read', description: 'Read authorized user profiles', category: 'Profiles' },
+  { scope: 'profiles:write', description: 'Switch between authorized profiles', category: 'Profiles' },
+
+  // Group permissions
+  { scope: 'groups:read', description: 'Read user group memberships', category: 'Groups' },
+  { scope: 'groups:write', description: 'Access group member information', category: 'Groups' },
+
+  // Entry permissions
+  { scope: 'entries:read', description: 'Read entries', category: 'Content' },
+  { scope: 'entries:write', description: 'Create and update entries', category: 'Content' },
+  { scope: 'entries:delete', description: 'Delete entries', category: 'Content' },
+
+  // Template permissions
+  { scope: 'templates:read', description: 'Read templates', category: 'Templates' },
+  { scope: 'templates:write', description: 'Create and update templates', category: 'Templates' },
+
+  // Marketplace permissions
+  { scope: 'marketplace:read', description: 'Browse public marketplace apps', category: 'Marketplace' },
+
+  // Storage permissions
+  { scope: 'storage:read', description: 'Read app-specific data only', category: 'Storage' },
+  { scope: 'storage:write', description: 'Write app-specific data only', category: 'Storage' },
+
+  // UI permissions
+  { scope: 'ui:notifications', description: 'Show notifications to user', category: 'UI' },
+  { scope: 'ui:modals', description: 'Display modals', category: 'UI' },
+  { scope: 'ui:navigation', description: 'Navigate between screens', category: 'UI' }
+];
+
+// Get available permissions for developer UI
+app.get('/api/v1/dev/permissions', (req, res) => {
+  res.json({
+    success: true,
+    data: AVAILABLE_PERMISSIONS
+  });
+});
+
 // API Key Management endpoints (for developer dashboard)
 // Generate live API key endpoint - fixes confusing test key naming
 app.post('/api/v1/dev/generate-live-key', devRateLimiter, requireAdminToken, async (req, res) => {
   try {
-    const { name = 'Live API Key' } = req.body;
+    const { name = 'Live API Key', permissions = null } = req.body;
     const userId = req.user?.id;
+
+    // Validate permissions if provided
+    if (permissions) {
+      const validScopes = AVAILABLE_PERMISSIONS.map(p => p.scope);
+      const invalidPermissions = permissions.filter(p => !validScopes.includes(p));
+      if (invalidPermissions.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid permissions: ${invalidPermissions.join(', ')}`
+        });
+      }
+    }
 
     if (!userId) {
       return res.status(401).json({
@@ -761,7 +817,10 @@ app.post('/api/v1/dev/generate-live-key', devRateLimiter, requireAdminToken, asy
         key_hash: keyHash,
         key_prefix: keyPrefix,
         is_active: true,
-        permissions: ['profiles', 'groups', 'marketplace'],
+        permissions: permissions || [
+          'user:read', 'profiles:read', 'profiles:write', 'groups:read',
+          'entries:read', 'templates:read', 'marketplace:read', 'storage:read', 'storage:write'
+        ],
         created_at: new Date().toISOString()
       })
       .select()
