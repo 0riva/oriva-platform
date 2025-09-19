@@ -1,6 +1,6 @@
 # 🚀 Developer Start Guide
 
-> **Build apps that extend the Oriva source code collaboration platform**
+> **Build apps that extend the Oriva social network platform**
 
 Welcome to the Oriva Platform! This guide will help you build powerful integrations that extend Oriva's functionality for millions of users.
 
@@ -354,31 +354,18 @@ const profilesResponse = await fetch(`${process.env.EXPO_PUBLIC_ORIVA_API_URL}/p
 const profiles = await profilesResponse.json();
 ```
 
-### 3.2 Dynamic CORS Support ✨
+### 3.2 CORS Support ✨
 
-**🎉 Great News!** The Oriva Platform API now supports **automatic CORS approval** for registered marketplace apps.
+**Automatic CORS approval** for registered marketplace apps:
 
-> **📖 Detailed Headers Documentation**: See [API Headers Guide](./developer-guides/api-headers-guide.md) for complete CORS policy, allowed headers, and troubleshooting guidance.
-
-**How it works:**
-1. **Register your app** in the Oriva Developer Settings
+1. **Register your app** in Developer Settings
 2. **Submit for marketplace approval** with your `execution_url`
-3. **Once approved**, your domain is automatically allowed to make API calls
-4. **No additional configuration needed** - it just works!
-
-**Benefits:**
-- ✅ **Zero CORS configuration** - automatic domain allowlist
-- ✅ **Real-time updates** - new apps get access immediately upon approval
-- ✅ **High performance** - cached allowlist with 5-minute refresh
-- ✅ **Secure by default** - only approved marketplace apps get access
-- ✅ **Developer friendly** - follows standard web development patterns
+3. **Once approved**, your domain automatically gets API access
 
 **Supported Domains:**
-- **Core Oriva**: `oriva.io`, `app.oriva.io` (always allowed)
-- **Approved Apps**: Any domain from your app's `execution_url` after marketplace approval
-- **Development**: `localhost` domains (development mode only)
-
-**Need Additional Headers?** Use our streamlined [CORS Header Request Template](../.github/ISSUE_TEMPLATE/cors-header-request.md) to request new headers.
+- Core Oriva: `oriva.io`, `app.oriva.io`
+- Approved marketplace apps
+- `localhost` (development)
 
 ### 3.3 Error Handling
 
@@ -509,6 +496,21 @@ const profiles = await fetch('https://api.oriva.io/api/v1/profiles/available', {
 }).then(r => r.json());
 
 console.log('Available profiles:', profiles.data);
+// Note: Anonymous profiles are automatically filtered out for privacy protection
+
+// Example response:
+// {
+//   "success": true,
+//   "data": [
+//     {
+//       "profileId": "profile_123",
+//       "profileName": "Work Profile",
+//       "isActive": true,
+//       "avatar": "https://example.com/avatar.jpg",
+//       "isDefault": false
+//     }
+//   ]
+// }
 ```
 
 ---
@@ -722,10 +724,12 @@ Before submitting your app, ensure:
 
 ### 🔒 **Privacy-First Profile API**
 ```bash
-GET    /api/v1/profiles/available            # Get authorized profiles
+GET    /api/v1/profiles/available            # Get user's non-anonymous profiles
 GET    /api/v1/profiles/active               # Get currently active profile
 POST   /api/v1/profiles/:profileId/activate  # Switch to different profile
 ```
+
+**🛡️ Privacy Protection**: Anonymous profiles are automatically filtered out to protect user privacy. Third-party apps only receive profiles that users have intentionally created.
 
 ### 👥 **Privacy-First Group API**
 ```bash
@@ -795,14 +799,18 @@ const profiles = await fetch('/api/v1/profiles/available', {
 //   "success": true,
 //   "data": [
 //     {
-//       "profileId": "ext_1234567890abcdef",
+//       "profileId": "profile_123",
 //       "profileName": "Work Profile",
-//       "isActive": true
+//       "isActive": true,
+//       "avatar": "https://example.com/avatar.jpg",
+//       "isDefault": false
 //     },
 //     {
-//       "profileId": "ext_fedcba0987654321", 
+//       "profileId": "profile_456",
 //       "profileName": "Personal Profile",
-//       "isActive": false
+//       "isActive": false,
+//       "avatar": "https://example.com/avatar2.jpg",
+//       "isDefault": true
 //     }
 //   ]
 // }
@@ -868,73 +876,13 @@ const members = await fetch('/api/v1/groups/ext_9876543210fedcba/members', {
 
 ### Development Environment
 
-You have two options for development and testing:
-
-#### **Option 1: Local Development Server (Recommended)**
-- **API URL**: `http://localhost:3001`
-- **Setup**: Run the Oriva API locally for development
-- **Benefits**: No rate limits, full control, isolated testing
-- **Perfect for**: Development, testing, and debugging
-
-**Setting up Local Development:**
-```bash
-# Clone the Oriva platform repository
-git clone https://github.com/0riva/oriva-platform.git
-cd oriva-platform
-
-# Install dependencies
-cd api && npm install
-
-# Set up environment
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start the local API server
-npm run dev
-# Server will be available at http://localhost:3001
-```
-
-**Update your environment variables for local development:**
-```bash
-# .env file for local development
-EXPO_PUBLIC_ORIVA_API_URL=http://localhost:3001/api/v1
-EXPO_PUBLIC_ORIVA_API_KEY=your_oriva_api_key_here
-EXPO_PUBLIC_ORIVA_CLIENT_ID=work-buddy-app
-```
-
-#### **Option 2: Production API**
+**Production API Testing**:
 - **API URL**: `https://api.oriva.io`
-- **Use for**: Final integration testing with real data
-- **Approach**: Use read-only operations and create test repositories
+- **Use for**: Integration testing with your live API key
 
 ### Testing Your App
 
-#### Option 1: Interactive API Tester (Recommended)
-
-The easiest way to test your API integration is using our secure interactive API tester:
-
-1. **Set up local server**: Follow the setup instructions in the API tester
-2. **Configure API key**: Set your API key in environment variables (`.env` file)
-3. **Start proxy server**: Run the local test server to proxy requests securely
-4. **Open the API Tester**: Navigate to `docs/api-tester.html` in your browser
-5. **Test endpoints**: Click "🚀 Test All Endpoints" to test all available endpoints
-6. **View results**: See detailed responses, status codes, and error messages
-
-**Benefits of the Secure API Tester:**
-- ✅ **Secure** - API key never exposed in browser/client-side code
-- ✅ **Visual interface** - Easy to use, no command line needed
-- ✅ **Real-time testing** - See responses immediately
-- ✅ **Error handling** - Clear error messages and status codes
-- ✅ **Response viewing** - Expandable JSON responses
-- ✅ **Environment-based** - Uses proper `.env` file for API key storage
-- ✅ **Rate limit friendly** - Built-in delays between requests
-
-**Security Features:**
-- 🔐 **Server-side proxy** - API key stays on your machine
-- 🔐 **Environment variables** - No hardcoded secrets
-- 🔐 **Local-only** - No API key transmission to external servers
-
-#### Option 2: Command Line Testing
+#### **Command Line Testing**
 
 ```bash
 # Test API connectivity
