@@ -391,7 +391,7 @@ const validateAuth = async (req, res, next) => {
         id: keyData.id,
         userId: keyData.user_id,
         name: keyData.name,
-        permissions: keyData.permissions,
+        permissions: expandPermissions(keyData.permissions),
         usageCount: keyData.usage_count,
         authType: 'api_key'
       };
@@ -515,7 +515,7 @@ const validateApiKey = async (req, res, next) => {
       id: keyData.id,
       userId: keyData.user_id,
       name: keyData.name,
-      permissions: keyData.permissions,
+      permissions: expandPermissions(keyData.permissions),
       usageCount: keyData.usage_count
     };
     
@@ -617,7 +617,7 @@ app.get('/api/v1/debug/workbuddy', async (req, res) => {
         debugInfo.keyTest.keyData = {
           id: keyData.id,
           name: keyData.name,
-          permissions: keyData.permissions,
+          permissions: expandPermissions(keyData.permissions),
           isActive: keyData.is_active
         };
       }
@@ -733,6 +733,34 @@ const generateAPIKey = (prefix = 'oriva_pk_live_') => {
   return prefix + keyString;
 };
 
+// Backward compatibility mapping for old permission format
+const LEGACY_PERMISSION_MAPPING = {
+  'profiles': ['user:read', 'profiles:read', 'profiles:write'],
+  'groups': ['groups:read', 'groups:write'],
+  'marketplace': ['marketplace:read'],
+  'entries': ['entries:read', 'entries:write'],
+  'templates': ['templates:read', 'templates:write']
+};
+
+// Helper function to expand legacy permissions to granular permissions
+const expandPermissions = (permissions) => {
+  const expandedPerms = new Set();
+
+  permissions.forEach(perm => {
+    if (LEGACY_PERMISSION_MAPPING[perm]) {
+      // Legacy permission - expand it
+      LEGACY_PERMISSION_MAPPING[perm].forEach(granularPerm => {
+        expandedPerms.add(granularPerm);
+      });
+    } else {
+      // Already granular permission
+      expandedPerms.add(perm);
+    }
+  });
+
+  return Array.from(expandedPerms);
+};
+
 // Available permissions list for developer UI
 const AVAILABLE_PERMISSIONS = [
   // User permissions
@@ -842,7 +870,7 @@ app.post('/api/v1/dev/generate-live-key', devRateLimiter, requireAdminToken, asy
         key: apiKey, // Return full key only once
         keyPrefix: keyPrefix,
         type: 'live',
-        permissions: keyData.permissions,
+        permissions: expandPermissions(keyData.permissions),
         createdAt: keyData.created_at
       },
       message: 'Live API key generated successfully. Store this key securely - it will not be shown again.'
