@@ -1,12 +1,51 @@
+// TypeScript Basic Type Definitions for TDD
+interface ApiResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+interface MarketplaceApp {
+  execution_url: string;
+  status: 'approved' | 'pending' | 'rejected';
+}
+
+interface DebugKeyTest {
+  hashSuccess?: boolean;
+  hash?: string;
+  dbQuerySuccess?: boolean;
+  keyFound?: boolean;
+  error?: string | null;
+  dbError?: {
+    message: string;
+    details?: string;
+    hint?: string;
+    code?: string;
+  };
+  keyData?: {
+    id: string;
+    name: string;
+    permissions: string[];
+    isActive: boolean;
+  };
+}
+
+interface DebugConnectionTest {
+  success: boolean;
+  error: string | null;
+}
+
+// TypeScript compatibility fixes moved to end of file
+
 // Load env variables in local/dev
-try { 
-  require('dotenv').config(); 
+try {
+  require('dotenv').config();
 } catch {
   // dotenv not available in production
 }
 const express = require('express');
 const cors = require('cors');
-const crypto = require('crypto');
+const nodeCrypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const rateLimit = require('express-rate-limit');
 const { param, validationResult } = require('express-validator');
@@ -640,7 +679,7 @@ const validateRequest = (req, res, next) => {
 
 // Helper function to generate API keys
 const generateAPIKey = (prefix = 'oriva_pk_live_') => {
-  const randomBytes = crypto.randomBytes(32);
+  const randomBytes = nodeCrypto.randomBytes(32);
   const keyString = randomBytes.toString('hex');
   return prefix + keyString;
 };
@@ -655,10 +694,10 @@ const LEGACY_PERMISSION_MAPPING = {
 };
 
 // Helper function to expand legacy permissions to granular permissions
-const expandPermissions = (permissions) => {
-  const expandedPerms = new Set();
+const expandPermissions = (permissions: unknown[]): string[] => {
+  const expandedPerms = new Set<string>();
 
-  permissions.forEach(perm => {
+  permissions.forEach((perm: any) => {
     if (LEGACY_PERMISSION_MAPPING[perm]) {
       // Legacy permission - expand it
       LEGACY_PERMISSION_MAPPING[perm].forEach(granularPerm => {
@@ -2401,3 +2440,6 @@ if (require.main === module) {
   });
 }
 // Force deployment trigger - Wed Sep 17 19:54:21 CST 2025
+
+// This export makes this file a module for TypeScript
+export {};
