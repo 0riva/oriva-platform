@@ -246,6 +246,8 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/user/me
 ```
 
+> **🛠️ Complete Troubleshooting**: For systematic debugging workflows and comprehensive issue resolution, see [API Troubleshooting Guide](./developer-guides/api-troubleshooting.md)
+
 ---
 
 ## 🔧 Developer Endpoints (Admin Only)
@@ -1100,6 +1102,7 @@ npm run vercel-build
 
 - **📖 [API Reference Guide](./developer-guides/api-reference-guide.md)** - Complete API documentation with property lists and discovery guidance
 - **🔗 [API Headers Guide](./developer-guides/api-headers-guide.md)** - Comprehensive header documentation and troubleshooting
+- **🛠️ [API Troubleshooting Guide](./developer-guides/api-troubleshooting.md)** - Systematic debugging workflow and common issue resolution
 - **🎮 [App Integration Requirements](./developer-guides/app-integration-requirements.md)** - Technical integration specifications
 - **🧪 [API Tester](api-tester.html)** - Interactive tool to test Oriva Platform APIs
 - **🔧 [API Examples](https://github.com/0riva/oriva-platform/tree/main/examples)** - Integration examples (coming soon)
