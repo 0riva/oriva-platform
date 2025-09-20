@@ -10,14 +10,32 @@ interface MarketplaceApp {
   status: 'approved' | 'pending' | 'rejected';
 }
 
-// TypeScript compatibility fixes
-declare const globalThis: {
-  crypto: {
-    subtle: {
-      digest: (algorithm: string, data: ArrayBuffer) => Promise<ArrayBuffer>;
-    };
+interface DebugKeyTest {
+  hashSuccess?: boolean;
+  hash?: string;
+  dbQuerySuccess?: boolean;
+  keyFound?: boolean;
+  error?: string | null;
+  dbError?: {
+    message: string;
+    details?: string;
+    hint?: string;
+    code?: string;
   };
-} & typeof global;
+  keyData?: {
+    id: string;
+    name: string;
+    permissions: string[];
+    isActive: boolean;
+  };
+}
+
+interface DebugConnectionTest {
+  success: boolean;
+  error: string | null;
+}
+
+// TypeScript compatibility fixes moved to end of file
 
 // Load env variables in local/dev
 try {
@@ -595,7 +613,18 @@ app.get('/api/v1/debug/workbuddy', async (req, res) => {
   try {
     const WORK_BUDDY_API_KEY = 'oriva_pk_live_b7d127a91ff32d58044492ab89a72e52976f65143178fda8f2d808e967b2a9d9';
 
-    const debugInfo = {
+    const debugInfo: {
+      timestamp: string;
+      environment: {
+        nodeEnv: string | undefined;
+        hasSupabaseUrl: boolean;
+        hasServiceKey: boolean;
+        supabaseUrlValue: string;
+        cryptoSubtleAvailable: boolean;
+      };
+      keyTest: DebugKeyTest;
+      connectionTest?: DebugConnectionTest;
+    } = {
       timestamp: new Date().toISOString(),
       environment: {
         nodeEnv: process.env.NODE_ENV,
@@ -764,10 +793,10 @@ const LEGACY_PERMISSION_MAPPING = {
 };
 
 // Helper function to expand legacy permissions to granular permissions
-const expandPermissions = (permissions) => {
-  const expandedPerms = new Set();
+const expandPermissions = (permissions: unknown[]): string[] => {
+  const expandedPerms = new Set<string>();
 
-  permissions.forEach(perm => {
+  permissions.forEach((perm: any) => {
     if (LEGACY_PERMISSION_MAPPING[perm]) {
       // Legacy permission - expand it
       LEGACY_PERMISSION_MAPPING[perm].forEach(granularPerm => {
@@ -2510,3 +2539,6 @@ if (require.main === module) {
   });
 }
 // Force deployment trigger - Wed Sep 17 19:54:21 CST 2025
+
+// This export makes this file a module for TypeScript
+export {};
