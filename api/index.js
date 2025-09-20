@@ -572,7 +572,15 @@ app.get('/api/v1/test', (req, res) => {
 // Debug endpoint for Work Buddy API key
 app.get('/api/v1/debug/workbuddy', async (req, res) => {
   try {
-    const WORK_BUDDY_API_KEY = 'oriva_pk_live_b7d127a91ff32d58044492ab89a72e52976f65143178fda8f2d808e967b2a9d9';
+    const WORK_BUDDY_API_KEY = process.env.WORK_BUDDY_API_KEY;
+
+    // Security: Only allow debug endpoint when API key is properly configured
+    if (!WORK_BUDDY_API_KEY) {
+      return res.status(503).json({
+        error: 'Debug endpoint unavailable',
+        message: 'WORK_BUDDY_API_KEY environment variable not configured'
+      });
+    }
 
     const debugInfo = {
       timestamp: new Date().toISOString(),
