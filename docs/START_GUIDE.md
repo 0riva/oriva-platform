@@ -304,6 +304,279 @@ curl -X POST https://api.oriva.io/api/v1/dev/revoke-key \
 
 ---
 
+## 🔐 Production Security Architecture
+
+### Backend-for-Frontend (BFF) Pattern ⚠️ **CRITICAL FOR PRODUCTION**
+
+**Never expose API keys client-side.** Always implement a secure proxy pattern for production apps.
+
+```
+Client App → Your Backend Proxy → Oriva API
+```
+
+**Why BFF is Required:**
+- **Security**: Oriva API keys remain server-side only
+- **CORS**: Bypass browser cross-origin restrictions  
+- **Rate Limiting**: Implement your own rate limiting
+- **Error Handling**: Centralized error processing
+- **Authentication**: Add your own auth layer
+
+### Secure Proxy Implementation
+
+Create API proxy endpoints that handle Oriva communication:
+
+```javascript
+// /api/oriva/profiles.js (Vercel/Netlify Functions)
+export default async function handler(req, res) {
+  // 1. CORS Configuration for iframe contexts
+  const allowedOrigins = [
+    'https://your-app.vercel.app',
+    'https://apps.oriva.io',
+    'https://oriva.io',
+    'http://localhost:8081' // Development
+  ];
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Client-ID, User-Agent');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // 2. Client Authentication & Rate Limiting
+  const clientId = req.headers['x-client-id'];
+  const allowedClients = ['your-app-name', 'oriva-platform'];
+
+  if (!clientId || !allowedClients.includes(clientId)) {
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized - Valid X-Client-ID required'
+    });
+  }
+
+  // 3. Server-side API Call (API key stays secure)
+  const orivaApiKey = process.env.ORIVA_API_KEY;
+  const orivaClientId = process.env.ORIVA_CLIENT_ID;
+
+  try {
+    const orivaResponse = await fetch('https://api.oriva.io/api/v1/profiles/available', {
+      method: req.method,
+      headers: {
+        'Authorization': `Bearer ${orivaApiKey}`,
+        'X-Client-ID': orivaClientId,
+        'Content-Type': 'application/json',
+        'User-Agent': 'YourApp-BFF/1.0.0'
+      },
+      body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined
+    });
+
+    if (!orivaResponse.ok) {
+      const errorText = await orivaResponse.text();
+      return res.status(orivaResponse.status).json({
+        success: false,
+        error: `Oriva API error: ${orivaResponse.status}`,
+        details: errorText
+      });
+    }
+
+    const data = await orivaResponse.json();
+    return res.status(200).json({
+      success: true,
+      data: data.data || data,
+      message: data.message
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+}
+```
+
+### Client-side Service Pattern
+
+```typescript
+// services/orivaApi.ts
+class OrivaApiService {
+  private config: {
+    proxyUrl: string;
+    clientId: string;
+  };
+
+  constructor() {
+    const isLocalhost = Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.location.hostname === 'localhost';
+
+    // Always use absolute URL for production iframe contexts
+    this.config = {
+      proxyUrl: isLocalhost
+        ? 'http://localhost:8090/api/oriva'
+        : 'https://your-app.vercel.app/api/oriva',
+      clientId: process.env.EXPO_PUBLIC_ORIVA_CLIENT_ID || 'your-app-name',
+    };
+  }
+
+  private async makeRequest<T>(endpoint: string, options: RequestInit = {}) {
+    const url = `${this.config.proxyUrl}${endpoint}`;
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-ID': this.config.clientId,
+        'User-Agent': `${this.config.clientId}/1.0.0`,
+        ...options.headers,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        data: null as T,
+        error: data.error || `HTTP ${response.status}`,
+      };
+    }
+
+    return {
+      success: true,
+      data: data.data || data,
+      message: data.message,
+    };
+  }
+
+  async getUserProfiles() {
+    return this.makeRequest('/profiles');
+  }
+
+  async createSession(sessionData: any) {
+    return this.makeRequest('/sessions', {
+      method: 'POST',
+      body: JSON.stringify(sessionData),
+    });
+  }
+}
+```
+
+### Production Data Source Pattern
+
+```javascript
+// config/dataSource.js - Production-ready with fallbacks
+export const getProfiles = async () => {
+  // Always attempt API first in production
+  if (appVariant !== 'development' || !isLocalhost) {
+    try {
+      const profilesResponse = await orivaApi.getUserProfiles();
+
+      if (profilesResponse.success) {
+        console.log(`✅ Retrieved ${profilesResponse.data.length} profiles from Oriva API`);
+        return profilesResponse.data;
+      } else {
+        console.error('❌ Oriva API failed:', profilesResponse.error);
+        // Graceful fallback to demo data
+        return mockProfiles;
+      }
+    } catch (error) {
+      console.error('❌ API call failed:', error);
+      return mockProfiles; // Fallback for reliability
+    }
+  } else {
+    // Development mode with dummy data
+    return mockProfiles;
+  }
+};
+```
+
+## 🌐 Advanced Iframe Integration
+
+### Iframe Detection & Context Handling
+
+```javascript
+// Detect if running in iframe context
+const isInIframe = typeof window !== 'undefined' && (() => {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true; // Cross-origin iframe
+  }
+})();
+
+// URL resolution for iframe contexts
+const getApiUrl = () => {
+  const isLocalhost = typeof window !== 'undefined' &&
+    window.location.hostname === 'localhost';
+
+  // Always use absolute URLs when embedded to bypass deployment protection
+  return isLocalhost
+    ? 'http://localhost:8090/api/oriva'
+    : 'https://your-production-domain.com/api/oriva';
+};
+```
+
+### Enhanced CSP Headers for Production
+
+```javascript
+// Enhanced CSP for iframe embedding with Oriva
+res.setHeader('Content-Security-Policy',
+  `frame-ancestors 'self' https://oriva.io https://*.oriva.io https://app.oriva.io https://apps.oriva.io http://localhost:* https://localhost:*; ` +
+  `script-src 'self' 'unsafe-inline' https://oriva.io; ` +
+  `style-src 'self' 'unsafe-inline' https://oriva.io; ` +
+  `connect-src 'self' https://api.oriva.io`
+);
+```
+
+## 🚀 Production Deployment
+
+### Vercel Configuration
+
+```json
+// vercel.json
+{
+  "functions": {
+    "api/oriva/profiles.js": {
+      "maxDuration": 10
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://oriva.io https://*.oriva.io https://app.oriva.io"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "ORIVA_CLIENT_ID": "@oriva-client-id"
+  }
+}
+```
+
+### Environment Setup
+
+```bash
+# Production Environment Variables
+# Set in Vercel dashboard (keep server-side only)
+ORIVA_API_KEY=oriva_pk_live_xxxxxxxxxxxxx
+ORIVA_CLIENT_ID=your-app-name
+
+# Client-side (safe to expose)
+EXPO_PUBLIC_ORIVA_CLIENT_ID=your-app-name
+EXPO_PUBLIC_APP_VARIANT=production
+```
+
 ## 📚 Developer Resources & Specialized Guides
 
 **Before diving into integration, familiarize yourself with these specialized guides:**
@@ -976,6 +1249,83 @@ const response = await fetch('https://api.oriva.io/api/v1/user/me', {
 });
 ```
 
+### 4. Production-Specific Issues
+
+#### **"No profiles available" Error**
+**Cause**: Client-side credential detection failing in production
+**Solution**: Remove client-side credential dependency, always attempt API calls in production
+
+```javascript
+// ❌ Wrong - checking credentials client-side
+if (hasCredentials) {
+  const profiles = await orivaApi.getUserProfiles();
+}
+
+// ✅ Right - always attempt API calls in production
+const profilesResponse = await orivaApi.getUserProfiles();
+if (profilesResponse.success) {
+  return profilesResponse.data;
+} else {
+  // Graceful fallback to demo data
+  return mockProfiles;
+}
+```
+
+#### **Vercel Deployment Protection Issues**
+**Cause**: Using deployment-specific URLs in iframe contexts
+**Solution**: Always use main domain URL for production
+
+```javascript
+// ❌ Wrong - deployment-specific URL
+const apiUrl = 'https://your-app-git-main-team.vercel.app/api/oriva';
+
+// ✅ Right - use main domain
+const apiUrl = 'https://your-app.vercel.app/api/oriva';
+```
+
+#### **API Key Exposure Risks**
+**Cause**: Including API keys in client environment variables
+**Solution**: Use BFF pattern, keep keys server-side only
+
+```bash
+# ❌ NEVER expose API keys client-side
+EXPO_PUBLIC_ORIVA_API_KEY=oriva_pk_live_xxxxx  # ❌ DANGEROUS
+
+# ✅ Keep server-side only
+ORIVA_API_KEY=oriva_pk_live_xxxxx              # ✅ SECURE
+EXPO_PUBLIC_ORIVA_CLIENT_ID=your-app-name      # ✅ Safe to expose
+```
+
+#### **Rate Limiting in Production**
+**Cause**: Too many direct API calls or missing rate limiting
+**Solution**: Implement proper rate limiting in your proxy
+
+```javascript
+const rateLimitStore = new Map();
+
+function rateLimit(req, clientId, limit = 100, window = 60000) {
+  const key = `${clientId || req.ip || 'unknown'}`;
+  const now = Date.now();
+  const windowStart = now - window;
+
+  // Get current requests for this key
+  const requests = rateLimitStore.get(key) || [];
+  
+  // Remove old requests outside the window
+  const validRequests = requests.filter(time => time > windowStart);
+  
+  if (validRequests.length >= limit) {
+    return false; // Rate limit exceeded
+  }
+  
+  // Add current request
+  validRequests.push(now);
+  rateLimitStore.set(key, validRequests);
+  
+  return true; // Request allowed
+}
+```
+
 ### 4. Iframe Sandbox Errors
 
 **Problem**: Console errors like "Error while parsing the 'sandbox' attribute: 'allow-orientation-lock', 'allow-presentation' are invalid"
@@ -1085,14 +1435,55 @@ npm run vercel-build
 # Verify no errors in build output
 ```
 
-### 4. Pre-Submission Checklist
+### 4. Production API Testing
+
+```bash
+# Test your proxy endpoint directly
+curl -H "X-Client-ID: your-app-name" \
+     "https://your-app.vercel.app/api/oriva/profiles"
+
+# Test with different origins
+curl -H "X-Client-ID: your-app-name" \
+     -H "Origin: https://oriva.io" \
+     "https://your-app.vercel.app/api/oriva/profiles"
+
+# Verify rate limiting works
+for i in {1..10}; do
+  curl -H "X-Client-ID: test-client" \
+       "https://your-app.vercel.app/api/oriva/profiles"
+done
+```
+
+### 5. Production Validation Checklist
+
+#### **Security & Authentication**
+- [ ] API keys stored server-side only (never in client bundle)
+- [ ] BFF proxy endpoints implement proper authentication
+- [ ] Rate limiting configured and tested
+- [ ] CORS origins restricted to approved domains only
+- [ ] No sensitive data visible in browser network tab
+
+#### **Integration & Performance**
 - [ ] App loads in iframe without console errors
 - [ ] CSP headers configured with `frame-ancestors` directive
 - [ ] X-Frame-Options removed or set to allow embedding
+- [ ] API calls succeed from iframe context
+- [ ] App responds within 3 seconds in production
+- [ ] Graceful fallback to demo data when API fails
+
+#### **Production Deployment**
 - [ ] Build process completes successfully
 - [ ] HTTPS enabled for production deployment
-- [ ] App responds within 3 seconds
+- [ ] Environment variables set correctly on hosting platform
+- [ ] Absolute URLs used for iframe contexts
 - [ ] Mobile responsive design implemented
+- [ ] Error monitoring and logging configured
+
+#### **API Integration**
+- [ ] Profiles load correctly from Oriva API
+- [ ] Error handling works for API failures
+- [ ] Data source pattern implemented with fallbacks
+- [ ] No client-side credential dependencies
 
 ---
 
