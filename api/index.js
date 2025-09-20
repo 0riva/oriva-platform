@@ -98,7 +98,7 @@ refreshCorsCache().then(() => {
   console.warn('⚠️ Failed to initialize CORS cache:', error.message);
 });
 
-// ULTRA-BULLETPROOF CORS: Guaranteed Work Buddy support
+// Dynamic CORS for marketplace applications
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, etc.)
@@ -109,9 +109,9 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // CRITICAL: Work Buddy MUST ALWAYS be allowed (highest priority)
-    if (origin === 'https://work-buddy-expo.vercel.app') {
-      console.log('✅ CORS: Work Buddy origin allowed (critical path)');
+    // Check against registered marketplace applications
+    if (corsOriginCache.data.has(origin)) {
+      console.log('✅ CORS: Registered marketplace origin allowed:', origin);
       return callback(null, true);
     }
 
@@ -569,102 +569,6 @@ app.get('/api/v1/test', (req, res) => {
   });
 });
 
-// Debug endpoint for Work Buddy API key
-app.get('/api/v1/debug/workbuddy', async (req, res) => {
-  try {
-    const WORK_BUDDY_API_KEY = process.env.WORK_BUDDY_API_KEY;
-
-    // Security: Only allow debug endpoint when API key is properly configured
-    if (!WORK_BUDDY_API_KEY) {
-      return res.status(503).json({
-        error: 'Debug endpoint unavailable',
-        message: 'WORK_BUDDY_API_KEY environment variable not configured'
-      });
-    }
-
-    const debugInfo = {
-      timestamp: new Date().toISOString(),
-      environment: {
-        nodeEnv: process.env.NODE_ENV,
-        hasSupabaseUrl: !!supabaseUrl,
-        hasServiceKey: !!supabaseServiceKey,
-        supabaseUrlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING',
-        cryptoSubtleAvailable: !!crypto.subtle
-      },
-      keyTest: {}
-    };
-
-    // Test key hashing
-    try {
-      const keyHash = await hashAPIKey(WORK_BUDDY_API_KEY);
-      debugInfo.keyTest.hashSuccess = true;
-      debugInfo.keyTest.hash = keyHash.substring(0, 16) + '...';
-
-      // Test database query
-      const { data: keyData, error } = await supabase
-        .from('developer_api_keys')
-        .select('id, user_id, name, permissions, is_active, usage_count')
-        .eq('key_hash', keyHash)
-        .eq('is_active', true)
-        .single();
-
-      debugInfo.keyTest.dbQuerySuccess = !error;
-      debugInfo.keyTest.keyFound = !!keyData;
-      debugInfo.keyTest.error = error?.message || null;
-
-      if (error) {
-        debugInfo.keyTest.dbError = {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        };
-      }
-
-      if (keyData) {
-        debugInfo.keyTest.keyData = {
-          id: keyData.id,
-          name: keyData.name,
-          permissions: expandPermissions(keyData.permissions),
-          isActive: keyData.is_active
-        };
-      }
-
-    } catch (error) {
-      debugInfo.keyTest.hashSuccess = false;
-      debugInfo.keyTest.error = error.message;
-    }
-
-    // Test basic Supabase connection
-    try {
-      const { data: connectionTest, error: connectionError } = await supabase
-        .from('developer_api_keys')
-        .select('count')
-        .limit(1);
-
-      debugInfo.connectionTest = {
-        success: !connectionError,
-        error: connectionError?.message || null
-      };
-    } catch (error) {
-      debugInfo.connectionTest = {
-        success: false,
-        error: error.message
-      };
-    }
-
-    res.json({
-      success: true,
-      debug: debugInfo
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
 
 // Debug endpoint to check CORS cache state (admin only)
 app.get('/api/v1/debug/cors', requireAdminToken, async (req, res) => {
@@ -679,11 +583,11 @@ app.get('/api/v1/debug/cors', requireAdminToken, async (req, res) => {
     const cacheAge = Date.now() - corsOriginCache.lastUpdated;
     const cacheOrigins = Array.from(corsOriginCache.data);
 
-    // Test Work Buddy specifically
-    const { data: workBuddyApps, error: workBuddyError } = await supabase
+    // Test marketplace apps
+    const { data: marketplaceApps, error: marketplaceError } = await supabase
       .from('plugin_marketplace_apps')
       .select('name, execution_url, status')
-      .ilike('name', '%work%buddy%');
+      .eq('is_active', true);
 
     res.json({
       success: true,
@@ -698,10 +602,10 @@ app.get('/api/v1/debug/cors', requireAdminToken, async (req, res) => {
         ageMs: cacheAge,
         origins: cacheOrigins
       },
-      workBuddy: {
-        found: workBuddyApps?.length || 0,
-        apps: workBuddyApps || [],
-        error: workBuddyError?.message || null
+      marketplace: {
+        totalApps: marketplaceApps?.length || 0,
+        apps: marketplaceApps || [],
+        error: marketplaceError?.message || null
       },
       environment: {
         hasSupabaseUrl: !!process.env.SUPABASE_URL || !!process.env.EXPO_PUBLIC_SUPABASE_URL,
