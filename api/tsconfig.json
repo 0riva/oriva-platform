@@ -4,19 +4,31 @@
     "module": "commonjs",
     "allowJs": true,
     "checkJs": false,
-    "noEmit": true,
+    "noEmit": false,
+    "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": false,
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noImplicitThis": false
   },
   "include": [
-    "**/*.js"
+    "**/*.js",
+    "**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "sql"
+    "sql",
+    "dist",
+    "**/*.test.js",
+    "**/*.test.ts"
   ]
 }
