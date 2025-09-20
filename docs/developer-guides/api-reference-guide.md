@@ -693,6 +693,73 @@ Show notifications to user.
 
 ---
 
+## 🔐 API Permissions Reference
+
+### Available API Permissions
+
+When creating an API key, you'll receive access to the following granular permissions:
+
+| Permission | Description | Endpoints Affected |
+|------------|-------------|-------------------|
+| `user:read` | Read user profile information | `/api/v1/user/me`, `/api/v1/users/me` |
+| `user:write` | Update user information | User update endpoints |
+| `profiles:read` | Read authorized user profiles (excludes anonymous) | `/api/v1/profiles/available`, `/api/v1/profiles/active` |
+| `profiles:write` | Switch between authorized profiles | `/api/v1/profiles/{profileId}/activate` |
+| `groups:read` | Read user group memberships | `/api/v1/groups` |
+| `groups:write` | Access group member information | `/api/v1/groups/{groupId}/members` |
+| `entries:read` | Read entries | `/api/v1/entries` |
+| `entries:write` | Create and update entries | Entry creation/update endpoints |
+| `entries:delete` | Delete entries | Entry deletion endpoints |
+| `templates:read` | Read templates | `/api/v1/templates` |
+| `templates:write` | Create and update templates | Template management endpoints |
+| `marketplace:read` | Browse public marketplace apps | `/api/v1/marketplace/*` |
+| `storage:read` | Read storage data | `/api/v1/storage` |
+| `storage:write` | Write storage data | Storage update endpoints |
+
+### Permission Updates (January 2025)
+
+**🔄 Recent Changes:**
+- **Permission Format**: Updated from `read:profile` to `user:read` format for consistency
+- **Anonymous Filtering**: Profile endpoints now exclude anonymous profiles for privacy
+- **Storage Permissions**: Added `storage:read` and `storage:write` for app data access
+- **Granular Control**: Expanded from 2 basic permissions to 12 specific permissions
+
+**🔧 Migration Guide:**
+If you have an existing API key created before January 2025:
+1. **Old keys** retain their original limited permissions (`read:profile`, `read:entries`)
+2. **Create new key** to access all 12 granular permissions
+3. **Update integration** to handle new permission format and excluded anonymous profiles
+
+### Permission Validation
+
+Your API key's permissions are validated against the endpoints you access:
+
+```json
+{
+  "success": true,
+  "data": {
+    "apiKeyInfo": {
+      "permissions": [
+        "user:read",
+        "profiles:read",
+        "groups:read",
+        "entries:read",
+        "marketplace:read",
+        "storage:read"
+      ]
+    }
+  }
+}
+```
+
+**Privacy & Security:**
+- Anonymous profiles are automatically excluded from all profile endpoints
+- Each permission grants access only to data the authenticated user can access
+- Cross-profile data isolation prevents unauthorized access
+- All responses use sanitized external IDs (e.g., `ext_1234567890abcdef`)
+
+---
+
 ## 🔍 Property Discovery Guide
 
 ### Interactive API Explorer
