@@ -5,41 +5,43 @@
 
 const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
 
+const expectTypedAuthError = (response, expectedMessage, expectedStatus = 401) => {
+  expect(response.status).toBe(expectedStatus);
+  expect(response.body.success).toBe(false);
+  expect(typeof response.body.code).toBe('string');
+  expect(response.body.message).toBe(expectedMessage);
+  if (Object.prototype.hasOwnProperty.call(response.body, 'details')) {
+    expect(Array.isArray(response.body.details)).toBe(true);
+  }
+};
+
 describe('Authentication', () => {
   describe('Authorization Header Validation', () => {
     test('should reject requests without authorization header', async () => {
       const response = await createTestRequest('/api/v1/user/me');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedAuthError(response, 'API key required');
     });
 
     test('should reject requests without Bearer prefix', async () => {
       const response = await createTestRequest('/api/v1/user/me')
         .set('Authorization', 'invalid_format');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedAuthError(response, 'API key required');
     });
 
     test('should reject empty Bearer token', async () => {
       const response = await createTestRequest('/api/v1/user/me')
         .set('Authorization', 'Bearer ');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedAuthError(response, 'API key required');
     });
 
     test('should reject non-string tokens', async () => {
       const response = await createTestRequest('/api/v1/user/me')
         .set('Authorization', 'Bearer null');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
   });
 
@@ -53,9 +55,7 @@ describe('Authentication', () => {
           `${prefix}invalid_key_suffix`
         );
 
-        expect(response.status).toBe(401);
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Invalid API key');
+        expectTypedAuthError(response, 'Invalid API key');
       }
     });
 
@@ -65,9 +65,7 @@ describe('Authentication', () => {
         testData.invalidApiKey
       );
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
 
     test('should accept valid API key and attach keyInfo', async () => {
@@ -91,9 +89,7 @@ describe('Authentication', () => {
         'oriva_pk_test_malformed_key_123'
       );
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
 
     test('should handle database lookup errors gracefully', async () => {
@@ -103,9 +99,7 @@ describe('Authentication', () => {
         'oriva_pk_test_non_existent_key_hash'
       );
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
   });
 
@@ -116,9 +110,7 @@ describe('Authentication', () => {
         'invalid_token_without_prefix'
       );
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
 
     test('should reject malformed JWT-like tokens', async () => {
@@ -127,9 +119,7 @@ describe('Authentication', () => {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid_payload'
       );
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
   });
 
@@ -145,22 +135,19 @@ describe('Authentication', () => {
     protectedEndpoints.forEach(endpoint => {
       test(`should require authentication for ${endpoint}`, async () => {
         const response = await createTestRequest(endpoint);
-        
-        expect(response.status).toBe(401);
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('API key required');
+
+        expectTypedAuthError(response, 'API key required');
       });
     });
 
     // Test marketplace endpoint separately since it might have different behavior
     test('should require authentication for marketplace apps', async () => {
       const response = await createTestRequest('/api/v1/marketplace/apps');
-      
+
       // Accept either 401 (auth required) or 404 (endpoint not found)
       expect([401, 404]).toContain(response.status);
       if (response.status === 401) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('API key required');
+        expectTypedAuthError(response, 'API key required');
       }
     });
   });
@@ -196,7 +183,10 @@ describe('Authentication', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toMatch(/Invalid (API key|authentication token)/);
+      expect(typeof response.body.code).toBe('string');
+      expect(response.body.message).toMatch(/Invalid (API key|authentication token)/);
+      // Should not expose details for auth errors to prevent information leakage
+      expect(response.body).not.toHaveProperty('details');
     });
 
     test('should handle special characters in API keys', async () => {
@@ -206,9 +196,7 @@ describe('Authentication', () => {
         specialCharsKey
       );
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
 
     test('should handle case sensitivity in API keys', async () => {
@@ -218,9 +206,7 @@ describe('Authentication', () => {
         upperCaseKey
       );
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
 
     test('should handle authorization header with extra whitespace', async () => {
@@ -228,9 +214,7 @@ describe('Authentication', () => {
         .set('Authorization', `  Bearer  ${  testData.validApiKey  }  `);
 
       // The middleware parses the key but it has extra spaces, so fails validation
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key');
     });
   });
 
@@ -240,11 +224,9 @@ describe('Authentication', () => {
 
       expect([401, 404, 503]).toContain(response.status);
       if (response.status === 401) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Unauthorized');
+        expectTypedAuthError(response, 'Unauthorized');
       } else if (response.status === 503) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Admin token not configured');
+        expectTypedAuthError(response, 'Admin token not configured', 503);
       }
     });
 
@@ -254,8 +236,7 @@ describe('Authentication', () => {
 
       expect([401, 404]).toContain(response.status);
       if (response.status === 401) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Unauthorized');
+        expectTypedAuthError(response, 'Unauthorized');
       }
     });
   });
@@ -269,8 +250,7 @@ describe('Authentication', () => {
       // Should respond with proper structure even if rate limited
       expect([401, 404, 429, 503]).toContain(response.status);
       if (response.status === 429) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Rate limit exceeded');
+        expectTypedAuthError(response, 'Rate limit exceeded', 429);
       }
     });
   });

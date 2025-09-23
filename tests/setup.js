@@ -7,6 +7,7 @@ const { initTestApp } = require('./utils/testHelpers');
 
 // Mock environment variables for testing
 process.env.NODE_ENV = 'test';
+process.env.NO_SERVER = 'true';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test_service_key';
 process.env.ORIVA_CORE_API_URL = 'https://test.oriva-core.co';
@@ -55,8 +56,8 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 
 // Initialize the test app
-const app = require('../api/index');
-initTestApp(app);
+const api = require('../api/index.js');
+initTestApp(api.app || api.default || api);
 
 // Global test timeout
 jest.setTimeout(10000);
