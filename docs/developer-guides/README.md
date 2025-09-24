@@ -8,7 +8,24 @@ New to Oriva Platform? Start here:
 
 1. **📋 [Start Guide](../START_GUIDE.md)** - Complete setup and integration tutorial
 2. **📖 [API Reference Guide](./api-reference-guide.md)** - Detailed endpoint documentation with property lists
-3. **🔗 [API Headers Guide](./api-headers-guide.md)** - Complete header documentation and troubleshooting
+3. **🔧 TypeScript Workflow**
+   ```bash
+   # Install dependencies
+   npm install
+
+   # Type-check without emitting
+   npm run type-check
+
+   # Start the typed dev server (ts-node)
+   npm run dev
+
+   # Build the compiled output
+   npm run build
+
+   # Run Jest with TypeScript support
+   npm test
+   ```
+4. **🔗 [API Headers Guide](./api-headers-guide.md)** - Complete header documentation and troubleshooting
 
 ## 📚 Complete Guide Index
 

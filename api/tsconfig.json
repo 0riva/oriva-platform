@@ -1,24 +1,29 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "nodenext",
     "allowJs": true,
     "checkJs": false,
     "noEmit": false,
     "outDir": "./dist",
     "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "@api/*": ["./*"]
+    },
     "forceConsistentCasingInFileNames": true,
-    "strict": false,
+    "strict": true,
     "skipLibCheck": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "declaration": false,
     "sourceMap": true,
     "incremental": true,
     "tsBuildInfoFile": "./.tsbuildinfo",
-    "noImplicitAny": false,
-    "noImplicitReturns": false,
-    "noImplicitThis": false
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "isolatedModules": true
   },
   "include": [
     "**/*.js",

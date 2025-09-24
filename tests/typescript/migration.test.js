@@ -1,6 +1,12 @@
 const request = require('supertest');
 const path = require('path');
 const fs = require('fs');
+const tsNode = require('ts-node');
+
+tsNode.register({
+  transpileOnly: true,
+  project: path.join(__dirname, '../../api/tsconfig.json')
+});
 
 // TDD Test Suite for TypeScript Migration
 describe('TypeScript Migration TDD', () => {
@@ -64,6 +70,15 @@ describe('TypeScript Migration TDD', () => {
       // Verify we have some basic type annotations
       expect(tsContent).toMatch(/interface\s+\w+/); // At least one interface
       expect(tsContent).toMatch(/:\s*(string|number|boolean)/); // Basic type annotations
+    });
+
+    test('🔵 REFACTOR: Should export foundational API types from api/types/index.ts', () => {
+      // This will fail until the new type barrel exports are implemented
+      const types = require('../../api/types/index.ts');
+
+      expect(types.ApiResponse).toBeDefined();
+      expect(types.AuthenticatedRequest).toBeDefined();
+      expect(types.DatabaseQueryResult).toBeDefined();
     });
 
   });

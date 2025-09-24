@@ -5,14 +5,47 @@
 
 const { createTestRequest, withAuth, testData } = require('../utils/testHelpers');
 
+const expectTypedMarketplaceError = (response, expectedMessage, expectedStatus = 401) => {
+  expect(response.status).toBe(expectedStatus);
+  expect(response.body.success).toBe(false);
+  expect(typeof response.body.code).toBe('string');
+  expect(response.body.message).toBe(expectedMessage);
+  if (Object.prototype.hasOwnProperty.call(response.body, 'details')) {
+    expect(Array.isArray(response.body.details)).toBe(true);
+  }
+};
+
+const expectMarketplaceAppShape = (app) => {
+  expect(typeof app.id).toBe('string');
+  expect(typeof app.name).toBe('string');
+  expect(typeof app.slug).toBe('string');
+  expect(typeof app.category).toBe('string');
+  expect(typeof app.developerId).toBe('string');
+  expect(typeof app.developerName).toBe('string');
+  expect(['draft', 'pending_review', 'approved', 'rejected']).toContain(app.status);
+  expect(typeof app.isActive).toBe('boolean');
+  if (app.screenshots) {
+    expect(Array.isArray(app.screenshots)).toBe(true);
+  }
+};
+
+const expectPaginatedMeta = (meta) => {
+  expect(meta).toBeDefined();
+  expect(meta).toHaveProperty('pagination');
+  expect(meta.pagination).toEqual(expect.objectContaining({
+    page: expect.any(Number),
+    limit: expect.any(Number),
+    total: expect.any(Number),
+    totalPages: expect.any(Number)
+  }));
+};
+
 describe('Marketplace API', () => {
   describe('GET /api/v1/marketplace/apps', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/apps');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should return marketplace apps with valid API key', async () => {
@@ -27,12 +60,12 @@ describe('Marketplace API', () => {
       if (response.status === 200) {
         expect(response.body.success).toBe(true);
         expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
       } else if (response.status === 500) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Failed to fetch apps');
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
       } else if (response.status === 401) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Invalid API key');
+        expectTypedMarketplaceError(response, 'Invalid API key');
       }
     });
 
@@ -43,6 +76,17 @@ describe('Marketplace API', () => {
       );
 
       expect([200, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
 
     test('should handle category filtering', async () => {
@@ -52,6 +96,17 @@ describe('Marketplace API', () => {
       );
 
       expect([200, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
 
     test('should handle search filtering', async () => {
@@ -61,6 +116,17 @@ describe('Marketplace API', () => {
       );
 
       expect([200, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
 
     test('should handle combined filtering and pagination', async () => {
@@ -70,6 +136,17 @@ describe('Marketplace API', () => {
       );
 
       expect([200, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
   });
 
@@ -77,9 +154,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/trending');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should return trending apps with valid API key', async () => {
@@ -93,6 +168,11 @@ describe('Marketplace API', () => {
       if (response.status === 200) {
         expect(response.body.success).toBe(true);
         expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
       }
     });
 
@@ -103,6 +183,16 @@ describe('Marketplace API', () => {
       );
 
       expect([200, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
   });
 
@@ -110,9 +200,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/featured');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should return featured apps with valid API key', async () => {
@@ -126,6 +214,11 @@ describe('Marketplace API', () => {
       if (response.status === 200) {
         expect(response.body.success).toBe(true);
         expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
       }
     });
 
@@ -136,6 +229,16 @@ describe('Marketplace API', () => {
       );
 
       expect([200, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
   });
 
@@ -143,9 +246,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/categories');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should return categories with valid API key', async () => {
@@ -159,6 +260,10 @@ describe('Marketplace API', () => {
       if (response.status === 200) {
         expect(response.body.success).toBe(true);
         expect(Array.isArray(response.body.data)).toBe(true);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
       }
     });
   });
@@ -167,9 +272,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/apps/test-app-123');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should return specific app with valid API key', async () => {
@@ -183,9 +286,13 @@ describe('Marketplace API', () => {
       if (response.status === 200) {
         expect(response.body.success).toBe(true);
         expect(response.body.data).toBeDefined();
+        expectMarketplaceAppShape(response.body.data);
       } else if (response.status === 404) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('App not found');
+        expectTypedMarketplaceError(response, 'App not found', 404);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
       }
     });
 
@@ -196,6 +303,17 @@ describe('Marketplace API', () => {
       );
 
       expect([400, 401, 404, 500]).toContain(response.status);
+
+      if (response.status === 400 || response.status === 404) {
+        expectTypedMarketplaceError(response, response.body.message, response.status);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      } else if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expectMarketplaceAppShape(response.body.data);
+      }
     });
   });
 
@@ -203,7 +321,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/installed');
 
-      expect(response.status).toBe(401);
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should return installed apps for authenticated user', async () => {
@@ -218,6 +336,11 @@ describe('Marketplace API', () => {
       if (response.status === 200) {
         expect(response.body.success).toBe(true);
         expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
       }
     });
   });
@@ -226,7 +349,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/install/test-app-123', 'post');
 
-      expect(response.status).toBe(401);
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should handle app installation with valid authentication', async () => {
@@ -238,12 +361,17 @@ describe('Marketplace API', () => {
       // This endpoint uses validateAuth, so may behave differently
       expect([200, 400, 401, 404, 409, 500]).toContain(response.status);
 
-      if (response.status === 409) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('App already installed');
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expectMarketplaceAppShape(response.body.data);
+      } else if (response.status === 409) {
+        expectTypedMarketplaceError(response, 'App already installed', 409);
       } else if (response.status === 404) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('App not found');
+        expectTypedMarketplaceError(response, 'App not found', 404);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to install app', 500);
       }
     });
 
@@ -254,6 +382,10 @@ describe('Marketplace API', () => {
       );
 
       expect([400, 404]).toContain(response.status);
+
+      if (response.status === 400 || response.status === 404) {
+        expectTypedMarketplaceError(response, response.body.message, response.status);
+      }
     });
   });
 
@@ -261,7 +393,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/uninstall/test-app-123', 'delete');
 
-      expect(response.status).toBe(401);
+      expectTypedMarketplaceError(response, 'API key required');
     });
 
     test('should handle app uninstallation with valid authentication', async () => {
@@ -273,9 +405,15 @@ describe('Marketplace API', () => {
       // This endpoint uses validateAuth, so may behave differently
       expect([200, 401, 404, 500]).toContain(response.status);
 
-      if (response.status === 404) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toMatch(/not found|not installed/);
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+      } else if (response.status === 404) {
+        expect(response.body.message).toMatch(/not found|not installed/);
+        expectTypedMarketplaceError(response, response.body.message, 404);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to uninstall app', 500);
       }
     });
 
@@ -286,6 +424,10 @@ describe('Marketplace API', () => {
       );
 
       expect([400, 404]).toContain(response.status);
+
+      if (response.status === 400 || response.status === 404) {
+        expectTypedMarketplaceError(response, response.body.message, response.status);
+      }
     });
   });
 
@@ -300,8 +442,14 @@ describe('Marketplace API', () => {
       expect([200, 401, 500]).toContain(response.status);
 
       if (response.status === 500) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBeDefined();
+        expectTypedMarketplaceError(response, response.body.message, 500);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
       }
     });
 
@@ -313,6 +461,19 @@ describe('Marketplace API', () => {
 
       // Should handle gracefully, either working with defaults or returning an error
       expect([200, 400, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
+      } else if (response.status === 400) {
+        expectTypedMarketplaceError(response, response.body.message, 400);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
 
     test('should handle SQL injection attempts in search', async () => {
@@ -323,6 +484,19 @@ describe('Marketplace API', () => {
 
       // Should handle safely without allowing injection
       expect([200, 400, 401, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
+      } else if (response.status === 400) {
+        expectTypedMarketplaceError(response, response.body.message, 400);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
 
     test('should handle extremely long search queries', async () => {
@@ -333,6 +507,19 @@ describe('Marketplace API', () => {
       );
 
       expect([200, 400, 401, 414, 500]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        response.body.data.forEach(expectMarketplaceAppShape);
+        expectPaginatedMeta(response.body.meta);
+      } else if (response.status === 400 || response.status === 414) {
+        expectTypedMarketplaceError(response, response.body.message, response.status);
+      } else if (response.status === 401) {
+        expectTypedMarketplaceError(response, 'Invalid API key');
+      } else if (response.status === 500) {
+        expectTypedMarketplaceError(response, 'Failed to fetch apps', 500);
+      }
     });
   });
 });
