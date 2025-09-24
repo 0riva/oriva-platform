@@ -36,3 +36,44 @@ api/debug-*.js
 
 # Coverage reports
 coverage/
+
+# Additional Security for Public Repository
+*.key
+*.pem
+*.p12
+*.cert
+*.crt
+*secrets*
+*credentials*
+*.private
+.aws/
+.ssh/
+
+# IDE and Editor files
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+.Trashes
+.fseventsd
+
+# Backup and temporary files  
+*.backup
+*.bak
+*.tmp
+*.temp
+*~
+
+# Large files that might cause issues
+*.iso
+*.dmg
+*.pkg
+*.exe
+
+# Cache directories
+.cache/
+.parcel-cache/

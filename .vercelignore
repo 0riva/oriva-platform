@@ -1,0 +1,56 @@
+# Security and internal files - DO NOT DEPLOY
+internal-docs/
+specs/
+.specify/
+.claude/
+AGENTS.md
+CLAUDE.md
+
+# Environment files
+.env*
+!env.example
+
+# Node modules and dependencies 
+node_modules/
+
+# Build artifacts and caches
+dist/
+.tsbuildinfo
+*.log
+logs/
+
+# Testing and coverage
+coverage/
+tests/
+*.test.js
+*.test.ts
+
+# Development files
+.DS_Store
+.vscode/
+*.tmp
+*.temp
+
+# Archives and backups
+archive/
+*.backup
+*.bak
+
+# Security scanning
+.secrets.baseline
+
+# Database files (safety)
+*.db
+*.sqlite*
+
+# Temporary and debug files
+debug-*.js
+temp-*.js
+*-debug.js
+test-credentials.js
+
+# Git and version control
+.git/
+.gitignore
+
+# Note: docs/ directory is PUBLIC and should be deployed for API documentation
