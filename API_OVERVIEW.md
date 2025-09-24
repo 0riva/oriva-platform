@@ -9,13 +9,13 @@
 # Oriva Platform Configuration
 EXPO_PUBLIC_ORIVA_API_URL=https://api.oriva.io/api/v1
 EXPO_PUBLIC_ORIVA_API_KEY=your_oriva_api_key_here
-EXPO_PUBLIC_ORIVA_CLIENT_ID=work-buddy-app
+EXPO_PUBLIC_ORIVA_CLIENT_ID=your-app-name
 ```
 
 These environment variables follow the standard Oriva naming conventions for:
 - **API URL**: Versioned endpoint following `/api/v1` pattern
 - **API Key**: Standardized authentication key format
-- **Client ID**: Application identifier for work-buddy integration
+- **Client ID**: Application identifier for your app integration
 
 ## 🎯 **API Overview**
 

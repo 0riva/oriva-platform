@@ -77,7 +77,7 @@ Create a `.env` file in your project root with your Oriva API credentials using 
 # Oriva Platform Configuration (Required)
 EXPO_PUBLIC_ORIVA_API_URL=https://api.oriva.io/api/v1
 EXPO_PUBLIC_ORIVA_API_KEY=your_oriva_api_key_here
-EXPO_PUBLIC_ORIVA_CLIENT_ID=work-buddy-app
+EXPO_PUBLIC_ORIVA_CLIENT_ID=your-app-name
 ```
 
 > **📝 Note**: Use the `EXPO_PUBLIC_` prefix for variables that need to be accessible in your client-side code. Variables without this prefix remain server-side only.
@@ -94,7 +94,7 @@ When deploying your app, you'll need to configure these environment variables in
    ```
    EXPO_PUBLIC_ORIVA_API_URL = https://api.oriva.io/api/v1
    EXPO_PUBLIC_ORIVA_API_KEY = your_oriva_api_key_here
-   EXPO_PUBLIC_ORIVA_CLIENT_ID = work-buddy-app
+   EXPO_PUBLIC_ORIVA_CLIENT_ID = your-app-name
    ```
 4. **Set Environment** to "Production, Preview, and Development"
 5. **Deploy** your changes

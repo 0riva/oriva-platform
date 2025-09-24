@@ -33,7 +33,7 @@ Content-Type: application/json
 Helps with debugging and analytics:
 ```http
 User-Agent: your-app-name/1.0.0 (web)
-User-Agent: work-buddy-app/2.1.3 (mobile)
+User-Agent: your-app-name/2.1.3 (mobile)
 ```
 
 ### X-Client-ID (Recommended)
@@ -94,8 +94,8 @@ fetch('https://api.oriva.io/api/v1/profiles/available', {
   headers: {
     'Authorization': 'Bearer oriva_pk_live_...',
     'Content-Type': 'application/json',
-    'User-Agent': 'work-buddy-app/1.0.0 (web)',
-    'X-Client-ID': 'work-buddy-app'
+    'User-Agent': 'your-app-name/1.0.0 (web)',
+    'X-Client-ID': 'your-app-name'
   }
 });
 ```
