@@ -499,6 +499,8 @@ export const getProfiles = async () => {
 
 ## 🌐 Advanced Iframe Integration
 
+> **📖 Iframe Authentication Guide**: For embedded apps requiring parent window authentication, see [Iframe Authentication](./developer-guides/iframe-authentication.md) for quick setup and [Complete Implementation](./developer-guides/iframe-authentication-complete.md) for detailed patterns.
+
 ### Iframe Detection & Context Handling
 
 ```javascript
