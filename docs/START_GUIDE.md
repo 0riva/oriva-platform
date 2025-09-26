@@ -4,6 +4,20 @@
 
 Welcome to the Oriva Platform! This guide will help you build powerful integrations that extend Oriva's functionality for millions of users.
 
+## 🧭 **Quick Navigation**
+
+**For Quick Reference (AI Agents):**
+- **[API Endpoints Summary](#-api-endpoints)** - Complete endpoint reference with examples
+- **[Environment Setup](#-step-2-set-up-authentication)** - Configuration patterns and examples
+- **[Security Patterns](#-production-security-architecture)** - BFF proxy implementation examples
+- **[Error Handling](#-common-issues)** - Troubleshooting patterns and solutions
+
+**For Step-by-Step Learning (Humans):**
+- **[Prerequisites & Setup](#-prerequisites)** - System requirements and account setup
+- **[5-Step Integration Process](#-step-1-register-your-app)** - Complete guided walkthrough
+- **[Testing & Publishing](#-step-5-publish-to-marketplace)** - Validation and marketplace submission
+- **[Specialized Guides](#-developer-resources--specialized-guides)** - Deep-dive documentation links
+
 [![API Version](https://img.shields.io/badge/API-v1.0-blue)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)]()
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green)]()
@@ -209,7 +223,7 @@ if (sessionId && appId) {
 
 3. **Verify in Oriva launcher** by installing your app in development
 
-> **📖 Complete Integration Guide**: See [App Integration Requirements](./developer-guides/app-integration-requirements.md) for comprehensive technical specifications.
+> **📖 Complete Integration Guide**: See [App Integration Requirements](./public/developer-guide/app-integration-requirements.md) for comprehensive technical specifications.
 
 ### 2.4 API Key Authentication
 
@@ -246,7 +260,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/user/me
 ```
 
-> **🛠️ Complete Troubleshooting**: For systematic debugging workflows and comprehensive issue resolution, see [API Troubleshooting Guide](./developer-guides/api-troubleshooting.md)
+> **🛠️ Complete Troubleshooting**: For systematic debugging workflows and comprehensive issue resolution, see [API Troubleshooting Guide](./public/developer-guide/api-troubleshooting-guide.md)
 
 ---
 
@@ -499,7 +513,7 @@ export const getProfiles = async () => {
 
 ## 🌐 Advanced Iframe Integration
 
-> **📖 Iframe Authentication Guide**: For embedded apps requiring parent window authentication, see [Iframe Authentication](./developer-guides/iframe-authentication.md) for quick setup and [Complete Implementation](./developer-guides/iframe-authentication-complete.md) for detailed patterns.
+> **📖 Secure Iframe Integration**: For embedded apps requiring secure authentication, see [Secure Iframe Integration](./public/developer-guide/iframe-integration-secure.md) for production-ready patterns.
 
 ### Iframe Detection & Context Handling
 
@@ -584,18 +598,18 @@ EXPO_PUBLIC_APP_VARIANT=production
 **Before diving into integration, familiarize yourself with these specialized guides:**
 
 ### 🔗 **API Headers & CORS**
-- **📖 [API Headers Guide](./developer-guides/api-headers-guide.md)** - Complete guide to required, recommended, and optional headers
+- **📖 [API Headers Reference](./public/developer-guide/api-headers-reference.md)** - Complete guide to required, recommended, and optional headers
 - **🌐 CORS Support** - Automatic CORS approval for approved marketplace apps
 - **🎯 Quick Reference** - Copy-paste examples for JavaScript, cURL, Python
 - **🚨 Need Help?** - Use our [GitHub issue template](../.github/ISSUE_TEMPLATE/cors-header-request.md) for new header requests
 
 ### 🎮 **App Integration & Launcher**
-- **📖 [App Integration Requirements](./developer-guides/app-integration-requirements.md)** - Complete technical specifications
-- **🔧 [X-Frame-Options Guide](./developer-guides/x-frame-options.md)** - Iframe embedding configuration
-- **🚀 [App Launcher Migration](./developer-guides/app-launcher-migration.md)** - Upgrading to the new launcher system
+- **📖 [App Integration Requirements](./public/developer-guide/app-integration-requirements.md)** - Complete technical specifications
+- **🔧 [Iframe Configuration Guide](./public/developer-guide/iframe-configuration-guide.md)** - Secure iframe embedding setup
+- **🔒 [Authentication Patterns](./public/developer-guide/authentication-patterns.md)** - Secure authentication implementation
 
 ### 🔧 **Technical Specifications**
-- **📋 [App Launcher Integration](./developer-guides/app-launcher-integration.md)** - Advanced launcher features and configuration
+- **📋 [Development Tools](./public/developer-guide/development-tools.md)** - Testing utilities and performance monitors
 - **🔒 Content Security Policy** - CSP configuration for iframe embedding
 - **📱 Responsive Design** - Mobile optimization requirements
 
@@ -612,9 +626,9 @@ EXPO_PUBLIC_APP_VARIANT=production
 
 Use your preferred HTTP client to call the Oriva Platform API directly:
 
-> **📖 Complete API Reference**: See [API Reference Guide](./developer-guides/api-reference-guide.md) for detailed endpoint documentation with complete property lists, response schemas, and discovery guidance.
+> **📖 Complete API Reference**: See [Complete API Reference](./public/developer-guide/api-reference-complete.md) for detailed endpoint documentation with security-first patterns and comprehensive examples.
 
-> **📖 Complete Headers Guide**: See [API Headers Guide](./developer-guides/api-headers-guide.md) for comprehensive header documentation, including required, recommended, and optional headers for different use cases.
+> **📖 Complete Headers Guide**: See [API Headers Reference](./public/developer-guide/api-headers-reference.md) for comprehensive header documentation with security best practices.
 
 ```typescript
 // Get current user information
@@ -1013,7 +1027,7 @@ Before submitting your app, ensure:
 - [ ] **Mobile responsive** design implemented
 - [ ] **Error handling** for integration failures
 
-> 📖 **[Complete App Integration Requirements](./developer-guides/app-integration-requirements.md)** - Full technical specifications and examples
+> 📖 **[Complete App Integration Requirements](./public/developer-guide/app-integration-requirements.md)** - Full technical specifications and examples
 
 ### 🔒 **Privacy-First Profile API**
 ```bash
@@ -1493,10 +1507,10 @@ done
 
 ### Learn More
 
-- **📖 [API Reference Guide](./developer-guides/api-reference-guide.md)** - Complete API documentation with property lists and discovery guidance
-- **🔗 [API Headers Guide](./developer-guides/api-headers-guide.md)** - Comprehensive header documentation and troubleshooting
-- **🛠️ [API Troubleshooting Guide](./developer-guides/api-troubleshooting.md)** - Systematic debugging workflow and common issue resolution
-- **🎮 [App Integration Requirements](./developer-guides/app-integration-requirements.md)** - Technical integration specifications
+- **📖 [Complete API Reference](./public/developer-guide/api-reference-complete.md)** - Complete API documentation with security-first patterns and comprehensive examples
+- **🔗 [API Headers Reference](./public/developer-guide/api-headers-reference.md)** - Comprehensive header documentation and security best practices
+- **🛠️ [API Troubleshooting Guide](./public/developer-guide/api-troubleshooting-guide.md)** - Systematic debugging workflow and common issue resolution
+- **🎮 [App Integration Requirements](./public/developer-guide/app-integration-requirements.md)** - Technical integration specifications
 - **🧪 [API Tester](api-tester.html)** - Interactive tool to test Oriva Platform APIs
 - **🔧 [API Examples](https://github.com/0riva/oriva-platform/tree/main/examples)** - Integration examples (coming soon)
 - **🔐 [OAuth Guide](https://github.com/0riva/oriva-platform)** - Authentication details (coming soon)
