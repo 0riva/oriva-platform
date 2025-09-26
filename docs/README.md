@@ -12,12 +12,19 @@ This directory contains the API documentation for the Oriva Platform.
 
 ## 🛡️ Third-Party Developer Documentation
 
-**NEW**: Secure, production-ready integration guides for developers.
+**NEW**: Comprehensive, security-first integration guides for developers building on the Oriva Platform.
 
-- **[Developer Guide Overview](./public/developer-guide/)** - Security-first integration documentation
-- **[Quick Start](./public/developer-guide/quick-start.md)** - 15-minute secure setup
-- **[Security Warning](./public/developer-guide/SECURITY-WARNING.md)** - Critical security information
-- **[Localhost Development](./public/developer-guide/SECURE-localhost-development.md)** - Secure development environment
+### 📚 **[Complete Developer Guide](./public/developer-guide/)**
+- **Security-first patterns** - Production-ready authentication and API integration
+- **Step-by-step guides** - From setup to deployment with secure defaults
+- **Comprehensive API reference** - Complete endpoint documentation with best practices
+- **Integration patterns** - Web apps, iframe embedding, and development workflows
+- **Migration guidance** - Upgrade paths from legacy implementations
+
+### 🚀 **Quick Access**
+- **[15-Minute Quick Start](./public/developer-guide/quick-start.md)** - Fast, secure integration
+- **[Security Guidelines](./public/developer-guide/SECURITY-WARNING.md)** - Critical security patterns
+- **[Development Setup](./public/developer-guide/SECURE-localhost-development.md)** - Local environment configuration
 
 ## GitHub Pages Setup
 

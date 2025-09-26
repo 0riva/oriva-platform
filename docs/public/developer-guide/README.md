@@ -66,39 +66,19 @@ All documentation in this directory follows security-first principles:
 
 ## 🔍 Quick Reference
 
-### Essential Security Headers
-```javascript
-const headers = {
-  'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`, // Server-side only
-  'Content-Type': 'application/json',
-  'User-Agent': 'your-app/1.0.0',
-  'X-Client-ID': 'your-app-id'
-};
-```
+### Security Principles
+- **Server-side API key management** - Never expose credentials in client code
+- **HTTP-only cookie authentication** - Secure session management patterns
+- **Environment variable configuration** - Proper credential isolation
+- **Production-ready error handling** - Security without data exposure
 
-### Secure Authentication Flow
-```javascript
-// ✅ Secure: POST-based authentication
-fetch('/api/auth/login', {
-  method: 'POST',
-  body: JSON.stringify({ credentials }),
-  credentials: 'same-origin'
-});
+### Integration Approach
+- **POST-based authentication flows** instead of URL tokens
+- **Server-side proxy patterns** for sensitive API calls
+- **Complete environment isolation** between development and production
+- **Origin validation** for secure iframe communication
 
-// ❌ Insecure: URL-based tokens
-window.location.href = `/?token=${authToken}`; // NEVER DO THIS
-```
-
-### Environment Setup
-```bash
-# .env.development
-DEV_DATABASE_URL=postgresql://localhost:5432/oriva_dev
-DEV_API_KEY=oriva_pk_dev_your_key_here
-
-# .env.production
-DATABASE_URL=your_production_database_url
-API_KEY=oriva_pk_live_your_key_here
-```
+*Complete implementation examples available in the individual guides*
 
 ## 📊 Documentation Quality Standards
 
