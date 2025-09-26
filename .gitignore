@@ -7,6 +7,7 @@ dist
 # Security - Internal implementation files
 # api/ - Commented out to allow API deployment
 archive/
+internal-docs/
 
 # Environment files
 .env.local

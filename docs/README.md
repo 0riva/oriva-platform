@@ -10,6 +10,15 @@ This directory contains the API documentation for the Oriva Platform.
 - **`api-tester.html`** - Interactive API testing tool for developers
 - **`_config.yml`** - GitHub Pages configuration
 
+## 🛡️ Third-Party Developer Documentation
+
+**NEW**: Secure, production-ready integration guides for developers.
+
+- **[Developer Guide Overview](./public/developer-guide/)** - Security-first integration documentation
+- **[Quick Start](./public/developer-guide/quick-start.md)** - 15-minute secure setup
+- **[Security Warning](./public/developer-guide/SECURITY-WARNING.md)** - Critical security information
+- **[Localhost Development](./public/developer-guide/SECURE-localhost-development.md)** - Secure development environment
+
 ## GitHub Pages Setup
 
 This documentation is automatically deployed to GitHub Pages when changes are pushed to the main branch.
