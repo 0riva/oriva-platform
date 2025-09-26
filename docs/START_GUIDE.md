@@ -14,6 +14,7 @@ Welcome to the Oriva Platform! This guide will help you build powerful integrati
 
 **For Step-by-Step Learning (Humans):**
 - **[Prerequisites & Setup](#-prerequisites)** - System requirements and account setup
+- **[3-Level Learning Path](#-learning-path)** - Progressive complexity levels
 - **[5-Step Integration Process](#-step-1-register-your-app)** - Complete guided walkthrough
 - **[Testing & Publishing](#-step-5-publish-to-marketplace)** - Validation and marketplace submission
 - **[Specialized Guides](#-developer-resources--specialized-guides)** - Deep-dive documentation links
@@ -33,6 +34,92 @@ By the end of this guide, you'll have:
 - ✅ **Configured app launcher integration** with proper CSP headers
 - ✅ **Made your first API calls** to Oriva
 - ✅ **Submitted your app** for admin review and marketplace approval
+
+---
+
+## 🎓 Learning Path
+
+**Choose your complexity level based on your goals:**
+
+### 🟢 **Level 1: Quick Validation (20 minutes)**
+*"I want to test if this API works for my use case"*
+
+1. **[5-Minute API Test](./public/developer-guide/5-minute-api-test.md)** - Verify your API key
+2. **[15-Minute Web App](./public/developer-guide/15-minute-web-app.md)** - Build working integration
+
+**✅ Success Milestone**: You can see your Oriva user data in a web browser
+
+### 🟡 **Level 2: Production Setup (2 hours)**
+*"I want to build a real app for users"*
+
+1. **Complete Steps 1-3 below** (Register → Auth → API Integration)
+2. **Add error handling and security patterns**
+3. **Deploy to hosting platform**
+
+**✅ Success Milestone**: Your app works reliably with real users
+
+### 🔴 **Level 3: Marketplace Integration (4+ hours)**
+*"I want to publish to the Oriva marketplace"*
+
+1. **Complete all steps below** (Steps 1-5)
+2. **Implement iframe embedding and CSP headers**
+3. **Submit for marketplace approval**
+
+**✅ Success Milestone**: Your app is live in the Oriva marketplace
+
+**💡 Recommendation**: Start with Level 1 to validate your concept, then progress to higher levels as needed.
+
+---
+
+## 🗺️ Choose Your Integration Path
+
+**Not sure which approach fits your project? Use this decision tree:**
+
+### 🤔 **What are you building?**
+
+```
+📱 Simple Web App
+├── Just need user data? → Level 1: Quick Validation
+├── Building for real users? → Level 2: Production Setup
+└── Want marketplace listing? → Level 3: Full Integration
+
+🖼️ Embedded/Iframe App
+├── Embedding in your own site? → Level 2 + Iframe Setup
+├── Want Oriva marketplace? → Level 3: Full Integration
+└── Just testing iframe concept? → Level 1 first
+
+🏢 Enterprise Integration
+├── Custom authentication? → Level 2 + Custom Auth Patterns
+├── High-volume API usage? → Level 2 + BFF Proxy Patterns
+└── Multi-tenant setup? → Level 3 + Enterprise Guide
+
+🧪 Proof of Concept
+├── Quick API evaluation? → Level 1: 5-Minute Test
+├── Demonstrating to stakeholders? → Level 1: 15-Minute App
+└── Competitive analysis? → Level 1 + API Reference
+```
+
+### 📋 **Integration Requirements Checklist**
+
+**Check all that apply to determine your path:**
+
+- [ ] **I need to show this works quickly** → Start with Level 1
+- [ ] **Users will interact with this app** → Level 2 minimum
+- [ ] **I want to sell/distribute through Oriva** → Level 3 required
+- [ ] **This will be embedded in other sites** → iframe patterns needed
+- [ ] **I need enterprise-grade security** → BFF proxy patterns required
+- [ ] **High traffic expected (>1000 users)** → Production deployment required
+
+### 🎯 **Recommended Paths by Developer Experience**
+
+**New to APIs (Junior)**
+→ Level 1: 5-Minute Test → 15-Minute App → Build features → Level 2 when ready
+
+**Experienced Web Developer (Mid-level)**
+→ Level 1 for validation → Level 2 for production → Level 3 for marketplace
+
+**Senior/Enterprise Developer**
+→ Quick Level 1 validation → Jump to Level 2 → Custom security patterns
 
 ---
 
@@ -78,6 +165,30 @@ npm --version     # Should be 8+
    - Test the OAuth flow in development
 
 > **🔐 Security Note:** Keep your API key secure and never expose it in client-side code in production!
+
+### ✅ **Step 1 Success Checkpoint**
+
+**Validate your setup before continuing:**
+
+```bash
+# Test your API key quickly
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/user/me
+```
+
+**Expected Success Response:**
+```json
+{
+  "id": "user_123...",
+  "name": "Your Name",
+  "email": "your@email.com"
+}
+```
+
+**✅ If you see your user data**: Proceed to Step 2
+**❌ If you get an error**: Check your API key format and regenerate if needed
+
+**💡 Quick Alternative**: Use our **[5-Minute API Test](./public/developer-guide/5-minute-api-test.md)** for a more user-friendly validation.
 
 ---
 
@@ -261,6 +372,34 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```
 
 > **🛠️ Complete Troubleshooting**: For systematic debugging workflows and comprehensive issue resolution, see [API Troubleshooting Guide](./public/developer-guide/api-troubleshooting-guide.md)
+
+### ✅ **Step 2 Success Checkpoint**
+
+**Before continuing, validate your authentication setup:**
+
+1. **Environment Check**: Your `.env` file has the correct API key
+2. **Platform Check**: Your hosting platform (Vercel/Netlify) has environment variables set
+3. **CSP Check**: Your app allows iframe embedding (if planning marketplace integration)
+
+**Quick Validation Test:**
+```javascript
+// Test in browser console or Node.js
+fetch('https://api.oriva.io/api/v1/user/me', {
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  }
+}).then(r => r.json()).then(console.log);
+```
+
+**✅ Success Indicators:**
+- Your API key returns user data (not 401/403 errors)
+- Environment variables are properly configured
+- CSP headers allow Oriva domains (if iframe app)
+
+**💡 Level 1 Complete**: If you just want basic API access, you're done! Try building features with the API.
+
+**📈 Ready for Level 2?**: Continue to Step 3 for full API integration patterns.
 
 ---
 

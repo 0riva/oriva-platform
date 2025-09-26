@@ -4,12 +4,17 @@
 
 ## 🚀 Quick Start
 
-**New to Oriva Platform?** Start here for secure integration:
+**New to Oriva Platform?** Choose your learning path:
 
-1. **[Quick Start Guide](./quick-start.md)** - 15-minute setup with secure patterns
-2. **[Secure Localhost Development](./SECURE-localhost-development.md)** - Development environment setup
-3. **[Authentication Patterns](./authentication-patterns.md)** - Secure auth implementation
-4. **[API Headers Reference](./api-headers-reference.md)** - Complete header documentation
+### 🏃‍♂️ **Fast Track (Recommended for New Developers)**
+1. **[5-Minute API Test](./5-minute-api-test.md)** - Verify your API key works
+2. **[15-Minute Web App](./15-minute-web-app.md)** - Build a working integration
+3. **[Production Deployment](../START_GUIDE.md#-production-deployment)** - Go live
+
+### 🏗️ **Comprehensive Setup (For Production Apps)**
+1. **[Complete Integration Guide](../START_GUIDE.md)** - Full marketplace integration
+2. **[Authentication Patterns](./authentication-patterns.md)** - Secure auth implementation
+3. **[API Reference](./api-reference-complete.md)** - Complete endpoint documentation
 
 ## 📚 Complete Documentation Index
 
