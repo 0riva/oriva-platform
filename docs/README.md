@@ -21,10 +21,14 @@ This directory contains the API documentation for the Oriva Platform.
 - **Integration patterns** - Web apps, iframe embedding, and development workflows
 - **Migration guidance** - Upgrade paths from legacy implementations
 
-### 🚀 **Quick Access**
-- **[15-Minute Quick Start](./public/developer-guide/quick-start.md)** - Fast, secure integration
+### 🚀 **Get Started Fast**
+- **[5-Minute API Test](./public/developer-guide/5-minute-api-test.md)** - Verify your setup works
+- **[15-Minute Web App](./public/developer-guide/15-minute-web-app.md)** - Build a working integration
+- **[Complete Integration Guide](./START_GUIDE.md)** - Full marketplace-ready implementation
+
+### 🛡️ **Security & Best Practices**
 - **[Security Guidelines](./public/developer-guide/SECURITY-WARNING.md)** - Critical security patterns
-- **[Development Setup](./public/developer-guide/SECURE-localhost-development.md)** - Local environment configuration
+- **[Authentication Patterns](./public/developer-guide/authentication-patterns.md)** - Production-ready auth
 
 ## GitHub Pages Setup
 
