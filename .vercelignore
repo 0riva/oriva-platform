@@ -6,18 +6,12 @@ specs/
 AGENTS.md
 CLAUDE.md
 
-# Let Vercel handle TypeScript compilation natively
-# Exclude everything except the main entry point
+# Static files that interfere with API routing
+index.html
 
 # Include only the main API entry point for serverless function
 api/*
-!api/index.ts
-
-# But include TypeScript modules needed for compilation
-!api/types/
-!api/middleware/
-!api/routes/
-!api/services/
+!api/bundle.ts
 
 # Exclude specific non-essential subdirectories
 api/sql/
@@ -38,7 +32,7 @@ api/index-minimal.js
 .env*
 !env.example
 
-# Node modules and dependencies 
+# Node modules and dependencies
 node_modules/
 
 # Build artifacts and caches (dist/ needed for compiled TypeScript)

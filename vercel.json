@@ -1,12 +1,17 @@
 {
+  "functions": {
+    "api/bundle.ts": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api"
+      "destination": "/api/bundle"
     },
     {
       "source": "/(.*)",
-      "destination": "/api"
+      "destination": "/api/bundle"
     }
   ]
 }
