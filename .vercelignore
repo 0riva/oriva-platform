@@ -10,13 +10,16 @@ CLAUDE.md
 api/**/*.ts
 api/tsconfig*.json
 
-# Exclude JavaScript files outside api directory
-*.js
-tests/**/*.js
-docs/**/*.js
+# Exclude ALL JavaScript files that might be treated as serverless functions
+**/*.js
 
-# Include all compiled JavaScript in api directory
-!api/**/*.js
+# Only include the main API entry point and its dependencies
+!api/index.js
+!api/types/database/entities.js
+!api/types/errors/index.js
+!api/middleware/auth.js
+!api/middleware/error-handler.js
+!api/routes/hugo-ai.js
 
 # Explicitly exclude test and debug files
 tests/
