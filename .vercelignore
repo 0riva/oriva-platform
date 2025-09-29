@@ -42,3 +42,4 @@ test-credentials.js
 .git/
 .gitignore
 api/index.ts
+api/index.js
