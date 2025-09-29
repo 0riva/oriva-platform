@@ -170,11 +170,11 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [
+        'https://oriva.io',         // Main platform first
+        'https://www.oriva.io',
         'https://oriva.app',
         'https://www.oriva.app',
         'https://app.oriva.app',
-        'https://oriva.io',
-        'https://www.oriva.io',
         'https://oriva-platform.vercel.app'
       ]
     : true, // Allow all origins in development
