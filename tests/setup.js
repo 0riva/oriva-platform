@@ -56,7 +56,7 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 
 // Initialize the test app
-const api = require('../api/test-wrapper.js');
+const api = require('../api/index.ts');
 initTestApp(api.app || api.default || api);
 
 // Global test timeout
