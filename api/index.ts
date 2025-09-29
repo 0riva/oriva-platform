@@ -221,13 +221,8 @@ async function refreshCorsCache() {
 
     // Update cache
     corsOriginCache.data = new Set([
-      // Core Oriva domains
-      ...process.env.CORS_ORIGIN?.split(',') || [
-        'https://oriva.io',
-        'https://www.oriva.io',
-        'https://app.oriva.io',
-        'http://localhost:8081'  // Added for Oriva Core team development
-      ],
+      // Core Oriva domains (static origins)
+      ...STATIC_CORS_ORIGINS,
       // Registered 3rd party app domains
       ...appDomains
     ]);
@@ -247,9 +242,17 @@ async function refreshCorsCache() {
 // Core origins that must always work (high-trust domains)
 // Currently using dynamic CORS from database
 
+// Static origins that must always work (high-trust domains)
+const STATIC_CORS_ORIGINS = process.env.CORS_ORIGIN?.split(',') || [
+  'https://oriva.io',
+  'https://www.oriva.io',
+  'https://app.oriva.io',
+  'http://localhost:8081'  // Added for Oriva Core team development
+];
+
 // CORS cache for marketplace apps (loaded at startup)
 const corsOriginCache = {
-  data: new Set(),
+  data: new Set(STATIC_CORS_ORIGINS), // Initialize with static origins
   lastUpdated: 0,
   CACHE_TTL: 5 * 60 * 1000 // 5 minutes
 };
@@ -258,7 +261,9 @@ const corsOriginCache = {
 refreshCorsCache().then(() => {
   console.log('✅ CORS cache initialized with registered app domains');
 }).catch(error => {
-  console.warn('⚠️ Failed to initialize CORS cache:', error.message);
+  console.warn('⚠️ Failed to initialize CORS cache, using static origins only:', error.message);
+  // Ensure static origins are still in cache if refresh failed
+  STATIC_CORS_ORIGINS.forEach(origin => corsOriginCache.data.add(origin));
 });
 
 // Dynamic CORS for marketplace applications
