@@ -73,9 +73,9 @@ describe('TypeScript Migration TDD', () => {
       expect(tsContent).toMatch(/:\s*(string|number|boolean)/); // Basic type annotations
     });
 
-    test('🔵 REFACTOR: Should export foundational API types from api/types/index.ts', () => {
+    test('🔵 REFACTOR: Should export foundational API types from src/types/index.ts', () => {
       // This will fail until the new type barrel exports are implemented
-      const types = require('../../api/types/index.ts');
+      const types = require('../../src/types/index.ts');
 
       expect(types.ApiResponse).toBeDefined();
       expect(types.AuthenticatedRequest).toBeDefined();

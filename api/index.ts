@@ -8,11 +8,11 @@ import { param, validationResult } from 'express-validator';
 import winston from 'winston';
 import type { Logger } from 'winston';
 
-import type { AuthenticatedRequest, ApiMiddleware, ApiKeyInfo } from './types/middleware/auth';
+import type { AuthenticatedRequest, ApiMiddleware, ApiKeyInfo } from '../src/types/middleware/auth';
 import type {
   ApiResponse,
   PaginatedResponse
-} from './types/api/responses';
+} from '../src/types/api/responses';
 import {
   AUDIENCE_TYPES,
   type AudienceType,
@@ -21,20 +21,20 @@ import {
   type Group,
   type GroupMember,
   type Profile
-} from './types/database/entities';
-import type { MarketplaceApp } from './types/database/marketplace';
+} from '../src/types/database/entities';
+import type { MarketplaceApp } from '../src/types/database/marketplace';
 import {
   createAuthError,
   createDatabaseError,
   createValidationError,
   toErrorResponse
-} from './types/errors';
+} from '../src/types/errors';
 import {
   createAuthMiddleware,
   createLegacyApiKeyMiddleware
-} from './middleware/auth';
-import { errorHandler } from './middleware/error-handler';
-import { createHugoAIRouter } from './routes/hugo-ai';
+} from '../src/middleware/auth';
+import { errorHandler } from '../src/middleware/error-handler';
+import { createHugoAIRouter } from '../src/routes/hugo-ai';
 
 dotenv.config();
 
