@@ -11,7 +11,11 @@ index.html
 
 # Include only the main API entry point for serverless function
 api/*
-!api/bundle.ts
+!api/index.ts
+!api/types/**
+!api/middleware/**
+!api/routes/**
+!api/services/**
 
 # Exclude specific non-essential subdirectories
 api/sql/
