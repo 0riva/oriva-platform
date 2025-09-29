@@ -6,6 +6,26 @@ specs/
 AGENTS.md
 CLAUDE.md
 
+# TypeScript source files - use pre-compiled JavaScript instead
+api/**/*.ts
+api/tsconfig*.json
+
+# Exclude ALL JavaScript files that might be treated as serverless functions
+**/*.js
+
+# Only include the main API entry point
+!api/index.js
+
+# Explicitly exclude test and debug files
+tests/
+internal-docs/
+debug-*.js
+**/node_modules/
+
+# Only specific files to exclude
+build/
+api/index-minimal.js
+
 # Environment files
 .env*
 !env.example
@@ -13,8 +33,7 @@ CLAUDE.md
 # Node modules and dependencies 
 node_modules/
 
-# Build artifacts and caches
-dist/
+# Build artifacts and caches (dist/ needed for compiled TypeScript)
 .tsbuildinfo
 *.log
 logs/
