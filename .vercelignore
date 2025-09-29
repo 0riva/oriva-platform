@@ -7,16 +7,13 @@ AGENTS.md
 CLAUDE.md
 
 # Let Vercel handle TypeScript compilation natively
-# But exclude files that shouldn't be treated as serverless functions
+# Only exclude files that definitely shouldn't be deployed
 
-# Exclude TypeScript files that are not entry points
-api/types/**/*
-api/middleware/**/*
-api/routes/**/*
-api/services/**/*
-api/monitoring/**/*
-
-# Only api/index.ts should be treated as a serverless function
+# Exclude build artifacts and non-essential files
+api/**/*.js
+api/dist/**/*
+api/.tsbuildinfo
+api/sql/**/*
 
 # Explicitly exclude test and debug files
 tests/
