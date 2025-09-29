@@ -4,8 +4,7 @@
     "module": "commonjs",
     "allowJs": true,
     "checkJs": false,
-    "noEmit": false,
-    "outDir": "./dist",
+    "noEmit": true,
     "esModuleInterop": true,
     "baseUrl": "./",
     "paths": {
