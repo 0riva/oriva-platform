@@ -211,10 +211,10 @@ const authenticateAPIKey: ApiMiddleware = async (req: AuthenticatedRequest, res:
     // Hash the API key for database lookup
     const apiKeyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
 
-    // Look up the API key in the database
+    // Look up the API key in the database (using same table as auth middleware)
     const { data: keyData, error } = await supabase
-      .from('api_keys')
-      .select('*')
+      .from('developer_api_keys')
+      .select('id, user_id, name, permissions, usage_count, is_active, created_at')
       .eq('key_hash', apiKeyHash)
       .eq('is_active', true)
       .single();
@@ -230,7 +230,7 @@ const authenticateAPIKey: ApiMiddleware = async (req: AuthenticatedRequest, res:
 
     // Update usage tracking
     await supabase
-      .from('api_keys')
+      .from('developer_api_keys')
       .update({
         usage_count: keyData.usage_count + 1,
         last_used_at: new Date().toISOString()
