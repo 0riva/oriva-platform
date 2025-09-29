@@ -14,5 +14,11 @@
       "destination": "/api/index"
     }
   ],
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    }
+  ]
 }
