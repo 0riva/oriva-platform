@@ -1,6 +1,10 @@
 {
-  "buildCommand": "npm run build:api",
-  "outputDirectory": ".",
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",

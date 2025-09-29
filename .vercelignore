@@ -6,20 +6,8 @@ specs/
 AGENTS.md
 CLAUDE.md
 
-# TypeScript source files - use pre-compiled JavaScript instead
-api/**/*.ts
-api/tsconfig*.json
-
-# Exclude ALL JavaScript files that might be treated as serverless functions
-**/*.js
-
-# Only include the main API entry point and its dependencies
-!api/index.js
-!api/types/database/entities.js
-!api/types/errors/index.js
-!api/middleware/auth.js
-!api/middleware/error-handler.js
-!api/routes/hugo-ai.js
+# Let Vercel handle TypeScript compilation natively
+# Only exclude non-essential files
 
 # Explicitly exclude test and debug files
 tests/

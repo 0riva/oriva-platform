@@ -7,7 +7,7 @@
     "dev": "ts-node api/index.ts",
     "start": "ts-node api/index.ts",
     "build": "npm run build:api",
-    "build:api": "echo 'Vercel build: checking required dependencies exist' && ls -la api/index.js api/types/database/entities.js api/middleware/auth.js",
+    "build:api": "echo 'Vercel will compile TypeScript automatically'",
     "build:local": "npm run clean && npm run compile && npm run copy-main && npm run cleanup-ts-conditional",
     "compile": "tsc --project api/tsconfig.production.json",
     "copy-main": "cp -r build/* api/ && rm -rf build",
