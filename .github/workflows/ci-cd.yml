@@ -1,10 +1,27 @@
 name: CI/CD Pipeline
 
+# Prevent concurrent deployments to avoid rate limits
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'api/**'
+      - 'src/**'
+      - 'package*.json'
+      - 'vercel.json'
+      - '.github/workflows/ci-cd.yml'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'api/**'
+      - 'src/**'
+      - 'package*.json'
+      - 'vercel.json'
+      - '.github/workflows/ci-cd.yml'
 
 jobs:
   test:
@@ -81,12 +98,17 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [test, security-scan]
-    if: github.ref == 'refs/heads/main'
-    
+    if: |
+      github.ref == 'refs/heads/main' &&
+      !contains(github.event.head_commit.message, '[skip-deploy]') &&
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !startsWith(github.event.head_commit.message, 'docs:') &&
+      !startsWith(github.event.head_commit.message, 'chore:')
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Deploy to Vercel Production
       uses: amondnet/vercel-action@v25
       with:
