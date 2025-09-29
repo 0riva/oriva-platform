@@ -225,7 +225,8 @@ async function refreshCorsCache() {
       ...process.env.CORS_ORIGIN?.split(',') || [
         'https://oriva.io',
         'https://www.oriva.io',
-        'https://app.oriva.io'
+        'https://app.oriva.io',
+        'http://localhost:8081'  // Added for Oriva Core team development
       ],
       // Registered 3rd party app domains
       ...appDomains

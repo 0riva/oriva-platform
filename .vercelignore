@@ -1,4 +1,4 @@
-# Include only what we need for the single API function
+# Exclude unnecessary files but include TypeScript dependencies for index.ts
 internal-docs/
 specs/
 .specify/
@@ -8,10 +8,6 @@ CLAUDE.md
 api/sql/
 api/dist/
 api/monitoring/
-api/middleware/
-api/routes/
-api/services/
-api/types/
 tests/
 debug-*.js
 **/node_modules/
@@ -41,5 +37,3 @@ temp-*.js
 test-credentials.js
 .git/
 .gitignore
-api/index.ts
-api/index.js
