@@ -80,5 +80,5 @@ Thumbs.db
 .parcel-cache/
 # Compiled JavaScript (except main entry point)
 api/**/*.js
-!api/index.js
+!api/test-wrapper.js
 api/**/*.js.map

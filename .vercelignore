@@ -1,6 +1,5 @@
 # Exclude unnecessary files but include TypeScript dependencies for index.ts
-# IMPORTANT: Exclude api/index.js to prevent conflict with api/index.ts
-api/index.js
+# Note: api/index.js renamed to api/test-wrapper.js to avoid conflict with api/index.ts
 internal-docs/
 specs/
 .specify/

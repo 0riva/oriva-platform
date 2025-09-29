@@ -13,7 +13,7 @@
     "copy-main": "cp -r build/* api/ && rm -rf build",
     "cleanup-ts": "find api -name '*.ts' -delete",
     "cleanup-ts-conditional": "if [ \"$VERCEL\" != \"1\" ]; then npm run cleanup-ts; fi",
-    "clean": "rm -rf dist build api/index.js",
+    "clean": "rm -rf dist build",
     "build:watch": "tsc --project api/tsconfig.json --watch",
     "type-check": "tsc --project api/tsconfig.json --noEmit",
     "test": "jest",

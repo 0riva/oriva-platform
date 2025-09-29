@@ -43,7 +43,8 @@ describe('TypeScript Migration TDD', () => {
 
     test('🟢 GREEN: All existing API endpoints should work identically', async () => {
       // This test ensures NO REGRESSION during migration
-      const app = require('../../api/index.js');
+      const appModule = require('../../api/test-wrapper.js');
+      const app = appModule.default || appModule.app;
 
       // Test critical endpoints maintain exact same behavior
       const response1 = await request(app).get('/api/v1/profiles/available');
