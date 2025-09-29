@@ -7,7 +7,7 @@
     "dev": "ts-node api/index.ts",
     "start": "ts-node api/index.ts",
     "build": "npm run build:api",
-    "build:api": "npx tsc api/index.ts --outDir api --target es2021 --module commonjs --esModuleInterop --resolveJsonModule --skipLibCheck --strict false",
+    "build:api": "ls -la && ls -la api/ && npx tsc api/index.ts --outDir api --target es2021 --module commonjs --esModuleInterop --resolveJsonModule --skipLibCheck --strict false",
     "build:local": "npm run clean && npm run compile && npm run copy-main && npm run cleanup-ts-conditional",
     "compile": "tsc --project api/tsconfig.production.json",
     "copy-main": "cp -r build/* api/ && rm -rf build",
