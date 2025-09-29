@@ -78,3 +78,7 @@ Thumbs.db
 # Cache directories
 .cache/
 .parcel-cache/
+# Compiled JavaScript (except main entry point)
+api/**/*.js
+!api/index.js
+api/**/*.js.map
