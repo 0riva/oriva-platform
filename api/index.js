@@ -16,6 +16,7 @@ const entities_1 = require("./types/database/entities");
 const errors_1 = require("./types/errors");
 const auth_1 = require("./middleware/auth");
 const error_handler_1 = require("./middleware/error-handler");
+const hugo_ai_1 = require("./routes/hugo-ai");
 dotenv_1.default.config();
 const webcrypto = globalThis.crypto ?? node_crypto_1.default.webcrypto;
 exports.app = (0, express_1.default)();
@@ -539,145 +540,37 @@ exports.app.get('/api/v1/dev/permissions', (req, res) => {
         data: AVAILABLE_PERMISSIONS
     });
 });
-// API Key Management endpoints (for developer dashboard)
-// Generate live API key endpoint - fixes confusing test key naming
-exports.app.post('/api/v1/dev/generate-live-key', devRateLimiter, requireAdminToken, withAuthContext(async (req, res, keyInfo) => {
-    try {
-        const { name = 'Live API Key', permissions = null } = req.body;
-        const userId = keyInfo.userId || req.headers['x-user-id']?.toString() || null;
-        // Validate permissions if provided
-        if (permissions) {
-            const validScopes = AVAILABLE_PERMISSIONS.map(p => p.scope);
-            const invalidPermissions = permissions.filter(p => !validScopes.includes(p));
-            if (invalidPermissions.length > 0) {
-                respondWithError(res, 400, 'INVALID_PERMISSIONS', `Invalid permissions: ${invalidPermissions.join(', ')}`);
-                return;
-            }
-        }
-        if (!userId) {
-            respondWithError(res, 401, 'UNAUTHORIZED', 'User authentication required');
-            return;
-        }
-        // Generate live API key
-        const apiKey = generateAPIKey('oriva_pk_live_');
-        const keyHash = await hashAPIKey(apiKey);
-        const keyPrefix = apiKey.substring(0, 20); // Store first 20 chars for display
-        // Store in database
-        const { data: keyData, error } = await supabase
-            .from('developer_api_keys')
-            .insert({
-            user_id: userId,
-            name,
-            key_hash: keyHash,
-            key_prefix: keyPrefix,
-            is_active: true,
-            permissions: permissions || [
-                'user:read', 'profiles:read', 'profiles:write', 'groups:read',
-                'entries:read', 'templates:read', 'marketplace:read', 'storage:read', 'storage:write'
-            ],
-            created_at: new Date().toISOString()
-        })
-            .select()
-            .single();
-        if (error) {
-            logger.error('Failed to store API key', { error, userId });
-            respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to create API key');
-            return;
-        }
-        res.json({
-            ok: true,
-            success: true,
-            data: {
-                id: keyData.id,
-                name: keyData.name,
-                key: apiKey, // Return full key only once
-                keyPrefix: keyPrefix,
-                type: 'live',
-                permissions: expandPermissions(keyData.permissions),
-                createdAt: keyData.created_at
-            },
-            message: 'Live API key generated successfully. Store this key securely - it will not be shown again.'
-        });
-    }
-    catch (error) {
-        logger.error('API key generation error', { error, userId: keyInfo.userId });
-        respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Internal server error during key generation');
-    }
-}));
-// Legacy endpoint - now redirects to live key generation
-exports.app.post('/api/v1/dev/generate-key', devRateLimiter, requireAdminToken, (req, res) => {
-    res.status(501).json({
-        ok: false,
-        success: false,
-        error: 'This endpoint has been deprecated. Use /api/v1/dev/generate-live-key for production keys.',
-        message: 'This endpoint has been deprecated. Use /api/v1/dev/generate-live-key for production keys.',
-        code: 'ENDPOINT_DEPRECATED',
-        details: [],
-        redirect: '/api/v1/dev/generate-live-key'
-    });
-});
-exports.app.get('/api/v1/dev/keys', devRateLimiter, requireAdminToken, async (_req, res) => {
-    try {
-        const { data: keys, error } = await supabase
-            .from('developer_api_keys')
-            .select('id, name, key_prefix, is_active, usage_count, last_used_at, created_at')
-            .order('created_at', { ascending: false });
-        if (error) {
-            logger.error('Failed to fetch API keys', { error });
-            respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to retrieve API keys');
-            return;
-        }
-        const keyRows = (keys ?? []);
-        const formattedKeys = keyRows.map(key => ({
-            id: key.id,
-            key: `${key.key_prefix}${'•'.repeat(24)}••••`, // Show prefix and masked key
-            name: key.name,
-            type: key.key_prefix.includes('_live_') ? 'live' : 'test',
-            createdAt: key.created_at,
-            lastUsed: key.last_used_at,
-            usageCount: key.usage_count || 0,
-            isActive: key.is_active
-        }));
-        res.json({
-            ok: true,
-            success: true,
-            data: formattedKeys
-        });
-    }
-    catch (error) {
-        logger.error('Dev keys endpoint error', { error });
-        respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to retrieve API keys');
-    }
-});
-exports.app.post('/api/v1/dev/revoke-key', devRateLimiter, requireAdminToken, withAuthContext(async (req, res) => {
-    try {
-        const { keyId } = req.body;
-        if (!keyId) {
-            respondWithError(res, 400, 'INVALID_REQUEST', 'Key ID is required');
-            return;
-        }
-        const { data, error } = await supabase
-            .from('developer_api_keys')
-            .update({ is_active: false })
-            .eq('id', keyId)
-            .select()
-            .single();
-        if (error || !data) {
-            logger.error('Failed to revoke API key', { error, keyId });
-            respondWithError(res, 404, 'DEV_KEY_NOT_FOUND', 'API key not found');
-            return;
-        }
-        res.json({
-            ok: true,
-            success: true,
-            message: 'API key revoked successfully'
-        });
-    }
-    catch (error) {
-        logger.error('Revoke key endpoint error', { error });
-        respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to revoke API key');
-    }
-}));
+// =============================================================================
+// 🚨 SECURITY NOTICE: API KEY MANAGEMENT
+// =============================================================================
+// 
+// NEVER expose API key generation endpoints in public APIs!
+// 
+// The following endpoints have been REMOVED for security:
+//   ❌ POST /api/v1/dev/generate-live-key - Key generation
+//   ❌ POST /api/v1/dev/generate-key - Legacy key generation  
+//   ❌ GET /api/v1/dev/keys - List all keys
+//   ❌ POST /api/v1/dev/revoke-key - Revoke keys
+//
+// WHY THIS IS CRITICAL:
+//   1. API key generation must require authenticated web sessions
+//   2. Programmatic key generation enables automated attacks
+//   3. Shared admin tokens are insecure for production
+//   4. No audit trail or user attribution
+//   5. Risk of unlimited key generation abuse
+//
+// CORRECT ARCHITECTURE:
+//   ✅ Generate keys through Oriva platform web UI only
+//   ✅ Require user authentication (OAuth/session)
+//   ✅ Add CAPTCHA and rate limiting
+//   ✅ Email verification for new keys
+//   ✅ Full audit logging with user attribution
+//   ✅ Keys shown once and copied by developer
+//
+// Only the permissions documentation endpoint remains public:
+//   ✅ GET /api/v1/dev/permissions - Documentation only
+//
+// =============================================================================
 // API keys are now managed through Supabase database
 console.log('🔑 API keys will be validated against Supabase database');
 // User endpoints
@@ -1871,105 +1764,6 @@ exports.app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, withAut
     }
 }));
 // =============================================================================
-// HUGO AI ENDPOINTS
-// =============================================================================
-
-// Hugo AI Chat endpoint
-exports.app.post('/api/hugo/chat', validateApiKey, [
-    (0, express_validator_1.body)('message').notEmpty().withMessage('Message is required'),
-    (0, express_validator_1.body)('userId').optional().isString(),
-    (0, express_validator_1.body)('sessionId').optional().isString()
-], validateRequest, async (req, res, next) => {
-    try {
-        const { message, userId, sessionId } = req.body;
-
-        // Mock Hugo AI response for now
-        const response = {
-            id: node_crypto_1.default.randomUUID(),
-            message: `Hugo AI Response to: "${message}"`,
-            timestamp: new Date().toISOString(),
-            userId,
-            sessionId,
-            metadata: {
-                type: 'coaching_response',
-                confidence: 0.95
-            }
-        };
-
-        res.json({
-            ok: true,
-            success: true,
-            data: response
-        });
-    } catch (error) {
-        logger.error('Hugo AI chat error:', { error });
-        next(error);
-    }
-});
-
-// Hugo AI Sessions endpoint
-exports.app.get('/api/hugo/sessions', validateApiKey, [
-    (0, express_validator_1.query)('userId').optional().isString(),
-    (0, express_validator_1.query)('limit').optional().isInt({ min: 1, max: 100 })
-], validateRequest, async (req, res, next) => {
-    try {
-        // Mock sessions data
-        const sessions = [
-            {
-                id: node_crypto_1.default.randomUUID(),
-                userId: req.query.userId || 'anonymous',
-                title: 'Dating Confidence Session',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                message_count: 12
-            }
-        ];
-
-        res.json({
-            ok: true,
-            success: true,
-            data: sessions,
-            pagination: {
-                total: sessions.length,
-                limit: parseInt(req.query.limit) || 20,
-                offset: 0
-            }
-        });
-    } catch (error) {
-        logger.error('Hugo AI sessions error:', { error });
-        next(error);
-    }
-});
-
-// Hugo AI User Management
-exports.app.post('/api/hugo/users', validateApiKey, [
-    (0, express_validator_1.body)('email').isEmail().withMessage('Valid email is required'),
-    (0, express_validator_1.body)('profile').optional().isObject()
-], validateRequest, async (req, res, next) => {
-    try {
-        const { email, profile } = req.body;
-
-        const user = {
-            id: node_crypto_1.default.randomUUID(),
-            email,
-            profile: profile || {},
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            status: 'active'
-        };
-
-        res.json({
-            ok: true,
-            success: true,
-            data: user
-        });
-    } catch (error) {
-        logger.error('Hugo AI user creation error:', { error });
-        next(error);
-    }
-});
-
-// =============================================================================
 // ADMIN ENDPOINTS FOR APP APPROVAL
 // =============================================================================
 // Get pending apps for review (admin only)
@@ -2033,6 +1827,9 @@ exports.app.post('/api/v1/admin/apps/:appId/review', validateApiKey, requireAdmi
         respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
     }
 }));
+// Mount Hugo AI router
+const hugoRouter = (0, hugo_ai_1.createHugoAIRouter)(supabase);
+exports.app.use('/api/hugo', hugoRouter);
 // 404 handler for unmatched routes
 exports.app.use('*', (req, res) => {
     res.status(404).json({

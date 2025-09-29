@@ -34,6 +34,7 @@ import {
   createLegacyApiKeyMiddleware
 } from './middleware/auth';
 import { errorHandler } from './middleware/error-handler';
+import { createHugoAIRouter } from './routes/hugo-ai';
 
 dotenv.config();
 
@@ -724,169 +725,37 @@ app.get('/api/v1/dev/permissions', (req, res) => {
   });
 });
 
-// API Key Management endpoints (for developer dashboard)
-// Generate live API key endpoint - fixes confusing test key naming
-app.post('/api/v1/dev/generate-live-key', devRateLimiter, requireAdminToken, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { name = 'Live API Key', permissions = null } = req.body as { name?: string; permissions?: string[] | null };
-    const userId = keyInfo.userId || req.headers['x-user-id']?.toString() || null;
-
-    // Validate permissions if provided
-    if (permissions) {
-      const validScopes = AVAILABLE_PERMISSIONS.map(p => p.scope);
-      const invalidPermissions = permissions.filter(p => !validScopes.includes(p));
-      if (invalidPermissions.length > 0) {
-        respondWithError(res, 400, 'INVALID_PERMISSIONS', `Invalid permissions: ${invalidPermissions.join(', ')}`);
-        return;
-      }
-    }
-
-    if (!userId) {
-      respondWithError(res, 401, 'UNAUTHORIZED', 'User authentication required');
-      return;
-    }
-
-    // Generate live API key
-    const apiKey = generateAPIKey('oriva_pk_live_');
-    const keyHash = await hashAPIKey(apiKey);
-    const keyPrefix = apiKey.substring(0, 20); // Store first 20 chars for display
-
-    // Store in database
-    const { data: keyData, error } = await supabase
-      .from('developer_api_keys')
-      .insert({
-        user_id: userId,
-        name,
-        key_hash: keyHash,
-        key_prefix: keyPrefix,
-        is_active: true,
-        permissions: permissions || [
-          'user:read', 'profiles:read', 'profiles:write', 'groups:read',
-          'entries:read', 'templates:read', 'marketplace:read', 'storage:read', 'storage:write'
-        ],
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error('Failed to store API key', { error, userId });
-      respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to create API key');
-      return;
-    }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: {
-        id: keyData.id,
-        name: keyData.name,
-        key: apiKey, // Return full key only once
-        keyPrefix: keyPrefix,
-        type: 'live',
-        permissions: expandPermissions(keyData.permissions),
-        createdAt: keyData.created_at
-      },
-      message: 'Live API key generated successfully. Store this key securely - it will not be shown again.'
-    });
-
-  } catch (error) {
-    logger.error('API key generation error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Internal server error during key generation');
-  }
-}));
-
-// Legacy endpoint - now redirects to live key generation
-app.post('/api/v1/dev/generate-key', devRateLimiter, requireAdminToken, (req, res) => {
-  res.status(501).json({
-    ok: false,
-    success: false,
-    error: 'This endpoint has been deprecated. Use /api/v1/dev/generate-live-key for production keys.',
-    message: 'This endpoint has been deprecated. Use /api/v1/dev/generate-live-key for production keys.',
-    code: 'ENDPOINT_DEPRECATED',
-    details: [],
-    redirect: '/api/v1/dev/generate-live-key'
-  });
-});
-
-app.get('/api/v1/dev/keys', devRateLimiter, requireAdminToken, async (_req, res) => {
-  try {
-    const { data: keys, error } = await supabase
-      .from('developer_api_keys')
-      .select('id, name, key_prefix, is_active, usage_count, last_used_at, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      logger.error('Failed to fetch API keys', { error });
-      respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to retrieve API keys');
-      return;
-    }
-    
-    type DevKeyRow = {
-      id: string;
-      name: string;
-      key_prefix: string;
-      is_active: boolean;
-      usage_count: number | null;
-      last_used_at: string | null;
-      created_at: string;
-    };
-
-    const keyRows = (keys ?? []) as DevKeyRow[];
-    const formattedKeys = keyRows.map(key => ({
-      id: key.id,
-      key: `${key.key_prefix}${'•'.repeat(24)}••••`, // Show prefix and masked key
-      name: key.name,
-      type: key.key_prefix.includes('_live_') ? 'live' : 'test',
-      createdAt: key.created_at,
-      lastUsed: key.last_used_at,
-      usageCount: key.usage_count || 0,
-      isActive: key.is_active
-    }));
-    
-    res.json({
-      ok: true,
-      success: true,
-      data: formattedKeys
-    });
-  } catch (error) {
-    logger.error('Dev keys endpoint error', { error });
-    respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to retrieve API keys');
-  }
-});
-
-app.post('/api/v1/dev/revoke-key', devRateLimiter, requireAdminToken, withAuthContext(async (req, res) => {
-  try {
-    const { keyId } = req.body as { keyId?: string };
-
-    if (!keyId) {
-      respondWithError(res, 400, 'INVALID_REQUEST', 'Key ID is required');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('developer_api_keys')
-      .update({ is_active: false })
-      .eq('id', keyId)
-      .select()
-      .single();
-
-    if (error || !data) {
-      logger.error('Failed to revoke API key', { error, keyId });
-      respondWithError(res, 404, 'DEV_KEY_NOT_FOUND', 'API key not found');
-      return;
-    }
-
-    res.json({
-      ok: true,
-      success: true,
-      message: 'API key revoked successfully'
-    });
-  } catch (error) {
-    logger.error('Revoke key endpoint error', { error });
-    respondWithError(res, 500, 'DEV_KEYS_ERROR', 'Failed to revoke API key');
-  }
-}));
+// =============================================================================
+// 🚨 SECURITY NOTICE: API KEY MANAGEMENT
+// =============================================================================
+// 
+// NEVER expose API key generation endpoints in public APIs!
+// 
+// The following endpoints have been REMOVED for security:
+//   ❌ POST /api/v1/dev/generate-live-key - Key generation
+//   ❌ POST /api/v1/dev/generate-key - Legacy key generation  
+//   ❌ GET /api/v1/dev/keys - List all keys
+//   ❌ POST /api/v1/dev/revoke-key - Revoke keys
+//
+// WHY THIS IS CRITICAL:
+//   1. API key generation must require authenticated web sessions
+//   2. Programmatic key generation enables automated attacks
+//   3. Shared admin tokens are insecure for production
+//   4. No audit trail or user attribution
+//   5. Risk of unlimited key generation abuse
+//
+// CORRECT ARCHITECTURE:
+//   ✅ Generate keys through Oriva platform web UI only
+//   ✅ Require user authentication (OAuth/session)
+//   ✅ Add CAPTCHA and rate limiting
+//   ✅ Email verification for new keys
+//   ✅ Full audit logging with user attribution
+//   ✅ Keys shown once and copied by developer
+//
+// Only the permissions documentation endpoint remains public:
+//   ✅ GET /api/v1/dev/permissions - Documentation only
+//
+// =============================================================================
 
 // API keys are now managed through Supabase database
 console.log('🔑 API keys will be validated against Supabase database');
@@ -2368,6 +2237,10 @@ app.post('/api/v1/admin/apps/:appId/review', validateApiKey, requireAdminToken, 
     respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
   }
 }));
+
+// Mount Hugo AI router
+const hugoRouter = createHugoAIRouter(supabase);
+app.use('/api/hugo', hugoRouter);
 
 // 404 handler for unmatched routes
 app.use('*', (req, res) => {
