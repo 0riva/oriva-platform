@@ -2,12 +2,10 @@
   "name": "oriva-platform",
   "version": "1.0.0",
   "description": "Oriva Platform API",
-  "main": "api/index.js",
+  "main": "api/index.ts",
   "scripts": {
-    "dev": "npm run dev:ts",
-    "dev:ts": "ts-node api/index.ts",
-    "start": "node api/index.js",
-    "start:ts": "node api/dist/index.js",
+    "dev": "ts-node api/index.ts",
+    "start": "ts-node api/index.ts",
     "build": "tsc --project api/tsconfig.json",
     "build:watch": "tsc --project api/tsconfig.json --watch",
     "type-check": "tsc --project api/tsconfig.json --noEmit",
@@ -21,15 +19,22 @@
     "security:audit": "npm audit --audit-level moderate",
     "security:check": "npm audit --audit-level high",
     "ci": "npm run type-check && npm run test:ci && npm run security:audit",
-    "tdd": "npm run test:tdd"
+    "tdd": "npm run test:tdd",
+    "health:check": "ts-node api/monitoring/check-api-health.ts",
+    "health:check:prod": "API_BASE_URL=https://oriva-platform.vercel.app ts-node api/monitoring/check-api-health.ts",
+    "health:check:verbose": "ts-node api/monitoring/check-api-health.ts --verbose",
+    "health:check:detailed": "ts-node api/monitoring/check-api-health.ts --detailed --verbose",
+    "monitor": "ts-node api/monitoring/check-api-health.ts --detailed"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "chalk": "^4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "express-rate-limit": "^8.1.0",
     "express-validator": "^7.2.1",
+    "openai": "^5.23.1",
     "winston": "^3.17.0"
   },
   "engines": {

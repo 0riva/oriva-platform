@@ -34,6 +34,7 @@ import {
   createLegacyApiKeyMiddleware
 } from './middleware/auth';
 import { errorHandler } from './middleware/error-handler';
+import { healthCheckService, trackEndpointPerformance } from './services/health-check';
 
 dotenv.config();
 
@@ -387,6 +388,9 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Track endpoint performance for health monitoring
+app.use(trackEndpointPerformance);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -549,15 +553,37 @@ app.get('/health', (req, res) => {
 });
 
 // Legacy health endpoint
-app.get('/api/v1/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    version: '1.0.4',
-    features: ['marketplace', 'profiles', 'groups', 'privacy-first'],
-    deployment: 'fixed-routing',
-    test: 'routing-fix'
-  });
+app.get('/api/v1/health', async (req, res) => {
+  try {
+    const health = await healthCheckService.getBasicHealth();
+    res.json({
+      ...health,
+      version: '1.0.4',
+      features: ['marketplace', 'profiles', 'groups', 'privacy-first'],
+      deployment: 'fixed-routing',
+      test: 'routing-fix'
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      message: 'Health check failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Detailed health endpoint for monitoring dashboards
+app.get('/api/v1/health/detailed', async (req, res) => {
+  try {
+    const detailedHealth = await healthCheckService.getDetailedHealth();
+    res.json(detailedHealth);
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      message: 'Detailed health check failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Test endpoint to verify routing
@@ -2369,7 +2395,19 @@ app.post('/api/v1/admin/apps/:appId/review', validateApiKey, requireAdminToken, 
   }
 }));
 
-// 404 handler for unmatched routes
+// ==========================================
+// Hugo AI Routes
+// ==========================================
+import { createHugoAIRouter } from './routes/hugo-ai';
+
+// Mount Hugo AI routes
+console.log('🤖 Creating Hugo AI router...');
+const hugoRouter = createHugoAIRouter(supabase);
+console.log('🤖 Hugo AI router created, mounting at /api/hugo');
+app.use('/api/hugo', hugoRouter);
+console.log('🤖 Hugo AI routes mounted successfully');
+
+// 404 handler for unmatched routes (must be AFTER all route mounts)
 app.use('*', (req, res) => {
   res.status(404).json({
     ok: false,
@@ -2408,4 +2446,10 @@ export const startServer = (): void => {
 };
 
 export default app;
+
+// Start the server when running directly with ts-node
+if (require.main === module) {
+  startServer();
+}
+
 // Force deployment trigger - Wed Sep 17 19:54:21 CST 2025
