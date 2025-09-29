@@ -1,3 +1,34 @@
+/**
+ * JavaScript Entry Point - Simplified Vercel Deployment Version
+ *
+ * This is a simplified JavaScript implementation created for Vercel deployment:
+ * - Basic Express server with core endpoints
+ * - No TypeScript compilation issues
+ * - No complex dependency resolution problems
+ * - Minimal but functional API for testing deployment
+ *
+ * WHY THIS EXISTS ALONGSIDE index.ts:
+ * After trying to deploy the full TypeScript version, we discovered:
+ * 1. Vercel serverless struggles with TypeScript compilation
+ * 2. OpenAI module resolution issues in serverless environment
+ * 3. 60+ TypeScript strict mode compilation errors
+ * 4. Complex dependency trees causing deployment failures
+ *
+ * LESSON LEARNED:
+ * "Sometimes the simplest solution really is the best one!"
+ * We went full circle: TypeScript → compilation fixes → more fixes → JavaScript works immediately 🤦‍♂️
+ *
+ * CURRENT STRATEGY:
+ * - Use this file (index.js) for Vercel deployment
+ * - Keep index.ts for local development with full features
+ * - Gradually migrate back to TypeScript once deployment is stable
+ *
+ * ENDPOINTS PROVIDED:
+ * - GET /api/health - Basic health check
+ * - GET /api/hugo/debug - Debug information
+ * - GET /api/hugo/knowledge - Mock knowledge base (no auth required)
+ */
+
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();

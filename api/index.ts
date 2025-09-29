@@ -1,3 +1,27 @@
+/**
+ * TypeScript Entry Point - Full HugoAI Implementation
+ *
+ * This is the complete TypeScript implementation with all HugoAI features:
+ * - Full authentication middleware with API key validation
+ * - Complete chat, memory, profile, and analysis endpoints
+ * - OpenAI integration for AI processing
+ * - Supabase integration for data persistence
+ * - Type safety and comprehensive error handling
+ *
+ * WHY TWO INDEX FILES EXIST:
+ * - index.ts: Full-featured development version (this file)
+ * - index.js: Simplified deployment version for Vercel
+ *
+ * DEPLOYMENT LESSON LEARNED:
+ * Vercel serverless had issues with:
+ * 1. TypeScript compilation in serverless environment
+ * 2. Complex dependency resolution (OpenAI module)
+ * 3. Strict type checking causing 60+ compilation errors
+ *
+ * SOLUTION: Use index.js for deployment, index.ts for development
+ * Eventually we can migrate back to TypeScript once deployment is stable
+ */
+
 import dotenv from 'dotenv';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import cors from 'cors';
