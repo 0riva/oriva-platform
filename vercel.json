@@ -1,6 +1,7 @@
 {
-  "buildCommand": "mkdir -p dist && echo 'No build needed - using pre-compiled JavaScript' > dist/build.log",
-  "outputDirectory": "dist",
+  "buildCommand": "npm run build:api",
+  "outputDirectory": ".",
+  "framework": null,
   "functions": {
     "api/index.js": {
       "memory": 1024,
