@@ -1,17 +1,18 @@
 {
   "functions": {
-    "api/index.ts": {
+    "api/combined.ts": {
       "maxDuration": 30
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index"
+      "destination": "/api/combined"
     },
     {
       "source": "/(.*)",
-      "destination": "/api/index"
+      "destination": "/api/combined"
     }
-  ]
+  ],
+  "outputDirectory": "public"
 }

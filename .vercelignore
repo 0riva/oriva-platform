@@ -1,81 +1,44 @@
-# Security and internal files - DO NOT DEPLOY
+# Include only what we need for the single API function
 internal-docs/
 specs/
 .specify/
 .claude/
 AGENTS.md
 CLAUDE.md
-
-# Static files that interfere with API routing
-index.html
-
-# Include only the main API entry point for serverless function
-api/*
-!api/index.ts
-!api/types/**
-!api/middleware/**
-!api/routes/**
-!api/services/**
-
-# Exclude specific non-essential subdirectories
 api/sql/
 api/dist/
 api/monitoring/
-
-# Explicitly exclude test and debug files
+api/middleware/
+api/routes/
+api/services/
+api/types/
 tests/
-internal-docs/
 debug-*.js
 **/node_modules/
-
-# Only specific files to exclude
 build/
-api/index-minimal.js
-
-# Environment files
 .env*
-!env.example
-
-# Node modules and dependencies
+!.env.example
 node_modules/
-
-# Build artifacts and caches (dist/ needed for compiled TypeScript)
 .tsbuildinfo
 *.log
 logs/
-
-# Testing and coverage
 coverage/
-tests/
 *.test.js
 *.test.ts
-
-# Development files
 .DS_Store
 .vscode/
 *.tmp
 *.temp
-
-# Archives and backups
 archive/
 *.backup
 *.bak
-
-# Security scanning
 .secrets.baseline
-
-# Database files (safety)
 *.db
 *.sqlite*
-
-# Temporary and debug files
 debug-*.js
 temp-*.js
 *-debug.js
 test-credentials.js
-
-# Git and version control
 .git/
 .gitignore
-
-# Note: docs/ directory is PUBLIC and should be deployed for API documentation
+api/index.ts
