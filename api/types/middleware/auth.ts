@@ -13,7 +13,7 @@ export interface ApiKeyInfo {
   lastUsedAt?: string;
 }
 
-export interface AuthenticatedRequest<TParams = any, TResBody = any, TReqBody = any> extends Request<TParams, TResBody, TReqBody> {
+export interface AuthenticatedRequest<TParams = any, TResBody = any, TReqBody = any> extends Request {
   apiKey?: string;
   authToken?: string;
   keyInfo?: ApiKeyInfo;
