@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import express, { type NextFunction, type Request, type Response } from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
