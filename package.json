@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node api/index.ts",
     "start": "ts-node api/index.ts",
-    "build": "tsc --project api/tsconfig.json",
+    "build": "echo 'No build step needed for serverless TypeScript'",
     "build:watch": "tsc --project api/tsconfig.json --watch",
     "type-check": "tsc --project api/tsconfig.json --noEmit",
     "test": "jest",
