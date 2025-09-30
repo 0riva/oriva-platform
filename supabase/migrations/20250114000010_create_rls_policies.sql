@@ -4,14 +4,26 @@
 -- Dependencies: T001-T009 (all tables must exist)
 
 -- ============================================================================
--- USERS TABLE - Users can only see/update their own profile
+-- DROP ALL EXISTING POLICIES FIRST
 -- ============================================================================
 
--- Drop existing policies first
+-- Users table
 DROP POLICY IF EXISTS "Users can insert own profile" ON users;
 DROP POLICY IF EXISTS "Users can update own profile" ON users;
 DROP POLICY IF EXISTS "Users can view own profile" ON users;
 DROP POLICY IF EXISTS users_self_update ON users;
+
+-- Hugo tables
+DROP POLICY IF EXISTS "Users can insert their own memories" ON hugo_collaboration_memory;
+DROP POLICY IF EXISTS "Users can update their own memories" ON hugo_collaboration_memory;
+DROP POLICY IF EXISTS "Users can view their own memories" ON hugo_collaboration_memory;
+DROP POLICY IF EXISTS "Users can view their own profile" ON hugo_user_profiles;
+DROP POLICY IF EXISTS context_kb_read_access ON hugo_knowledge_base;
+DROP POLICY IF EXISTS context_kb_system_only ON hugo_knowledge_base;
+
+-- ============================================================================
+-- USERS TABLE - Users can only see/update their own profile
+-- ============================================================================
 
 CREATE POLICY users_select_own ON users
   FOR SELECT USING (id = auth.uid());
