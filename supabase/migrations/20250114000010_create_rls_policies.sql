@@ -20,7 +20,7 @@ CREATE POLICY users_update_own ON users
 -- CONVERSATIONS TABLE - Users can only access their own conversations
 -- ============================================================================
 
-CREATE POLICY conversations_user_access ON conversations
+CREATE POLICY conversations_user_access ON hugo_conversations
   FOR ALL USING (user_id IN (
     SELECT id FROM users WHERE oriva_user_id = auth.uid()
   ));
@@ -44,7 +44,7 @@ CREATE POLICY messages_user_access ON hugo_messages
 -- USER_PROGRESS TABLE - Users can only access their own progress
 -- ============================================================================
 
-CREATE POLICY up_user_access ON user_progress
+CREATE POLICY up_user_access ON hugo_user_progress
   FOR ALL USING (user_id IN (
     SELECT id FROM users WHERE oriva_user_id = auth.uid()
   ));
@@ -53,7 +53,7 @@ CREATE POLICY up_user_access ON user_progress
 -- USER_MEMORIES TABLE - Users can only access their own memories
 -- ============================================================================
 
-CREATE POLICY um_user_access ON user_memories
+CREATE POLICY um_user_access ON hugo_user_memories
   FOR ALL USING (user_id IN (
     SELECT id FROM users WHERE oriva_user_id = auth.uid()
   ));
@@ -75,5 +75,5 @@ COMMENT ON POLICY users_select_own ON users IS 'Users can view their own profile
 COMMENT ON POLICY users_update_own ON users IS 'Users can update their own profile';
 COMMENT ON POLICY conversations_user_access ON hugo_conversations IS 'Users can CRUD their own conversations';
 COMMENT ON POLICY messages_user_access ON hugo_messages IS 'Users can CRUD hugo_messages in their conversations';
-COMMENT ON POLICY up_user_access ON user_progress IS 'Users can CRUD their own progress';
-COMMENT ON POLICY um_user_access ON user_memories IS 'Users can CRUD their own memories';
+COMMENT ON POLICY up_user_access ON hugo_user_progress IS 'Users can CRUD their own progress';
+COMMENT ON POLICY um_user_access ON hugo_user_memories IS 'Users can CRUD their own memories';

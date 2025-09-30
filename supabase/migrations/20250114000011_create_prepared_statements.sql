@@ -34,9 +34,9 @@ SELECT
   up.current_focus_area,
   up.milestones_reached
 FROM hugo_apps a
-LEFT JOIN personality_schemas ps ON ps.id = a.personality_schema_id
-LEFT JOIN knowledge_bases kb ON kb.kb_id = ANY(a.knowledge_base_ids)
-LEFT JOIN user_progress up ON up.user_id = $2 AND up.app_id = a.id
+LEFT JOIN hugo_personality_schemas ps ON ps.id = a.personality_schema_id
+LEFT JOIN hugo_knowledge_bases kb ON kb.kb_id = ANY(a.knowledge_base_ids)
+LEFT JOIN hugo_user_progress up ON up.user_id = $2 AND up.app_id = a.id
 WHERE a.app_id = $1
   AND a.is_active = true
 GROUP BY a.id, ps.id, up.id;
@@ -57,12 +57,12 @@ SELECT
   ke.tags,
   ts_rank(ke.search_vector, websearch_to_tsquery('english', $1)) as relevance,
   kb.kb_id
-FROM knowledge_entries ke
-JOIN knowledge_bases kb ON kb.id = ke.knowledge_base_id
+FROM hugo_knowledge_entries ke
+JOIN hugo_knowledge_bases kb ON kb.id = ke.knowledge_base_id
 WHERE
   kb.kb_id = ANY(
     SELECT unnest(knowledge_base_ids)
-    FROM apps
+    FROM hugo_apps
     WHERE app_id = $2
       AND is_active = true
   )
@@ -98,14 +98,14 @@ SELECT
         'created_at', um.created_at
       ) ORDER BY um.importance DESC
     )
-    FROM user_memories um
+    FROM hugo_user_memories um
     WHERE um.user_id = u.id
       AND um.app_id = (SELECT id FROM hugo_apps WHERE app_id = $2)
       AND (um.expires_at IS NULL OR um.expires_at > now())
     LIMIT 20
   ) as memories
 FROM users u
-LEFT JOIN user_progress up ON up.user_id = u.id
+LEFT JOIN hugo_user_progress up ON up.user_id = u.id
   AND up.app_id = (SELECT id FROM hugo_apps WHERE app_id = $2)
 WHERE u.id = $1;
 
