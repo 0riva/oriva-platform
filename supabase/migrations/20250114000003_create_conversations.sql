@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS hugo_conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID NOT NULL UNIQUE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  app_id TEXT NOT NULL,
+  app_id UUID NOT NULL REFERENCES hugo_apps(id),
 
   -- Session metadata
   title TEXT,

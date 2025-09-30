@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS hugo_user_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  app_id TEXT NOT NULL,
+  app_id UUID NOT NULL REFERENCES hugo_apps(id),
 
   -- Progress tracking
   progress_data JSONB NOT NULL DEFAULT '{}'::jsonb,

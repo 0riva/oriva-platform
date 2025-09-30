@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS hugo_user_memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  app_id TEXT NOT NULL,
+  app_id UUID NOT NULL REFERENCES hugo_apps(id),
   conversation_id UUID REFERENCES hugo_conversations(id) ON DELETE SET NULL,
 
   -- Memory content
@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS hugo_user_memories (
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS um_user_app_idx ON user_memories(user_id, app_id);
-CREATE INDEX IF NOT EXISTS um_type_idx ON user_memories(memory_type);
-CREATE INDEX IF NOT EXISTS um_importance_idx ON user_memories(importance DESC);
-CREATE INDEX IF NOT EXISTS um_expires_idx ON user_memories(expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS um_user_app_idx ON hugo_user_memories(user_id, app_id);
+CREATE INDEX IF NOT EXISTS um_type_idx ON hugo_user_memories(memory_type);
+CREATE INDEX IF NOT EXISTS um_importance_idx ON hugo_user_memories(importance DESC);
+CREATE INDEX IF NOT EXISTS um_expires_idx ON hugo_user_memories(expires_at) WHERE expires_at IS NOT NULL;
 
 -- Constraints
 ALTER TABLE hugo_user_memories ADD CONSTRAINT um_memory_type_check
