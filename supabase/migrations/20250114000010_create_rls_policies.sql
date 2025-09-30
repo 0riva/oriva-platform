@@ -8,10 +8,10 @@
 -- ============================================================================
 
 CREATE POLICY users_select_own ON users
-  FOR SELECT USING (id = auth.uid()::text);
+  FOR SELECT USING (id = auth.uid());
 
 CREATE POLICY users_update_own ON users
-  FOR UPDATE USING (id = auth.uid()::text);
+  FOR UPDATE USING (id = auth.uid());
 
 -- No INSERT policy - user creation handled by backend auth flow
 -- No DELETE policy - account deletion requires backend verification
