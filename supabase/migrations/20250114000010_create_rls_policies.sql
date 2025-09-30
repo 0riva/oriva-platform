@@ -7,6 +7,12 @@
 -- USERS TABLE - Users can only see/update their own profile
 -- ============================================================================
 
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Users can insert own profile" ON users;
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
+DROP POLICY IF EXISTS "Users can view own profile" ON users;
+DROP POLICY IF EXISTS users_self_update ON users;
+
 CREATE POLICY users_select_own ON users
   FOR SELECT USING (id = auth.uid());
 
