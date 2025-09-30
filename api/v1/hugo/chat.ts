@@ -6,7 +6,7 @@ import { authenticate, AuthenticatedRequest } from '../../middleware/auth';
 import { asyncHandler, validationError } from '../../middleware/error-handler';
 import { rateLimit } from '../../middleware/rate-limit';
 import { composeChatContext, buildSystemPrompt, saveMessage } from '../../services/chat';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
 interface ChatRequest {
   conversation_id: string;
@@ -17,8 +17,8 @@ interface ChatRequest {
   };
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const anthropic = new Anthropic({
+  apiKey: process.env.HUGO_CLAUDE_API_KEY,
 });
 
 async function chatHandler(req: AuthenticatedRequest, res: VercelResponse): Promise<void> {
@@ -80,9 +80,8 @@ async function chatHandler(req: AuthenticatedRequest, res: VercelResponse): Prom
   // Build system prompt
   const systemPrompt = buildSystemPrompt(composedContext);
 
-  // Build conversation messages
-  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: 'system', content: systemPrompt },
+  // Build conversation messages for Claude
+  const messages: Anthropic.MessageParam[] = [
     ...composedContext.history.map((m) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
@@ -95,11 +94,12 @@ async function chatHandler(req: AuthenticatedRequest, res: VercelResponse): Prom
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  // Stream response
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4',
+  // Stream response with Claude Sonnet 4.5
+  const stream = await anthropic.messages.stream({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4096,
+    system: systemPrompt,
     messages,
-    stream: true,
     temperature: 0.7,
   });
 
@@ -108,8 +108,8 @@ async function chatHandler(req: AuthenticatedRequest, res: VercelResponse): Prom
 
   try {
     for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || '';
-      if (content) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        const content = chunk.delta.text;
         fullResponse += content;
         tokenCount++;
 
@@ -126,7 +126,7 @@ async function chatHandler(req: AuthenticatedRequest, res: VercelResponse): Prom
       conversationId: conversation_id,
       role: 'assistant',
       content: fullResponse,
-      model: 'gpt-4',
+      model: 'claude-sonnet-4-20250514',
       confidenceScore: 0.85, // TODO: Calculate actual confidence
       generationTimeMs,
       tokensUsed: tokenCount,
