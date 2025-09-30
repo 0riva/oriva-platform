@@ -4,8 +4,8 @@
 
 CREATE TABLE IF NOT EXISTS hugo_user_memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  app_id UUID NOT NULL REFERENCES hugo_apps(id),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  app_id TEXT NOT NULL,
   conversation_id UUID REFERENCES hugo_conversations(id) ON DELETE SET NULL,
 
   -- Memory content
