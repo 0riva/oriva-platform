@@ -36,6 +36,11 @@ export function errorHandler(error: Error | AppError, req: VercelRequest, res: V
   // Generate request ID for tracing
   const requestId = generateRequestId();
 
+  // Sanitize headers to prevent sensitive data logging
+  const sanitizedHeaders = { ...req.headers };
+  delete sanitizedHeaders.authorization;
+  delete sanitizedHeaders.cookie;
+
   // Log error details
   console.error('Error handler caught:', {
     requestId,
@@ -43,7 +48,7 @@ export function errorHandler(error: Error | AppError, req: VercelRequest, res: V
     stack: error.stack,
     method: req.method,
     url: req.url,
-    headers: req.headers,
+    headers: sanitizedHeaders,
   });
 
   // Determine status code and error code

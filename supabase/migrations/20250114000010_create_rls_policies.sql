@@ -8,10 +8,10 @@
 -- ============================================================================
 
 CREATE POLICY users_select_own ON users
-  FOR SELECT USING (id = auth.uid());
+  FOR SELECT USING (oriva_user_id = auth.uid());
 
 CREATE POLICY users_update_own ON users
-  FOR UPDATE USING (id = auth.uid());
+  FOR UPDATE USING (oriva_user_id = auth.uid());
 
 -- No INSERT policy - user creation handled by backend auth flow
 -- No DELETE policy - account deletion requires backend verification
@@ -21,7 +21,9 @@ CREATE POLICY users_update_own ON users
 -- ============================================================================
 
 CREATE POLICY conversations_user_access ON conversations
-  FOR ALL USING (user_id = auth.uid());
+  FOR ALL USING (user_id IN (
+    SELECT id FROM users WHERE oriva_user_id = auth.uid()
+  ));
 
 -- Allows SELECT, INSERT, UPDATE, DELETE for user's own conversations
 
@@ -32,7 +34,9 @@ CREATE POLICY conversations_user_access ON conversations
 CREATE POLICY messages_user_access ON messages
   FOR ALL USING (
     conversation_id IN (
-      SELECT id FROM conversations WHERE user_id = auth.uid()
+      SELECT c.id FROM conversations c
+      JOIN users u ON c.user_id = u.id
+      WHERE u.oriva_user_id = auth.uid()
     )
   );
 
@@ -41,14 +45,18 @@ CREATE POLICY messages_user_access ON messages
 -- ============================================================================
 
 CREATE POLICY up_user_access ON user_progress
-  FOR ALL USING (user_id = auth.uid());
+  FOR ALL USING (user_id IN (
+    SELECT id FROM users WHERE oriva_user_id = auth.uid()
+  ));
 
 -- ============================================================================
 -- USER_MEMORIES TABLE - Users can only access their own memories
 -- ============================================================================
 
 CREATE POLICY um_user_access ON user_memories
-  FOR ALL USING (user_id = auth.uid());
+  FOR ALL USING (user_id IN (
+    SELECT id FROM users WHERE oriva_user_id = auth.uid()
+  ));
 
 -- ============================================================================
 -- PUBLIC READ TABLES (no RLS needed)
