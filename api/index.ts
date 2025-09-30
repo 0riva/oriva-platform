@@ -2174,6 +2174,705 @@ app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, withAuthContext
 }));
 
 // =============================================================================
+// MARKETPLACE ITEMS ENDPOINTS (OrivaFlow Commerce)
+// =============================================================================
+
+// List/search marketplace items (public)
+app.get('/api/v1/marketplace/items', async (req, res) => {
+  try {
+    const limit = getLimit(req.query.limit, 20, 100);
+    const offset = getOffset(req.query.offset, 0);
+    const itemType = toStringParam(req.query.item_type);
+    const earnerType = toStringParam(req.query.earner_type);
+    const categoryId = toStringParam(req.query.category_id);
+    const minPrice = req.query.min_price ? toNumber(req.query.min_price, 0) : undefined;
+    const maxPrice = req.query.max_price ? toNumber(req.query.max_price, 0) : undefined;
+    const sellerId = toStringParam(req.query.seller_id);
+    const searchTerm = toStringParam(req.query.search);
+
+    let query = supabase
+      .from('entries')
+      .select('*', { count: 'exact' })
+      .eq('entry_type', 'marketplace_item')
+      .eq('marketplace_metadata->>is_published', 'true');
+
+    if (itemType) {
+      query = query.eq('marketplace_metadata->>item_type', itemType);
+    }
+
+    if (earnerType) {
+      query = query.eq('marketplace_metadata->>earner_type', earnerType);
+    }
+
+    if (categoryId) {
+      query = query.contains('marketplace_metadata->category_ids', [categoryId]);
+    }
+
+    if (minPrice !== undefined) {
+      query = query.gte('marketplace_metadata->>price', minPrice);
+    }
+
+    if (maxPrice !== undefined) {
+      query = query.lte('marketplace_metadata->>price', maxPrice);
+    }
+
+    if (sellerId) {
+      query = query.eq('user_id', sellerId);
+    }
+
+    if (searchTerm) {
+      const escaped = searchTerm.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      query = query.or(`title.ilike.%${escaped}%,content.ilike.%${escaped}%`);
+    }
+
+    query = query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      logger.error('Failed to fetch marketplace items', { error });
+      respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to fetch items');
+      return;
+    }
+
+    const pagination = {
+      page: limit === 0 ? 1 : Math.floor(offset / limit) + 1,
+      limit,
+      total: count || 0,
+      totalPages: limit === 0 ? 0 : Math.ceil((count || 0) / limit)
+    };
+
+    res.json({
+      ok: true,
+      success: true,
+      data: data || [],
+      meta: { pagination }
+    });
+  } catch (error) {
+    logger.error('Marketplace items endpoint error', { error });
+    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to fetch items');
+  }
+});
+
+// Create marketplace item (auth required)
+app.post('/api/v1/marketplace/items', validateAuth, withAuthContext(async (req, res, keyInfo) => {
+  try {
+    const { title, content, marketplace_metadata } = req.body as {
+      title: string;
+      content?: string;
+      marketplace_metadata: Record<string, unknown>;
+    };
+
+    // Validation
+    if (!title || title.trim() === '') {
+      respondWithError(res, 400, 'VALIDATION_ERROR', 'Title is required');
+      return;
+    }
+
+    if (!marketplace_metadata?.price && marketplace_metadata?.price !== 0) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', 'Price is required');
+      return;
+    }
+
+    if (!marketplace_metadata?.currency) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', 'Currency is required');
+      return;
+    }
+
+    if (typeof marketplace_metadata.price === 'number' && marketplace_metadata.price < 0) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', 'Price must be greater than or equal to 0');
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const itemData = {
+      title,
+      content: content || '',
+      entry_type: 'marketplace_item',
+      user_id: keyInfo.userId,
+      marketplace_metadata: {
+        ...marketplace_metadata,
+        is_published: false // Default to unpublished
+      },
+      created_at: now,
+      updated_at: now
+    };
+
+    const { data, error } = await supabase
+      .from('entries')
+      .insert(itemData)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Failed to create marketplace item', { error, userId: keyInfo.userId });
+      if (error.code === '23505') {
+        respondWithError(res, 409, 'DUPLICATE_ERROR', 'Duplicate SKU or unique constraint violation');
+        return;
+      }
+      respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to create item');
+      return;
+    }
+
+    logger.info('Marketplace item created', { itemId: data.id, userId: keyInfo.userId });
+    res.status(201).json({
+      ok: true,
+      success: true,
+      data
+    });
+  } catch (error) {
+    logger.error('Create marketplace item error', { error, userId: keyInfo.userId });
+    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to create item');
+  }
+}));
+
+// Get single marketplace item (public)
+app.get('/api/v1/marketplace/items/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('entries')
+      .select('*')
+      .eq('id', id)
+      .eq('entry_type', 'marketplace_item')
+      .single();
+
+    if (error || !data) {
+      respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Marketplace item not found');
+      return;
+    }
+
+    // Check if published (unpublished items hidden from public)
+    const isPublished = data.marketplace_metadata?.is_published;
+    if (!isPublished) {
+      respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Marketplace item not found');
+      return;
+    }
+
+    res.json({
+      ok: true,
+      success: true,
+      data
+    });
+  } catch (error) {
+    logger.error('Get marketplace item error', { error, itemId: req.params.id });
+    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to retrieve item');
+  }
+});
+
+// Update marketplace item (owner only)
+app.put('/api/v1/marketplace/items/:id', validateAuth, withAuthContext(async (req, res, keyInfo) => {
+  try {
+    const { id } = req.params;
+    const { title, content, marketplace_metadata } = req.body as {
+      title?: string;
+      content?: string;
+      marketplace_metadata?: Record<string, unknown>;
+    };
+
+    // Validate metadata if provided
+    if (marketplace_metadata?.price !== undefined && typeof marketplace_metadata.price === 'number') {
+      if (marketplace_metadata.price < 0) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Price must be greater than or equal to 0');
+        return;
+      }
+    }
+
+    const updates = {
+      ...(title && { title }),
+      ...(content !== undefined && { content }),
+      ...(marketplace_metadata && { marketplace_metadata }),
+      updated_at: new Date().toISOString()
+    };
+
+    // Update item (RLS enforces ownership via user_id match)
+    const { data, error } = await supabase
+      .from('entries')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', keyInfo.userId)
+      .eq('entry_type', 'marketplace_item')
+      .select()
+      .single();
+
+    if (error || !data) {
+      logger.error('Failed to update marketplace item', { error, itemId: id, userId: keyInfo.userId });
+      respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Item not found or permission denied');
+      return;
+    }
+
+    logger.info('Marketplace item updated', { itemId: id, userId: keyInfo.userId });
+    res.json({
+      ok: true,
+      success: true,
+      data
+    });
+  } catch (error) {
+    logger.error('Update marketplace item error', { error, itemId: req.params.id, userId: keyInfo.userId });
+    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to update item');
+  }
+}));
+
+// Delete marketplace item (owner only)
+app.delete('/api/v1/marketplace/items/:id', validateAuth, withAuthContext(async (req, res, keyInfo) => {
+  try {
+    const { id } = req.params;
+
+    // Delete item (RLS enforces ownership)
+    const { error } = await supabase
+      .from('entries')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', keyInfo.userId)
+      .eq('entry_type', 'marketplace_item');
+
+    if (error) {
+      logger.error('Failed to delete marketplace item', { error, itemId: id, userId: keyInfo.userId });
+      respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Item not found or permission denied');
+      return;
+    }
+
+    logger.info('Marketplace item deleted', { itemId: id, userId: keyInfo.userId });
+    res.json({
+      ok: true,
+      success: true,
+      message: 'Item deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Delete marketplace item error', { error, itemId: req.params.id, userId: keyInfo.userId });
+    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to delete item');
+  }
+}));
+
+// =============================================================================
+// MARKETPLACE SEARCH ENDPOINT
+// =============================================================================
+
+// Advanced search (public)
+app.post('/api/v1/marketplace/search', async (req, res) => {
+  try {
+    const {
+      query: searchQuery,
+      filters = {},
+      sort = 'created_at',
+      order = 'desc',
+      page = 1,
+      limit: requestLimit = 20
+    } = req.body as {
+      query?: string;
+      filters?: Record<string, unknown>;
+      sort?: string;
+      order?: 'asc' | 'desc';
+      page?: number;
+      limit?: number;
+    };
+
+    const limit = getLimit(requestLimit, 20, 100);
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from('entries')
+      .select('*', { count: 'exact' })
+      .eq('entry_type', 'marketplace_item')
+      .eq('marketplace_metadata->>is_published', 'true');
+
+    // Apply search query
+    if (searchQuery && searchQuery.trim() !== '') {
+      const escaped = searchQuery.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      query = query.or(`title.ilike.%${escaped}%,content.ilike.%${escaped}%`);
+    }
+
+    // Apply filters
+    if (filters.item_type) {
+      query = query.eq('marketplace_metadata->>item_type', filters.item_type);
+    }
+
+    if (filters.category_id) {
+      query = query.contains('marketplace_metadata->category_ids', [filters.category_id]);
+    }
+
+    if (filters.min_price !== undefined) {
+      query = query.gte('marketplace_metadata->>price', filters.min_price);
+    }
+
+    if (filters.max_price !== undefined) {
+      query = query.lte('marketplace_metadata->>price', filters.max_price);
+    }
+
+    if (filters.seller_id) {
+      query = query.eq('user_id', filters.seller_id);
+    }
+
+    // Apply sorting
+    const validSortFields = ['created_at', 'updated_at', 'title'];
+    const sortField = validSortFields.includes(sort) ? sort : 'created_at';
+    query = query.order(sortField, { ascending: order === 'asc' });
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      logger.error('Failed to search marketplace items', { error });
+      respondWithError(res, 500, 'SEARCH_ERROR', 'Failed to search items');
+      return;
+    }
+
+    const pagination = {
+      page,
+      limit,
+      total: count || 0,
+      totalPages: limit === 0 ? 0 : Math.ceil((count || 0) / limit)
+    };
+
+    res.json({
+      ok: true,
+      success: true,
+      data: data || [],
+      meta: {
+        pagination,
+        query: searchQuery,
+        filters,
+        sort: { field: sortField, order }
+      }
+    });
+  } catch (error) {
+    logger.error('Marketplace search error', { error });
+    respondWithError(res, 500, 'SEARCH_ERROR', 'Failed to search items');
+  }
+});
+
+// =============================================================================
+// MARKETPLACE CATEGORIES ENDPOINTS
+// =============================================================================
+
+// List categories (public)
+app.get('/api/v1/marketplace/categories', async (req, res) => {
+  try {
+    const parentId = req.query.parent_id ? toStringParam(req.query.parent_id) : undefined;
+
+    let query = supabase
+      .from('collections')
+      .select('*')
+      .eq('collection_type', 'marketplace_category')
+      .order('organization_rules->display_order', { ascending: true });
+
+    // Filter by parent_id
+    if (parentId !== undefined) {
+      if (parentId === 'null' || parentId === '') {
+        query = query.is('organization_rules->>parent_category_id', null);
+      } else {
+        query = query.eq('organization_rules->>parent_category_id', parentId);
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      logger.error('Failed to fetch categories', { error });
+      respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to fetch categories');
+      return;
+    }
+
+    res.json({
+      ok: true,
+      success: true,
+      data: data || []
+    });
+  } catch (error) {
+    logger.error('Categories endpoint error', { error });
+    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to fetch categories');
+  }
+});
+
+// Create category (admin only)
+app.post('/api/v1/marketplace/categories', validateAuth, requireAdminToken, withAuthContext(async (req, res) => {
+  try {
+    const { name, description, organization_rules } = req.body as {
+      name: string;
+      description?: string;
+      organization_rules: Record<string, unknown>;
+    };
+
+    // Validation
+    if (!name || name.trim() === '') {
+      respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name is required');
+      return;
+    }
+
+    if (name.length > 255) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name too long (max 255 characters)');
+      return;
+    }
+
+    // Auto-generate SEO slug if not provided
+    const seoSlug = organization_rules?.seo_slug || name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const now = new Date().toISOString();
+    const categoryData = {
+      name,
+      description: description || null,
+      collection_type: 'marketplace_category',
+      organization_rules: {
+        ...organization_rules,
+        seo_slug: seoSlug
+      },
+      entry_count: 0,
+      created_at: now,
+      updated_at: now
+    };
+
+    const { data, error } = await supabase
+      .from('collections')
+      .insert(categoryData)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Failed to create category', { error });
+      if (error.code === '23505') {
+        respondWithError(res, 409, 'DUPLICATE_ERROR', 'Duplicate category name or SEO slug');
+        return;
+      }
+      respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to create category');
+      return;
+    }
+
+    logger.info('Category created', { categoryId: data.id });
+    res.status(201).json({
+      ok: true,
+      success: true,
+      data
+    });
+  } catch (error) {
+    logger.error('Create category error', { error });
+    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to create category');
+  }
+}));
+
+// Get category tree hierarchy (public)
+app.get('/api/v1/marketplace/categories/tree', async (req, res) => {
+  try {
+    // Get all categories
+    const { data, error } = await supabase
+      .from('collections')
+      .select('*')
+      .eq('collection_type', 'marketplace_category')
+      .order('organization_rules->display_order', { ascending: true });
+
+    if (error) {
+      logger.error('Failed to fetch categories for tree', { error });
+      respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to fetch categories');
+      return;
+    }
+
+    const categories = data || [];
+
+    // Build tree structure
+    type CategoryNode = typeof categories[0] & { children: CategoryNode[] };
+    const categoryMap = new Map<string, CategoryNode>();
+    const rootNodes: CategoryNode[] = [];
+
+    // First pass: create nodes
+    categories.forEach((category) => {
+      categoryMap.set(category.id, { ...category, children: [] });
+    });
+
+    // Second pass: build hierarchy
+    categories.forEach((category) => {
+      const node = categoryMap.get(category.id)!;
+      const parentId = category.organization_rules?.parent_category_id;
+
+      if (parentId && categoryMap.has(parentId)) {
+        const parent = categoryMap.get(parentId)!;
+        parent.children.push(node);
+      } else if (!parentId) {
+        rootNodes.push(node);
+      }
+    });
+
+    res.json({
+      ok: true,
+      success: true,
+      data: rootNodes
+    });
+  } catch (error) {
+    logger.error('Category tree error', { error });
+    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to build category tree');
+  }
+});
+
+// Get single category (public)
+app.get('/api/v1/marketplace/categories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('collections')
+      .select('*')
+      .eq('id', id)
+      .eq('collection_type', 'marketplace_category')
+      .single();
+
+    if (error || !data) {
+      respondWithError(res, 404, 'CATEGORY_NOT_FOUND', 'Category not found');
+      return;
+    }
+
+    res.json({
+      ok: true,
+      success: true,
+      data
+    });
+  } catch (error) {
+    logger.error('Get category error', { error, categoryId: req.params.id });
+    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to retrieve category');
+  }
+});
+
+// Update category (admin only)
+app.put('/api/v1/marketplace/categories/:id', validateAuth, requireAdminToken, withAuthContext(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, organization_rules } = req.body as {
+      name?: string;
+      description?: string;
+      organization_rules?: Record<string, unknown>;
+    };
+
+    // Validation
+    if (name !== undefined) {
+      if (name.trim() === '') {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name cannot be empty');
+        return;
+      }
+      if (name.length > 255) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name too long (max 255 characters)');
+        return;
+      }
+    }
+
+    // Auto-update SEO slug if name changes and slug not explicitly provided
+    let updatedOrgRules = organization_rules;
+    if (name && !organization_rules?.seo_slug) {
+      const seoSlug = name
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      updatedOrgRules = {
+        ...organization_rules,
+        seo_slug: seoSlug
+      };
+    }
+
+    const updates = {
+      ...(name && { name }),
+      ...(description !== undefined && { description }),
+      ...(updatedOrgRules && { organization_rules: updatedOrgRules }),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('collections')
+      .update(updates)
+      .eq('id', id)
+      .eq('collection_type', 'marketplace_category')
+      .select()
+      .single();
+
+    if (error || !data) {
+      logger.error('Failed to update category', { error, categoryId: id });
+      respondWithError(res, 404, 'CATEGORY_NOT_FOUND', 'Category not found or permission denied');
+      return;
+    }
+
+    logger.info('Category updated', { categoryId: id });
+    res.json({
+      ok: true,
+      success: true,
+      data
+    });
+  } catch (error) {
+    logger.error('Update category error', { error, categoryId: req.params.id });
+    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to update category');
+  }
+}));
+
+// Delete category (admin only)
+app.delete('/api/v1/marketplace/categories/:id', validateAuth, requireAdminToken, withAuthContext(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if category has items
+    const { data: categoryData, error: fetchError } = await supabase
+      .from('collections')
+      .select('entry_count')
+      .eq('id', id)
+      .eq('collection_type', 'marketplace_category')
+      .single();
+
+    if (fetchError) {
+      respondWithError(res, 404, 'CATEGORY_NOT_FOUND', 'Category not found');
+      return;
+    }
+
+    if (categoryData.entry_count > 0) {
+      respondWithError(res, 409, 'CATEGORY_HAS_ITEMS', 'Cannot delete category with items');
+      return;
+    }
+
+    // Check if category has sub-categories
+    const { data: subCategories } = await supabase
+      .from('collections')
+      .select('id')
+      .eq('collection_type', 'marketplace_category')
+      .eq('organization_rules->>parent_category_id', id);
+
+    if (subCategories && subCategories.length > 0) {
+      respondWithError(res, 409, 'CATEGORY_HAS_CHILDREN', 'Cannot delete category with sub-categories');
+      return;
+    }
+
+    // Delete category
+    const { error } = await supabase
+      .from('collections')
+      .delete()
+      .eq('id', id)
+      .eq('collection_type', 'marketplace_category');
+
+    if (error) {
+      logger.error('Failed to delete category', { error, categoryId: id });
+      respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to delete category');
+      return;
+    }
+
+    logger.info('Category deleted', { categoryId: id });
+    res.json({
+      ok: true,
+      success: true,
+      message: 'Category deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Delete category error', { error, categoryId: req.params.id });
+    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to delete category');
+  }
+}));
+
+// =============================================================================
 // ADMIN ENDPOINTS FOR APP APPROVAL
 // =============================================================================
 
