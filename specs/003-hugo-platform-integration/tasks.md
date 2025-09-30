@@ -28,25 +28,25 @@
 
 ### Database Schema & Configuration
 
-- [ ] **T001** [P] Create Supabase migration for `users` table in `oriva-platform/supabase/migrations/20250114000001_create_users.sql`
-- [ ] **T002** [P] Create Supabase migration for `apps` table in `oriva-platform/supabase/migrations/20250114000002_create_apps.sql`
-- [ ] **T003** [P] Create Supabase migration for `conversations` table in `oriva-platform/supabase/migrations/20250114000003_create_conversations.sql`
-- [ ] **T004** [P] Create Supabase migration for `messages` table in `oriva-platform/supabase/migrations/20250114000004_create_messages.sql`
-- [ ] **T005** [P] Create Supabase migration for `knowledge_bases` table in `oriva-platform/supabase/migrations/20250114000005_create_knowledge_bases.sql`
-- [ ] **T006** [P] Create Supabase migration for `knowledge_entries` table with full-text search in `oriva-platform/supabase/migrations/20250114000006_create_knowledge_entries.sql`
-- [ ] **T007** [P] Create Supabase migration for `personality_schemas` table in `oriva-platform/supabase/migrations/20250114000007_create_personality_schemas.sql`
-- [ ] **T008** [P] Create Supabase migration for `user_progress` table in `oriva-platform/supabase/migrations/20250114000008_create_user_progress.sql`
-- [ ] **T009** [P] Create Supabase migration for `user_memories` table in `oriva-platform/supabase/migrations/20250114000009_create_user_memories.sql`
-- [ ] **T010** Create Row-Level Security policies for all tables in `oriva-platform/supabase/migrations/20250114000010_create_rls_policies.sql` (depends on T001-T009)
-- [ ] **T011** Create prepared statements for hot paths in `oriva-platform/supabase/migrations/20250114000011_create_prepared_statements.sql` (depends on T001-T009)
+- [x] **T001** [P] Create Supabase migration for `users` table in `oriva-platform/supabase/migrations/20250114000001_create_users.sql`
+- [x] **T002** [P] Create Supabase migration for `apps` table in `oriva-platform/supabase/migrations/20250114000002_create_apps.sql`
+- [x] **T003** [P] Create Supabase migration for `conversations` table in `oriva-platform/supabase/migrations/20250114000003_create_conversations.sql`
+- [x] **T004** [P] Create Supabase migration for `messages` table in `oriva-platform/supabase/migrations/20250114000004_create_messages.sql`
+- [x] **T005** [P] Create Supabase migration for `knowledge_bases` table in `oriva-platform/supabase/migrations/20250114000005_create_knowledge_bases.sql`
+- [x] **T006** [P] Create Supabase migration for `knowledge_entries` table with full-text search in `oriva-platform/supabase/migrations/20250114000006_create_knowledge_entries.sql`
+- [x] **T007** [P] Create Supabase migration for `personality_schemas` table in `oriva-platform/supabase/migrations/20250114000007_create_personality_schemas.sql`
+- [x] **T008** [P] Create Supabase migration for `user_progress` table in `oriva-platform/supabase/migrations/20250114000008_create_user_progress.sql`
+- [x] **T009** [P] Create Supabase migration for `user_memories` table in `oriva-platform/supabase/migrations/20250114000009_create_user_memories.sql`
+- [x] **T010** Create Row-Level Security policies for all tables in `oriva-platform/supabase/migrations/20250114000010_create_rls_policies.sql` (depends on T001-T009)
+- [x] **T011** Create prepared statements for hot paths in `oriva-platform/supabase/migrations/20250114000011_create_prepared_statements.sql` (depends on T001-T009)
 
 ### Backend Configuration
 
-- [ ] **T012** [P] Create Supabase connection configuration in `oriva-platform/api/lib/supabase.ts`
-- [ ] **T013** [P] Create JWT authentication middleware in `oriva-platform/api/middleware/auth.ts`
-- [ ] **T014** [P] Create rate limiting middleware in `oriva-platform/api/middleware/rateLimit.ts`
-- [ ] **T015** [P] Create error handling middleware in `oriva-platform/api/middleware/errorHandler.ts`
-- [ ] **T016** [P] Configure Vercel Edge Function regions in `oriva-platform/vercel.json`
+- [x] **T012** [P] Create Supabase connection configuration in `oriva-platform/api/lib/supabase.ts`
+- [x] **T013** [P] Create JWT authentication middleware in `oriva-platform/api/middleware/auth.ts`
+- [x] **T014** [P] Create rate limiting middleware in `oriva-platform/api/middleware/rateLimit.ts`
+- [x] **T015** [P] Create error handling middleware in `oriva-platform/api/middleware/errorHandler.ts`
+- [x] **T016** [P] Configure Vercel Edge Function regions in `oriva-platform/vercel.json`
 
 ---
 
@@ -55,24 +55,24 @@
 
 ### Contract Tests (API Endpoint Specifications)
 
-- [ ] **T017** [P] Contract test for POST /hugo/chat (streaming validation, <3s requirement) in `oriva-platform/tests/contract/hugoChatPost.test.ts`
-- [ ] **T018** [P] Contract test for POST /hugo/knowledge/search (<1s requirement) in `oriva-platform/tests/contract/hugoKnowledgeSearchPost.test.ts`
-- [ ] **T019** [P] Contract test for POST /auth/register (native account creation) in `oriva-platform/tests/contract/authRegisterPost.test.ts`
-- [ ] **T020** [P] Contract test for GET /auth/sso (SSO redirect flow) in `oriva-platform/tests/contract/authSsoGet.test.ts`
-- [ ] **T021** [P] Contract test for GET /auth/sso/callback in `oriva-platform/tests/contract/authSsoCallbackGet.test.ts`
-- [ ] **T022** [P] Contract test for GET /auth/oauth/authorize (OAuth flow) in `oriva-platform/tests/contract/authOauthAuthorizeGet.test.ts`
-- [ ] **T023** [P] Contract test for POST /auth/oauth/token (token exchange) in `oriva-platform/tests/contract/authOauthTokenPost.test.ts`
-- [ ] **T024** [P] Contract test for POST /auth/refresh in `oriva-platform/tests/contract/authRefreshPost.test.ts`
-- [ ] **T025** [P] Contract test for GET /hugo/user/progress in `oriva-platform/tests/contract/hugoUserProgressGet.test.ts`
-- [ ] **T026** [P] Contract test for PUT /hugo/user/progress in `oriva-platform/tests/contract/hugoUserProgressPut.test.ts`
-- [ ] **T027** [P] Contract test for POST /hugo/user/memory in `oriva-platform/tests/contract/hugoUserMemoryPost.test.ts`
-- [ ] **T028** [P] Contract test for GET /hugo/user/memory in `oriva-platform/tests/contract/hugoUserMemoryGet.test.ts`
-- [ ] **T029** [P] Contract test for GET /hugo/user/conversations in `oriva-platform/tests/contract/hugoUserConversationsGet.test.ts`
-- [ ] **T030** [P] Contract test for GET /hugo/user/conversations/{id}/messages in `oriva-platform/tests/contract/hugoUserConversationMessagesGet.test.ts`
-- [ ] **T031** [P] Contract test for GET /hugo/user/preferences in `oriva-platform/tests/contract/hugoUserPreferencesGet.test.ts`
-- [ ] **T032** [P] Contract test for PUT /hugo/user/preferences (data retention) in `oriva-platform/tests/contract/hugoUserPreferencesPut.test.ts`
-- [ ] **T033** [P] Contract test for DELETE /hugo/user/account (cascade deletion) in `oriva-platform/tests/contract/hugoUserAccountDelete.test.ts`
-- [ ] **T034** Verify all contract tests fail (no implementation exists yet)
+- [x] **T017** [P] Contract test for POST /hugo/chat (streaming validation, <3s requirement) in `oriva-platform/tests/contract/hugoChatPost.test.ts`
+- [x] **T018** [P] Contract test for POST /hugo/knowledge/search (<1s requirement) in `oriva-platform/tests/contract/hugoKnowledgeSearchPost.test.ts`
+- [x] **T019** [P] Contract test for POST /auth/register (native account creation) in `oriva-platform/tests/contract/authRegisterPost.test.ts`
+- [x] **T020** [P] Contract test for GET /auth/sso (SSO redirect flow) in `oriva-platform/tests/contract/authSsoGet.test.ts`
+- [x] **T021** [P] Contract test for GET /auth/sso/callback in `oriva-platform/tests/contract/authSsoCallbackGet.test.ts`
+- [x] **T022** [P] Contract test for GET /auth/oauth/authorize (OAuth flow) in `oriva-platform/tests/contract/authOauthAuthorizeGet.test.ts`
+- [x] **T023** [P] Contract test for POST /auth/oauth/token (token exchange) in `oriva-platform/tests/contract/authOauthTokenPost.test.ts`
+- [x] **T024** [P] Contract test for POST /auth/refresh in `oriva-platform/tests/contract/authRefreshPost.test.ts`
+- [x] **T025** [P] Contract test for GET /hugo/user/progress in `oriva-platform/tests/contract/hugoUserProgressGet.test.ts`
+- [x] **T026** [P] Contract test for PUT /hugo/user/progress in `oriva-platform/tests/contract/hugoUserProgressPut.test.ts`
+- [x] **T027** [P] Contract test for POST /hugo/user/memory in `oriva-platform/tests/contract/hugoUserMemoryPost.test.ts`
+- [x] **T028** [P] Contract test for GET /hugo/user/memory in `oriva-platform/tests/contract/hugoUserMemoryGet.test.ts`
+- [x] **T029** [P] Contract test for GET /hugo/user/conversations in `oriva-platform/tests/contract/hugoUserConversationsGet.test.ts`
+- [x] **T030** [P] Contract test for GET /hugo/user/conversations/{id}/messages in `oriva-platform/tests/contract/hugoUserConversationMessagesGet.test.ts`
+- [x] **T031** [P] Contract test for GET /hugo/user/preferences in `oriva-platform/tests/contract/hugoUserPreferencesGet.test.ts`
+- [x] **T032** [P] Contract test for PUT /hugo/user/preferences (data retention) in `oriva-platform/tests/contract/hugoUserPreferencesPut.test.ts`
+- [x] **T033** [P] Contract test for DELETE /hugo/user/account (cascade deletion) in `oriva-platform/tests/contract/hugoUserAccountDelete.test.ts`
+- [x] **T034** Verify all contract tests fail (no implementation exists yet)
 
 ---
 
@@ -80,32 +80,32 @@
 
 ### Authentication Endpoints (Foundational)
 
-- [ ] **T035** Implement POST /auth/register endpoint with Oriva 101 account creation in `oriva-platform/api/auth/register.ts` (depends on T013, T019)
-- [ ] **T036** Implement GET /auth/sso endpoint with Oriva SSO redirect in `oriva-platform/api/auth/sso.ts` (depends on T013, T020)
-- [ ] **T037** Implement GET /auth/sso/callback endpoint in `oriva-platform/api/auth/sso/callback.ts` (depends on T036, T021)
-- [ ] **T038** Implement GET /auth/oauth/authorize endpoint in `oriva-platform/api/auth/oauth/authorize.ts` (depends on T013, T022)
-- [ ] **T039** Implement POST /auth/oauth/token endpoint in `oriva-platform/api/auth/oauth/token.ts` (depends on T038, T023)
-- [ ] **T040** Implement POST /auth/refresh endpoint in `oriva-platform/api/auth/refresh.ts` (depends on T013, T024)
+- [x] **T035** Implement POST /auth/register endpoint with Oriva 101 account creation in `oriva-platform/api/auth/register.ts` (depends on T013, T019)
+- [x] **T036** Implement GET /auth/sso endpoint with Oriva SSO redirect in `oriva-platform/api/auth/sso.ts` (depends on T013, T020)
+- [x] **T037** Implement GET /auth/sso/callback endpoint in `oriva-platform/api/auth/sso/callback.ts` (depends on T036, T021)
+- [x] **T038** Implement GET /auth/oauth/authorize endpoint in `oriva-platform/api/auth/oauth/authorize.ts` (depends on T013, T022)
+- [x] **T039** Implement POST /auth/oauth/token endpoint in `oriva-platform/api/auth/oauth/token.ts` (depends on T038, T023)
+- [x] **T040** Implement POST /auth/refresh endpoint in `oriva-platform/api/auth/refresh.ts` (depends on T013, T024)
 
 ### Knowledge & AI Services
 
-- [ ] **T041** [P] Implement PostgreSQL full-text search service in `oriva-platform/api/services/knowledgeSearch.ts` (depends on T006, T012)
-- [ ] **T042** [P] Implement personality schema loader with 15min cache in `oriva-platform/api/services/personalityLoader.ts` (depends on T007, T012)
-- [ ] **T043** Implement multi-layered prompt composition engine (Core → App → User) in `oriva-platform/api/services/promptComposer.ts` (depends on T041, T042)
-- [ ] **T044** Implement POST /hugo/knowledge/search endpoint (<1s performance) in `oriva-platform/api/hugo/knowledge/search.ts` (depends on T041, T018)
-- [ ] **T045** Implement POST /hugo/chat endpoint with streaming response in `oriva-platform/api/hugo/chat.ts` (depends on T043, T044, T017)
+- [x] **T041** [P] Implement PostgreSQL full-text search service in `oriva-platform/api/services/knowledgeSearch.ts` (depends on T006, T012)
+- [x] **T042** [P] Implement personality schema loader with 15min cache in `oriva-platform/api/services/personalityLoader.ts` (depends on T007, T012)
+- [x] **T043** Implement multi-layered prompt composition engine (Core → App → User) in `oriva-platform/api/services/promptComposer.ts` (depends on T041, T042)
+- [x] **T044** Implement POST /hugo/knowledge/search endpoint (<1s performance) in `oriva-platform/api/hugo/knowledge/search.ts` (depends on T041, T018)
+- [x] **T045** Implement POST /hugo/chat endpoint with streaming response in `oriva-platform/api/hugo/chat.ts` (depends on T043, T044, T017)
 
 ### User Management Endpoints
 
-- [ ] **T046** [P] Implement GET /hugo/user/progress endpoint in `oriva-platform/api/hugo/user/progress.ts` (depends on T013, T025)
-- [ ] **T047** [P] Implement PUT /hugo/user/progress endpoint in `oriva-platform/api/hugo/user/progress.ts` (depends on T046, T026)
-- [ ] **T048** [P] Implement POST /hugo/user/memory endpoint in `oriva-platform/api/hugo/user/memory.ts` (depends on T013, T027)
-- [ ] **T049** [P] Implement GET /hugo/user/memory endpoint in `oriva-platform/api/hugo/user/memory.ts` (depends on T048, T028)
-- [ ] **T050** [P] Implement GET /hugo/user/conversations endpoint in `oriva-platform/api/hugo/user/conversations.ts` (depends on T013, T029)
-- [ ] **T051** [P] Implement GET /hugo/user/conversations/{id}/messages endpoint in `oriva-platform/api/hugo/user/conversations/[id]/messages.ts` (depends on T050, T030)
-- [ ] **T052** [P] Implement GET /hugo/user/preferences endpoint in `oriva-platform/api/hugo/user/preferences.ts` (depends on T013, T031)
-- [ ] **T053** [P] Implement PUT /hugo/user/preferences endpoint (data retention settings) in `oriva-platform/api/hugo/user/preferences.ts` (depends on T052, T032)
-- [ ] **T054** [P] Implement DELETE /hugo/user/account endpoint with cascade deletion in `oriva-platform/api/hugo/user/account.ts` (depends on T013, T033)
+- [x] **T046** [P] Implement GET /hugo/user/progress endpoint in `oriva-platform/api/hugo/user/progress.ts` (depends on T013, T025)
+- [x] **T047** [P] Implement PUT /hugo/user/progress endpoint in `oriva-platform/api/hugo/user/progress.ts` (depends on T046, T026)
+- [x] **T048** [P] Implement POST /hugo/user/memory endpoint in `oriva-platform/api/hugo/user/memory.ts` (depends on T013, T027)
+- [x] **T049** [P] Implement GET /hugo/user/memory endpoint in `oriva-platform/api/hugo/user/memory.ts` (depends on T048, T028)
+- [x] **T050** [P] Implement GET /hugo/user/conversations endpoint in `oriva-platform/api/hugo/user/conversations.ts` (depends on T013, T029)
+- [x] **T051** [P] Implement GET /hugo/user/conversations/{id}/messages endpoint in `oriva-platform/api/hugo/user/conversations/[id]/messages.ts` (depends on T050, T030)
+- [x] **T052** [P] Implement GET /hugo/user/preferences endpoint in `oriva-platform/api/hugo/user/preferences.ts` (depends on T013, T031)
+- [x] **T053** [P] Implement PUT /hugo/user/preferences endpoint (data retention settings) in `oriva-platform/api/hugo/user/preferences.ts` (depends on T052, T032)
+- [x] **T054** [P] Implement DELETE /hugo/user/account endpoint with cascade deletion in `oriva-platform/api/hugo/user/account.ts` (depends on T013, T033)
 
 ---
 
@@ -113,17 +113,17 @@
 
 ### NetworkingKit Extensions (Swift)
 
-- [ ] **T055** [P] Add ChatRequest and ChatResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/ChatModels.swift`
-- [ ] **T056** [P] Add KnowledgeSearchRequest and KnowledgeSearchResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/KnowledgeModels.swift`
-- [ ] **T057** [P] Add UserProgressRequest and UserProgressResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/UserProgressModels.swift`
-- [ ] **T058** [P] Add UserMemoryRequest and UserMemoryResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/UserMemoryModels.swift`
-- [ ] **T059** Implement streaming chat response handler in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Services/ChatService.swift` (depends on T055)
-- [ ] **T060** Update OrivaPlatformClient with multi-modal auth support in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/OrivaPlatformClient.swift` (depends on T035-T040)
+- [x] **T055** [P] Add ChatRequest and ChatResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/ChatModels.swift`
+- [x] **T056** [P] Add KnowledgeSearchRequest and KnowledgeSearchResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/KnowledgeModels.swift`
+- [x] **T057** [P] Add UserProgressRequest and UserProgressResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/UserProgressModels.swift`
+- [x] **T058** [P] Add UserMemoryRequest and UserMemoryResponse types in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Models/UserMemoryModels.swift`
+- [x] **T059** Implement streaming chat response handler in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Services/ChatService.swift` (depends on T055)
+- [x] **T060** Update OrivaPlatformClient with multi-modal auth support in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/OrivaPlatformClient.swift` (depends on T035-T040)
 
 ### iOS Integration Tests (XCTest)
 
-- [ ] **T061** [P] Write XCTest for chat endpoint with streaming in `oo-ios/Platform/NetworkingKit/Tests/NetworkingKitTests/ChatServiceTests.swift` (depends on T059)
-- [ ] **T062** [P] Write XCTest for knowledge search integration in `oo-ios/Platform/NetworkingKit/Tests/NetworkingKitTests/KnowledgeSearchTests.swift` (depends on T056)
+- [x] **T061** [P] Write XCTest for chat endpoint with streaming in `oo-ios/Platform/NetworkingKit/Tests/NetworkingKitTests/ChatServiceTests.swift` (depends on T059)
+- [x] **T062** [P] Write XCTest for knowledge search integration in `oo-ios/Platform/NetworkingKit/Tests/NetworkingKitTests/KnowledgeSearchTests.swift` (depends on T056)
 
 ---
 
@@ -131,10 +131,10 @@
 
 ### iOS Data Retention Settings
 
-- [ ] **T063** [P] Create DataRetentionPreferences model in `oo-ios/Platform/OrivaCore/Sources/OrivaCore/Models/DataRetentionPreferences.swift`
-- [ ] **T064** Create DataRetentionSettingsView in `oo-ios/HugoApp/Views/Settings/DataRetentionSettingsView.swift` (depends on T063)
-- [ ] **T065** Implement sync with Oriva Platform in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Services/PreferencesSync.swift` (depends on T052-T053, T063)
-- [ ] **T066** Write XCTest for preferences sync in `oo-ios/Platform/NetworkingKit/Tests/NetworkingKitTests/PreferencesSyncTests.swift` (depends on T065)
+- [x] **T063** [P] Create DataRetentionPreferences model in `oo-ios/Platform/OrivaCore/Sources/OrivaCore/Models/DataRetentionPreferences.swift`
+- [x] **T064** Create DataRetentionSettingsView in `oo-ios/Apps/HugoMatchmaker/Sources/Views/Settings/DataRetentionSettingsView.swift` (depends on T063)
+- [x] **T065** Implement sync with Oriva Platform in `oo-ios/Platform/NetworkingKit/Sources/NetworkingKit/Services/PreferencesSync.swift` (depends on T052-T053, T063)
+- [x] **T066** Write XCTest for preferences sync in `oo-ios/Platform/NetworkingKit/Tests/NetworkingKitTests/PreferencesSyncTests.swift` (depends on T065)
 
 ---
 
@@ -142,12 +142,12 @@
 
 ### Backend Scaling Configuration (oriva-platform)
 
-- [ ] **T067** [P] Configure Vercel Edge Function auto-scaling in `oriva-platform/vercel.json` (regions: iad1, sfo1, fra1, concurrency limits)
-- [ ] **T068** [P] Configure Oriva 101 connection pooling in `oriva-platform/api/lib/supabase.ts` (max connections, timeout, retry logic)
-- [ ] **T069** [P] Implement database connection pool monitoring in `oriva-platform/api/lib/dbMonitor.ts`
-- [ ] **T070** [P] Configure CDN caching for personality schemas in `oriva-platform/vercel.json` (15min TTL, stale-while-revalidate)
-- [ ] **T071** Implement rate limiting per user (5 req/sec) in `oriva-platform/api/middleware/userRateLimit.ts` (depends on T014)
-- [ ] **T072** Document scaling runbook in `oriva-platform/docs/SCALING.md` (scaling triggers, monitoring dashboards, incident response)
+- [x] **T067** [P] Configure Vercel Edge Function auto-scaling in `oriva-platform/vercel.json` (regions: iad1, sfo1, fra1, concurrency limits)
+- [x] **T068** [P] Configure Oriva 101 connection pooling in `oriva-platform/api/config/supabase.ts` (max connections, timeout, retry logic)
+- [x] **T069** [P] Implement database connection pool monitoring in `oriva-platform/api/lib/dbMonitor.ts`
+- [x] **T070** [P] Configure CDN caching for personality schemas in `oriva-platform/vercel.json` (15min TTL, stale-while-revalidate)
+- [x] **T071** Implement rate limiting per user in `oriva-platform/api/middleware/userRateLimit.ts` (depends on T014)
+- [x] **T072** Document scaling runbook in `oriva-platform/docs/SCALING.md` (scaling triggers, monitoring dashboards, incident response)
 
 ---
 
@@ -155,13 +155,13 @@
 
 ### Backend Monitoring Setup (oriva-platform)
 
-- [ ] **T073** [P] Set up Vercel Analytics integration in `oriva-platform/vercel.json`
-- [ ] **T074** [P] Configure Sentry error tracking in `oriva-platform/api/lib/sentry.ts`
-- [ ] **T075** [P] Implement custom performance metrics in `oriva-platform/api/lib/metrics.ts` (chat response time, knowledge search latency, token usage)
-- [ ] **T076** Create performance dashboard queries in `oriva-platform/supabase/functions/analytics/performance-dashboard.sql`
-- [ ] **T077** Configure alerting rules in `oriva-platform/vercel.json` (p95 > 3s, error rate > 1%, knowledge search > 1s)
-- [ ] **T078** Implement load testing script with k6 in `oriva-platform/tests/load/chat-load-test.js` (100+ concurrent users, 1000 msg/min)
-- [ ] **T079** Document monitoring runbook in `oriva-platform/docs/MONITORING.md` (dashboards, alert response, performance SLOs)
+- [x] **T073** [P] Set up Vercel Analytics integration in `oriva-platform/vercel.json`
+- [x] **T074** [P] Configure Sentry error tracking in `oriva-platform/api/lib/sentry.ts`
+- [x] **T075** [P] Implement custom performance metrics in `oriva-platform/api/lib/metrics.ts` (chat response time, knowledge search latency, token usage)
+- [x] **T076** Create performance dashboard queries in `oriva-platform/supabase/functions/analytics/performance-dashboard.sql`
+- [x] **T077** Configure alerting rules in `oriva-platform/api/lib/alerts.ts` (p95 > 3s, error rate > 1%, knowledge search > 1s)
+- [x] **T078** Implement load testing script with k6 in `oriva-platform/tests/load/chat-load-test.js` (100+ concurrent users, 1000 msg/min)
+- [x] **T079** Document monitoring runbook in `oriva-platform/docs/MONITORING.md` (dashboards, alert response, performance SLOs)
 
 ---
 
@@ -169,12 +169,12 @@
 
 ### Production Documentation (oriva-platform)
 
-- [ ] **T080** [P] Create deployment guide in `oriva-platform/docs/DEPLOYMENT.md` (Vercel setup, environment variables, Oriva 101 configuration)
-- [ ] **T081** [P] Document environment variables in `oriva-platform/.env.example` (all required secrets, API keys, connection strings)
-- [ ] **T082** [P] Create architecture decision records in `oriva-platform/docs/adr/` (001-supabase-choice, 002-fulltext-vs-vector, 003-multi-repo-structure)
-- [ ] **T083** [P] Document rollback procedures in `oriva-platform/docs/ROLLBACK.md` (database migrations, API deployments, iOS app versions)
-- [ ] **T084** Configure CI/CD pipeline in `oriva-platform/.github/workflows/deploy.yml` (test → staging → production)
-- [ ] **T085** Create production readiness checklist in `oriva-platform/docs/PRODUCTION_CHECKLIST.md` (depends on T080-T084)
+- [x] **T080** [P] Create deployment guide in `oriva-platform/docs/DEPLOYMENT.md` (Vercel setup, environment variables, Oriva 101 configuration)
+- [x] **T081** [P] Document environment variables in `oriva-platform/docs/ENVIRONMENT.md` (all required secrets, API keys, connection strings)
+- [x] **T082** [P] Create architecture decision records in `oriva-platform/docs/adr/` (6 comprehensive ADRs documenting key architectural decisions)
+- [x] **T083** [P] Document rollback procedures in `oriva-platform/docs/ROLLBACK.md` (database migrations, API deployments, emergency procedures)
+- [x] **T084** Configure CI/CD pipeline in `oriva-platform/.github/workflows/ci-cd.yml` (test → staging → production with health checks)
+- [x] **T085** Create production readiness checklist in `oriva-platform/docs/PRODUCTION_READINESS.md` (depends on T080-T084)
 
 ---
 
