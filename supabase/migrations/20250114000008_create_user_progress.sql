@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS hugo_user_progress (
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS up_user_app_idx ON user_progress(user_id, app_id);
-CREATE INDEX IF NOT EXISTS up_milestones_idx ON user_progress USING GIN(milestones_reached);
+CREATE INDEX IF NOT EXISTS up_user_app_idx ON hugo_user_progress(user_id, app_id);
+CREATE INDEX IF NOT EXISTS up_milestones_idx ON hugo_user_progress USING GIN(milestones_reached);
 
 -- Constraints
 ALTER TABLE hugo_user_progress ADD CONSTRAINT up_conversations_check
