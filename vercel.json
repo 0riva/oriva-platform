@@ -1,18 +1,102 @@
 {
-  "functions": {
-    "api/index.ts": {
-      "maxDuration": 30,
-      "includeFiles": "api/**"
+  "version": 2,
+  "name": "oriva-platform",
+  "regions": [
+    "iad1",
+    "sfo1",
+    "cdg1"
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
     }
   },
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 10,
+      "memory": 1024,
+      "regions": [
+        "iad1",
+        "sfo1",
+        "cdg1"
+      ]
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/api/health.ts"
+    },
+    {
+      "src": "/api/v1/chat",
+      "dest": "/api/v1/chat.ts",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/v1/auth/register",
+      "dest": "/api/v1/auth/register.ts",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/v1/auth/login",
+      "dest": "/api/v1/auth/login.ts",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/v1/knowledge/search",
+      "dest": "/api/v1/knowledge/search.ts",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/v1/conversations",
+      "dest": "/api/v1/conversations/index.ts",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/api/v1/conversations/([^/]+)",
+      "dest": "/api/v1/conversations/$1.ts",
+      "methods": ["GET", "DELETE"]
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Authorization, Content-Type, X-Request-ID"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
+      "destination": "/api/$1"
     }
   ],
   "outputDirectory": "public"
