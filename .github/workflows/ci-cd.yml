@@ -110,12 +110,59 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Deploy to Vercel Production
+      id: deploy
       uses: amondnet/vercel-action@v25
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         vercel-args: '--prod'
+
+    - name: Wait for deployment to be ready
+      run: sleep 30
+
+    - name: Health check
+      run: |
+        echo "Running health check..."
+        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.deploy.outputs.preview-url }}/api/health)
+        if [ $RESPONSE -eq 200 ]; then
+          echo "✅ Health check passed"
+        else
+          echo "❌ Health check failed with status $RESPONSE"
+          exit 1
+        fi
+
+    - name: Verify database connectivity
+      run: |
+        echo "Checking database connection..."
+        DB_STATUS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/health | jq -r '.checks.database')
+        if [ "$DB_STATUS" = "healthy" ]; then
+          echo "✅ Database connectivity verified"
+        else
+          echo "❌ Database connectivity check failed"
+          exit 1
+        fi
+
+    - name: Verify environment variables
+      run: |
+        echo "Checking environment configuration..."
+        ENV_STATUS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/health | jq -r '.checks.environment')
+        if [ "$ENV_STATUS" = "healthy" ]; then
+          echo "✅ Environment variables verified"
+        else
+          echo "❌ Environment variables check failed"
+          exit 1
+        fi
+
+    - name: Check for critical alerts
+      run: |
+        echo "Checking for critical alerts..."
+        CRITICAL_ALERTS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/alerts?action=status | jq -r '.alerts.critical')
+        if [ "$CRITICAL_ALERTS" -eq 0 ]; then
+          echo "✅ No critical alerts"
+        else
+          echo "⚠️  Warning: $CRITICAL_ALERTS critical alerts detected"
+        fi
 
   notify:
     name: Notify Deployment
