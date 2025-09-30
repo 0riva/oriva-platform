@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "oriva-platform",
   "regions": [
     "iad1",
     "sfo1",
@@ -146,11 +145,5 @@
       "destination": "/api/$1"
     }
   ],
-  "outputDirectory": "public",
-  "analytics": {
-    "enable": true
-  },
-  "speedInsights": {
-    "enable": true
-  }
+  "outputDirectory": "public"
 }
