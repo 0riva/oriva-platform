@@ -22,7 +22,27 @@
       "regions": [
         "iad1",
         "sfo1",
-        "cdg1"
+        "fra1"
+      ]
+    },
+    "api/v1/hugo/chat.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30,
+      "memory": 2048,
+      "regions": [
+        "iad1",
+        "sfo1",
+        "fra1"
+      ]
+    },
+    "api/v1/hugo/knowledge/search.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 5,
+      "memory": 512,
+      "regions": [
+        "iad1",
+        "sfo1",
+        "fra1"
       ]
     }
   },
@@ -76,7 +96,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Authorization, Content-Type, X-Request-ID"
+          "value": "Authorization, Content-Type, X-Request-ID, X-App-ID"
         },
         {
           "key": "X-Content-Type-Options",
@@ -89,6 +109,28 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
+        }
+      ]
+    },
+    {
+      "source": "/api/v1/hugo/personality-schemas/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=900, stale-while-revalidate=1800"
+        },
+        {
+          "key": "CDN-Cache-Control",
+          "value": "public, max-age=900"
+        }
+      ]
+    },
+    {
+      "source": "/api/health",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=30, must-revalidate"
         }
       ]
     }

@@ -1,4 +1,4 @@
-// Task: T012 - Supabase connection configuration
+// Task: T012 + T068 - Supabase connection configuration with pooling
 // Description: Type-safe Supabase client configuration with connection pooling
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -15,6 +15,15 @@ if (!SUPABASE_URL) {
 if (!SUPABASE_ANON_KEY) {
   throw new Error('Missing SUPABASE_ANON_KEY environment variable');
 }
+
+// T068: Connection pooling configuration for Oriva 101 (Supabase)
+const CONNECTION_POOL_CONFIG = {
+  max: parseInt(process.env.DB_POOL_MAX || '20', 10), // Max connections per function instance
+  min: parseInt(process.env.DB_POOL_MIN || '2', 10),  // Min connections to maintain
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10), // 30s idle timeout
+  connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT || '5000', 10), // 5s connect timeout
+  maxRetries: parseInt(process.env.DB_MAX_RETRIES || '3', 10), // Max retry attempts
+};
 
 // Database types (will be generated from Supabase CLI)
 export interface Database {
