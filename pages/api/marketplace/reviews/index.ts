@@ -3,7 +3,7 @@
  * Feature: 010-orivaflow-semantic-commerce
  *
  * GET /api/marketplace/reviews - List reviews for an item
- * POST /api/marketplace/reviews - Create a review (verified buyers only)
+ * POST /api/marketplace/reviews - Create a new review
  */
 
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -20,28 +20,25 @@ export default async function handler(
 ) {
   const { method } = req;
 
-  // Get user from authorization header (optional for GET)
+  // Get user from authorization header
   const authHeader = req.headers.authorization;
-  let userId: string | null = null;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const token = authHeader.substring(7);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (!authError && user) {
-      userId = user.id;
-    }
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Invalid token' });
   }
 
   try {
     switch (method) {
       case 'GET':
-        return await handleGet(req, res, userId);
+        return await handleGet(req, res, user.id);
       case 'POST':
-        if (!userId) {
-          return res.status(401).json({ error: 'Unauthorized' });
-        }
-        return await handlePost(req, res, userId);
+        return await handlePost(req, res, user.id);
       default:
         res.setHeader('Allow', ['GET', 'POST']);
         return res.status(405).json({ error: `Method ${method} not allowed` });
@@ -58,17 +55,18 @@ export default async function handler(
 async function handleGet(
   req: NextApiRequest,
   res: NextApiResponse,
-  userId: string | null
+  userId: string
 ) {
   const {
     item_id,
     rating,
-    sort = 'recent', // 'recent', 'helpful', 'rating_high', 'rating_low'
+    verified_only = 'false',
+    sort = 'newest', // 'newest', 'oldest', 'helpful', 'rating_high', 'rating_low'
     limit = '20',
     offset = '0',
   } = req.query;
 
-  if (!item_id || typeof item_id !== 'string') {
+  if (!item_id) {
     return res.status(400).json({ error: 'item_id required' });
   }
 
@@ -80,25 +78,30 @@ async function handleGet(
     .select(`
       *,
       reviewer:auth.users!reviewer_id(id, email),
-      transaction:orivapay_transactions(id, status)
+      profiles!reviewer_id(username, display_name, avatar_url)
     `)
     .eq('item_id', item_id)
+    .eq('moderation_status', 'approved')
     .range(offsetNum, offsetNum + limitNum - 1);
-
-  // Only show approved reviews to non-authors
-  if (userId) {
-    query = query.or(`moderation_status.eq.approved,reviewer_id.eq.${userId}`);
-  } else {
-    query = query.eq('moderation_status', 'approved');
-  }
 
   // Filter by rating
   if (rating) {
     query = query.eq('rating', parseInt(rating as string, 10));
   }
 
-  // Apply sorting
+  // Filter verified purchases
+  if (verified_only === 'true') {
+    query = query.eq('verified_purchase', true);
+  }
+
+  // Sort
   switch (sort) {
+    case 'newest':
+      query = query.order('created_at', { ascending: false });
+      break;
+    case 'oldest':
+      query = query.order('created_at', { ascending: true });
+      break;
     case 'helpful':
       query = query.order('helpful_count', { ascending: false });
       break;
@@ -108,31 +111,29 @@ async function handleGet(
     case 'rating_low':
       query = query.order('rating', { ascending: true });
       break;
-    case 'recent':
     default:
       query = query.order('created_at', { ascending: false });
-      break;
   }
 
-  const { data, error, count } = await query;
+  const { data: reviews, error, count } = await query;
 
   if (error) {
     console.error('[Get Reviews Error]:', error);
     return res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 
-  // Get review statistics
-  const { data: stats } = await supabase
+  // Calculate summary statistics
+  const { data: allReviews } = await supabase
     .from('marketplace_reviews')
     .select('rating')
     .eq('item_id', item_id)
     .eq('moderation_status', 'approved');
 
-  const reviewStats = calculateReviewStats(stats || []);
+  const summary = calculateSummary(allReviews || []);
 
   return res.status(200).json({
-    reviews: data,
-    stats: reviewStats,
+    reviews,
+    summary,
     pagination: {
       limit: limitNum,
       offset: offsetNum,
@@ -142,7 +143,7 @@ async function handleGet(
 }
 
 /**
- * POST - Create a review
+ * POST - Create a new review
  */
 async function handlePost(
   req: NextApiRequest,
@@ -151,7 +152,6 @@ async function handlePost(
 ) {
   const {
     item_id,
-    transaction_id,
     rating,
     title,
     content,
@@ -169,37 +169,36 @@ async function handlePost(
     return res.status(400).json({ error: 'Rating must be between 1 and 5' });
   }
 
-  // Validate title and content length
+  // Validate content length
+  if (content.length < 10) {
+    return res.status(400).json({ error: 'Review content must be at least 10 characters' });
+  }
+
   if (title.length > 200) {
     return res.status(400).json({ error: 'Title must be 200 characters or less' });
   }
 
-  if (content.length < 10) {
-    return res.status(400).json({ error: 'Content must be at least 10 characters' });
-  }
-
-  // Check if user has purchased this item
+  // Check if user has purchased the item
   const { data: purchase } = await supabase
     .from('orivapay_transactions')
     .select('id')
-    .eq('item_id', item_id)
     .eq('buyer_id', userId)
+    .eq('item_id', item_id)
     .eq('status', 'succeeded')
     .single();
 
-  const verified_purchase = !!purchase;
-  const transactionId = transaction_id || purchase?.id || null;
+  const verifiedPurchase = !!purchase;
 
-  // Check if user has already reviewed this item
-  const { data: existing } = await supabase
+  // Check if user already reviewed this item
+  const { data: existingReview } = await supabase
     .from('marketplace_reviews')
     .select('id')
     .eq('item_id', item_id)
     .eq('reviewer_id', userId)
     .single();
 
-  if (existing) {
-    return res.status(400).json({ error: 'You have already reviewed this item' });
+  if (existingReview) {
+    return res.status(409).json({ error: 'You have already reviewed this item' });
   }
 
   // Create review
@@ -208,19 +207,17 @@ async function handlePost(
     .insert({
       item_id,
       reviewer_id: userId,
-      transaction_id: transactionId,
+      transaction_id: purchase?.id,
       rating,
       title,
       content,
-      verified_purchase,
-      moderation_status: 'pending', // Reviews require moderation
-      helpful_count: 0,
-      not_helpful_count: 0,
+      verified_purchase: verifiedPurchase,
+      moderation_status: 'pending', // Will be moderated
     })
     .select(`
       *,
       reviewer:auth.users!reviewer_id(id, email),
-      transaction:orivapay_transactions(id, status)
+      profiles!reviewer_id(username, display_name, avatar_url)
     `)
     .single();
 
@@ -232,10 +229,7 @@ async function handlePost(
   return res.status(201).json({ review });
 }
 
-/**
- * Calculate review statistics
- */
-function calculateReviewStats(reviews: any[]) {
+function calculateSummary(reviews: any[]) {
   if (reviews.length === 0) {
     return {
       average_rating: 0,
@@ -244,21 +238,17 @@ function calculateReviewStats(reviews: any[]) {
     };
   }
 
-  const total = reviews.length;
-  const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
-  const average = sum / total;
+  const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+  const averageRating = totalRating / reviews.length;
 
-  const distribution = reviews.reduce(
-    (acc, r) => {
-      acc[r.rating] = (acc[r.rating] || 0) + 1;
-      return acc;
-    },
-    { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-  );
+  const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  reviews.forEach(r => {
+    distribution[r.rating] = (distribution[r.rating] || 0) + 1;
+  });
 
   return {
-    average_rating: Math.round(average * 10) / 10,
-    total_reviews: total,
+    average_rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
+    total_reviews: reviews.length,
     rating_distribution: distribution,
   };
 }

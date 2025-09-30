@@ -3,10 +3,8 @@
  * Feature: 010-orivaflow-semantic-commerce
  *
  * GET /api/marketplace/reviews/[id] - Get review details
- * PATCH /api/marketplace/reviews/[id] - Update review (author only)
- * DELETE /api/marketplace/reviews/[id] - Delete review (author only)
- * POST /api/marketplace/reviews/[id]/vote - Vote on review helpfulness
- * POST /api/marketplace/reviews/[id]/respond - Seller response to review
+ * PATCH /api/marketplace/reviews/[id] - Update review
+ * DELETE /api/marketplace/reviews/[id] - Delete review
  */
 
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -73,8 +71,8 @@ async function handleGet(
     .select(`
       *,
       reviewer:auth.users!reviewer_id(id, email),
-      transaction:orivapay_transactions(id, status, item:entries!item_id(id, seller_id)),
-      item:entries!item_id(id, title, seller_id)
+      profiles!reviewer_id(username, display_name, avatar_url),
+      item:entries!item_id(id, title, marketplace_metadata)
     `)
     .eq('id', reviewId)
     .single();
@@ -87,12 +85,9 @@ async function handleGet(
     return res.status(500).json({ error: 'Failed to fetch review' });
   }
 
-  // Check if user can view this review
-  const isAuthor = review.reviewer_id === userId;
-  const isApproved = review.moderation_status === 'approved';
-
-  if (!isAuthor && !isApproved) {
-    return res.status(403).json({ error: 'Review is not yet approved' });
+  // Only show approved reviews unless it's the reviewer's own review
+  if (review.moderation_status !== 'approved' && review.reviewer_id !== userId) {
+    return res.status(404).json({ error: 'Review not found' });
   }
 
   return res.status(200).json({ review });
@@ -107,25 +102,25 @@ async function handlePatch(
   userId: string,
   reviewId: string
 ) {
-  const { rating, title, content } = req.body;
-
   // Get existing review
-  const { data: existing, error: fetchError } = await supabase
+  const { data: existingReview, error: fetchError } = await supabase
     .from('marketplace_reviews')
-    .select('reviewer_id')
+    .select('*')
     .eq('id', reviewId)
     .single();
 
-  if (fetchError || !existing) {
+  if (fetchError || !existingReview) {
     return res.status(404).json({ error: 'Review not found' });
   }
 
-  // Verify user is the author
-  if (existing.reviewer_id !== userId) {
-    return res.status(403).json({ error: 'You can only update your own reviews' });
+  // Verify ownership
+  if (existingReview.reviewer_id !== userId) {
+    return res.status(403).json({ error: 'Forbidden' });
   }
 
-  // Build updates
+  const { rating, title, content } = req.body;
+
+  // Validate updates
   const updates: any = {};
 
   if (rating !== undefined) {
@@ -149,10 +144,12 @@ async function handlePatch(
     updates.content = content;
   }
 
-  // Reset moderation status if content changed
-  if (rating !== undefined || title !== undefined || content !== undefined) {
-    updates.moderation_status = 'pending';
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No updates provided' });
   }
+
+  // Reset moderation status on edit
+  updates.moderation_status = 'pending';
 
   // Update review
   const { data: review, error } = await supabase
@@ -162,7 +159,7 @@ async function handlePatch(
     .select(`
       *,
       reviewer:auth.users!reviewer_id(id, email),
-      transaction:orivapay_transactions(id, status)
+      profiles!reviewer_id(username, display_name, avatar_url)
     `)
     .single();
 
@@ -184,19 +181,19 @@ async function handleDelete(
   reviewId: string
 ) {
   // Get existing review
-  const { data: existing, error: fetchError } = await supabase
+  const { data: existingReview, error: fetchError } = await supabase
     .from('marketplace_reviews')
     .select('reviewer_id')
     .eq('id', reviewId)
     .single();
 
-  if (fetchError || !existing) {
+  if (fetchError || !existingReview) {
     return res.status(404).json({ error: 'Review not found' });
   }
 
-  // Verify user is the author
-  if (existing.reviewer_id !== userId) {
-    return res.status(403).json({ error: 'You can only delete your own reviews' });
+  // Verify ownership
+  if (existingReview.reviewer_id !== userId) {
+    return res.status(403).json({ error: 'Forbidden' });
   }
 
   // Delete review
@@ -210,5 +207,5 @@ async function handleDelete(
     return res.status(500).json({ error: 'Failed to delete review' });
   }
 
-  return res.status(204).send(null);
+  return res.status(204).end();
 }

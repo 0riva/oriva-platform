@@ -1,5 +1,5 @@
 /**
- * Review Vote API
+ * Marketplace Review Vote API
  * Feature: 010-orivaflow-semantic-commerce
  *
  * POST /api/marketplace/reviews/[id]/vote - Vote on review helpfulness
@@ -43,112 +43,81 @@ export default async function handler(
   }
 
   try {
-    return await handleVote(req, res, user.id, id);
+    const { vote_type } = req.body;
+
+    if (!vote_type || !['helpful', 'not_helpful'].includes(vote_type)) {
+      return res.status(400).json({
+        error: 'vote_type required (helpful or not_helpful)',
+      });
+    }
+
+    // Check if review exists
+    const { data: review, error: reviewError } = await supabase
+      .from('marketplace_reviews')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (reviewError || !review) {
+      return res.status(404).json({ error: 'Review not found' });
+    }
+
+    // Check if user already voted
+    const { data: existingVote } = await supabase
+      .from('marketplace_review_votes')
+      .select('id, vote_type')
+      .eq('review_id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (existingVote) {
+      // Update vote if different
+      if (existingVote.vote_type !== vote_type) {
+        await supabase
+          .from('marketplace_review_votes')
+          .update({ vote_type })
+          .eq('id', existingVote.id);
+
+        // Update review counts
+        if (vote_type === 'helpful') {
+          await supabase.rpc('increment_review_helpful_count', { review_uuid: id });
+          await supabase.rpc('decrement_review_not_helpful_count', { review_uuid: id });
+        } else {
+          await supabase.rpc('increment_review_not_helpful_count', { review_uuid: id });
+          await supabase.rpc('decrement_review_helpful_count', { review_uuid: id });
+        }
+
+        return res.status(200).json({ message: 'Vote updated', vote_type });
+      } else {
+        return res.status(200).json({ message: 'Vote already recorded', vote_type });
+      }
+    }
+
+    // Create new vote
+    const { error: voteError } = await supabase
+      .from('marketplace_review_votes')
+      .insert({
+        review_id: id,
+        user_id: user.id,
+        vote_type,
+      });
+
+    if (voteError) {
+      console.error('[Create Vote Error]:', voteError);
+      return res.status(500).json({ error: 'Failed to record vote' });
+    }
+
+    // Update review counts
+    if (vote_type === 'helpful') {
+      await supabase.rpc('increment_review_helpful_count', { review_uuid: id });
+    } else {
+      await supabase.rpc('increment_review_not_helpful_count', { review_uuid: id });
+    }
+
+    return res.status(201).json({ message: 'Vote recorded', vote_type });
+
   } catch (error) {
     console.error('[Review Vote API Error]:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
-}
-
-async function handleVote(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string,
-  reviewId: string
-) {
-  const { vote_type } = req.body;
-
-  // Validate vote type
-  if (!vote_type || !['helpful', 'not_helpful'].includes(vote_type)) {
-    return res.status(400).json({ error: 'vote_type must be "helpful" or "not_helpful"' });
-  }
-
-  // Check if review exists
-  const { data: review, error: reviewError } = await supabase
-    .from('marketplace_reviews')
-    .select('id, helpful_count, not_helpful_count')
-    .eq('id', reviewId)
-    .single();
-
-  if (reviewError || !review) {
-    return res.status(404).json({ error: 'Review not found' });
-  }
-
-  // Check if user has already voted
-  const { data: existingVote } = await supabase
-    .from('marketplace_review_votes')
-    .select('id, vote_type')
-    .eq('review_id', reviewId)
-    .eq('user_id', userId)
-    .single();
-
-  if (existingVote) {
-    // User is changing their vote
-    if (existingVote.vote_type === vote_type) {
-      return res.status(400).json({ error: 'You have already voted this way' });
-    }
-
-    // Update vote
-    const { error: updateError } = await supabase
-      .from('marketplace_review_votes')
-      .update({ vote_type })
-      .eq('id', existingVote.id);
-
-    if (updateError) {
-      console.error('[Update Vote Error]:', updateError);
-      return res.status(500).json({ error: 'Failed to update vote' });
-    }
-
-    // Update review counts
-    const updates: any = {};
-    if (existingVote.vote_type === 'helpful') {
-      updates.helpful_count = Math.max(0, review.helpful_count - 1);
-      updates.not_helpful_count = review.not_helpful_count + 1;
-    } else {
-      updates.helpful_count = review.helpful_count + 1;
-      updates.not_helpful_count = Math.max(0, review.not_helpful_count - 1);
-    }
-
-    await supabase
-      .from('marketplace_reviews')
-      .update(updates)
-      .eq('id', reviewId);
-
-    return res.status(200).json({
-      message: 'Vote updated',
-      vote_type,
-    });
-  }
-
-  // Create new vote
-  const { error: voteError } = await supabase
-    .from('marketplace_review_votes')
-    .insert({
-      review_id: reviewId,
-      user_id: userId,
-      vote_type,
-    });
-
-  if (voteError) {
-    console.error('[Create Vote Error]:', voteError);
-    return res.status(500).json({ error: 'Failed to create vote' });
-  }
-
-  // Update review counts
-  const updates: any = {};
-  if (vote_type === 'helpful') {
-    updates.helpful_count = review.helpful_count + 1;
-  } else {
-    updates.not_helpful_count = review.not_helpful_count + 1;
-  }
-
-  await supabase
-    .from('marketplace_reviews')
-    .update(updates)
-    .eq('id', reviewId);
-
-  return res.status(201).json({
-    message: 'Vote recorded',
-    vote_type,
-  });
 }
