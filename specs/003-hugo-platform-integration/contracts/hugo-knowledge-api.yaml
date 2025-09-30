@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: Hugo Platform Knowledge API
+  description: Knowledge base search and retrieval with PostgreSQL full-text search
+  version: 1.0.0
+  contact:
+    name: Oriva Platform Team
+
+servers:
+  - url: https://api.oriva.com/v1
+    description: Production API
+  - url: https://api-staging.oriva.com/v1
+    description: Staging API
+
+paths:
+  /hugo/knowledge/search:
+    post:
+      summary: Search knowledge base
+      description: |
+        Search app-specific knowledge base using PostgreSQL full-text search.
+
+        Returns relevant knowledge entries ranked by relevance score.
+
+        **Performance Requirements**: <1s response time
+
+        **Functional Requirements**: FR-005, FR-006, FR-008, FR-009, FR-028
+      operationId: searchKnowledge
+      tags:
+        - Knowledge
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Application identifier (e.g., "hugo_matchmaker")
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  description: Search query text
+                max_results:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                  default: 5
+                  description: Maximum number of results to return
+                category:
+                  type: string
+                  description: Filter by knowledge category
+                min_relevance:
+                  type: number
+                  format: float
+                  minimum: 0.0
+                  maximum: 1.0
+                  default: 0.3
+                  description: Minimum relevance score threshold
+      responses:
+        '200':
+          description: Successful search results
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - results
+                  - total_count
+                  - query_time_ms
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KnowledgeEntry'
+                  total_count:
+                    type: integer
+                    description: Total number of matching entries
+                  query_time_ms:
+                    type: number
+                    format: float
+                    description: Query execution time in milliseconds
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                    description: Alternative search suggestions if results are limited
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Oriva platform JWT authentication token
+
+  schemas:
+    KnowledgeEntry:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - relevance_score
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Knowledge entry unique identifier
+        knowledge_base_id:
+          type: string
+          format: uuid
+          description: Parent knowledge base identifier
+        title:
+          type: string
+          description: Entry title
+        content:
+          type: string
+          description: Full entry content
+        category:
+          type: string
+          description: Entry category
+        tags:
+          type: array
+          items:
+            type: string
+          description: Entry tags
+        relevance_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Search relevance score
+        access_count:
+          type: integer
+          description: Number of times accessed
+        last_accessed_at:
+          type: string
+          format: date-time
+          description: Last access timestamp
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code identifier
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context

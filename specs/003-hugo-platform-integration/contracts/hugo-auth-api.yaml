@@ -1,0 +1,371 @@
+openapi: 3.0.3
+info:
+  title: Hugo Platform Authentication API
+  description: Multi-modal authentication (SSO, native account creation, social login)
+  version: 1.0.0
+  contact:
+    name: Oriva Platform Team
+
+servers:
+  - url: https://api.oriva.com/v1
+    description: Production API
+  - url: https://api-staging.oriva.com/v1
+    description: Staging API
+
+paths:
+  /auth/register:
+    post:
+      summary: Native account creation
+      description: |
+        Create new user account from iOS app, automatically registered in Oriva 101.
+
+        **Functional Requirements**: FR-040, FR-042
+      operationId: registerNativeAccount
+      tags:
+        - Authentication
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Application identifier (e.g., "hugo_matchmaker_ios")
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User email address
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: User password (min 8 characters)
+                profile:
+                  type: object
+                  properties:
+                    display_name:
+                      type: string
+                    preferences:
+                      type: object
+                      additionalProperties: true
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/sso:
+    get:
+      summary: Oriva SSO authentication
+      description: |
+        Redirect flow for marketplace users with existing Oriva accounts.
+
+        **Functional Requirements**: FR-039
+      operationId: initiateOrivaSSO
+      tags:
+        - Authentication
+      parameters:
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+          description: Callback URI after authentication (e.g., "hugomatchmaker://auth")
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: CSRF protection state parameter
+      responses:
+        '302':
+          description: Redirect to Oriva authentication
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: Oriva SSO authentication URL
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/sso/callback:
+    get:
+      summary: Oriva SSO callback
+      description: Handle callback after Oriva authentication
+      operationId: handleOrivaSSO Callback
+      tags:
+        - Authentication
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from Oriva
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: CSRF protection state parameter
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request or state mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/oauth/authorize:
+    get:
+      summary: Oriva OAuth social login
+      description: |
+        OAuth-style "Sign in with Oriva" flow similar to GitHub OAuth.
+
+        **Functional Requirements**: FR-041, FR-043
+      operationId: initiateOrivaOAuth
+      tags:
+        - Authentication
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OAuth client identifier
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+          description: OAuth callback URI
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Requested OAuth scopes (e.g., "profile apps")
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional state parameter for CSRF protection
+      responses:
+        '302':
+          description: Redirect to Oriva OAuth consent screen
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: Oriva OAuth authorization URL
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/oauth/token:
+    post:
+      summary: Exchange OAuth code for tokens
+      description: Exchange authorization code for access and refresh tokens
+      operationId: exchangeOAuthToken
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - grant_type
+                - code
+                - client_id
+              properties:
+                grant_type:
+                  type: string
+                  enum: [authorization_code]
+                code:
+                  type: string
+                  description: Authorization code from OAuth callback
+                client_id:
+                  type: string
+                  description: OAuth client identifier
+                redirect_uri:
+                  type: string
+                  format: uri
+                  description: Must match original redirect_uri
+      responses:
+        '200':
+          description: Token exchange successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid authorization code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Obtain new access token using refresh token
+      operationId: refreshToken
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Valid refresh token
+      responses:
+        '200':
+          description: Token refresh successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      required:
+        - user_id
+        - oriva_user_id
+        - access_token
+        - refresh_token
+        - token_type
+        - expires_in
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Platform user identifier
+        oriva_user_id:
+          type: string
+          format: uuid
+          description: Oriva 101 user identifier
+        access_token:
+          type: string
+          description: JWT access token (1 hour validity)
+        refresh_token:
+          type: string
+          description: Refresh token (30 days validity)
+        token_type:
+          type: string
+          enum: [Bearer]
+          description: Token type
+        expires_in:
+          type: integer
+          description: Access token expiration in seconds
+        marketplace_access:
+          type: boolean
+          description: Whether user has Oriva marketplace access
+        apps:
+          type: array
+          items:
+            type: string
+          description: List of user's installed apps
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code identifier
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context

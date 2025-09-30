@@ -1,0 +1,623 @@
+openapi: 3.0.3
+info:
+  title: Hugo Platform User API
+  description: User context, progress tracking, and memory management
+  version: 1.0.0
+  contact:
+    name: Oriva Platform Team
+
+servers:
+  - url: https://api.oriva.com/v1
+    description: Production API
+  - url: https://api-staging.oriva.com/v1
+    description: Staging API
+
+paths:
+  /hugo/user/progress:
+    get:
+      summary: Get user progress
+      description: |
+        Retrieve user's learning progress within specific app.
+
+        **Functional Requirements**: FR-012
+      operationId: getUserProgress
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Application identifier
+      responses:
+        '200':
+          description: User progress data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgress'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Progress not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update user progress
+      description: Update user's learning progress and milestones
+      operationId: updateUserProgress
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                progress_data:
+                  type: object
+                  additionalProperties: true
+                  description: App-specific progress data
+                milestones_reached:
+                  type: array
+                  items:
+                    type: string
+                  description: Newly completed milestones
+                current_focus_area:
+                  type: string
+                  description: Current learning focus
+      responses:
+        '200':
+          description: Progress updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgress'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /hugo/user/memory:
+    post:
+      summary: Store user memory
+      description: |
+        Store contextual memory for future coaching interactions.
+
+        **Functional Requirements**: FR-010, FR-011
+      operationId: storeUserMemory
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - memory_type
+                - content
+              properties:
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: Optional associated conversation
+                memory_type:
+                  type: string
+                  enum: [goal, preference, milestone, context, insight]
+                  description: Type of memory being stored
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+                  description: Memory content
+                importance:
+                  type: number
+                  format: float
+                  minimum: 0.0
+                  maximum: 1.0
+                  default: 0.5
+                  description: Memory importance score
+                metadata:
+                  type: object
+                  additionalProperties: true
+                  description: Additional metadata
+      responses:
+        '201':
+          description: Memory stored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserMemory'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: Retrieve user memories
+      description: Retrieve relevant user memories for coaching context
+      operationId: getUserMemories
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: memory_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [goal, preference, milestone, context, insight]
+          description: Filter by memory type
+        - name: min_importance
+          in: query
+          required: false
+          schema:
+            type: number
+            format: float
+            minimum: 0.0
+            maximum: 1.0
+          description: Minimum importance threshold
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Maximum number of memories to return
+      responses:
+        '200':
+          description: User memories retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - memories
+                  - total_count
+                properties:
+                  memories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserMemory'
+                  total_count:
+                    type: integer
+                    description: Total matching memories
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /hugo/user/conversations:
+    get:
+      summary: List user conversations
+      description: |
+        Retrieve user's conversation history within app.
+
+        **Functional Requirements**: FR-010, FR-014
+      operationId: listUserConversations
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Conversations retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversations
+                  - total_count
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+                  total_count:
+                    type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /hugo/user/conversations/{conversation_id}/messages:
+    get:
+      summary: Get conversation messages
+      description: Retrieve all messages from a specific conversation
+      operationId: getConversationMessages
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: before_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Get messages before this message ID (pagination)
+      responses:
+        '200':
+          description: Messages retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - messages
+                  - has_more
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  has_more:
+                    type: boolean
+                    description: Whether more messages exist
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /hugo/user/preferences:
+    get:
+      summary: Get user preferences
+      description: |
+        Retrieve user's platform and app-specific preferences.
+
+        **Functional Requirements**: FR-013, FR-022
+      operationId: getUserPreferences
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Preferences retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update user preferences
+      description: Update user's preferences including data retention settings
+      operationId: updateUserPreferences
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data_retention_days:
+                  type: integer
+                  minimum: 30
+                  maximum: 1825
+                  description: Data retention period (30 days to 5 years)
+                preferences:
+                  type: object
+                  additionalProperties: true
+                  description: App-specific preferences
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /hugo/user/account:
+    delete:
+      summary: Delete user account
+      description: |
+        Delete user account and all associated data.
+
+        **Functional Requirements**: FR-021, FR-024
+      operationId: deleteUserAccount
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Account deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Oriva platform JWT authentication token
+
+  schemas:
+    UserProgress:
+      type: object
+      required:
+        - user_id
+        - app_id
+        - progress_data
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        app_id:
+          type: string
+        progress_data:
+          type: object
+          additionalProperties: true
+          description: App-specific progress data
+        milestones_reached:
+          type: array
+          items:
+            type: string
+        current_focus_area:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+
+    UserMemory:
+      type: object
+      required:
+        - id
+        - memory_type
+        - content
+        - importance
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        memory_type:
+          type: string
+          enum: [goal, preference, milestone, context, insight]
+        content:
+          type: string
+        importance:
+          type: number
+          format: float
+        metadata:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+
+    Conversation:
+      type: object
+      required:
+        - id
+        - app_id
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        app_id:
+          type: string
+        title:
+          type: string
+        message_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        last_message_at:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      required:
+        - id
+        - conversation_id
+        - role
+        - content
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        confidence_score:
+          type: number
+          format: float
+        knowledge_sources:
+          type: array
+          items:
+            type: object
+            properties:
+              entry_id:
+                type: string
+                format: uuid
+              title:
+                type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    UserPreferences:
+      type: object
+      required:
+        - user_id
+        - subscription_tier
+        - data_retention_days
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        subscription_tier:
+          type: string
+          enum: [free, premium, enterprise]
+        data_retention_days:
+          type: integer
+        preferences:
+          type: object
+          additionalProperties: true
+        updated_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code identifier
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context

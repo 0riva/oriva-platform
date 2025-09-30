@@ -1,0 +1,183 @@
+openapi: 3.0.3
+info:
+  title: Hugo Platform Chat API
+  description: AI coaching chat endpoint with multi-layered prompt composition
+  version: 1.0.0
+  contact:
+    name: Oriva Platform Team
+
+servers:
+  - url: https://api.oriva.com/v1
+    description: Production API
+  - url: https://api-staging.oriva.com/v1
+    description: Staging API
+
+paths:
+  /hugo/chat:
+    post:
+      summary: Send coaching message
+      description: |
+        Process a user message through multi-layered AI coaching system:
+        1. Core HugoAI cognitive enhancement
+        2. App-specific knowledge retrieval
+        3. User context and conversation history
+
+        Returns streaming response with real-time token generation.
+
+        **Performance Requirements**: <3s end-to-end response time
+
+        **Functional Requirements**: FR-001, FR-002, FR-005, FR-026
+      operationId: sendCoachingMessage
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-App-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Application identifier (e.g., "hugo_matchmaker")
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - conversation_id
+                - message
+              properties:
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: Active conversation session ID
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+                  description: User's coaching question or message
+                context:
+                  type: object
+                  description: Optional additional context
+                  properties:
+                    current_goals:
+                      type: array
+                      items:
+                        type: string
+                      description: User's stated objectives for this conversation
+                    metadata:
+                      type: object
+                      additionalProperties: true
+                      description: App-specific metadata
+      responses:
+        '200':
+          description: Successful streaming response
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                enum: [text/event-stream]
+            Cache-Control:
+              schema:
+                type: string
+                enum: [no-cache]
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [token, done, error]
+                  content:
+                    type: string
+                    description: Token content or error message
+                  message_id:
+                    type: string
+                    format: uuid
+                    description: Unique message identifier (in done event)
+                  confidence:
+                    type: number
+                    format: float
+                    minimum: 0.0
+                    maximum: 1.0
+                    description: Confidence score for response quality
+                  knowledge_sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        entry_id:
+                          type: string
+                          format: uuid
+                        title:
+                          type: string
+                        relevance_score:
+                          type: number
+                          format: float
+              examples:
+                tokenEvent:
+                  value: |
+                    data: {"type":"token","content":"Hello"}
+
+                    data: {"type":"token","content":" there"}
+
+                    data: {"type":"done","message_id":"550e8400-e29b-41d4-a716-446655440000","confidence":0.87}
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Oriva platform JWT authentication token
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code identifier
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context
