@@ -166,7 +166,7 @@ async function verifyConversationAccess(conversationId: string, userId: string):
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('conversations')
+    .from('hugo_conversations')
     .select('user_id')
     .eq('id', conversationId)
     .single();

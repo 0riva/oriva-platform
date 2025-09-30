@@ -28,13 +28,13 @@ CREATE POLICY conversations_user_access ON conversations
 -- Allows SELECT, INSERT, UPDATE, DELETE for user's own conversations
 
 -- ============================================================================
--- MESSAGES TABLE - Users can only access messages in their conversations
+-- MESSAGES TABLE - Users can only access hugo_messages in their conversations
 -- ============================================================================
 
-CREATE POLICY messages_user_access ON messages
+CREATE POLICY messages_user_access ON hugo_messages
   FOR ALL USING (
     conversation_id IN (
-      SELECT c.id FROM conversations c
+      SELECT c.id FROM hugo_conversations c
       JOIN users u ON c.user_id = u.id
       WHERE u.oriva_user_id = auth.uid()
     )
@@ -73,7 +73,7 @@ CREATE POLICY um_user_access ON user_memories
 
 COMMENT ON POLICY users_select_own ON users IS 'Users can view their own profile';
 COMMENT ON POLICY users_update_own ON users IS 'Users can update their own profile';
-COMMENT ON POLICY conversations_user_access ON conversations IS 'Users can CRUD their own conversations';
-COMMENT ON POLICY messages_user_access ON messages IS 'Users can CRUD messages in their conversations';
+COMMENT ON POLICY conversations_user_access ON hugo_conversations IS 'Users can CRUD their own conversations';
+COMMENT ON POLICY messages_user_access ON hugo_messages IS 'Users can CRUD hugo_messages in their conversations';
 COMMENT ON POLICY up_user_access ON user_progress IS 'Users can CRUD their own progress';
 COMMENT ON POLICY um_user_access ON user_memories IS 'Users can CRUD their own memories';

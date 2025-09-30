@@ -56,8 +56,8 @@
       "methods": ["GET"]
     },
     {
-      "src": "/api/v1/chat",
-      "dest": "/api/v1/chat.ts",
+      "src": "/api/v1/hugo/chat",
+      "dest": "/api/v1/hugo/chat.ts",
       "methods": ["POST"]
     },
     {
@@ -71,8 +71,8 @@
       "methods": ["POST"]
     },
     {
-      "src": "/api/v1/knowledge/search",
-      "dest": "/api/v1/knowledge/search.ts",
+      "src": "/api/v1/hugo/knowledge/search",
+      "dest": "/api/v1/hugo/knowledge/search.ts",
       "methods": ["POST"]
     },
     {

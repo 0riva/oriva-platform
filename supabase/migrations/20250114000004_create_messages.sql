@@ -1,10 +1,10 @@
--- Migration: Create messages table
+-- Migration: Create hugo_messages table
 -- Task: T004
--- Description: Individual chat exchanges (user messages and AI responses)
+-- Description: Individual chat exchanges (user hugo_messages and AI responses)
 
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS hugo_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  conversation_id UUID NOT NULL REFERENCES hugo_conversations(id) ON DELETE CASCADE,
 
   -- Message content
   role TEXT NOT NULL,
@@ -23,24 +23,24 @@ CREATE TABLE messages (
 );
 
 -- Indexes
-CREATE INDEX messages_conversation_idx ON messages(conversation_id, created_at);
-CREATE INDEX messages_role_idx ON messages(role);
+CREATE INDEX IF NOT EXISTS messages_conversation_idx ON hugo_messages(conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS messages_role_idx ON hugo_messages(role);
 
 -- Constraints
-ALTER TABLE messages ADD CONSTRAINT messages_role_check
+ALTER TABLE hugo_messages ADD CONSTRAINT messages_role_check
   CHECK (role IN ('user', 'assistant'));
 
-ALTER TABLE messages ADD CONSTRAINT messages_content_check
+ALTER TABLE hugo_messages ADD CONSTRAINT messages_content_check
   CHECK (length(content) > 0);
 
-ALTER TABLE messages ADD CONSTRAINT messages_confidence_check
+ALTER TABLE hugo_messages ADD CONSTRAINT messages_confidence_check
   CHECK (confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0));
 
 -- RLS
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hugo_messages ENABLE ROW LEVEL SECURITY;
 
 -- Comments
-COMMENT ON TABLE messages IS 'Individual chat exchanges between users and AI coaches';
-COMMENT ON COLUMN messages.role IS 'Message role: user or assistant';
-COMMENT ON COLUMN messages.confidence_score IS 'AI confidence score (0.00-1.00)';
-COMMENT ON COLUMN messages.intimacy_code_reference IS 'Referenced principle for assistant messages';
+COMMENT ON TABLE hugo_messages IS 'Individual chat exchanges between users and AI coaches';
+COMMENT ON COLUMN hugo_messages.role IS 'Message role: user or assistant';
+COMMENT ON COLUMN hugo_messages.confidence_score IS 'AI confidence score (0.00-1.00)';
+COMMENT ON COLUMN hugo_messages.intimacy_code_reference IS 'Referenced principle for assistant messages';

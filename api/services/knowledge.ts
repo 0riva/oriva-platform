@@ -47,7 +47,7 @@ export async function searchKnowledge(
 
   // Get app's knowledge base IDs
   const { data: appData, error: appError } = await supabase
-    .from('apps')
+    .from('hugo_apps')
     .select('knowledge_base_ids')
     .eq('app_id', appId)
     .eq('is_active', true)
@@ -125,7 +125,7 @@ async function searchKnowledgeDirect(
 
   // Get knowledge base records
   const { data: kbData } = await supabase
-    .from('knowledge_bases')
+    .from('hugo_knowledge_bases')
     .select('id')
     .in('kb_id', kbIds)
     .eq('is_active', true);
@@ -142,7 +142,7 @@ async function searchKnowledgeDirect(
 
   // Build text search query
   let searchQuery = supabase
-    .from('knowledge_entries')
+    .from('hugo_knowledge_entries')
     .select('*')
     .in('knowledge_base_id', kbUuids)
     .textSearch('search_vector', query, {
@@ -208,7 +208,7 @@ export async function getKnowledgeEntry(entryId: string): Promise<KnowledgeEntry
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('knowledge_entries')
+    .from('hugo_knowledge_entries')
     .select('*')
     .eq('id', entryId)
     .single();

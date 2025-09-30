@@ -24,8 +24,8 @@ SELECT
         'created_at', m.created_at
       ) ORDER BY m.created_at DESC
     )
-    FROM messages m
-    JOIN conversations c ON c.id = m.conversation_id
+    FROM hugo_messages m
+    JOIN hugo_conversations c ON c.id = m.conversation_id
     WHERE c.user_id = $2 AND c.app_id = a.id
     ORDER BY m.created_at DESC
     LIMIT 10
@@ -33,7 +33,7 @@ SELECT
   up.progress_data,
   up.current_focus_area,
   up.milestones_reached
-FROM apps a
+FROM hugo_apps a
 LEFT JOIN personality_schemas ps ON ps.id = a.personality_schema_id
 LEFT JOIN knowledge_bases kb ON kb.kb_id = ANY(a.knowledge_base_ids)
 LEFT JOIN user_progress up ON up.user_id = $2 AND up.app_id = a.id
@@ -100,13 +100,13 @@ SELECT
     )
     FROM user_memories um
     WHERE um.user_id = u.id
-      AND um.app_id = (SELECT id FROM apps WHERE app_id = $2)
+      AND um.app_id = (SELECT id FROM hugo_apps WHERE app_id = $2)
       AND (um.expires_at IS NULL OR um.expires_at > now())
     LIMIT 20
   ) as memories
 FROM users u
 LEFT JOIN user_progress up ON up.user_id = u.id
-  AND up.app_id = (SELECT id FROM apps WHERE app_id = $2)
+  AND up.app_id = (SELECT id FROM hugo_apps WHERE app_id = $2)
 WHERE u.id = $1;
 
 COMMENT ON TEXT SEARCH CONFIGURATION pg_catalog."english" IS 'Prepared statement: get_user_context($1=user_id, $2=app_id) - retrieves user profile, progress, and memories';
@@ -131,18 +131,18 @@ SELECT
       'content', m.content,
       'created_at', m.created_at
     )
-    FROM messages m
+    FROM hugo_messages m
     WHERE m.conversation_id = c.id
     ORDER BY m.created_at DESC
     LIMIT 1
   ) as last_message
-FROM conversations c
+FROM hugo_conversations c
 WHERE c.user_id = $1
-  AND c.app_id = (SELECT id FROM apps WHERE app_id = $2)
+  AND c.app_id = (SELECT id FROM hugo_apps WHERE app_id = $2)
 ORDER BY c.last_message_at DESC
 LIMIT $3;
 
-COMMENT ON TEXT SEARCH CONFIGURATION pg_catalog."english" IS 'Prepared statement: get_recent_conversations($1=user_id, $2=app_id, $3=limit) - retrieves recent conversations with last message';
+COMMENT ON TEXT SEARCH CONFIGURATION pg_catalog."english" IS 'Prepared statement: get_recent_conversations($1=user_id, $2=app_id, $3=limit) - retrieves recent hugo_conversations with last message';
 
 -- ============================================================================
 -- HELPER FUNCTIONS for prepared statements

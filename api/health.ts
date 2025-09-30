@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // Check database connectivity
     const supabase = getSupabaseClient();
     const { error: dbError } = await supabase
-      .from('apps')
+      .from('hugo_apps')
       .select('id')
       .limit(1)
       .single();

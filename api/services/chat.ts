@@ -69,7 +69,7 @@ export async function composeChatContext(
 
   // 1. Get app configuration and personality schema
   const { data: appData, error: appError } = await supabase
-    .from('apps')
+    .from('hugo_apps')
     .select(`
       app_id,
       display_name,
@@ -96,7 +96,7 @@ export async function composeChatContext(
 
   // 3. Get user progress
   const { data: progressData } = await supabase
-    .from('user_progress')
+    .from('hugo_user_progress')
     .select('progress_data, current_focus_area, milestones_reached')
     .eq('user_id', userId)
     .eq('app_id', appData.app_id)
@@ -104,7 +104,7 @@ export async function composeChatContext(
 
   // 4. Get recent conversation history (FR-010, FR-011)
   const { data: messages } = await supabase
-    .from('messages')
+    .from('hugo_messages')
     .select('role, content, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true })
@@ -198,7 +198,7 @@ export async function saveMessage(params: {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('messages')
+    .from('hugo_messages')
     .insert({
       conversation_id: params.conversationId,
       role: params.role,

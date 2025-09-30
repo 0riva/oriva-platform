@@ -34,7 +34,10 @@
     "monitor": "ts-node api/monitoring/check-api-health.ts --detailed"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@sentry/node": "^10.16.0",
     "@supabase/supabase-js": "^2.57.4",
+    "@vercel/node": "^5.3.24",
     "chalk": "^4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",

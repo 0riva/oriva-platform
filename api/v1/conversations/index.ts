@@ -29,7 +29,7 @@ async function createConversationHandler(
 
   // Get app UUID from app_id
   const { data: appData, error: appError } = await supabase
-    .from('apps')
+    .from('hugo_apps')
     .select('id')
     .eq('app_id', appId)
     .single();
@@ -41,7 +41,7 @@ async function createConversationHandler(
   // Create conversation
   const sessionId = randomUUID();
   const { data, error } = await supabase
-    .from('conversations')
+    .from('hugo_conversations')
     .insert({
       session_id: sessionId,
       user_id: userId,
@@ -76,7 +76,7 @@ async function listConversationsHandler(
 
   // Get app UUID
   const { data: appData, error: appError } = await supabase
-    .from('apps')
+    .from('hugo_apps')
     .select('id')
     .eq('app_id', appId)
     .single();
@@ -87,7 +87,7 @@ async function listConversationsHandler(
 
   // Build query
   let query = supabase
-    .from('conversations')
+    .from('hugo_conversations')
     .select('*', { count: 'exact' })
     .eq('user_id', userId)
     .eq('app_id', appData.id)

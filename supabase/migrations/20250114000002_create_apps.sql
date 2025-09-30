@@ -1,8 +1,8 @@
--- Migration: Create apps table
+-- Migration: Create hugo_apps table
 -- Task: T002
--- Description: Coaching application registry for Oriva ecosystem
+-- Description: Hugo coaching application registry for Oriva ecosystem
 
-CREATE TABLE apps (
+CREATE TABLE IF NOT EXISTS hugo_apps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   app_id TEXT NOT NULL UNIQUE,
   display_name TEXT NOT NULL,
@@ -25,19 +25,21 @@ CREATE TABLE apps (
 );
 
 -- Indexes
-CREATE UNIQUE INDEX apps_app_id_idx ON apps(app_id);
-CREATE INDEX apps_domain_idx ON apps(domain);
-CREATE INDEX apps_active_idx ON apps(is_active) WHERE is_active = true;
+CREATE UNIQUE INDEX IF NOT EXISTS hugo_apps_app_id_idx ON hugo_apps(app_id);
+CREATE INDEX IF NOT EXISTS hugo_apps_domain_idx ON hugo_apps(domain);
+CREATE INDEX IF NOT EXISTS hugo_apps_active_idx ON hugo_apps(is_active) WHERE is_active = true;
 
 -- Constraints
-ALTER TABLE apps ADD CONSTRAINT apps_domain_check
+ALTER TABLE hugo_apps DROP CONSTRAINT IF EXISTS hugo_apps_domain_check;
+ALTER TABLE hugo_apps ADD CONSTRAINT hugo_apps_domain_check
   CHECK (domain IN ('dating', 'career', 'health', 'finance', 'relationships', 'general'));
 
-ALTER TABLE apps ADD CONSTRAINT apps_kb_ids_check
+ALTER TABLE hugo_apps DROP CONSTRAINT IF EXISTS hugo_apps_kb_ids_check;
+ALTER TABLE hugo_apps ADD CONSTRAINT hugo_apps_kb_ids_check
   CHECK (array_length(knowledge_base_ids, 1) IS NULL OR array_length(knowledge_base_ids, 1) > 0);
 
 -- Comments
-COMMENT ON TABLE apps IS 'Registry of coaching applications in Oriva ecosystem';
-COMMENT ON COLUMN apps.app_id IS 'Unique app identifier (lowercase_with_underscores)';
-COMMENT ON COLUMN apps.domain IS 'App domain: dating, career, health, finance, relationships, general';
-COMMENT ON COLUMN apps.knowledge_base_ids IS 'Array of knowledge base IDs accessible by this app';
+COMMENT ON TABLE hugo_apps IS 'Registry of Hugo coaching applications in Oriva ecosystem';
+COMMENT ON COLUMN hugo_apps.app_id IS 'Unique app identifier (lowercase_with_underscores)';
+COMMENT ON COLUMN hugo_apps.domain IS 'App domain: dating, career, health, finance, relationships, general';
+COMMENT ON COLUMN hugo_apps.knowledge_base_ids IS 'Array of knowledge base IDs accessible by this app';

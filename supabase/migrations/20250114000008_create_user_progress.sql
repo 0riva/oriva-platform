@@ -2,10 +2,10 @@
 -- Task: T008
 -- Description: User learning progress tracking per app
 
-CREATE TABLE user_progress (
+CREATE TABLE IF NOT EXISTS hugo_user_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  app_id UUID NOT NULL REFERENCES apps(id),
+  app_id UUID NOT NULL REFERENCES hugo_apps(id),
 
   -- Progress tracking
   progress_data JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -24,21 +24,21 @@ CREATE TABLE user_progress (
 );
 
 -- Indexes
-CREATE INDEX up_user_app_idx ON user_progress(user_id, app_id);
-CREATE INDEX up_milestones_idx ON user_progress USING GIN(milestones_reached);
+CREATE INDEX IF NOT EXISTS up_user_app_idx ON user_progress(user_id, app_id);
+CREATE INDEX IF NOT EXISTS up_milestones_idx ON user_progress USING GIN(milestones_reached);
 
 -- Constraints
-ALTER TABLE user_progress ADD CONSTRAINT up_conversations_check
+ALTER TABLE hugo_user_progress ADD CONSTRAINT up_conversations_check
   CHECK (total_conversations >= 0);
 
-ALTER TABLE user_progress ADD CONSTRAINT up_messages_check
+ALTER TABLE hugo_user_progress ADD CONSTRAINT up_messages_check
   CHECK (total_messages >= 0);
 
 -- RLS
-ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hugo_user_progress ENABLE ROW LEVEL SECURITY;
 
 -- Comments
-COMMENT ON TABLE user_progress IS 'User learning progress tracking per app';
-COMMENT ON COLUMN user_progress.progress_data IS 'JSONB: {principles_learned, skill_levels, current_focus}';
-COMMENT ON COLUMN user_progress.milestones_reached IS 'Array of milestone identifiers';
-COMMENT ON COLUMN user_progress.total_conversations IS 'Cached conversation count';
+COMMENT ON TABLE hugo_user_progress IS 'User learning progress tracking per app';
+COMMENT ON COLUMN hugo_user_progress.progress_data IS 'JSONB: {principles_learned, skill_levels, current_focus}';
+COMMENT ON COLUMN hugo_user_progress.milestones_reached IS 'Array of milestone identifiers';
+COMMENT ON COLUMN hugo_user_progress.total_conversations IS 'Cached conversation count';

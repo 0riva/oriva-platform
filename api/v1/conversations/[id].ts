@@ -17,7 +17,7 @@ async function getConversationHandler(
 
   // Get conversation with messages
   const { data: conversation, error: convError } = await supabase
-    .from('conversations')
+    .from('hugo_conversations')
     .select('*')
     .eq('id', conversationId)
     .single();
@@ -33,7 +33,7 @@ async function getConversationHandler(
 
   // Get messages
   const { data: messages, error: messagesError } = await supabase
-    .from('messages')
+    .from('hugo_messages')
     .select('*')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
@@ -58,7 +58,7 @@ async function deleteConversationHandler(
 
   // Get conversation to verify ownership
   const { data: conversation, error: convError } = await supabase
-    .from('conversations')
+    .from('hugo_conversations')
     .select('user_id')
     .eq('id', conversationId)
     .single();
@@ -74,7 +74,7 @@ async function deleteConversationHandler(
 
   // Delete conversation (CASCADE will delete messages)
   const { error: deleteError } = await supabase
-    .from('conversations')
+    .from('hugo_conversations')
     .delete()
     .eq('id', conversationId);
 
