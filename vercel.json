@@ -52,6 +52,11 @@
       "dest": "/api/health.ts"
     },
     {
+      "src": "/api/alerts",
+      "dest": "/api/alerts.ts",
+      "methods": ["GET"]
+    },
+    {
       "src": "/api/v1/chat",
       "dest": "/api/v1/chat.ts",
       "methods": ["POST"]
@@ -141,5 +146,11 @@
       "destination": "/api/$1"
     }
   ],
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "analytics": {
+    "enable": true
+  },
+  "speedInsights": {
+    "enable": true
+  }
 }
