@@ -293,7 +293,16 @@ COMMENT ON COLUMN webhook_delivery_log.success IS 'True if status_code 200-299';
 -- Trigger Functions
 -- ============================================================================
 
--- Reuse existing update_transaction_timestamp function for updated_at
+-- Function to automatically update updated_at timestamp on UPDATE
+CREATE OR REPLACE FUNCTION update_transaction_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply timestamp update trigger to tables with updated_at column
 CREATE TRIGGER update_platform_notifications_timestamp
   BEFORE UPDATE ON platform_notifications
   FOR EACH ROW EXECUTE FUNCTION update_transaction_timestamp();
