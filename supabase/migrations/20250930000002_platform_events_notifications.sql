@@ -131,10 +131,11 @@ CREATE INDEX idx_platform_notifications_type
 CREATE INDEX idx_platform_notifications_context_data
   ON platform_notifications USING GIN (context_data jsonb_path_ops);
 
--- Partial index for unexpired notifications (most common query)
-CREATE INDEX idx_platform_notifications_unexpired
-  ON platform_notifications(user_id, created_at DESC)
-  WHERE expires_at IS NULL OR expires_at > NOW();
+-- Index for notification queries by user and expiry
+-- Note: Cannot use NOW() in index predicate (not IMMUTABLE)
+-- Queries must filter expires_at at runtime
+CREATE INDEX idx_platform_notifications_user_expiry
+  ON platform_notifications(user_id, created_at DESC, expires_at);
 
 -- Comments
 COMMENT ON TABLE platform_notifications IS 'Notification content from third-party apps (immutable)';
