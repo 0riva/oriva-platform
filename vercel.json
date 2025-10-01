@@ -84,6 +84,56 @@
       "src": "/api/v1/conversations/([^/]+)",
       "dest": "/api/v1/conversations/$1.ts",
       "methods": ["GET", "DELETE"]
+    },
+    {
+      "src": "/api/v1/apps/([^/]+)/events",
+      "dest": "/api/v1/events/publish.ts?appId=$1",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/v1/apps/([^/]+)/events",
+      "dest": "/api/v1/events/query.ts?appId=$1",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/v1/apps/([^/]+)/notifications",
+      "dest": "/api/v1/notifications/create.ts?appId=$1",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/v1/users/([^/]+)/notifications",
+      "dest": "/api/v1/notifications/query.ts?userId=$1",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/v1/notifications/([^/]+)",
+      "dest": "/api/v1/notifications/update.ts?id=$1",
+      "methods": ["PATCH"]
+    },
+    {
+      "src": "/api/v1/notifications/([^/]+)",
+      "dest": "/api/v1/notifications/delete.ts?id=$1",
+      "methods": ["DELETE"]
+    },
+    {
+      "src": "/api/v1/apps/([^/]+)/webhooks",
+      "dest": "/api/v1/notifications/webhooks/create.ts?appId=$1",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/v1/apps/([^/]+)/webhooks",
+      "dest": "/api/v1/notifications/webhooks/list.ts?appId=$1",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/v1/apps/([^/]+)/webhooks/([^/]+)",
+      "dest": "/api/v1/notifications/webhooks/update.ts?appId=$1&id=$2",
+      "methods": ["PATCH"]
+    },
+    {
+      "src": "/api/v1/apps/([^/]+)/webhooks/([^/]+)",
+      "dest": "/api/v1/notifications/webhooks/delete.ts?appId=$1&id=$2",
+      "methods": ["DELETE"]
     }
   ],
   "headers": [
