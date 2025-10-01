@@ -19,6 +19,9 @@ import { handleInstalledApps } from '../../src/handlers/marketplace/installed/in
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
 
+  // Debug logging for URL pattern matching
+  console.log('Marketplace handler called:', { url, method });
+
   // GET /api/v1/marketplace/categories
   if (url?.match(/\/categories$/) && method === 'GET') {
     await handleCategories(req, res);
