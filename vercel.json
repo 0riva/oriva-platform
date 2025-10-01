@@ -9,8 +9,28 @@
   },
   "rewrites": [
     {
+      "source": "/api/v1/auth/:path*",
+      "destination": "/api/v1/auth"
+    },
+    {
       "source": "/api/v1/conversations/:id",
-      "destination": "/api/v1/conversations/:id.ts"
+      "destination": "/api/v1/conversations?id=$id"
+    },
+    {
+      "source": "/api/v1/conversations",
+      "destination": "/api/v1/conversations"
+    },
+    {
+      "source": "/api/v1/hugo/:path*",
+      "destination": "/api/v1/hugo"
+    },
+    {
+      "source": "/api/payments/:path*",
+      "destination": "/api/payments"
+    },
+    {
+      "source": "/api/v1/marketplace/:path*",
+      "destination": "/api/v1/marketplace"
     },
     {
       "source": "/api/v1/apps/:appId/events",
@@ -37,15 +57,7 @@
       "destination": "/api/v1/webhooks?appId=$appId"
     },
     {
-      "source": "/api/workers/webhookRetry",
-      "destination": "/api/workers"
-    },
-    {
-      "source": "/api/workers/notificationExpiry",
-      "destination": "/api/workers"
-    },
-    {
-      "source": "/api/workers/dataArchival",
+      "source": "/api/workers/:path*",
       "destination": "/api/workers"
     }
   ],

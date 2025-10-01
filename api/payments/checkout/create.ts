@@ -25,9 +25,8 @@
  * - 500: Server error
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { getService } from '../../../src/services/ServiceRegistry';
 
 // Types
 interface CheckoutCreateRequest {
@@ -51,7 +50,7 @@ interface ErrorResponse {
 /**
  * Validate and extract authentication from request
  */
-function getAuthToken(req: NextApiRequest): string | null {
+function getAuthToken(req: VercelRequest): string | null {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -90,9 +89,9 @@ function validateRequest(body: any): { valid: boolean; error?: string; data?: Ch
   };
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<CheckoutSession | ErrorResponse>
+export async function handleCheckoutCreate(
+  req: VercelRequest,
+  res: VercelResponse
 ) {
   // Only allow POST
   if (req.method !== 'POST') {
@@ -131,18 +130,18 @@ export default async function handler(
 
     const { itemId, quantity } = validation.data!;
 
-    // 4. Get CheckoutService
-    const checkoutService = await getService('checkout');
+    // TODO: Implement checkout service
+    // The ServiceRegistry and checkout service don't exist yet.
+    // This handler needs proper implementation with:
+    // - Stripe PaymentIntent creation
+    // - Transaction record creation in orivapay_transactions
+    // - Platform fee calculation
+    // - Escrow handling
 
-    // 5. Create checkout session
-    const session = await checkoutService.createCheckoutSession(
-      user.id,
-      itemId,
-      quantity
-    );
-
-    // 6. Return session details
-    return res.status(200).json(session);
+    return res.status(501).json({
+      error: 'Checkout service not implemented yet',
+      code: 'NOT_IMPLEMENTED'
+    });
 
   } catch (error: any) {
     console.error('Checkout create error:', error);

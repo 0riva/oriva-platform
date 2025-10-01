@@ -23,9 +23,8 @@
  * - 500: Server error
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { getService } from '../../../src/services/ServiceRegistry';
 import Stripe from 'stripe';
 
 // Types
@@ -62,7 +61,7 @@ function verifyStripeSignature(
  * Get raw request body as buffer
  * Next.js API routes parse body by default, but we need raw for signature verification
  */
-async function getRawBody(req: NextApiRequest): Promise<Buffer> {
+async function getRawBody(req: VercelRequest): Promise<Buffer> {
   const chunks: Buffer[] = [];
 
   return new Promise((resolve, reject) => {
@@ -210,9 +209,9 @@ async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
   console.log(`Charge refunded for transaction ${transaction.id}`);
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<WebhookResponse | ErrorResponse>
+export async function handleStripeWebhook(
+  req: VercelRequest,
+  res: VercelResponse
 ) {
   // Only allow POST
   if (req.method !== 'POST') {

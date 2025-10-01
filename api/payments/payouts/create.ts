@@ -22,7 +22,7 @@
  * - 500: Server error
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
@@ -50,7 +50,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 /**
  * Validate and extract authentication from request
  */
-function getAuthToken(req: NextApiRequest): string | null {
+function getAuthToken(req: VercelRequest): string | null {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -119,9 +119,9 @@ async function calculateAvailableBalance(
   return totalEarned - totalPaidOut;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<PayoutCreateResponse | ErrorResponse>
+export async function handlePayoutCreate(
+  req: VercelRequest,
+  res: VercelResponse
 ) {
   // Only allow POST
   if (req.method !== 'POST') {

@@ -144,7 +144,7 @@ async function getMarketplaceItemsHandler(
 }
 
 // Export with middleware chain
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export async function handleListItems(req: VercelRequest, res: VercelResponse): Promise<void> {
   await rateLimit(req, res, async () => {
     await asyncHandler(getMarketplaceItemsHandler)(req, res);
   });

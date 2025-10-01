@@ -22,9 +22,8 @@
  * - 500: Server error
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { getService } from '../../../src/services/ServiceRegistry';
 
 // Types
 interface CheckoutCompleteRequest {
@@ -44,7 +43,7 @@ interface ErrorResponse {
 /**
  * Validate and extract authentication from request
  */
-function getAuthToken(req: NextApiRequest): string | null {
+function getAuthToken(req: VercelRequest): string | null {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -72,9 +71,9 @@ function validateRequest(body: any): { valid: boolean; error?: string; data?: Ch
   };
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<CheckoutCompleteResponse | ErrorResponse>
+export async function handleCheckoutComplete(
+  req: VercelRequest,
+  res: VercelResponse
 ) {
   // Only allow POST
   if (req.method !== 'POST') {
@@ -141,15 +140,17 @@ export default async function handler(
       return res.status(400).json({ error: 'Transaction failed' });
     }
 
-    // 6. Get CheckoutService and complete payment
-    const checkoutService = await getService('checkout');
-    const completedTransaction = await checkoutService.confirmPayment(transactionId);
+    // TODO: Implement checkout completion service
+    // The ServiceRegistry and checkout service don't exist yet.
+    // This handler needs proper implementation with:
+    // - Verify payment status with Stripe
+    // - Update transaction status in orivapay_transactions
+    // - Handle escrow release if applicable
+    // - Trigger notifications
 
-    // 7. Return success response
-    return res.status(200).json({
-      success: true,
-      transactionId: completedTransaction.id,
-      status: completedTransaction.status,
+    return res.status(501).json({
+      error: 'Checkout completion service not implemented yet',
+      code: 'NOT_IMPLEMENTED'
     });
 
   } catch (error: any) {

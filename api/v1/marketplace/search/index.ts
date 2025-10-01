@@ -9,10 +9,10 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { authenticate } from '../../middleware/authenticate';
-import { asyncHandler } from '../../middleware/asyncHandler';
-import { rateLimit } from '../../middleware/rateLimit';
-import { validationError } from '../../utils/errors';
+import { authenticate } from '../../../middleware/auth';
+import { asyncHandler } from '../../../middleware/error-handler';
+import { rateLimit } from '../../../middleware/rate-limit';
+import { validationError } from '../../../middleware/error-handler';
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -302,4 +302,4 @@ async function searchMarketplaceHandler(
 }
 
 // Export with middleware chain
-export default rateLimit(asyncHandler(searchMarketplaceHandler));
+export const handleSearch = asyncHandler(searchMarketplaceHandler);
