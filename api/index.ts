@@ -533,7 +533,83 @@ import { apiRateLimiter } from '../src/middleware/rateLimiter';
 
 // Authentication middleware (includes rate limiting)
 const validateAuth = createAuthMiddleware(); // Returns [rateLimiter, authHandler]
-const validateApiKey = createAuthMiddleware(); // For now, use same auth for API key validation
+
+// API Key validation middleware
+const validateApiKey: ApiMiddleware = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      respondWithError(res, 401, 'AUTH_REQUIRED', 'Authorization header required');
+      return;
+    }
+
+    // Support both "Bearer token" and "token" formats
+    const apiKey = authHeader.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : authHeader;
+
+    if (!apiKey) {
+      respondWithError(res, 401, 'AUTH_REQUIRED', 'API key required');
+      return;
+    }
+
+    // Validate API key format
+    if (!apiKey.startsWith('oriva_pk_test_') && !apiKey.startsWith('oriva_pk_live_')) {
+      respondWithError(res, 401, 'INVALID_API_KEY', 'Invalid API key format');
+      return;
+    }
+
+    // Hash the API key
+    const keyHash = await hashAPIKey(apiKey);
+
+    // Look up the API key in the database
+    const { data: apiKeyRecord, error: keyError } = await supabase
+      .from('developer_api_keys')
+      .select('id, user_id, name, permissions, usage_count, is_active, last_used_at')
+      .eq('key_hash', keyHash)
+      .single();
+
+    if (keyError || !apiKeyRecord) {
+      respondWithError(res, 401, 'INVALID_API_KEY', 'Invalid or expired API key');
+      return;
+    }
+
+    if (!apiKeyRecord.is_active) {
+      respondWithError(res, 401, 'API_KEY_INACTIVE', 'API key is inactive');
+      return;
+    }
+
+    // Set keyInfo on the request
+    const authReq = asAuthRequest(req);
+    authReq.keyInfo = {
+      id: apiKeyRecord.id,
+      userId: apiKeyRecord.user_id,
+      name: apiKeyRecord.name,
+      permissions: apiKeyRecord.permissions || [],
+      usageCount: apiKeyRecord.usage_count || 0,
+      isActive: apiKeyRecord.is_active,
+      authType: 'api_key',
+      lastUsedAt: apiKeyRecord.last_used_at || undefined
+    };
+
+    // Update usage count and last_used_at (fire and forget)
+    supabase
+      .from('developer_api_keys')
+      .update({
+        usage_count: (apiKeyRecord.usage_count || 0) + 1,
+        last_used_at: new Date().toISOString()
+      })
+      .eq('id', apiKeyRecord.id)
+      .then(() => {})
+      .catch((err) => console.warn('Failed to update API key usage:', err));
+
+    next();
+  } catch (error) {
+    logger.error('API key validation error', { error: getErrorMessage(error) });
+    respondWithError(res, 500, 'AUTH_ERROR', 'Authentication error');
+  }
+}
 
 // Apply general API rate limiting to all routes
 app.use('/api', apiRateLimiter);
