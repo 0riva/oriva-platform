@@ -1,11 +1,12 @@
 // @ts-nocheck - TODO: Fix type errors
 // Consolidated Marketplace API Handler
 // Handles: GET /api/v1/marketplace/categories
-//          GET /api/v1/marketplace/items
+//          GET /api/v1/marketplace/items (also aliased as /apps for backward compatibility)
 //          GET /api/v1/marketplace/items/:id
 //          POST /api/v1/marketplace/items/create
 //          GET /api/v1/marketplace/search
 //          GET /api/v1/marketplace/installed
+//          GET /api/v1/marketplace/apps (alias for /items)
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
@@ -55,6 +56,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // GET /api/v1/marketplace/installed
   if (pathname.match(/\/installed$/) && method === 'GET') {
     await handleInstalledApps(req, res);
+    return;
+  }
+
+  // GET /api/v1/marketplace/apps (alias for /items for backward compatibility)
+  if (pathname.match(/\/apps$/) && method === 'GET') {
+    await handleListItems(req, res);
     return;
   }
 
