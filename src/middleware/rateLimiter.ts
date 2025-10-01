@@ -6,6 +6,12 @@ import type { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { trackRateLimitViolation } from '../lib/metrics';
 
+// TEMPORARY: Disable rate limiting in production serverless environment
+// In-memory rate limiting doesn't work in stateless serverless functions
+// TODO: Implement distributed rate limiting with Vercel KV
+const isProduction = process.env.NODE_ENV === 'production';
+const skipInProduction = isProduction ? () => true : undefined;
+
 /**
  * Rate limiter for authentication endpoints
  * Stricter limits to prevent brute force attacks on login/auth
@@ -25,6 +31,7 @@ export const authRateLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  skip: skipInProduction,
 
   // Custom handler for rate limit exceeded
   handler: (req: Request, res: Response) => {
@@ -79,6 +86,7 @@ export const apiRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInProduction,
 
   handler: (req: Request, res: Response) => {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
@@ -124,6 +132,7 @@ export const sensitiveOperationRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInProduction,
 
   handler: (req: Request, res: Response) => {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
@@ -170,6 +179,7 @@ export const userRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInProduction,
 
   handler: (req: Request, res: Response) => {
     const userId = (req as any).authContext?.userId || 'anonymous';

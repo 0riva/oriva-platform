@@ -2980,10 +2980,7 @@ app.use('*', (req, res) => {
 // Error handling (temporary placeholder until typed middleware lands)
 app.use(errorHandler as any);
 
-export const handler = (req: Request, res: Response): void => {
-  app(req, res);
-};
-
+// Start server for local development
 export const startServer = (): void => {
   const PORT = Number(process.env.PORT) || 3001;
   const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;

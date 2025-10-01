@@ -59,6 +59,10 @@
     {
       "source": "/api/workers/:path*",
       "destination": "/api/workers"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
     }
   ],
   "headers": [
