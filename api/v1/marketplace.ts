@@ -12,6 +12,7 @@ import { handleCreateItem } from '../../src/handlers/marketplace/items/create';
 import { handleItemById } from '../../src/handlers/marketplace/items/[id]';
 import { handleListItems } from '../../src/handlers/marketplace/items/list';
 import { handleSearch } from '../../src/handlers/marketplace/search/index';
+import { handleInstalledApps } from '../../src/handlers/marketplace/installed/index';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
@@ -48,7 +49,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // GET /api/v1/marketplace/installed
   if (url?.match(/\/installed$/) && method === 'GET') {
-    const { handleInstalledApps } = await import('../../src/handlers/marketplace/installed/index');
     await handleInstalledApps(req, res);
     return;
   }
