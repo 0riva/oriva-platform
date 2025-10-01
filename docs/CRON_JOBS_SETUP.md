@@ -84,7 +84,7 @@ Title: Oriva - Data Archival Worker
 URL: https://api.oriva.com/api/workers/dataArchival
 Method: POST
 Schedule: 0 0 * * * (Daily at midnight UTC)
-Timeout: 60 seconds
+Timeout: 30 seconds
 ```
 
 **Headers:**
@@ -201,9 +201,10 @@ DATA_ARCHIVAL_BATCH_SIZE=10000
 - Ensure bearer token format: `Bearer YOUR_KEY` (not just `YOUR_KEY`)
 
 ### Job Timeouts
-- Increase timeout in cron-job.org settings (max 120 seconds)
+- Check timeout in cron-job.org settings (max 30 seconds on free plan)
 - Consider reducing batch sizes via environment variables
 - Check Supabase connection latency
+- Optimize queries if workers consistently timeout
 
 ### Job Succeeds but No Work Done
 - Check database migration is applied
