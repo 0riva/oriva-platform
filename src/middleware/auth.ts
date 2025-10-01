@@ -1,227 +1,156 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Response, NextFunction } from 'express';
-import type { Logger } from 'winston';
+// Task: T013 - JWT authentication middleware
+// Description: Verify Oriva SSO JWT tokens and extract user context
 
-import type { AuthenticatedRequest, ApiMiddleware } from '../types/middleware/auth';
-import { createAuthError, toErrorResponse } from '../types/errors';
-import { incrementUsage, runSingle } from '../services/database';
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { getSupabaseClient } from '../config/supabase';
 
-const LEGACY_PERMISSION_MAPPING: Record<string, string[]> = {
-  profiles: ['user:read', 'profiles:read', 'profiles:write'],
-  groups: ['groups:read', 'groups:write'],
-  marketplace: ['marketplace:read'],
-  entries: ['entries:read', 'entries:write'],
-  templates: ['templates:read', 'templates:write']
-};
-
-interface DeveloperApiKeyRecord {
-  id: string;
-  user_id: string;
-  name: string;
-  permissions: unknown[];
-  usage_count: number;
-  is_active: boolean;
-  created_at: string;
+// JWT verification with Supabase Auth
+export interface AuthContext {
+  userId: string;
+  email: string;
+  subscription_tier: 'free' | 'premium' | 'enterprise';
 }
 
-export interface AuthMiddlewareOptions {
-  supabase: SupabaseClient;
-  logger: Logger;
-  hashApiKey: (key: string) => Promise<string>;
-}
-
-const expandPermissions = (permissions: unknown[]): string[] => {
-  if (!Array.isArray(permissions)) {
-    return [];
-  }
-
-  const expanded = new Set<string>();
-
-  permissions.forEach(permission => {
-    const legacy = LEGACY_PERMISSION_MAPPING[String(permission)];
-
-    if (legacy) {
-      legacy.forEach(scope => expanded.add(scope));
-    } else {
-      expanded.add(String(permission));
-    }
-  });
-
-  return Array.from(expanded);
-};
-
-const toApiKeyInfo = (record: DeveloperApiKeyRecord) => ({
-  id: record.id,
-  userId: record.user_id,
-  name: record.name,
-  permissions: expandPermissions(record.permissions),
-  usageCount: record.usage_count,
-  isActive: record.is_active,
-  authType: 'api_key' as const
-});
-
-const validateApiKey = async (
-  supabase: SupabaseClient,
-  keyHash: string
-) =>
-  runSingle(
-    supabase
-      .from('developer_api_keys')
-      .select('id, user_id, name, permissions, usage_count, is_active, created_at')
-      .eq('key_hash', keyHash)
-      .eq('is_active', true)
-      .maybeSingle()
-  );
-
-const handleApiKeyPath = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-  options: AuthMiddlewareOptions,
-  token: string
-): Promise<void> => {
+/**
+ * Authentication middleware for Vercel Edge Functions
+ * Verifies JWT token from Authorization header and attaches user context
+ */
+export async function authenticate(
+  req: VercelRequest,
+  res: VercelResponse,
+  next: () => void | Promise<void>,
+): Promise<void> {
   try {
-    const keyHash = await options.hashApiKey(token);
-    const { data, error } = await validateApiKey(options.supabase, keyHash);
-
-    if (error || !data) {
-      options.logger.warn('API key validation failed', {
-        error: error?.message,
-        hasKey: Boolean(data)
+    // Extract JWT from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({
+        error: 'Missing or invalid Authorization header',
+        code: 'AUTH_MISSING',
       });
-      const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-      res.status(authError.status).json(toErrorResponse(authError));
       return;
     }
 
-    const keyRecord = data as DeveloperApiKeyRecord;
+    const token = authHeader.substring(7); // Remove "Bearer " prefix
 
-    options.logger.info('API key validation succeeded', {
-      keyId: keyRecord.id,
-      userId: keyRecord.user_id,
-      name: keyRecord.name
-    });
+    // Verify JWT with Supabase
+    const supabase = getSupabaseClient();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
 
-    req.apiKey = token;
-    req.keyInfo = toApiKeyInfo(keyRecord);
-
-    incrementUsage(options.supabase, keyRecord.id, keyRecord.usage_count).catch(err => {
-      options.logger.warn('Failed to update API key usage', {
-        keyId: keyRecord.id,
-        message: err.message
+    if (error || !user) {
+      res.status(401).json({
+        error: 'Invalid or expired token',
+        code: 'AUTH_INVALID',
       });
-    });
+      return;
+    }
 
-    next();
+    // Fetch user profile from users table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, email, subscription_tier')
+      .eq('oriva_user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      res.status(404).json({
+        error: 'User profile not found',
+        code: 'USER_NOT_FOUND',
+      });
+      return;
+    }
+
+    // Attach auth context to request
+    (req as AuthenticatedRequest).authContext = {
+      userId: userProfile.id,
+      email: userProfile.email,
+      subscription_tier: userProfile.subscription_tier,
+    };
+
+    // Update last_active_at timestamp (fire and forget)
+    supabase
+      .from('users')
+      .update({ last_active_at: new Date().toISOString() })
+      .eq('id', userProfile.id)
+      .then(() => {})
+      .catch((err) => console.warn('Failed to update last_active_at:', err));
+
+    // Continue to handler
+    await next();
   } catch (error) {
-    options.logger.error('API key validation error', { error });
-    const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-    res.status(authError.status).json(toErrorResponse(authError));
+    console.error('Authentication error:', error);
+    res.status(500).json({
+      error: 'Internal authentication error',
+      code: 'AUTH_ERROR',
+    });
   }
-};
+}
 
-export const createAuthMiddleware = ({ supabase, logger, hashApiKey }: AuthMiddlewareOptions): ApiMiddleware =>
-  async (req, res, next) => {
+/**
+ * Optional authentication - allows unauthenticated requests but extracts context if available
+ * Useful for public endpoints that customize behavior for authenticated users
+ */
+export async function optionalAuthenticate(
+  req: VercelRequest,
+  res: VercelResponse,
+  next: () => void | Promise<void>,
+): Promise<void> {
+  try {
     const authHeader = req.headers.authorization;
-
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      const authError = createAuthError('AUTH_REQUIRED', 'API key required');
-      res.status(authError.status).json(toErrorResponse(authError));
+      // No auth provided - continue without context
+      await next();
       return;
     }
 
-    const token = authHeader.substring(7).trim();
+    const token = authHeader.substring(7);
+    const supabase = getSupabaseClient();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
 
-    if (!token) {
-      const authError = createAuthError('AUTH_REQUIRED', 'API key required');
-      res.status(authError.status).json(toErrorResponse(authError));
-      return;
-    }
+    if (!error && user) {
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('id, email, subscription_tier')
+        .eq('oriva_user_id', user.id)
+        .single();
 
-    const validPrefixes = ['oriva_pk_live_', 'oriva_pk_test_'];
-    const isApiKey = validPrefixes.some(prefix => token.startsWith(prefix));
-
-    if (isApiKey) {
-      await handleApiKeyPath(req, res, next, { supabase, logger, hashApiKey }, token);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.auth.getUser(token);
-
-      if (error || !data?.user) {
-        const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-        res.status(authError.status).json(toErrorResponse(authError));
-        return;
+      if (userProfile) {
+        (req as AuthenticatedRequest).authContext = {
+          userId: userProfile.id,
+          email: userProfile.email,
+          subscription_tier: userProfile.subscription_tier,
+        };
       }
-
-      const user = data.user;
-
-      req.apiKey = token;
-      req.keyInfo = {
-        id: user.id,
-        userId: user.id,
-        name: user.email || user.user_metadata?.name || 'User',
-        permissions: ['read', 'write'],
-        usageCount: 0,
-        isActive: true,
-        authType: 'supabase_auth' as const
-      };
-
-      next();
-    } catch (error) {
-      logger.error('Supabase auth validation error', { error });
-      const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-      res.status(authError.status).json(toErrorResponse(authError));
-    }
-  };
-
-export const createLegacyApiKeyMiddleware = ({ supabase, logger, hashApiKey }: AuthMiddlewareOptions): ApiMiddleware =>
-  async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      const authError = createAuthError('AUTH_REQUIRED', 'API key required');
-      res.status(authError.status).json(toErrorResponse(authError));
-      return;
     }
 
-    const apiKey = authHeader.substring(7);
+    await next();
+  } catch (error) {
+    console.error('Optional authentication error:', error);
+    // Continue without auth context on error
+    await next();
+  }
+}
 
-    if (!apiKey || typeof apiKey !== 'string') {
-      const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-      res.status(authError.status).json(toErrorResponse(authError));
-      return;
-    }
+/**
+ * Extended request type with auth context
+ */
+export interface AuthenticatedRequest extends VercelRequest {
+  authContext: AuthContext;
+}
 
-    const validPrefixes = ['oriva_pk_live_', 'oriva_pk_test_'];
-    const hasValidPrefix = validPrefixes.some(prefix => apiKey.startsWith(prefix));
+/**
+ * Type guard to check if request is authenticated
+ */
+export function isAuthenticated(req: VercelRequest): req is AuthenticatedRequest {
+  return 'authContext' in req && typeof (req as AuthenticatedRequest).authContext === 'object';
+}
 
-    if (!hasValidPrefix) {
-      const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-      res.status(authError.status).json(toErrorResponse(authError));
-      return;
-    }
-
-    try {
-      const keyHash = await hashApiKey(apiKey);
-      const { data, error } = await validateApiKey(supabase, keyHash);
-
-      if (error || !data) {
-        const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-        res.status(authError.status).json(toErrorResponse(authError));
-        return;
-      }
-
-      const keyRecord = data as DeveloperApiKeyRecord;
-
-      req.apiKey = apiKey;
-      req.keyInfo = toApiKeyInfo(keyRecord);
-
-      next();
-    } catch (error) {
-      logger.error('API key validation error', { error });
-      const authError = createAuthError('INVALID_API_KEY', 'Invalid API key');
-      res.status(authError.status).json(toErrorResponse(authError));
-    }
-  };
+/**
+ * Helper to extract auth context or throw error
+ */
+export function requireAuthContext(req: VercelRequest): AuthContext {
+  if (!isAuthenticated(req)) {
+    throw new Error('Authentication required but not provided');
+  }
+  return req.authContext;
+}
