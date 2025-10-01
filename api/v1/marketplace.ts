@@ -19,41 +19,41 @@ import { handleInstalledApps } from '../../src/handlers/marketplace/installed/in
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
 
-  // Debug logging for URL pattern matching
-  console.log('Marketplace handler called:', { url, method });
+  // Extract pathname without query parameters
+  const pathname = url?.split('?')[0] || '';
 
   // GET /api/v1/marketplace/categories
-  if (url?.match(/\/categories$/) && method === 'GET') {
+  if (pathname.match(/\/categories$/) && method === 'GET') {
     await handleCategories(req, res);
     return;
   }
 
   // POST /api/v1/marketplace/items/create
-  if (url?.match(/\/items\/create$/) && method === 'POST') {
+  if (pathname.match(/\/items\/create$/) && method === 'POST') {
     await handleCreateItem(req, res);
     return;
   }
 
   // GET /api/v1/marketplace/items/:id (must come before /items to avoid matching /items first)
-  if (url?.match(/\/items\/[^/]+$/) && method === 'GET') {
+  if (pathname.match(/\/items\/[^/]+$/) && method === 'GET') {
     await handleItemById(req, res);
     return;
   }
 
   // GET /api/v1/marketplace/items
-  if (url?.match(/\/items$/) && method === 'GET') {
+  if (pathname.match(/\/items$/) && method === 'GET') {
     await handleListItems(req, res);
     return;
   }
 
   // GET /api/v1/marketplace/search
-  if (url?.match(/\/search$/) && method === 'GET') {
+  if (pathname.match(/\/search$/) && method === 'GET') {
     await handleSearch(req, res);
     return;
   }
 
   // GET /api/v1/marketplace/installed
-  if (url?.match(/\/installed$/) && method === 'GET') {
+  if (pathname.match(/\/installed$/) && method === 'GET') {
     await handleInstalledApps(req, res);
     return;
   }
