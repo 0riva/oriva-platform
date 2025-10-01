@@ -4,7 +4,7 @@
   "description": "Oriva Platform API",
   "main": "api/index.ts",
   "scripts": {
-    "dev": "ts-node api/index.ts",
+    "dev": "ts-node -r dotenv/config api/index.ts",
     "start": "ts-node api/index.ts",
     "build": "npm run build:api",
     "build:api": "echo 'Vercel will compile TypeScript automatically'",

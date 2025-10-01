@@ -1,4 +1,6 @@
-import dotenv from 'dotenv';
+// Load environment variables FIRST before any imports
+require('dotenv').config();
+
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';
@@ -37,11 +39,13 @@ import {
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
 
-dotenv.config();
-
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 
 export const app = express();
+
+// Enable trust proxy for Vercel/reverse proxy environments
+// Required for express-rate-limit to work correctly with X-Forwarded-For headers
+app.set('trust proxy', true);
 
 // Production logging setup
 const logger: Logger = winston.createLogger({
@@ -594,15 +598,14 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
     };
 
     // Update usage count and last_used_at (fire and forget)
-    supabase
+    void supabase
       .from('developer_api_keys')
       .update({
         usage_count: (apiKeyRecord.usage_count || 0) + 1,
         last_used_at: new Date().toISOString()
       })
       .eq('id', apiKeyRecord.id)
-      .then(() => {})
-      .catch((err) => console.warn('Failed to update API key usage:', err));
+      .then(() => {}, (err) => console.warn('Failed to update API key usage:', err));
 
     next();
   } catch (error) {
@@ -3073,6 +3076,11 @@ export const startServer = (): void => {
     console.log(`🌟 Ready for development! Try: curl ${BASE_URL}/health`);
   });
 };
+
+// Auto-start server when run directly (not imported)
+if (require.main === module) {
+  startServer();
+}
 
 export default app;
 // Force deployment trigger - Wed Sep 17 19:54:21 CST 2025

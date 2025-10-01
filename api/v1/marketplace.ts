@@ -46,5 +46,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
+  // GET /api/v1/marketplace/installed
+  if (url?.match(/\/installed$/) && method === 'GET') {
+    const { handleInstalledApps } = await import('../../src/handlers/marketplace/installed/index');
+    await handleInstalledApps(req, res);
+    return;
+  }
+
   res.status(404).json({ error: 'Endpoint not found', code: 'NOT_FOUND' });
 }
