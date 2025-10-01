@@ -1,0 +1,488 @@
+/**
+ * Platform Events & Notifications System
+ * Feature: 004-events-notifications-system
+ * Phase 3.1: Database Schema - Event publishing and notification aggregation
+ *
+ * Constitutional Compliance:
+ * - Privacy-First: App-level data isolation via RLS policies
+ * - API-First: Schema supports all API contracts
+ * - Database Standards: Supabase patterns, structured logging ready
+ */
+
+-- ============================================================================
+-- Enable Required Extensions
+-- ============================================================================
+
+-- Enable UUID generation
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Enable pgcrypto for secure token generation
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================================
+-- Table 1: Platform Events
+-- Generic event log for audit, analytics, and webhook distribution
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS platform_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  app_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Event Classification
+  event_category TEXT NOT NULL CHECK (event_category IN ('notification', 'user', 'session', 'transaction')),
+  event_type TEXT NOT NULL CHECK (event_type ~ '^[a-z_]+$'), -- lowercase, underscores only
+
+  -- Event Target
+  entity_type TEXT NOT NULL,
+  entity_id TEXT NOT NULL CHECK (length(entity_id) > 0),
+
+  -- Event Payload
+  event_data JSONB DEFAULT '{}'::JSONB,
+
+  -- Audit Trail
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ip_address INET,
+  user_agent TEXT,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Foreign key to hugo_apps
+ALTER TABLE platform_events
+  ADD CONSTRAINT fk_platform_events_app_id
+  FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+
+-- Indexes for platform_events
+CREATE INDEX idx_platform_events_app_user_time
+  ON platform_events(app_id, user_id, created_at DESC);
+
+CREATE INDEX idx_platform_events_category_type
+  ON platform_events(event_category, event_type, created_at DESC);
+
+CREATE INDEX idx_platform_events_user_time
+  ON platform_events(user_id, timestamp DESC);
+
+CREATE INDEX idx_platform_events_entity
+  ON platform_events(entity_type, entity_id);
+
+CREATE INDEX idx_platform_events_data
+  ON platform_events USING GIN (event_data jsonb_path_ops);
+
+-- Comments
+COMMENT ON TABLE platform_events IS 'Generic event log for all platform events';
+COMMENT ON COLUMN platform_events.event_category IS 'High-level grouping: notification, user, session, transaction';
+COMMENT ON COLUMN platform_events.event_type IS 'Specific action (lowercase with underscores)';
+COMMENT ON COLUMN platform_events.entity_type IS 'Type of affected entity';
+COMMENT ON COLUMN platform_events.entity_id IS 'ID of affected entity';
+COMMENT ON COLUMN platform_events.event_data IS 'Flexible JSONB payload for event details';
+
+-- ============================================================================
+-- Table 2: Platform Notifications
+-- Immutable notification content created by third-party apps
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS platform_notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  app_id TEXT NOT NULL,
+  external_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Notification Content
+  notification_type TEXT NOT NULL,
+  title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 200),
+  body TEXT NOT NULL CHECK (length(body) BETWEEN 1 AND 1000),
+
+  -- Action
+  action_url TEXT,
+  action_label TEXT CHECK (action_label IS NULL OR length(action_label) <= 50),
+
+  -- Rich Content
+  image_url TEXT,
+  icon_url TEXT,
+  context_data JSONB DEFAULT '{}'::JSONB,
+
+  -- Priority & Expiry
+  priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
+  expires_at TIMESTAMPTZ CHECK (expires_at IS NULL OR expires_at > created_at),
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  -- Prevent duplicate notifications from same app
+  CONSTRAINT unique_app_external_id UNIQUE (app_id, external_id)
+);
+
+-- Foreign key to hugo_apps
+ALTER TABLE platform_notifications
+  ADD CONSTRAINT fk_platform_notifications_app_id
+  FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+
+-- Indexes for platform_notifications
+CREATE INDEX idx_platform_notifications_user_time
+  ON platform_notifications(user_id, created_at DESC);
+
+CREATE INDEX idx_platform_notifications_app_user_time
+  ON platform_notifications(app_id, user_id, created_at DESC);
+
+CREATE INDEX idx_platform_notifications_type
+  ON platform_notifications(notification_type);
+
+CREATE INDEX idx_platform_notifications_context_data
+  ON platform_notifications USING GIN (context_data jsonb_path_ops);
+
+-- Partial index for unexpired notifications (most common query)
+CREATE INDEX idx_platform_notifications_unexpired
+  ON platform_notifications(user_id, created_at DESC)
+  WHERE expires_at IS NULL OR expires_at > NOW();
+
+-- Comments
+COMMENT ON TABLE platform_notifications IS 'Notification content from third-party apps (immutable)';
+COMMENT ON COLUMN platform_notifications.external_id IS 'App-specific notification identifier';
+COMMENT ON COLUMN platform_notifications.title IS 'Notification title (1-200 chars)';
+COMMENT ON COLUMN platform_notifications.body IS 'Notification body (1-1000 chars)';
+COMMENT ON COLUMN platform_notifications.priority IS 'Display priority: low, normal, high, urgent';
+
+-- ============================================================================
+-- Table 3: Notification State
+-- Per-user mutable state for each notification
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS notification_state (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  notification_id UUID NOT NULL REFERENCES platform_notifications(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- State
+  status TEXT NOT NULL DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'dismissed', 'clicked', 'expired')),
+
+  -- State Timestamps
+  sent_at TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  read_at TIMESTAMPTZ,
+  dismissed_at TIMESTAMPTZ,
+  clicked_at TIMESTAMPTZ,
+
+  -- State Metadata
+  dismissed_from TEXT, -- app_id or 'oriva_core'
+  click_action TEXT,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  -- One state record per user per notification
+  CONSTRAINT unique_notification_user UNIQUE (notification_id, user_id)
+);
+
+-- Indexes for notification_state
+CREATE INDEX idx_notification_state_user_status_time
+  ON notification_state(user_id, status, updated_at DESC);
+
+CREATE INDEX idx_notification_state_notification
+  ON notification_state(notification_id);
+
+-- Comments
+COMMENT ON TABLE notification_state IS 'Per-user mutable state for notifications';
+COMMENT ON COLUMN notification_state.status IS 'Current state: unread, read, dismissed, clicked, expired';
+COMMENT ON COLUMN notification_state.dismissed_from IS 'Source of dismissal (app_id or oriva_core)';
+
+-- ============================================================================
+-- Table 4: App Webhooks
+-- Webhook subscriptions for event notifications
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS app_webhooks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  app_id TEXT NOT NULL,
+
+  -- Webhook Configuration
+  webhook_url TEXT NOT NULL CHECK (webhook_url LIKE 'https://%'),
+  webhook_secret TEXT NOT NULL CHECK (length(webhook_secret) >= 32),
+  subscribed_events TEXT[] NOT NULL CHECK (array_length(subscribed_events, 1) > 0),
+
+  -- Status
+  is_active BOOLEAN NOT NULL DEFAULT true,
+
+  -- Delivery Statistics
+  last_delivery_at TIMESTAMPTZ,
+  last_success_at TIMESTAMPTZ,
+  last_failure_at TIMESTAMPTZ,
+  consecutive_failures INTEGER NOT NULL DEFAULT 0,
+  total_deliveries INTEGER NOT NULL DEFAULT 0,
+  total_failures INTEGER NOT NULL DEFAULT 0,
+
+  -- Retry Configuration
+  max_retries INTEGER NOT NULL DEFAULT 5 CHECK (max_retries BETWEEN 1 AND 10),
+  retry_backoff_seconds INTEGER NOT NULL DEFAULT 1,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Foreign key to hugo_apps
+ALTER TABLE app_webhooks
+  ADD CONSTRAINT fk_app_webhooks_app_id
+  FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+
+-- Indexes for app_webhooks
+CREATE INDEX idx_app_webhooks_app_id
+  ON app_webhooks(app_id);
+
+CREATE INDEX idx_app_webhooks_active
+  ON app_webhooks(is_active)
+  WHERE is_active = true;
+
+-- Comments
+COMMENT ON TABLE app_webhooks IS 'Webhook subscriptions for third-party apps';
+COMMENT ON COLUMN app_webhooks.webhook_url IS 'HTTPS endpoint for webhook delivery';
+COMMENT ON COLUMN app_webhooks.webhook_secret IS 'Secret for HMAC signature verification (min 32 chars)';
+COMMENT ON COLUMN app_webhooks.subscribed_events IS 'Array of event type patterns (supports wildcards)';
+COMMENT ON COLUMN app_webhooks.consecutive_failures IS 'Auto-disable webhook after 100 consecutive failures';
+
+-- ============================================================================
+-- Table 5: Webhook Delivery Log
+-- Audit trail for all webhook delivery attempts
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS webhook_delivery_log (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  webhook_id UUID NOT NULL REFERENCES app_webhooks(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES platform_events(id) ON DELETE SET NULL,
+
+  -- Event Info (copied for history)
+  event_type TEXT NOT NULL,
+
+  -- Delivery Details
+  payload JSONB NOT NULL,
+  status_code INTEGER CHECK (status_code IS NULL OR (status_code >= 100 AND status_code <= 599)),
+  response_body TEXT, -- Truncated to 10KB
+  response_headers JSONB,
+
+  -- Delivery Metadata
+  delivery_attempt INTEGER NOT NULL CHECK (delivery_attempt BETWEEN 1 AND 10),
+  delivered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  response_time_ms INTEGER,
+
+  -- Status
+  success BOOLEAN NOT NULL,
+  error_message TEXT
+);
+
+-- Indexes for webhook_delivery_log
+CREATE INDEX idx_webhook_delivery_log_webhook_time
+  ON webhook_delivery_log(webhook_id, delivered_at DESC);
+
+CREATE INDEX idx_webhook_delivery_log_event
+  ON webhook_delivery_log(event_id);
+
+CREATE INDEX idx_webhook_delivery_log_success_time
+  ON webhook_delivery_log(success, delivered_at DESC);
+
+-- Partial index for failed deliveries needing retry
+CREATE INDEX idx_webhook_delivery_log_retry
+  ON webhook_delivery_log(webhook_id, delivered_at)
+  WHERE success = false AND delivery_attempt < 5;
+
+-- Comments
+COMMENT ON TABLE webhook_delivery_log IS 'Audit trail for webhook delivery attempts';
+COMMENT ON COLUMN webhook_delivery_log.delivery_attempt IS 'Attempt number (1-based, max 5)';
+COMMENT ON COLUMN webhook_delivery_log.success IS 'True if status_code 200-299';
+
+-- ============================================================================
+-- Trigger Functions
+-- ============================================================================
+
+-- Reuse existing update_transaction_timestamp function for updated_at
+CREATE TRIGGER update_platform_notifications_timestamp
+  BEFORE UPDATE ON platform_notifications
+  FOR EACH ROW EXECUTE FUNCTION update_transaction_timestamp();
+
+CREATE TRIGGER update_notification_state_timestamp
+  BEFORE UPDATE ON notification_state
+  FOR EACH ROW EXECUTE FUNCTION update_transaction_timestamp();
+
+CREATE TRIGGER update_app_webhooks_timestamp
+  BEFORE UPDATE ON app_webhooks
+  FOR EACH ROW EXECUTE FUNCTION update_transaction_timestamp();
+
+-- ============================================================================
+-- Row Level Security (RLS) Policies
+-- ============================================================================
+
+-- Enable RLS on all tables
+ALTER TABLE platform_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platform_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_webhooks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webhook_delivery_log ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================================
+-- Platform Events Policies
+-- ============================================================================
+
+-- Apps can view their own events
+CREATE POLICY "Apps can view their own events"
+  ON platform_events FOR SELECT
+  USING (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- Service role can create events (via API)
+CREATE POLICY "Service can create events"
+  ON platform_events FOR INSERT
+  WITH CHECK (true); -- Service role only
+
+-- Users can view their own events
+CREATE POLICY "Users can view their own events"
+  ON platform_events FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- Platform Notifications Policies
+-- ============================================================================
+
+-- Apps can view their own notifications
+CREATE POLICY "Apps can view their own notifications"
+  ON platform_notifications FOR SELECT
+  USING (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- Apps can create notifications for their users
+CREATE POLICY "Apps can create notifications"
+  ON platform_notifications FOR INSERT
+  WITH CHECK (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- Apps can delete their own notifications
+CREATE POLICY "Apps can delete their own notifications"
+  ON platform_notifications FOR DELETE
+  USING (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- Users can view notifications for them
+CREATE POLICY "Users can view their notifications"
+  ON platform_notifications FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- Notification State Policies
+-- ============================================================================
+
+-- Users can view their own notification state
+CREATE POLICY "Users can view their notification state"
+  ON notification_state FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Service can create notification state (auto-created with notification)
+CREATE POLICY "Service can create notification state"
+  ON notification_state FOR INSERT
+  WITH CHECK (true); -- Service role only
+
+-- Users can update their own notification state
+CREATE POLICY "Users can update their notification state"
+  ON notification_state FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Apps can update notification state for their notifications
+CREATE POLICY "Apps can update notification state"
+  ON notification_state FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM platform_notifications pn
+      WHERE pn.id = notification_state.notification_id
+      AND pn.app_id IN (
+        SELECT app_id FROM hugo_apps WHERE is_active = true
+      )
+    )
+  );
+
+-- ============================================================================
+-- App Webhooks Policies
+-- ============================================================================
+
+-- Apps can view their own webhooks
+CREATE POLICY "Apps can view their own webhooks"
+  ON app_webhooks FOR SELECT
+  USING (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- Apps can create their own webhooks
+CREATE POLICY "Apps can create webhooks"
+  ON app_webhooks FOR INSERT
+  WITH CHECK (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- Apps can update their own webhooks
+CREATE POLICY "Apps can update their own webhooks"
+  ON app_webhooks FOR UPDATE
+  USING (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- Apps can delete their own webhooks
+CREATE POLICY "Apps can delete their own webhooks"
+  ON app_webhooks FOR DELETE
+  USING (
+    app_id IN (
+      SELECT app_id FROM hugo_apps WHERE is_active = true
+    )
+  );
+
+-- ============================================================================
+-- Webhook Delivery Log Policies
+-- ============================================================================
+
+-- Apps can view delivery logs for their webhooks
+CREATE POLICY "Apps can view their webhook delivery logs"
+  ON webhook_delivery_log FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM app_webhooks
+      WHERE app_webhooks.id = webhook_delivery_log.webhook_id
+      AND app_webhooks.app_id IN (
+        SELECT app_id FROM hugo_apps WHERE is_active = true
+      )
+    )
+  );
+
+-- Service can create delivery logs
+CREATE POLICY "Service can create delivery logs"
+  ON webhook_delivery_log FOR INSERT
+  WITH CHECK (true); -- Service role only
+
+-- ============================================================================
+-- Grants (Service Role Access)
+-- ============================================================================
+
+-- Grant service role full access to all tables
+GRANT ALL ON platform_events TO service_role;
+GRANT ALL ON platform_notifications TO service_role;
+GRANT ALL ON notification_state TO service_role;
+GRANT ALL ON app_webhooks TO service_role;
+GRANT ALL ON webhook_delivery_log TO service_role;
+
+-- Grant authenticated users SELECT access (RLS policies control actual access)
+GRANT SELECT ON platform_events TO authenticated;
+GRANT SELECT ON platform_notifications TO authenticated;
+GRANT SELECT, UPDATE ON notification_state TO authenticated;
+GRANT SELECT ON app_webhooks TO authenticated;
+GRANT SELECT ON webhook_delivery_log TO authenticated;

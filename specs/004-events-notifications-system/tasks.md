@@ -44,7 +44,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ## Phase 3.1: Database Setup (1 task)
 
-- [ ] **T001** Create database migration file `supabase/migrations/20250930000002_platform_events_notifications.sql` with:
+- [x] **T001** Create database migration file `supabase/migrations/20250930000002_platform_events_notifications.sql` with:
   - 5 tables: platform_events, platform_notifications, notification_state, app_webhooks, webhook_delivery_log
   - All indexes as specified in data-model.md
   - RLS policies for app-level data isolation
