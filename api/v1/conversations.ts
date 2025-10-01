@@ -34,7 +34,8 @@ async function handleCreate(req: AuthenticatedRequest, res: VercelResponse): Pro
     .single();
 
   if (appError || !appData) {
-    throw new Error(`App not found: ${appId}`);
+    const errorMessage = process.env.NODE_ENV === 'production' ? 'App not found' : `App not found: ${appId}`;
+    throw new Error(errorMessage);
   }
 
   const sessionId = randomUUID();
@@ -51,7 +52,10 @@ async function handleCreate(req: AuthenticatedRequest, res: VercelResponse): Pro
     .single();
 
   if (error || !data) {
-    throw new Error(`Failed to create conversation: ${error?.message}`);
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Failed to create conversation'
+      : `Failed to create conversation: ${error?.message}`;
+    throw new Error(errorMessage);
   }
 
   res.status(201).json(data);
@@ -75,7 +79,8 @@ async function handleList(req: AuthenticatedRequest, res: VercelResponse): Promi
     .single();
 
   if (appError || !appData) {
-    throw new Error(`App not found: ${appId}`);
+    const errorMessage = process.env.NODE_ENV === 'production' ? 'App not found' : `App not found: ${appId}`;
+    throw new Error(errorMessage);
   }
 
   let query = supabase
@@ -97,7 +102,10 @@ async function handleList(req: AuthenticatedRequest, res: VercelResponse): Promi
   const { data, error, count } = await query;
 
   if (error) {
-    throw new Error(`Failed to fetch conversations: ${error.message}`);
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Failed to fetch conversations'
+      : `Failed to fetch conversations: ${error.message}`;
+    throw new Error(errorMessage);
   }
 
   res.status(200).json({
@@ -135,7 +143,10 @@ async function handleGet(req: AuthenticatedRequest, res: VercelResponse, convers
     .order('created_at', { ascending: true });
 
   if (messagesError) {
-    throw new Error(`Failed to fetch messages: ${messagesError.message}`);
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Failed to fetch messages'
+      : `Failed to fetch messages: ${messagesError.message}`;
+    throw new Error(errorMessage);
   }
 
   res.status(200).json({
@@ -168,7 +179,10 @@ async function handleDelete(req: AuthenticatedRequest, res: VercelResponse, conv
     .eq('id', conversationId);
 
   if (deleteError) {
-    throw new Error(`Failed to delete conversation: ${deleteError.message}`);
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Failed to delete conversation'
+      : `Failed to delete conversation: ${deleteError.message}`;
+    throw new Error(errorMessage);
   }
 
   res.status(204).end();

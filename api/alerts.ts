@@ -3,9 +3,11 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkAlerts, getRecentAlerts, getAlertSummary, getAlertHealthStatus } from '../src/lib/alerts';
+import { rateLimit } from '../src/middleware/rate-limit';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  try {
+  await rateLimit(req, res, async () => {
+    try {
     // Only allow GET requests
     if (req.method !== 'GET') {
       res.status(405).json({
@@ -86,10 +88,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
   } catch (error) {
     console.error('Alert endpoint error:', error);
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error as Error).message;
     res.status(500).json({
       error: 'Internal server error',
       code: 'INTERNAL_ERROR',
-      message: (error as Error).message,
+      message: errorMessage,
     });
   }
+  });
 }

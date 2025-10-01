@@ -49,8 +49,8 @@ async function handleChat(req: AuthenticatedRequest, res: VercelResponse): Promi
     throw validationError('message cannot be empty');
   }
 
-  if (message.length > 5000) {
-    throw validationError('message exceeds maximum length of 5000 characters');
+  if (message.length > 2000) {
+    throw validationError('message exceeds maximum length of 2000 characters');
   }
 
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -122,8 +122,11 @@ async function handleChat(req: AuthenticatedRequest, res: VercelResponse): Promi
 
     res.end();
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Chat error occurred'
+      : (error instanceof Error ? error.message : 'Unknown error occurred');
     sendSSE('error', {
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: errorMessage,
       code: 'CHAT_ERROR',
     });
     res.end();
@@ -165,14 +168,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           return;
         }
 
-        // POST /api/v1/hugo/chat
-        if (url?.includes('/chat')) {
-          return handleChat(authReq, res);
+        // POST /api/v1/hugo/knowledge/search (check first to avoid matching /chat)
+        if (url?.match(/\/knowledge\/search$/)) {
+          return handleKnowledgeSearch(authReq, res);
         }
 
-        // POST /api/v1/hugo/knowledge/search
-        if (url?.includes('/knowledge/search')) {
-          return handleKnowledgeSearch(authReq, res);
+        // POST /api/v1/hugo/chat
+        if (url?.match(/\/chat$/)) {
+          return handleChat(authReq, res);
         }
 
         res.status(404).json({ error: 'Endpoint not found', code: 'NOT_FOUND' });

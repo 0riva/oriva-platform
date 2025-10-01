@@ -5,9 +5,11 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from '../src/config/supabase';
 import { getMetricsSummary } from '../src/lib/metrics';
 import { getAlertHealthStatus, getAlertSummary } from '../src/lib/alerts';
+import { rateLimit } from '../src/middleware/rate-limit';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const startTime = Date.now();
+  await rateLimit(req, res, async () => {
+    const startTime = Date.now();
 
   try {
     // Check database connectivity
@@ -66,10 +68,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       version: '1.0.0',
     });
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Health check failed'
+      : (error as Error).message;
     res.status(503).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      error: (error as Error).message,
+      error: errorMessage,
+      code: 'HEALTH_CHECK_ERROR',
     });
   }
+  });
 }

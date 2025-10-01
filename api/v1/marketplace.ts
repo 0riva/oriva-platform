@@ -17,13 +17,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const { url, method } = req;
 
   // GET /api/v1/marketplace/categories
-  if (url?.includes('/categories') && method === 'GET') {
+  if (url?.match(/\/categories$/) && method === 'GET') {
     await handleCategories(req, res);
     return;
   }
 
   // POST /api/v1/marketplace/items/create
-  if (url?.includes('/items/create') && method === 'POST') {
+  if (url?.match(/\/items\/create$/) && method === 'POST') {
     await handleCreateItem(req, res);
     return;
   }
@@ -35,13 +35,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   // GET /api/v1/marketplace/items
-  if (url?.includes('/items') && method === 'GET') {
+  if (url?.match(/\/items$/) && method === 'GET') {
     await handleListItems(req, res);
     return;
   }
 
   // GET /api/v1/marketplace/search
-  if (url?.includes('/search') && method === 'GET') {
+  if (url?.match(/\/search$/) && method === 'GET') {
     await handleSearch(req, res);
     return;
   }

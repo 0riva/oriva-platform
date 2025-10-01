@@ -19,23 +19,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  // Route to appropriate handler based on URL
-  if (url?.includes('/checkout/create')) {
+  // Route to appropriate handler based on URL with more precise matching
+  if (url?.match(/\/checkout\/create$/)) {
     await handleCheckoutCreate(req, res);
     return;
   }
 
-  if (url?.includes('/checkout/complete')) {
+  if (url?.match(/\/checkout\/complete$/)) {
     await handleCheckoutComplete(req, res);
     return;
   }
 
-  if (url?.includes('/payouts/create')) {
+  if (url?.match(/\/payouts\/create$/)) {
     await handlePayoutCreate(req, res);
     return;
   }
 
-  if (url?.includes('/webhooks/stripe')) {
+  if (url?.match(/\/webhooks\/stripe$/)) {
     await handleStripeWebhook(req, res);
     return;
   }

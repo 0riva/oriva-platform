@@ -68,8 +68,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse, appId: stri
         return;
       }
     }
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }
@@ -111,8 +114,11 @@ async function handleQuery(req: VercelRequest, res: VercelResponse, userId: stri
       },
     });
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }
@@ -150,8 +156,11 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse, id: string,
         return;
       }
     }
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }
@@ -172,8 +181,11 @@ async function handleDelete(req: VercelRequest, res: VercelResponse, id: string,
         return;
       }
     }
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }

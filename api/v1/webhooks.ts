@@ -74,8 +74,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse, appId: stri
       webhook_secret: webhookSecret,
     });
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }
@@ -102,8 +105,11 @@ async function handleList(req: VercelRequest, res: VercelResponse, appId: string
       webhooks: data || [],
     });
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }
@@ -169,8 +175,11 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse, appId: stri
 
     res.status(200).json(data);
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }
@@ -193,8 +202,11 @@ async function handleDelete(req: VercelRequest, res: VercelResponse, appId: stri
 
     res.status(204).end();
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }

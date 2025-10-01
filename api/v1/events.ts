@@ -63,8 +63,11 @@ async function handlePublish(req: VercelRequest, res: VercelResponse, appId: str
         return;
       }
     }
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Failed to publish event'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }
@@ -81,7 +84,7 @@ async function handleQuery(req: VercelRequest, res: VercelResponse, appId: strin
     offset = '0',
   } = req.query;
 
-  const parsedLimit = Math.min(parseInt(limit as string, 10) || 100, 500);
+  const parsedLimit = Math.min(parseInt(limit as string, 10) || 100, 100);
   const parsedOffset = parseInt(offset as string, 10) || 0;
 
   try {
@@ -106,8 +109,11 @@ async function handleQuery(req: VercelRequest, res: VercelResponse, appId: strin
       },
     });
   } catch (error) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Query failed'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       code: 'INTERNAL_ERROR',
     });
   }

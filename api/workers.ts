@@ -6,9 +6,11 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from '../src/config/supabase';
-import { logger } from './utils/logger';
-import { retryWebhookDelivery } from './services/webhookDelivery';
-import { expireNotifications } from './services/notificationManager';
+import { logger } from '../src/utils/logger';
+import { retryWebhookDelivery } from '../src/services/webhookDelivery';
+import { expireNotifications } from '../src/services/notificationManager';
+import { authenticate } from '../src/middleware/auth';
+import { rateLimit } from '../src/middleware/rate-limit';
 
 const MAX_RETRIES = 5;
 const MAX_RETRIES_PER_RUN = 100;
@@ -32,7 +34,10 @@ async function handleWebhookRetry(req: VercelRequest, res: VercelResponse): Prom
 
     if (fetchError) {
       logger.error('Failed to fetch delivery logs', { error: fetchError.message });
-      res.status(500).json({ error: 'Failed to fetch delivery logs' });
+      const errorMessage = process.env.NODE_ENV === 'production'
+        ? 'Failed to fetch delivery logs'
+        : `Failed to fetch delivery logs: ${fetchError.message}`;
+      res.status(500).json({ error: errorMessage, code: 'FETCH_ERROR' });
       return;
     }
 
@@ -115,8 +120,12 @@ async function handleWebhookRetry(req: VercelRequest, res: VercelResponse): Prom
     logger.error('Webhook retry worker failed', {
       error: error instanceof Error ? error.message : String(error),
     });
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Webhook retry worker failed'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
+      code: 'WORKER_ERROR',
     });
   }
 }
@@ -139,8 +148,12 @@ async function handleNotificationExpiry(req: VercelRequest, res: VercelResponse)
     logger.error('Notification expiry worker failed', {
       error: error instanceof Error ? error.message : String(error),
     });
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Notification expiry worker failed'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
+      code: 'WORKER_ERROR',
     });
   }
 }
@@ -232,32 +245,42 @@ async function handleDataArchival(req: VercelRequest, res: VercelResponse): Prom
     logger.error('Data archival worker failed', {
       error: error instanceof Error ? error.message : String(error),
     });
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Data archival worker failed'
+      : (error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
+      code: 'WORKER_ERROR',
     });
   }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
+  // Add authentication and rate limiting to protect worker endpoints
+  await authenticate(req, res, async () => {
+    await rateLimit(req, res, async () => {
+      if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
+        return;
+      }
 
-  // Extract worker name from URL
-  const { url } = req;
+      // Extract worker name from URL with more precise matching
+      const { url } = req;
 
-  if (url?.includes('/webhookRetry')) {
-    return handleWebhookRetry(req, res);
-  }
+      // Use regex patterns for more precise route matching
+      if (url?.match(/\/webhookRetry$/)) {
+        return handleWebhookRetry(req, res);
+      }
 
-  if (url?.includes('/notificationExpiry')) {
-    return handleNotificationExpiry(req, res);
-  }
+      if (url?.match(/\/notificationExpiry$/)) {
+        return handleNotificationExpiry(req, res);
+      }
 
-  if (url?.includes('/dataArchival')) {
-    return handleDataArchival(req, res);
-  }
+      if (url?.match(/\/dataArchival$/)) {
+        return handleDataArchival(req, res);
+      }
 
-  res.status(404).json({ error: 'Worker not found' });
+      res.status(404).json({ error: 'Worker not found', code: 'NOT_FOUND' });
+    });
+  });
 }
