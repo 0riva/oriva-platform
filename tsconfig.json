@@ -17,11 +17,14 @@
     "types": ["node"]
   },
   "include": [
-    "api/**/*"
+    "api/**/*",
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "tests"
+    "tests",
+    "**/*.test.ts",
+    "**/*.test.js"
   ]
 }

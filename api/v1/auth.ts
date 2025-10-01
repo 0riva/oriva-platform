@@ -10,10 +10,10 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from '../src/config/supabase';
-import { asyncHandler, validationError } from '../src/middleware/error-handler';
-import { rateLimit } from '../src/middleware/rate-limit';
-import { authenticate, AuthenticatedRequest } from '../src/middleware/auth';
+import { getSupabaseClient } from '../../src/config/supabase';
+import { asyncHandler, validationError } from '../../src/middleware/error-handler';
+import { rateLimit } from '../../src/middleware/rate-limit';
+import { authenticate, AuthenticatedRequest } from '../../src/middleware/auth';
 
 interface RegisterRequest {
   email: string;
@@ -76,18 +76,17 @@ async function handleRegister(req: VercelRequest, res: VercelResponse): Promise<
     return;
   }
 
-  const { data: userData, error: userError } = await supabase
-    .from('users')
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
     .insert({
-      oriva_user_id: authData.user.id,
-      email: authData.user.email!,
-      subscription_tier: 'free',
-      user_preferences: preferences || {},
+      account_id: authData.user.id,
+      display_name: name || authData.user.email!.split('@')[0],
+      username: authData.user.email!.split('@')[0],
     })
     .select()
     .single();
 
-  if (userError) {
+  if (profileError) {
     res.status(500).json({
       error: 'Failed to create user profile',
       code: 'PROFILE_CREATION_FAILED',
@@ -97,9 +96,9 @@ async function handleRegister(req: VercelRequest, res: VercelResponse): Promise<
 
   res.status(201).json({
     user: {
-      id: userData.id,
-      email: userData.email,
-      subscription_tier: userData.subscription_tier,
+      id: profileData.id,
+      email: authData.user.email,
+      display_name: profileData.display_name,
     },
     message: 'Account created successfully',
   });
@@ -127,13 +126,13 @@ async function handleLogin(req: VercelRequest, res: VercelResponse): Promise<voi
     return;
   }
 
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('id, email, subscription_tier, user_preferences')
-    .eq('oriva_user_id', authData.user.id)
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, display_name, username, avatar_url')
+    .eq('account_id', authData.user.id)
     .single();
 
-  if (userError || !userData) {
+  if (profileError || !profileData) {
     res.status(404).json({
       error: 'User profile not found',
       code: 'USER_NOT_FOUND',
@@ -146,9 +145,10 @@ async function handleLogin(req: VercelRequest, res: VercelResponse): Promise<voi
     refresh_token: authData.session.refresh_token,
     expires_at: authData.session.expires_at,
     user: {
-      id: userData.id,
-      email: userData.email,
-      subscription_tier: userData.subscription_tier,
+      id: profileData.id,
+      email: authData.user.email,
+      display_name: profileData.display_name,
+      username: profileData.username,
     },
   });
 }
@@ -180,8 +180,8 @@ async function handleGetProfile(req: VercelRequest, res: VercelResponse): Promis
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('users')
-    .select('id, email, subscription_tier, user_preferences')
+    .from('profiles')
+    .select('id, display_name, username, bio, avatar_url, location, website_url')
     .eq('id', userId)
     .single();
 
@@ -205,10 +205,11 @@ async function handleUpdateProfile(req: VercelRequest, res: VercelResponse): Pro
   const supabase = getSupabaseClient();
   const updates: any = {};
 
-  if (preferences) updates.user_preferences = preferences;
+  if (name) updates.display_name = name;
+  // Note: preferences field doesn't exist in profiles table
 
   const { data, error } = await supabase
-    .from('users')
+    .from('profiles')
     .update(updates)
     .eq('id', userId)
     .select()
@@ -229,8 +230,8 @@ async function handleGetAccount(req: VercelRequest, res: VercelResponse): Promis
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('users')
-    .select('id, email, subscription_tier, created_at, updated_at')
+    .from('profiles')
+    .select('id, account_id, display_name, username, created_at, updated_at')
     .eq('id', userId)
     .single();
 
@@ -248,7 +249,7 @@ async function handleDeleteAccount(req: VercelRequest, res: VercelResponse): Pro
 
   const supabase = getSupabaseClient();
 
-  const { error } = await supabase.from('users').delete().eq('id', userId);
+  const { error } = await supabase.from('profiles').delete().eq('id', userId);
 
   if (error) {
     res.status(500).json({ error: 'Failed to delete account', code: 'DELETE_FAILED' });

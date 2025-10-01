@@ -7,7 +7,7 @@ interface MetricEvent {
   tags?: Record<string, string>;
 }
 
-interface AggregatedMetrics {
+export interface AggregatedMetrics {
   count: number;
   sum: number;
   min: number;

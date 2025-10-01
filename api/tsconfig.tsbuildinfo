@@ -1,0 +1,1 @@
+{"root":["./alerts.ts","./health.ts","./index.ts","./payments.ts","./workers.ts","./v1/auth.ts","./v1/conversations.ts","./v1/events.ts","./v1/hugo.ts","./v1/marketplace.ts","./v1/notifications.ts","./v1/webhooks.ts"],"errors":true,"version":"5.9.2"}

@@ -52,11 +52,11 @@ async function handleWebhookRetry(req: VercelRequest, res: VercelResponse): Prom
 
     for (const delivery of failedDeliveries) {
       try {
-        const attempt = delivery.attempts + 1;
+        const attempt = delivery.delivery_attempt + 1;
 
         // Calculate exponential backoff delay: 2^attempt seconds
-        const backoffSeconds = Math.pow(2, delivery.attempts);
-        const deliveryAge = Date.now() - new Date(delivery.created_at).getTime();
+        const backoffSeconds = Math.pow(2, delivery.delivery_attempt);
+        const deliveryAge = Date.now() - new Date(delivery.delivered_at).getTime();
         const requiredDelay = backoffSeconds * 1000;
 
         // Check if enough time has elapsed
