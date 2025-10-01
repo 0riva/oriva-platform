@@ -4,11 +4,11 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { authenticate, AuthenticatedRequest } from '../middleware/auth';
-import { asyncHandler, validationError } from '../middleware/error-handler';
-import { rateLimit } from '../middleware/rate-limit';
-import { composeChatContext, buildSystemPrompt, saveMessage } from '../services/chat';
-import { searchKnowledge } from '../services/knowledge';
+import { authenticate, AuthenticatedRequest } from '../src/middleware/auth';
+import { asyncHandler, validationError } from '../src/middleware/error-handler';
+import { rateLimit } from '../src/middleware/rate-limit';
+import { composeChatContext, buildSystemPrompt, saveMessage } from '../src/services/chat';
+import { searchKnowledge } from '../src/services/knowledge';
 import Anthropic from '@anthropic-ai/sdk';
 
 interface ChatRequest {

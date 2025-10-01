@@ -6,15 +6,15 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { rateLimit } from '../middleware/rate-limit';
-import { authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { rateLimit } from '../src/middleware/rate-limit';
+import { authenticate, AuthenticatedRequest } from '../src/middleware/auth';
 import {
   createNotification,
   queryNotifications,
   getCachedNotificationCount,
   updateNotificationState,
   deleteNotification,
-} from '../services/notificationManager';
+} from '../src/services/notificationManager';
 
 interface CreateNotificationRequest {
   user_id: string;

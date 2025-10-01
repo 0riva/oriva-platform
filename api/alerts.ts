@@ -2,7 +2,7 @@
 // Description: View recent alerts and alert summary
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { checkAlerts, getRecentAlerts, getAlertSummary, getAlertHealthStatus } from './lib/alerts';
+import { checkAlerts, getRecentAlerts, getAlertSummary, getAlertHealthStatus } from '../src/lib/alerts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {

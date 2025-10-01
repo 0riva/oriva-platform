@@ -10,10 +10,10 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from '../config/supabase';
-import { asyncHandler, validationError } from '../middleware/error-handler';
-import { rateLimit } from '../middleware/rate-limit';
-import { authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { getSupabaseClient } from '../src/config/supabase';
+import { asyncHandler, validationError } from '../src/middleware/error-handler';
+import { rateLimit } from '../src/middleware/rate-limit';
+import { authenticate, AuthenticatedRequest } from '../src/middleware/auth';
 
 interface RegisterRequest {
   email: string;

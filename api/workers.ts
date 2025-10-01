@@ -5,7 +5,7 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from './config/supabase';
+import { getSupabaseClient } from '../src/config/supabase';
 import { logger } from './utils/logger';
 import { retryWebhookDelivery } from './services/webhookDelivery';
 import { expireNotifications } from './services/notificationManager';

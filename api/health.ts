@@ -2,9 +2,9 @@
 // Task: Support for T073-T077 monitoring phase
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from './config/supabase';
-import { getMetricsSummary } from './lib/metrics';
-import { getAlertHealthStatus, getAlertSummary } from './lib/alerts';
+import { getSupabaseClient } from '../src/config/supabase';
+import { getMetricsSummary } from '../src/lib/metrics';
+import { getAlertHealthStatus, getAlertSummary } from '../src/lib/alerts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const startTime = Date.now();

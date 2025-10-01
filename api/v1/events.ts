@@ -3,9 +3,9 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { rateLimit } from '../middleware/rate-limit';
-import { authenticate, AuthenticatedRequest } from '../middleware/auth';
-import { publishEvent, queryEvents } from '../services/eventPublisher';
+import { rateLimit } from '../src/middleware/rate-limit';
+import { authenticate, AuthenticatedRequest } from '../src/middleware/auth';
+import { publishEvent, queryEvents } from '../src/services/eventPublisher';
 
 interface PublishEventRequest {
   user_id: string;

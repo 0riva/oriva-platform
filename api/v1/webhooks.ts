@@ -5,9 +5,9 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
-import { rateLimit } from '../middleware/rate-limit';
-import { authenticate } from '../middleware/auth';
-import { getSupabaseClient } from '../config/supabase';
+import { rateLimit } from '../src/middleware/rate-limit';
+import { authenticate } from '../src/middleware/auth';
+import { getSupabaseClient } from '../src/config/supabase';
 
 interface CreateWebhookRequest {
   webhook_url: string;
