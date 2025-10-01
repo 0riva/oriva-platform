@@ -1,7 +1,7 @@
 // Tasks: T018-T019 - Integration tests for webhook delivery (TDD - must fail before implementation)
 // Description: Test webhook subscriptions, delivery, retries, and HMAC signatures
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import request from 'supertest';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
