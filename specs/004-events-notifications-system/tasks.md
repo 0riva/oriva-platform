@@ -311,7 +311,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ### Event Publishing Endpoints (3 tasks)
 
-- [ ] **T025** Implement POST /api/v1/apps/:appId/events in `api/v1/events/publish.ts`:
+- [x] **T025** Implement POST /api/v1/apps/:appId/events in `api/v1/events/publish.ts`:
   - Use existing auth middleware from api/middleware/auth.ts
   - Rate limit: 1000 requests per 15 minutes (express-rate-limit)
   - Validate request body (event_category, event_type, entity_type, entity_id, event_data)
@@ -321,7 +321,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Return 401 for auth failures
   - Return 429 for rate limit exceeded
 
-- [ ] **T026** Implement GET /api/v1/apps/:appId/events in `api/v1/events/query.ts`:
+- [x] **T026** Implement GET /api/v1/apps/:appId/events in `api/v1/events/query.ts`:
   - Use existing auth middleware
   - Rate limit: 1000 requests per 15 minutes
   - Query parameters: event_category, event_type, start_date, end_date, limit (default 100, max 500), offset (default 0)
@@ -330,7 +330,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Return 401 for auth failures
   - Return 404 if app_id doesn't exist
 
-- [ ] **T027** Implement WSS /api/v1/events/stream in `api/v1/events/stream.ts`:
+- [x] **T027** Implement WSS /api/v1/events/stream in `api/v1/events/stream.ts`:
   - Create WebSocket server using `ws` library
   - Authenticate via query parameter token (validate against apps table)
   - Parse subscription message (event_types array)
@@ -347,7 +347,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ### Notification Management Endpoints (4 tasks)
 
-- [ ] **T028** Implement POST /api/v1/apps/:appId/notifications in `api/v1/notifications/create.ts`:
+- [x] **T028** Implement POST /api/v1/apps/:appId/notifications in `api/v1/notifications/create.ts`:
   - Use existing auth middleware
   - Rate limit: 500 requests per 15 minutes
   - Validate request body per data-model.md validations
@@ -358,7 +358,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Return 409 for duplicate external_id
   - Return 401 for auth failures
 
-- [ ] **T029** Implement GET /api/v1/users/:userId/notifications in `api/v1/notifications/query.ts`:
+- [x] **T029** Implement GET /api/v1/users/:userId/notifications in `api/v1/notifications/query.ts`:
   - Use existing auth middleware
   - Rate limit: 1000 requests per 15 minutes
   - Query parameters: status, app_id, limit (default 50, max 100), offset (default 0)
@@ -371,7 +371,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Invalidate cache on notification state changes (dismiss, read, click)
   - Return 401 for auth failures
 
-- [ ] **T030** Implement PATCH /api/v1/notifications/:id in `api/v1/notifications/update.ts`:
+- [x] **T030** Implement PATCH /api/v1/notifications/:id in `api/v1/notifications/update.ts`:
   - Use existing auth middleware
   - Rate limit: 1000 requests per 15 minutes
   - Validate status transition (per data-model.md state machine)
@@ -382,7 +382,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Return 404 if notification not found
   - Return 401 for auth failures
 
-- [ ] **T031** Implement DELETE /api/v1/notifications/:id in `api/v1/notifications/delete.ts`:
+- [x] **T031** Implement DELETE /api/v1/notifications/:id in `api/v1/notifications/delete.ts`:
   - Use existing auth middleware
   - Rate limit: 1000 requests per 15 minutes
   - Verify app_id matches notification owner (authorization)
@@ -400,7 +400,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ### Webhook Management Endpoints (4 tasks)
 
-- [ ] **T032** Implement POST /api/v1/apps/:appId/webhooks in `api/v1/notifications/webhooks/create.ts`:
+- [x] **T032** Implement POST /api/v1/apps/:appId/webhooks in `api/v1/notifications/webhooks/create.ts`:
   - Use existing auth middleware
   - Rate limit: 50 requests per 15 minutes
   - Validate webhook_url (must be HTTPS)
@@ -411,14 +411,14 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Return 400 for validation errors
   - Return 401 for auth failures
 
-- [ ] **T033** Implement GET /api/v1/apps/:appId/webhooks in `api/v1/notifications/webhooks/list.ts`:
+- [x] **T033** Implement GET /api/v1/apps/:appId/webhooks in `api/v1/notifications/webhooks/list.ts`:
   - Use existing auth middleware
   - Rate limit: 50 requests per 15 minutes
   - Query app_webhooks table filtered by app_id
   - Return 200 with webhooks array (exclude webhook_secret from response)
   - Return 401 for auth failures
 
-- [ ] **T034** Implement PATCH /api/v1/apps/:appId/webhooks/:id in `api/v1/notifications/webhooks/update.ts`:
+- [x] **T034** Implement PATCH /api/v1/apps/:appId/webhooks/:id in `api/v1/notifications/webhooks/update.ts`:
   - Use existing auth middleware
   - Rate limit: 50 requests per 15 minutes
   - Verify app_id matches webhook owner
@@ -428,7 +428,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Return 404 if webhook not found
   - Return 401 for auth failures
 
-- [ ] **T035** Implement DELETE /api/v1/apps/:appId/webhooks/:id in `api/v1/notifications/webhooks/delete.ts`:
+- [x] **T035** Implement DELETE /api/v1/apps/:appId/webhooks/:id in `api/v1/notifications/webhooks/delete.ts`:
   - Use existing auth middleware
   - Rate limit: 50 requests per 15 minutes
   - Verify app_id matches webhook owner
@@ -446,7 +446,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ### Middleware (1 task)
 
-- [ ] **T036** Create WebSocket authentication middleware in `api/middleware/websocket-auth.ts`:
+- [x] **T036** Create WebSocket authentication middleware in `api/middleware/websocket-auth.ts`:
   - Validate token from query parameter
   - Check token against apps table
   - Verify is_active = true
