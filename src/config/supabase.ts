@@ -6,16 +6,17 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database.types';
 
 // Environment variable validation
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+// Support both standard and EXPO_PUBLIC_ prefixed variables
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL) {
-  throw new Error('Missing SUPABASE_URL environment variable');
+  throw new Error('Missing SUPABASE_URL or EXPO_PUBLIC_SUPABASE_URL environment variable');
 }
 
 if (!SUPABASE_ANON_KEY) {
-  throw new Error('Missing SUPABASE_ANON_KEY environment variable');
+  throw new Error('Missing SUPABASE_ANON_KEY or EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable');
 }
 
 // T068: Connection pooling configuration for Oriva 101 (Supabase)

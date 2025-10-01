@@ -4,6 +4,8 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from '../config/supabase';
+import { trackAPIResponseTime, trackAuthEvent } from '../lib/metrics';
+import { authRateLimiter } from './rateLimiter';
 
 // JWT verification with Supabase Auth
 export interface AuthContext {
@@ -21,10 +23,13 @@ export async function authenticate(
   res: VercelResponse,
   next: () => void | Promise<void>,
 ): Promise<void> {
+  const startTime = Date.now();
+
   try {
     // Extract JWT from Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      trackAuthEvent('login', false);
       res.status(401).json({
         error: 'Missing or invalid Authorization header',
         code: 'AUTH_MISSING',
@@ -39,6 +44,7 @@ export async function authenticate(
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
+      trackAuthEvent('login', false);
       res.status(401).json({
         error: 'Invalid or expired token',
         code: 'AUTH_INVALID',
@@ -46,11 +52,11 @@ export async function authenticate(
       return;
     }
 
-    // Fetch user profile from users table
+    // Fetch user profile from profiles table
     const { data: userProfile, error: profileError } = await supabase
-      .from('users')
-      .select('id, email, subscription_tier')
-      .eq('oriva_user_id', user.id)
+      .from('profiles')
+      .select('id, email, subscription_tier, account_id')
+      .eq('account_id', user.id)
       .single();
 
     if (profileError || !userProfile) {
@@ -70,15 +76,21 @@ export async function authenticate(
 
     // Update last_active_at timestamp (fire and forget)
     supabase
-      .from('users')
+      .from('profiles')
       .update({ last_active_at: new Date().toISOString() })
       .eq('id', userProfile.id)
       .then(() => {})
       .catch((err) => console.warn('Failed to update last_active_at:', err));
 
+    // Track successful authentication
+    trackAuthEvent('login', true);
+    trackAPIResponseTime('auth.middleware', Date.now() - startTime);
+
     // Continue to handler
     await next();
   } catch (error) {
+    trackAuthEvent('login', false);
+    trackAPIResponseTime('auth.middleware', Date.now() - startTime);
     console.error('Authentication error:', error);
     res.status(500).json({
       error: 'Internal authentication error',
@@ -110,9 +122,9 @@ export async function optionalAuthenticate(
 
     if (!error && user) {
       const { data: userProfile } = await supabase
-        .from('users')
+        .from('profiles')
         .select('id, email, subscription_tier')
-        .eq('oriva_user_id', user.id)
+        .eq('account_id', user.id)
         .single();
 
       if (userProfile) {
@@ -154,4 +166,59 @@ export function requireAuthContext(req: VercelRequest): AuthContext {
     throw new Error('Authentication required but not provided');
   }
   return req.authContext;
+}
+
+/**
+ * Express-compatible authentication middleware
+ * Wraps the Vercel authenticate function for use with Express routers
+ */
+import type { Request, Response, NextFunction } from 'express';
+
+export interface ExpressAuthenticatedRequest extends Request {
+  authContext: AuthContext;
+}
+
+export function createAuthMiddleware() {
+  // Return an array of middleware: [rate limiter, auth handler]
+  return [
+    authRateLimiter,
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const vercelReq = req as unknown as VercelRequest;
+      const vercelRes = res as unknown as VercelResponse;
+
+      await authenticate(vercelReq, vercelRes, next);
+    }
+  ];
+}
+
+export function createOptionalAuthMiddleware() {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const vercelReq = req as unknown as VercelRequest;
+    const vercelRes = res as unknown as VercelResponse;
+
+    await optionalAuthenticate(vercelReq, vercelRes, next);
+  };
+}
+
+/**
+ * Create a user-scoped Supabase client using anon key
+ * This ensures RLS policies are enforced
+ */
+export function createUserSupabaseClient(accessToken: string) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+
+  const { createClient } = require('@supabase/supabase-js');
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
 }

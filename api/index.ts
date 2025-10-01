@@ -527,16 +527,16 @@ const hashAPIKey = async (key: string): Promise<string> => {
   }
 };
 
-// Stub middleware to replace missing createAuthMiddleware and createLegacyApiKeyMiddleware
-const validateAuth: ApiMiddleware = (req, res, next) => {
-  // TODO: Implement proper auth middleware
-  next();
-};
+// Import authentication and rate limiting middleware
+import { createAuthMiddleware, createOptionalAuthMiddleware, type ExpressAuthenticatedRequest } from '../src/middleware/auth';
+import { apiRateLimiter } from '../src/middleware/rateLimiter';
 
-const validateApiKey: ApiMiddleware = (req, res, next) => {
-  // TODO: Implement proper API key validation
-  next();
-};
+// Authentication middleware (includes rate limiting)
+const validateAuth = createAuthMiddleware(); // Returns [rateLimiter, authHandler]
+const validateApiKey = createAuthMiddleware(); // For now, use same auth for API key validation
+
+// Apply general API rate limiting to all routes
+app.use('/api', apiRateLimiter);
 
 // Health endpoint (no auth required)
 app.get('/health', (req, res) => {
@@ -1378,25 +1378,41 @@ app.get('/api/v1/groups/:groupId/members',
 // Entries endpoints
 app.get('/api/v1/entries', validateApiKey, async (req, res) => {
   try {
+    // Extract authenticated user context
+    const authReq = req as ExpressAuthenticatedRequest;
+    if (!authReq.authContext) {
+      respondWithError(res, 401, 'AUTH_REQUIRED', 'Authentication required');
+      return;
+    }
+
     const limit = toNumber(req.query.limit, 20);
     const offset = toNumber(req.query.offset, 0);
-    const profileFilter = toStringParam(req.query.profile_id, '');
 
+    // Get user's profile_id from their account
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', authReq.authContext.userId)
+      .single();
+
+    if (profileError || !userProfile) {
+      respondWithError(res, 404, 'PROFILE_NOT_FOUND', 'User profile not found');
+      return;
+    }
+
+    // Query entries for authenticated user's profile only
+    // RLS policies will automatically filter to only this user's entries
     let query = supabase
       .from('entries')
       .select('id, title, content, profile_id, created_at, updated_at, audience_type')
-      .eq('is_active', true)
+      .eq('profile_id', userProfile.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
-
-    if (profileFilter) {
-      query = query.eq('profile_id', profileFilter);
-    }
 
     const { data: entries, error } = await query;
 
     if (error) {
-      logger.error('Failed to fetch entries', { error, offset, limit, profileFilter });
+      logger.error('Failed to fetch entries', { error, offset, limit, userId: authReq.authContext.userId });
       res.json({
         ok: true,
         success: true,
