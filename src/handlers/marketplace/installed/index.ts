@@ -83,12 +83,18 @@ async function getInstalledAppsHandler(
     return;
   }
 
-  // Authenticate user
-  const user = await authenticate(req);
-  if (!user) {
-    res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+  // Authenticate user - authenticate will send error response if auth fails
+  let authComplete = false;
+  await authenticate(req, res, async () => {
+    authComplete = true;
+  });
+
+  if (!authComplete || !(req as any).authContext) {
+    // Auth middleware already sent error response
     return;
   }
+
+  const user = (req as any).authContext;
 
   try {
     const params: QueryParams = req.query;
@@ -116,13 +122,13 @@ async function getInstalledAppsHandler(
           install_count
         )
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', user.userId)
       .eq('is_active', true)
       .order('installed_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Failed to fetch installed apps', { error, userId: user.id });
+      console.error('Failed to fetch installed apps', { error, userId: user.userId });
       res.status(500).json({
         error: 'Failed to fetch apps',
         code: 'MARKETPLACE_APPS_ERROR'
@@ -152,7 +158,7 @@ async function getInstalledAppsHandler(
       meta: { pagination }
     });
   } catch (error: any) {
-    console.error('Installed apps endpoint error', { error, userId: user.id });
+    console.error('Installed apps endpoint error', { error, userId: user.userId });
     res.status(500).json({
       error: 'Failed to fetch apps',
       code: 'MARKETPLACE_APPS_ERROR'
