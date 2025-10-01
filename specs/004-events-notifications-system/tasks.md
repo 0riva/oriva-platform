@@ -461,7 +461,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ## Phase 3.6: Background Workers (2 tasks)
 
-- [ ] **T037 [P]** Implement webhook retry worker in `api/workers/webhookRetry.ts`:
+- [x] **T037 [P]** Implement webhook retry worker in `api/workers/webhookRetry.ts`:
   - Run every 60 seconds (Vercel Cron Job)
   - Query webhook_delivery_log for failed deliveries needing retry
   - Check delivery_attempt < max_retries
@@ -472,7 +472,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Alert developers when webhook disabled (log ERROR level)
   - Limit to 100 retries per run (prevent overload)
 
-- [ ] **T038 [P]** Implement notification expiry worker in `api/workers/notificationExpiry.ts`:
+- [x] **T038 [P]** Implement notification expiry worker in `api/workers/notificationExpiry.ts`:
   - Run every 5 minutes (Vercel Cron Job)
   - Query platform_notifications WHERE expires_at < NOW() AND NOT expired
   - For each expired notification:
@@ -486,7 +486,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 - `api/workers/webhookRetry.ts`
 - `api/workers/notificationExpiry.ts`
 
-- [ ] **T039 [P]** Implement data archival worker in `api/workers/dataArchival.ts`:
+- [x] **T039 [P]** Implement data archival worker in `api/workers/dataArchival.ts`:
   - Run daily at midnight (Vercel Cron Job)
   - Query platform_events WHERE created_at < NOW() - retention_period
   - Archive events older than retention policy (default: 90 days)
