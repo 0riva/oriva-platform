@@ -1,21 +1,16 @@
 <!--
 Sync Impact Report:
-Version change: Not specified in template → 1.0.0
-Modified principles:
-- All template placeholders replaced with concrete values specific to Oriva Platform
-Added sections:
-- API-First Development
-- Test-Driven Development (TDD)
-- Privacy-First Architecture
-- Phase-Based Implementation
-- Database Integration Standards
-Removed sections: None (all template sections converted to concrete content)
+Version change: 1.0.0 → 1.0.1
+Modified principles: None
+Added sections: None
+Removed sections: None
 Templates requiring updates:
 ✅ plan-template.md - Constitution Check section aligns with principles
 ✅ spec-template.md - Requirements align with privacy-first approach
 ✅ tasks-template.md - TDD workflow matches constitution requirements
 ✅ agent-file-template.md - Structure supports constitution principles
-Follow-up TODOs: None - all placeholders resolved
+Follow-up TODOs: None
+Amendment rationale: Periodic validation review (8+ months since initial ratification). All principles remain valid and properly implemented. Date update only.
 -->
 
 # Oriva Platform Constitution
@@ -59,4 +54,4 @@ Code quality requirements: TypeScript strict mode enforcement; ESLint and securi
 
 Constitution supersedes all other development practices; All feature plans must verify constitutional compliance at Phase 0 and Phase 1 boundaries; Amendments require documentation in this file with version increment; Development agents must reference this constitution for all implementation decisions; Complexity deviations require explicit justification in Complexity Tracking sections.
 
-**Version**: 1.0.0 | **Ratified**: 2025-01-21 | **Last Amended**: 2025-01-21
+**Version**: 1.0.1 | **Ratified**: 2025-01-21 | **Last Amended**: 2025-09-30
