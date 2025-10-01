@@ -6,7 +6,11 @@
 ✅ **IMMUTABLE Function Error** (2025-09-30) - Fixed in commit `7d66c97`
 - Removed `NOW()` from index predicate
 - Changed from partial index to composite index
-- Migration SQL now valid for direct execution
+
+✅ **Missing Trigger Function** (2025-09-30) - Fixed in commit `4342a3e`
+- Added `update_transaction_timestamp()` function definition
+- Uses CREATE OR REPLACE for idempotency
+- Migration now includes all dependencies
 
 ### Remaining Issue
 The Supabase migration history is out of sync between local and remote databases. Unable to push migrations using standard `supabase db push` command.
