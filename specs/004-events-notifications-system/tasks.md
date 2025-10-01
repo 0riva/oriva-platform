@@ -177,7 +177,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 ## Phase 3.3: Integration Tests (8 tasks)
 **CRITICAL: These tests MUST be written and MUST FAIL before implementation**
 
-- [ ] **T013 [P]** Integration test: Third-party app creates notification in `tests/integration/notification-sync.test.ts`:
+- [x] **T013 [P]** Integration test: Third-party app creates notification in `tests/integration/notification-sync.test.ts`:
   - Mock Work Buddy app creating session reminder
   - Verify notification created in platform_notifications table
   - Verify notification_state created with status=unread
@@ -185,7 +185,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Verify notification appears in user's feed query
   - Verify app branding (icon, name) included in response
 
-- [ ] **T014 [P]** Integration test: User dismisses notification in Oriva Core in `tests/integration/notification-sync.test.ts`:
+- [x] **T014 [P]** Integration test: User dismisses notification in Oriva Core in `tests/integration/notification-sync.test.ts`:
   - Create notification for test user
   - PATCH /api/v1/notifications/:id with status=dismissed
   - Verify notification_state updated with dismissed_at timestamp
@@ -193,14 +193,14 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Verify webhook delivery triggered (if subscribed)
   - Verify notification no longer in unread feed
 
-- [ ] **T015 [P]** Integration test: User dismisses notification in third-party app in `tests/integration/notification-sync.test.ts`:
+- [x] **T015 [P]** Integration test: User dismisses notification in third-party app in `tests/integration/notification-sync.test.ts`:
   - Create notification visible in both apps
   - Mock Work Buddy dismissing notification (POST event or PATCH state)
   - Verify notification_state updated
   - Verify Oriva Core query no longer returns notification
   - Verify idempotent operation (dismiss twice = same result)
 
-- [ ] **T016 [P]** Integration test: User clicks notification action in `tests/integration/notification-sync.test.ts`:
+- [x] **T016 [P]** Integration test: User clicks notification action in `tests/integration/notification-sync.test.ts`:
   - Create notification with action_url
   - PATCH /api/v1/notifications/:id with status=clicked
   - Verify notification_state updated with clicked_at timestamp
@@ -208,7 +208,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Verify webhook delivery triggered
   - Verify click action recorded in event_data
 
-- [ ] **T017 [P]** Integration test: Multiple apps send notifications in `tests/integration/notification-sync.test.ts`:
+- [x] **T017 [P]** Integration test: Multiple apps send notifications in `tests/integration/notification-sync.test.ts`:
   - Create notifications from Work Buddy, Hugo AI, and test apps
   - Query GET /api/v1/users/:userId/notifications
   - Verify all notifications returned
@@ -216,7 +216,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Verify each notification includes app branding
   - Verify filtering by app_id works
 
-- [ ] **T018 [P]** Integration test: App subscribes to platform events in `tests/integration/webhook-delivery.test.ts`:
+- [x] **T018 [P]** Integration test: App subscribes to platform events in `tests/integration/webhook-delivery.test.ts`:
   - Create webhook subscription for notification.dismissed
   - Create and dismiss notification
   - Verify webhook_delivery_log entry created
@@ -224,7 +224,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Verify HMAC signature included in X-Oriva-Signature header
   - Verify payload matches event schema
 
-- [ ] **T019 [P]** Integration test: Webhook retry on failure in `tests/integration/webhook-delivery.test.ts`:
+- [x] **T019 [P]** Integration test: Webhook retry on failure in `tests/integration/webhook-delivery.test.ts`:
   - Create webhook pointing to failing endpoint (returns 500)
   - Trigger event that matches webhook subscription
   - Verify first delivery fails, logged in webhook_delivery_log
@@ -232,7 +232,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Verify retry attempts (up to 5 times)
   - Verify webhook disabled after 100 consecutive failures
 
-- [ ] **T020 [P]** Integration test: Real-time notification updates in `tests/integration/websocket-realtime.test.ts`:
+- [x] **T020 [P]** Integration test: Real-time notification updates in `tests/integration/websocket-realtime.test.ts`:
   - Connect 2 WebSocket clients for same user
   - Create notification via POST /api/v1/apps/:appId/notifications
   - Verify both WebSocket clients receive real-time notification event
