@@ -62,7 +62,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ### Event Publishing Tests (3 tasks)
 
-- [ ] **T002 [P]** Contract test POST /api/v1/apps/:appId/events in `tests/contract/events/publish.test.ts`:
+- [x] **T002 [P]** Contract test POST /api/v1/apps/:appId/events in `tests/contract/events/publish.test.ts`:
   - Test valid event payload (200 response, event_id returned)
   - Test invalid event_category (400 response)
   - Test missing required fields (400 response)
@@ -70,7 +70,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Test rate limiting (429 after 1001 requests)
   - Test app_id validation (404 for non-existent app)
 
-- [ ] **T003 [P]** Contract test GET /api/v1/apps/:appId/events in `tests/contract/events/query.test.ts`:
+- [x] **T003 [P]** Contract test GET /api/v1/apps/:appId/events in `tests/contract/events/query.test.ts`:
   - Test event list retrieval (200 with pagination)
   - Test filtering by event_category (200 with filtered results)
   - Test filtering by event_type (200 with filtered results)
@@ -79,7 +79,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Test authentication enforcement (401 without API key)
   - Test app isolation (apps can only see their own events)
 
-- [ ] **T004 [P]** Contract test WSS /api/v1/events/stream in `tests/contract/events/stream.test.ts`:
+- [x] **T004 [P]** Contract test WSS /api/v1/events/stream in `tests/contract/events/stream.test.ts`:
   - Test WebSocket connection with valid token (connection accepted)
   - Test WebSocket connection with invalid token (connection rejected)
   - Test event subscription message (acknowledgment received)
@@ -94,7 +94,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ### Notification Management Tests (4 tasks)
 
-- [ ] **T005 [P]** Contract test POST /api/v1/apps/:appId/notifications in `tests/contract/notifications/create.test.ts`:
+- [x] **T005 [P]** Contract test POST /api/v1/apps/:appId/notifications in `tests/contract/notifications/create.test.ts`:
   - Test valid notification payload (201 response, notification_id returned)
   - Test title validation (400 if >200 chars or empty)
   - Test body validation (400 if >1000 chars or empty)
@@ -103,7 +103,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Test authentication enforcement (401 without API key)
   - Test rate limiting (429 after 501 requests)
 
-- [ ] **T006 [P]** Contract test GET /api/v1/users/:userId/notifications in `tests/contract/notifications/query.test.ts`:
+- [x] **T006 [P]** Contract test GET /api/v1/users/:userId/notifications in `tests/contract/notifications/query.test.ts`:
   - Test notification list for user (200 with all apps' notifications)
   - Test filtering by status (unread/read/dismissed)
   - Test filtering by app_id (specific app's notifications)
@@ -112,7 +112,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Test authentication enforcement (401 without API key)
   - Test user isolation (users can only see their own notifications)
 
-- [ ] **T007 [P]** Contract test PATCH /api/v1/notifications/:id in `tests/contract/notifications/update.test.ts`:
+- [x] **T007 [P]** Contract test PATCH /api/v1/notifications/:id in `tests/contract/notifications/update.test.ts`:
   - Test mark as read (200 response, status updated)
   - Test dismiss notification (200 response, status=dismissed)
   - Test mark as clicked (200 response, status=clicked)
@@ -121,7 +121,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Test authentication enforcement (401 without API key)
   - Test notification not found (404 for non-existent ID)
 
-- [ ] **T008 [P]** Contract test DELETE /api/v1/notifications/:id in `tests/contract/notifications/delete.test.ts`:
+- [x] **T008 [P]** Contract test DELETE /api/v1/notifications/:id in `tests/contract/notifications/delete.test.ts`:
   - Test notification deletion (204 response)
   - Test app authorization (403 if not notification owner app)
   - Test notification not found (404 for non-existent ID)
@@ -136,20 +136,20 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ### Webhook Management Tests (4 tasks)
 
-- [ ] **T009 [P]** Contract test POST /api/v1/apps/:appId/webhooks in `tests/contract/notifications/webhooks/create.test.ts`:
+- [x] **T009 [P]** Contract test POST /api/v1/apps/:appId/webhooks in `tests/contract/notifications/webhooks/create.test.ts`:
   - Test valid webhook creation (201 response, webhook_id and webhook_secret returned)
   - Test webhook_url validation (400 for non-HTTPS URL)
   - Test subscribed_events validation (400 for empty array)
   - Test authentication enforcement (401 without API key)
   - Test rate limiting (429 after 51 requests)
 
-- [ ] **T010 [P]** Contract test GET /api/v1/apps/:appId/webhooks in `tests/contract/notifications/webhooks/list.test.ts`:
+- [x] **T010 [P]** Contract test GET /api/v1/apps/:appId/webhooks in `tests/contract/notifications/webhooks/list.test.ts`:
   - Test webhook list retrieval (200 with all app webhooks)
   - Test empty list (200 with empty array)
   - Test authentication enforcement (401 without API key)
   - Test app isolation (apps only see their own webhooks)
 
-- [ ] **T011 [P]** Contract test PATCH /api/v1/apps/:appId/webhooks/:id in `tests/contract/notifications/webhooks/update.test.ts`:
+- [x] **T011 [P]** Contract test PATCH /api/v1/apps/:appId/webhooks/:id in `tests/contract/notifications/webhooks/update.test.ts`:
   - Test update webhook URL (200 response, URL updated)
   - Test update subscribed_events (200 response, events updated)
   - Test toggle is_active (200 response, status updated)
@@ -157,7 +157,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Test authentication enforcement (401 without API key)
   - Test app authorization (403 if not webhook owner app)
 
-- [ ] **T012 [P]** Contract test DELETE /api/v1/apps/:appId/webhooks/:id in `tests/contract/notifications/webhooks/delete.test.ts`:
+- [x] **T012 [P]** Contract test DELETE /api/v1/apps/:appId/webhooks/:id in `tests/contract/notifications/webhooks/delete.test.ts`:
   - Test webhook deletion (204 response)
   - Test webhook not found (404 for non-existent ID)
   - Test authentication enforcement (401 without API key)
