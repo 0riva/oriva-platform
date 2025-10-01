@@ -252,7 +252,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ## Phase 3.4: Service Layer (4 tasks - ONLY after tests are failing)
 
-- [ ] **T021 [P]** Implement EventPublisher service in `api/services/eventPublisher.ts`:
+- [x] **T021 [P]** Implement EventPublisher service in `api/services/eventPublisher.ts`:
   - `publishEvent(appId, userId, eventCategory, eventType, entityType, entityId, eventData)` method
   - Validate event payload (category enum, type format, entity_id not empty)
   - Insert into platform_events table with server timestamp
@@ -262,7 +262,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Broadcast to WebSocket connections matching subscription
   - Trigger webhook delivery for matching subscriptions
 
-- [ ] **T022 [P]** Implement NotificationManager service in `api/services/notificationManager.ts`:
+- [x] **T022 [P]** Implement NotificationManager service in `api/services/notificationManager.ts`:
   - `createNotification(payload)` method - insert into platform_notifications and notification_state
   - `queryNotifications(userId, filters, pagination)` method - join notifications + state
   - `updateNotificationState(notificationId, userId, newStatus, metadata)` method
@@ -276,7 +276,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - XSS sanitization on title and body fields
   - Call invalidateCountCache() after any state change operation
 
-- [ ] **T023 [P]** Implement WebhookDelivery service in `api/services/webhookDelivery.ts`:
+- [x] **T023 [P]** Implement WebhookDelivery service in `api/services/webhookDelivery.ts`:
   - `deliverEvent(eventId, webhookId)` method
   - Fetch event and webhook from database
   - Build webhook payload with event data
@@ -288,7 +288,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Return success/failure status
   - Retry logic handled by background worker
 
-- [ ] **T024 [P]** Implement WebSocketBroadcaster service in `api/services/websocketBroadcaster.ts`:
+- [x] **T024 [P]** Implement WebSocketBroadcaster service in `api/services/websocketBroadcaster.ts`:
   - Manage WebSocket connections in memory (Map<userId, Set<WebSocket>>)
   - `registerConnection(userId, ws, subscriptions)` method
   - `removeConnection(userId, ws)` method
