@@ -1,28 +1,10 @@
 {
-  "version": 2,
   "env": {
     "NODE_ENV": "production"
   },
   "build": {
     "env": {
       "NODE_ENV": "production"
-    }
-  },
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 10,
-      "memory": 1024
-    },
-    "api/v1/hugo/chat.ts": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 30,
-      "memory": 2048
-    },
-    "api/v1/hugo/knowledge/search.ts": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 5,
-      "memory": 512
     }
   },
   "rewrites": [
