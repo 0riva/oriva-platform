@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "regions": [
-    "iad1",
-    "sfo1",
-    "cdg1"
-  ],
   "env": {
     "NODE_ENV": "production"
   },
@@ -17,32 +12,17 @@
     "api/**/*.ts": {
       "runtime": "nodejs20.x",
       "maxDuration": 10,
-      "memory": 1024,
-      "regions": [
-        "iad1",
-        "sfo1",
-        "fra1"
-      ]
+      "memory": 1024
     },
     "api/v1/hugo/chat.ts": {
       "runtime": "nodejs20.x",
       "maxDuration": 30,
-      "memory": 2048,
-      "regions": [
-        "iad1",
-        "sfo1",
-        "fra1"
-      ]
+      "memory": 2048
     },
     "api/v1/hugo/knowledge/search.ts": {
       "runtime": "nodejs20.x",
       "maxDuration": 5,
-      "memory": 512,
-      "regions": [
-        "iad1",
-        "sfo1",
-        "fra1"
-      ]
+      "memory": 512
     }
   },
   "routes": [
