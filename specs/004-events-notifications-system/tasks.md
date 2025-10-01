@@ -505,7 +505,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
 
 ## Phase 3.7: Polish (4 tasks)
 
-- [ ] **T040** Update OpenAPI specification in `docs/openapi.yml`:
+- [x] **T040** Update OpenAPI specification in `docs/events-notifications-api.yml`:
   - Add all 12 endpoint definitions from contracts/
   - Include authentication schema (Bearer token)
   - Include all request/response schemas
@@ -514,14 +514,14 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Add examples for each endpoint
   - Version: 1.0.0
 
-- [ ] **T041** Update developer documentation in `docs/START_GUIDE.md`:
+- [x] **T041** Create developer documentation in `docs/EVENTS_NOTIFICATIONS_GUIDE.md`:
   - Add section on Platform Events & Notifications System
   - Link to quickstart.md
   - Add authentication setup instructions
   - Add rate limit reference table
   - Add troubleshooting section for common issues
 
-- [ ] **T042** Run end-to-end validation:
+- [x] **T042** Run end-to-end validation:
   - Execute all scenarios from quickstart.md
   - Verify all tests passing (npm test)
   - Check test coverage ≥80% (npm run test:coverage)
@@ -532,7 +532,7 @@ All paths relative to repository root `/Users/cosmic/Documents/oriva-platform/`
   - Verify webhook delivery to real endpoints
   - Verify WebSocket connection stability (30+ minutes)
 
-- [ ] **T043** Final review and cleanup:
+- [x] **T043** Final review and cleanup:
   - Remove console.log statements
   - Remove commented code
   - Remove TODO comments
