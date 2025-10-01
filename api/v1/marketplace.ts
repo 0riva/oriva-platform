@@ -7,11 +7,11 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { handleCategories } from './marketplace/categories/index';
-import { handleCreateItem } from './marketplace/items/create';
-import { handleItemById } from './marketplace/items/[id]';
-import { handleListItems } from './marketplace/items/index';
-import { handleSearch } from './marketplace/search/index';
+import { handleCategories } from '../../src/handlers/marketplace/categories/index';
+import { handleCreateItem } from '../../src/handlers/marketplace/items/create';
+import { handleItemById } from '../../src/handlers/marketplace/items/[id]';
+import { handleListItems } from '../../src/handlers/marketplace/items/list';
+import { handleSearch } from '../../src/handlers/marketplace/search/index';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;

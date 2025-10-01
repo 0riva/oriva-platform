@@ -6,10 +6,10 @@
 // Pattern: Catch-all routing to reduce function count
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { handleCheckoutCreate } from './payments/checkout/create';
-import { handleCheckoutComplete } from './payments/checkout/complete';
-import { handlePayoutCreate } from './payments/payouts/create';
-import { handleStripeWebhook } from './payments/webhooks/stripe';
+import { handleCheckoutCreate } from '../src/handlers/payments/checkout/create';
+import { handleCheckoutComplete } from '../src/handlers/payments/checkout/complete';
+import { handlePayoutCreate } from '../src/handlers/payments/payouts/create';
+import { handleStripeWebhook } from '../src/handlers/payments/webhooks/stripe';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
