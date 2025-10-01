@@ -11,6 +11,42 @@
     {
       "source": "/api/v1/conversations/:id",
       "destination": "/api/v1/conversations/:id.ts"
+    },
+    {
+      "source": "/api/v1/apps/:appId/events",
+      "destination": "/api/v1/events?appId=$appId"
+    },
+    {
+      "source": "/api/v1/apps/:appId/notifications",
+      "destination": "/api/v1/notifications?appId=$appId"
+    },
+    {
+      "source": "/api/v1/users/:userId/notifications",
+      "destination": "/api/v1/notifications?userId=$userId"
+    },
+    {
+      "source": "/api/v1/notifications/:id",
+      "destination": "/api/v1/notifications?id=$id"
+    },
+    {
+      "source": "/api/v1/apps/:appId/webhooks/:id",
+      "destination": "/api/v1/webhooks?appId=$appId&id=$id"
+    },
+    {
+      "source": "/api/v1/apps/:appId/webhooks",
+      "destination": "/api/v1/webhooks?appId=$appId"
+    },
+    {
+      "source": "/api/workers/webhookRetry",
+      "destination": "/api/workers"
+    },
+    {
+      "source": "/api/workers/notificationExpiry",
+      "destination": "/api/workers"
+    },
+    {
+      "source": "/api/workers/dataArchival",
+      "destination": "/api/workers"
     }
   ],
   "headers": [
