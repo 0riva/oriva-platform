@@ -11,6 +11,7 @@ internal-docs/
 
 # Agent and workflow files (internal use only)
 .claude/
+.specify/
 CLAUDE.md
 AGENTS.md
 CLAUDE_DEPLOYMENT_RULES.md
