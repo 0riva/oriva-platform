@@ -435,10 +435,10 @@
 
 **[REPO: oriva-platform]** - Public semantic commerce API endpoints
 
-- [ ] **T191** ⚠️ Write API tests in `api/__tests__/semantic/analyze.test.ts`
-- [ ] **T192** Implement `api/semantic/analyze-thread.ts` (POST analyze thread for commerce opportunities)
-- [ ] **T193** [P] ⚠️ Write suggestion tests in `api/__tests__/semantic/suggestions.test.ts`
-- [ ] **T194** [P] Implement `api/semantic/suggestions.ts` (GET contextual marketplace suggestions)
+- [x] **T191** ⚠️ Write API tests in `tests/semantic/analyze.test.ts` - COMPLETE (28/28 passing)
+- [x] **T192** Implement `api/semantic/analyze-thread.ts` (POST analyze thread for commerce opportunities) - COMPLETE
+- [x] **T193** [P] ⚠️ Write suggestion tests in `tests/semantic/suggestions.test.ts` - COMPLETE (23/23 passing)
+- [x] **T194** [P] Implement `api/semantic/suggestions.ts` (GET contextual marketplace suggestions) - COMPLETE
 
 ---
 
