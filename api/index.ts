@@ -44,8 +44,9 @@ const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 export const app = express();
 
 // Enable trust proxy for Vercel/reverse proxy environments
-// Required for express-rate-limit to work correctly with X-Forwarded-For headers
-app.set('trust proxy', true);
+// Trust only Vercel's proxy layer (loopback + private networks)
+// See: https://expressjs.com/en/guide/behind-proxies.html
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Production logging setup
 const logger: Logger = winston.createLogger({
