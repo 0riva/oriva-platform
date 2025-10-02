@@ -186,6 +186,24 @@ export const APP_STATUSES = ['active', 'inactive', 'extracting'] as const;
 export type AppStatus = (typeof APP_STATUSES)[number];
 
 /**
+ * Ice breaker category enum
+ */
+export const ICE_BREAKER_CATEGORIES = [
+  'humor',
+  'observation',
+  'question',
+  'compliment',
+  'shared_interest',
+] as const;
+export type IceBreakerCategory = (typeof ICE_BREAKER_CATEGORIES)[number];
+
+/**
+ * Ice breaker style enum
+ */
+export const ICE_BREAKER_STYLES = ['casual', 'playful', 'sincere', 'witty'] as const;
+export type IceBreakerStyle = (typeof ICE_BREAKER_STYLES)[number];
+
+/**
  * User role enum
  */
 export const USER_ROLES = ['user', 'admin', 'owner'] as const;
