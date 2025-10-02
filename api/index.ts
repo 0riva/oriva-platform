@@ -429,26 +429,34 @@ app.use((req, res, next) => {
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // DEBUG: Log environment variable status
 console.log('🔍 Environment Variables Debug:', {
   hasSupabaseUrl: !!supabaseUrl,
   hasServiceKey: !!supabaseServiceKey,
+  hasAnonKey: !!supabaseAnonKey,
   supabaseUrlSource: process.env.SUPABASE_URL ? 'SUPABASE_URL' : (process.env.EXPO_PUBLIC_SUPABASE_URL ? 'EXPO_PUBLIC_SUPABASE_URL' : 'MISSING'),
   nodeEnv: process.env.NODE_ENV,
   supabaseUrlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING'
 });
 
-if (!supabaseUrl || !supabaseServiceKey) {
+if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
   console.error('❌ Missing Supabase configuration. Required environment variables:');
   console.error('   - SUPABASE_URL or EXPO_PUBLIC_SUPABASE_URL');
   console.error('   - SUPABASE_SERVICE_ROLE_KEY');
+  console.error('   - SUPABASE_ANON_KEY or EXPO_PUBLIC_SUPABASE_ANON_KEY');
   console.error('🚨 API cannot start without database connection');
   process.exit(1);
 }
 
+// Service role client for database operations (bypasses RLS)
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-console.log('✅ Supabase client initialized for API key validation');
+console.log('✅ Supabase service client initialized');
+
+// Anon client for auth operations (regular user operations)
+const supabaseAuth: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+console.log('✅ Supabase auth client initialized');
 
 // CORS cache defined above
 
@@ -3038,6 +3046,327 @@ app.post('/api/v1/admin/apps/:appId/review', validateApiKey, requireAdminToken, 
   }
 }));
 
+// =============================================================================
+// AUTH REGISTRATION & LOGIN ENDPOINTS
+// =============================================================================
+
+// Helper functions for validation
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function isStrongPassword(password: string): boolean {
+  if (password.length < 8) return false;
+  if (!/[A-Z]/.test(password)) return false;
+  if (!/[a-z]/.test(password)) return false;
+  if (!/[0-9]/.test(password)) return false;
+  return true;
+}
+
+// POST /api/v1/auth/register - User registration
+app.post('/api/v1/auth/register', async (req, res) => {
+  try {
+    const { email, password, username, name, preferences } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Email and password are required');
+    }
+
+    if (!isValidEmail(email)) {
+      return respondWithError(res, 400, 'INVALID_EMAIL', 'Invalid email format');
+    }
+
+    if (!isStrongPassword(password)) {
+      return respondWithError(res, 400, 'WEAK_PASSWORD', 'Password must be at least 8 characters with uppercase, lowercase, and numbers');
+    }
+
+    // Create Supabase auth user using anon client (public signup)
+    const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError) {
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+        return respondWithError(res, 409, 'USER_EXISTS', 'Email already registered');
+      }
+      logger.error('Auth signup failed', { error: authError, message: authError.message, status: authError.status });
+      return respondWithError(res, 500, 'SIGNUP_ERROR', `Database error creating new user: ${authError.message}`);
+    }
+
+    if (!authData.user) {
+      return respondWithError(res, 500, 'USER_CREATION_FAILED', 'User creation failed');
+    }
+
+    // Create user profile in profiles table (called 'users')
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        account_id: authData.user.id,
+        display_name: name || authData.user.email!.split('@')[0],
+        username: authData.user.email!.split('@')[0],
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      // Rollback: Delete auth user if profile creation fails
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      logger.error('Profile creation failed', { error: profileError });
+      return respondWithError(res, 500, 'PROFILE_CREATION_FAILED', 'Failed to create user profile');
+    }
+
+    // Generate session tokens
+    const { data: sessionData, error: sessionError } = await supabaseAuth.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (sessionError || !sessionData.session) {
+      logger.error('Session creation failed', { error: sessionError });
+      return respondWithError(res, 500, 'SESSION_ERROR', 'Session creation failed after registration');
+    }
+
+    // Return auth response with profile data
+    res.status(201).json({
+      user: {
+        id: profileData.id,
+        email: authData.user.email,
+        display_name: profileData.display_name,
+        username: profileData.username,
+        subscription_tier: 'free',
+        created_at: profileData.created_at,
+      },
+      access_token: sessionData.session.access_token,
+      refresh_token: sessionData.session.refresh_token,
+      expires_in: sessionData.session.expires_in || 3600,
+    });
+  } catch (error) {
+    logger.error('Registration error', { error });
+    respondWithError(res, 500, 'REGISTRATION_ERROR', getErrorMessage(error));
+  }
+});
+
+// POST /api/v1/auth/login - User login
+app.post('/api/v1/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Email and password are required');
+    }
+
+    // Authenticate with Supabase
+    const { data: sessionData, error: authError } = await supabaseAuth.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError || !sessionData.session) {
+      logger.error('Login failed', { error: authError, email });
+      return respondWithError(res, 401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+    }
+
+    // Get user profile from profiles table
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, display_name, username, avatar_url')
+      .eq('account_id', sessionData.user.id)
+      .single();
+
+    if (profileError || !profileData) {
+      logger.error('User profile not found', { error: profileError, authUserId: sessionData.user.id });
+      return respondWithError(res, 404, 'USER_NOT_FOUND', 'User profile not found');
+    }
+
+    // Return auth response with profile data
+    res.status(200).json({
+      user: {
+        id: profileData.id,
+        email: sessionData.user.email,
+        display_name: profileData.display_name,
+        username: profileData.username,
+        subscription_tier: 'free',
+        created_at: sessionData.user.created_at,
+      },
+      access_token: sessionData.session.access_token,
+      refresh_token: sessionData.session.refresh_token,
+      expires_in: sessionData.session.expires_in || 3600,
+    });
+  } catch (error) {
+    logger.error('Login error', { error });
+    respondWithError(res, 500, 'LOGIN_ERROR', getErrorMessage(error));
+  }
+});
+
+// POST /api/v1/auth/logout - User logout
+app.post('/api/v1/auth/logout', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return respondWithError(res, 401, 'AUTH_MISSING', 'Missing authorization header');
+    }
+
+    await supabase.auth.signOut();
+    res.status(204).end();
+  } catch (error) {
+    logger.error('Logout error', { error });
+    respondWithError(res, 500, 'LOGOUT_ERROR', getErrorMessage(error));
+  }
+});
+
+// POST /api/v1/auth/token/refresh - Refresh access token
+app.post('/api/v1/auth/token/refresh', async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+
+    if (!refresh_token) {
+      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Refresh token is required');
+    }
+
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+
+    if (error || !data.session) {
+      return respondWithError(res, 401, 'INVALID_REFRESH_TOKEN', 'Invalid or expired refresh token');
+    }
+
+    res.status(200).json({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_in: data.session.expires_in || 3600,
+    });
+  } catch (error) {
+    logger.error('Token refresh error', { error });
+    respondWithError(res, 500, 'REFRESH_ERROR', getErrorMessage(error));
+  }
+});
+
+// GET /api/v1/auth/profile - Get user profile (requires auth)
+app.get('/api/v1/auth/profile', validateAuth, async (req, res) => {
+  try {
+    const userId = (req as any).authContext.userId;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, display_name, username, bio, avatar_url, location, website_url')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      return respondWithError(res, 404, 'USER_NOT_FOUND', 'User not found');
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    logger.error('Get profile error', { error });
+    respondWithError(res, 500, 'PROFILE_ERROR', getErrorMessage(error));
+  }
+});
+
+// PATCH /api/v1/auth/profile - Update user profile (requires auth)
+app.patch('/api/v1/auth/profile', validateAuth, async (req, res) => {
+  try {
+    const userId = (req as any).authContext.userId;
+    const { name, bio, avatar_url, location, website_url } = req.body;
+
+    if (!name && !bio && !avatar_url && !location && !website_url) {
+      return respondWithError(res, 400, 'VALIDATION_ERROR', 'At least one field must be provided');
+    }
+
+    const updates: any = {};
+    if (name) updates.display_name = name;
+    if (bio !== undefined) updates.bio = bio;
+    if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+    if (location !== undefined) updates.location = location;
+    if (website_url !== undefined) updates.website_url = website_url;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Update profile error', { error });
+      return respondWithError(res, 500, 'UPDATE_FAILED', 'Failed to update profile');
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    logger.error('Update profile error', { error });
+    respondWithError(res, 500, 'PROFILE_ERROR', getErrorMessage(error));
+  }
+});
+
+// PUT /api/v1/auth/profile - Update user profile (requires auth) - alias for PATCH
+app.put('/api/v1/auth/profile', validateAuth, async (req, res) => {
+  try {
+    const userId = (req as any).authContext.userId;
+    const { name, bio, avatar_url, location, website_url, preferences, data_retention_days } = req.body;
+
+    if (!name && !bio && !avatar_url && !location && !website_url && !preferences && !data_retention_days) {
+      return respondWithError(res, 400, 'VALIDATION_ERROR', 'At least one field must be provided');
+    }
+
+    // Validate data_retention_days if provided
+    if (data_retention_days !== undefined && data_retention_days < 30) {
+      return respondWithError(res, 400, 'VALIDATION_ERROR', 'data_retention_days must be at least 30');
+    }
+
+    const updates: any = {};
+    if (name) updates.display_name = name;
+    if (bio !== undefined) updates.bio = bio;
+    if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+    if (location !== undefined) updates.location = location;
+    if (website_url !== undefined) updates.website_url = website_url;
+    if (preferences !== undefined) updates.preferences = preferences;
+    if (data_retention_days !== undefined) updates.data_retention_days = data_retention_days;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Update profile error', { error });
+      return respondWithError(res, 500, 'UPDATE_FAILED', 'Failed to update profile');
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    logger.error('Update profile error', { error });
+    respondWithError(res, 500, 'PROFILE_ERROR', getErrorMessage(error));
+  }
+});
+
+// DELETE /api/v1/auth/account - Delete user account (requires auth)
+app.delete('/api/v1/auth/account', validateAuth, async (req, res) => {
+  try {
+    const userId = (req as any).authContext.userId;
+
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (error) {
+      logger.error('Delete account error', { error });
+      return respondWithError(res, 500, 'DELETE_FAILED', 'Failed to delete account');
+    }
+
+    res.status(204).end();
+  } catch (error) {
+    logger.error('Delete account error', { error });
+    respondWithError(res, 500, 'ACCOUNT_ERROR', getErrorMessage(error));
+  }
+});
+
 // Mount Hugo AI router
 const hugoRouter = createHugoAIRouter(supabase);
 app.use('/api/hugo', hugoRouter);
@@ -3059,7 +3388,6 @@ app.use('*', (req, res) => {
 // Error handling (temporary placeholder until typed middleware lands)
 app.use(errorHandler as any);
 
-// Start server for local development
 export const startServer = (): void => {
   const PORT = Number(process.env.PORT) || 3001;
   const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
