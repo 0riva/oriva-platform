@@ -228,16 +228,6 @@ export const EXTRACTION_STATUSES = ['prepared', 'executing', 'completed', 'faile
 export type ExtractionStatus = (typeof EXTRACTION_STATUSES)[number];
 
 /**
- * Ice breaker category enum
- */
-export const ICE_BREAKER_CATEGORIES = [
-  'shared_interest',
-  'photo_comment',
-  'conversation_starter',
-] as const;
-export type IceBreakerCategory = (typeof ICE_BREAKER_CATEGORIES)[number];
-
-/**
  * Validate session type
  */
 export const validateSessionType = (value: string): SessionType => {

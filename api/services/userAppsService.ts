@@ -92,10 +92,10 @@ export const getUserApps = async (
     query = query.eq('status', 'active');
   }
 
-  const result = await executeQuery<UserAppAccess[]>(
+  const result = await executeQuery<any>(
     () => query,
     'get user apps'
-  );
+  ) as UserAppAccess[];
 
   // Check if user exists (empty result could mean no access or user doesn't exist)
   if (result.length === 0) {

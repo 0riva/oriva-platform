@@ -248,3 +248,6 @@ export const optionalAuth = async (
   // Auth provided, validate it
   await requireAuth(req, res, next);
 };
+
+// Alias for backward compatibility
+export const requireAuthentication = requireAuth;

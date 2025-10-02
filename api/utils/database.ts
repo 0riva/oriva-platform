@@ -132,7 +132,7 @@ export const createQueryBuilder = (req: Request): SchemaQueryBuilder => {
  * Execute database operation with error handling
  */
 export async function executeQuery<T>(
-  operation: () => Promise<{ data: T | null; error: PostgrestError | null }>,
+  operation: () => Promise<{ data: T | null; error: PostgrestError | null }> | PromiseLike<{ data: T | null; error: PostgrestError | null }>,
   operationName: string
 ): Promise<T> {
   const { data, error } = await operation();
@@ -152,10 +152,10 @@ export async function executeQuery<T>(
  * Execute database operation that may return null (e.g., optional selects)
  */
 export async function executeQueryOptional<T>(
-  operation: () => Promise<{ data: T | null; error: PostgrestError | null }>,
+  operation: () => Promise<{ data: T | null; error: PostgrestError | null }> | PromiseLike<{ data: T | null; error: PostgrestError | null }>,
   operationName: string
 ): Promise<T | null> {
-  const { data, error } = await operation();
+  const { data, error} = await operation();
 
   if (error) {
     handleDatabaseError(error, operationName);
@@ -258,5 +258,5 @@ export const buildJsonbFilter = (
  */
 export const sanitizeInput = (input: string): string => {
   // Remove potentially dangerous characters
-  return input.replace(/[';--]/g, '');
+  return input.replace(/[';-]/g, '');
 };
