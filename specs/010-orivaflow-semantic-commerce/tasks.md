@@ -568,7 +568,7 @@ Note for Oriva API
 
 ### Phase 11.4: Documentation
 
-- [ ] **T233** [P] Update `docs/4-dev/NAVIGATOR.md` with OrivaFlow implementation guide references
+- [x] **T233** [P] Update `docs/4-dev/NAVIGATOR.md` with OrivaFlow implementation guide references
 - [ ] **T234** [P] Create `docs/marketplace/README.md` with earner onboarding documentation
 - [ ] **T235** [P] Create `docs/payments/ORIVAPAY.md` with payment integration guide
 - [ ] **T236** [P] Create `docs/affiliate/NETWORK.md` with affiliate program documentation
