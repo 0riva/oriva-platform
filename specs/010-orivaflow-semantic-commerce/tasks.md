@@ -428,10 +428,10 @@
 
 - [x] **T187** ⚠️ Write tests for contextual suggestions in `src/services/semantic/__tests__/ContextualSuggestionService.test.ts` ✅
 - [x] **T188** Implement `src/services/semantic/ContextualSuggestionService.ts` analyzing threads for commerce opportunities ✅
-- [ ] **T189** [P] ⚠️ Write tests for ReciprocityEngineService in `src/services/semantic/__tests__/ReciprocityEngineService.test.ts`
-- [ ] **T190** [P] Implement `src/services/semantic/ReciprocityEngineService.ts` tracking contribution balance
+- [x] **T189** [P] ⚠️ Write tests for ReciprocityEngineService in `src/services/semantic/__tests__/ReciprocityEngineService.test.ts` - COMPLETE ✅
+- [x] **T190** [P] Implement `src/services/semantic/ReciprocityEngineService.ts` tracking contribution balance - COMPLETE ✅
 
-### Phase 7.3: Semantic API Endpoints
+### Phase 7.3: Semantic API Endpoints ✅
 
 **[REPO: oriva-platform]** - Public semantic commerce API endpoints
 
@@ -442,23 +442,23 @@
 
 ---
 
-## Phase 8: Contextual Commerce UX (2 weeks)
+## Phase 8: Contextual Commerce UX (2 weeks) ✅
 
 **[REPO: oriva-core]** - All Phase 8 tasks are client-side UI/services
 
 ### Phase 8.1: Contextual Suggestion UI ✅
 
-- [ ] **T195** ⚠️ Write tests for ContextualCommerceSuggestion in `src/components/organisms/contextual/__tests__/ContextualCommerceSuggestion.test.tsx` (embeds in threads ✅)
-- [ ] **T196** Implement `src/components/organisms/contextual/ContextualCommerceSuggestion.tsx` displaying inline product cards in threads
-- [ ] **T197** [P] ⚠️ Write tests for SemanticMarketplacePanel in `src/components/organisms/contextual/__tests__/SemanticMarketplacePanel.test.tsx`
-- [ ] **T198** [P] Implement `src/components/organisms/contextual/SemanticMarketplacePanel.tsx` as sidebar panel
+- [x] **T195** ⚠️ Write tests for ContextualCommerceSuggestion in `src/components/organisms/contextual/__tests__/ContextualCommerceSuggestion.test.tsx` (embeds in threads ✅) - COMPLETE ✅
+- [x] **T196** Implement `src/components/organisms/contextual/ContextualCommerceSuggestion.tsx` displaying inline product cards in threads - COMPLETE ✅
+- [x] **T197** [P] ⚠️ Write tests for SemanticMarketplacePanel in `src/components/organisms/contextual/__tests__/SemanticMarketplacePanel.test.tsx` - COMPLETE ✅
+- [x] **T198** [P] Implement `src/components/organisms/contextual/SemanticMarketplacePanel.tsx` as sidebar panel - COMPLETE ✅
 
-### Phase 8.2: Feed Integration
+### Phase 8.2: Feed Integration ✅
 
-- [ ] **T199** ⚠️ Write integration tests for feed commerce in `src/components/__tests__/FeedIntegration.test.tsx`
-- [ ] **T200** Enhance existing Feed component to embed marketplace suggestions ✅ (edit `src/components/organisms/Feed.tsx`)
-- [ ] **T201** [P] ⚠️ Write throttling tests in `src/services/__tests__/SuggestionThrottlingService.test.ts`
-- [ ] **T202** [P] Implement `src/services/SuggestionThrottlingService.ts` limiting suggestion frequency
+- [x] **T199** ⚠️ Write integration tests for feed commerce in `src/components/__tests__/FeedIntegration.test.tsx` - COMPLETE ✅
+- [x] **T200** Enhance existing Feed component to embed marketplace suggestions ✅ (edit `src/components/organisms/Feed.tsx`) - COMPLETE ✅
+- [x] **T201** [P] ⚠️ Write throttling tests in `src/services/__tests__/SuggestionThrottlingService.test.ts` - COMPLETE ✅
+- [x] **T202** [P] Implement `src/services/SuggestionThrottlingService.ts` limiting suggestion frequency - COMPLETE ✅
 
 ### Phase 8.3: One-Click Actions
 
