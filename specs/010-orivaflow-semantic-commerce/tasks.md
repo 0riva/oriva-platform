@@ -571,7 +571,7 @@ Note for Oriva API
 - [x] **T233** [P] Update `docs/4-dev/NAVIGATOR.md` with OrivaFlow implementation guide references
 - [x] **T234** [P] Create `docs/marketplace/README.md` with earner onboarding documentation
 - [x] **T235** [P] Create `docs/payments/ORIVAPAY.md` with payment integration guide
-- [ ] **T236** [P] Create `docs/affiliate/NETWORK.md` with affiliate program documentation
+- [x] **T236** [P] Create `docs/affiliate/NETWORK.md` with affiliate program documentation
 
 ---
 
