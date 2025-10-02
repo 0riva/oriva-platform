@@ -14,7 +14,7 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "allowJs": true,
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": [
     "api/**/*"
