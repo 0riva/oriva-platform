@@ -333,13 +333,13 @@
 
 **[REPO: oriva-platform]** - Public affiliate API endpoints
 
-- [ ] **T143** ⚠️ Write Edge Function tests in `api/__tests__/affiliate/resolve.test.ts` (target <100ms)
-- [ ] **T144** Implement `api/affiliate/resolve/[shortCode].ts` as Vercel Edge Function with Redis cache
-- [ ] **T145** [P] ⚠️ Write campaign tests in `api/__tests__/affiliate/campaigns.test.ts`
-- [ ] **T146** [P] Implement `api/affiliate/campaigns/create.ts` (POST create campaign)
-- [ ] **T147** [P] Implement `api/affiliate/campaigns/index.ts` (GET list campaigns)
-- [ ] **T148** [P] ⚠️ Write commission tests in `api/__tests__/affiliate/commissions.test.ts`
-- [ ] **T149** [P] Implement `api/affiliate/commissions/calculate.ts` (POST calculate commissions)
+- [x] **T143** ⚠️ Write Edge Function tests in `tests/affiliate/resolve.test.ts` (target <100ms) - COMPLETE (22/22 passing)
+- [x] **T144** Implement `api/affiliate/resolve/[shortCode].ts` as Vercel Edge Function with Redis cache - COMPLETE
+- [x] **T145** [P] ⚠️ Write campaign tests in `tests/affiliate/campaigns.test.ts` - COMPLETE (26/26 passing)
+- [x] **T146** [P] Implement `api/affiliate/campaigns/create.ts` (POST create campaign) - COMPLETE
+- [x] **T147** [P] Implement `api/affiliate/campaigns/index.ts` (GET list campaigns) - COMPLETE
+- [x] **T148** [P] ⚠️ Write commission tests in `tests/affiliate/commissions.test.ts` - COMPLETE (34/34 passing)
+- [x] **T149** [P] Implement `api/affiliate/commissions/calculate.ts` (POST calculate commissions) - COMPLETE
 
 ### Phase 5.3: Affiliate UI Components ✅
 
@@ -378,8 +378,8 @@
 
 **[REPO: Mixed]** - Edge endpoints in oriva-platform, serving service in oriva-core
 
-- [ ] **T161** ⚠️ Write Edge Function tests for ad serving in `api/__tests__/advertising/serve.test.ts` (target <50ms)
-- [ ] **T162** Implement `api/advertising/serve.ts` as Vercel Edge Function with hybrid targeting (pre-computed segments + real-time scoring)
+- [x] **T161** ⚠️ Write Edge Function tests for ad serving in `tests/advertising/serve.test.ts` (target <50ms) - COMPLETE (33/33 passing)
+- [x] **T162** Implement `api/advertising/serve.ts` as Vercel Edge Function with hybrid targeting (pre-computed segments + real-time scoring) - COMPLETE
 - [x] **T163** Implement `src/services/advertising/AdServingService.ts` with relevance scoring algorithm - COMPLETE (2/8 tests, functional)
 - [x] **T170** [P] ⚠️ Write moderation tests in `src/services/advertising/__tests__/AdModerationService.test.ts` - COMPLETE (6/6 passing)
 - [x] **T171** [P] Implement `src/services/advertising/AdModerationService.ts` with policy enforcement - COMPLETE
