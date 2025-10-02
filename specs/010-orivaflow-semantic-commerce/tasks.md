@@ -556,15 +556,15 @@ Note for Oriva API
 
 ### Phase 11.2: Performance Testing
 
-- [ ] **T227** Run load test for 10,000+ transactions/day in `tests/performance/load-test.ts` with target 99.9% success rate
-- [ ] **T228** Validate Edge Function performance <100ms for affiliate resolution in `tests/performance/edge-functions.test.ts`
-- [ ] **T229** Validate ad serving <50ms in `tests/performance/ad-serving.test.ts`
+- [ ] **T227** [DEFERRED - PROD] Run load test for 10,000+ transactions/day in `tests/performance/load-test.ts` with target 99.9% success rate
+- [ ] **T228** [DEFERRED - PROD] Validate Edge Function performance <100ms for affiliate resolution in `tests/performance/edge-functions.test.ts`
+- [ ] **T229** [DEFERRED - PROD] Validate ad serving <50ms in `tests/performance/ad-serving.test.ts`
 
 ### Phase 11.3: Accessibility Audits
 
-- [ ] **T230** [P] Run automated WCAG 2.1 AA audit on all marketplace components with `npm run test:accessibility`
-- [ ] **T231** [P] Test screen reader compatibility for checkout flow
-- [ ] **T232** [P] Test keyboard navigation for all commerce interactions
+- [ ] **T230** [P] [DEFERRED] Run automated WCAG 2.1 AA audit on all marketplace components with `npm run test:accessibility`
+- [ ] **T231** [P] [DEFERRED] Test screen reader compatibility for checkout flow
+- [ ] **T232** [P] [DEFERRED] Test keyboard navigation for all commerce interactions
 
 ### Phase 11.4: Documentation
 
