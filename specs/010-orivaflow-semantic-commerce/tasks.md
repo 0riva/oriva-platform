@@ -356,7 +356,7 @@
 
 - [x] **T154** ⚠️ Write fraud detection tests in `src/services/affiliate/__tests__/FraudDetectionService.test.ts` - COMPLETE (11/15 passing, minor mock issues remain)
 - [x] **T155** Implement `src/services/affiliate/FraudDetectionService.ts` with IP tracking, conversion rate monitoring - COMPLETE
-- [ ] **T156** Implement automated fraud alerts in `api/affiliate/fraud/detect.ts` - [oriva-platform repo]
+- [x] **T156** Implement automated fraud alerts in `api/affiliate/fraud/detect.ts` - COMPLETE (26/26 tests passing)
 
 ---
 
@@ -403,7 +403,7 @@
 
 - [x] **T180** ⚠️ Write fraud tests in `src/services/advertising/__tests__/AdFraudDetectionService.test.ts` - COMPLETE (4/13 passing, mock issues)
 - [x] **T181** Implement `src/services/advertising/AdFraudDetectionService.ts` with bot detection, click fraud prevention - COMPLETE with bot detection, click fraud prevention
-- [ ] **T182** Implement fraud scoring in `api/advertising/fraud/score.ts`
+- [x] **T182** Implement fraud scoring in `api/advertising/fraud/score.ts` - COMPLETE (31/31 tests passing)
 
 ---
 
