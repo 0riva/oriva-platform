@@ -4,9 +4,13 @@
 export default async function globalSetup() {
   console.log('🔧 Setting up test environment...');
 
-  // Set test environment variables
-  process.env.NODE_ENV = 'test';
-  process.env.TEST_API_URL = process.env.TEST_API_URL || 'http://localhost:3000';
+  // Set test environment variables (use Object.defineProperty to override readonly)
+  if (process.env.NODE_ENV !== 'test') {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true });
+  }
+  if (!process.env.TEST_API_URL) {
+    process.env.TEST_API_URL = 'http://localhost:3000';
+  }
 
   // TODO: Start test server if needed
   // TODO: Run database migrations in test database
