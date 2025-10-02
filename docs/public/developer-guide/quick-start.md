@@ -6,97 +6,312 @@
 
 Before you begin, ensure you have:
 - [ ] Node.js 18+ and npm installed
-- [ ] Oriva developer account and API credentials
+- [ ] Oriva developer account and API key from the developer dashboard
 - [ ] Code editor (VS Code recommended)
-- [ ] Git for version control
 
-## Step 1: Clone the Starter Template
-
-```bash
-# Clone the official starter template
-git clone https://github.com/oriva/starter-template.git my-oriva-app
-cd my-oriva-app
-
-# Install dependencies
-npm install
-```
-
-## Step 2: Configure Environment
-
-Create a `.env.local` file in your project root:
+## Step 1: Set Up Your Project
 
 ```bash
-# Required Configuration
-ORIVA_API_KEY=your_api_key_here
-ORIVA_CLIENT_ID=your_client_id_here
+# Create a new project directory
+mkdir my-oriva-integration
+cd my-oriva-integration
 
-# Optional: Your Database
-DATABASE_URL=your_database_url
-DATABASE_ANON_KEY=your_database_key
+# Initialize npm project
+npm init -y
+
+# Install required dependencies
+npm install node-fetch dotenv
+npm install -D typescript @types/node ts-node
 ```
 
-## Step 3: Set Up Authentication
+## Step 2: Configure Environment Variables
 
-The starter template includes a basic auth setup. Customize it for your needs:
+Create a `.env` file in your project root:
+
+```bash
+# Required: Get your API key from the Oriva developer dashboard
+ORIVA_API_KEY=oriva_pk_test_your_key_here
+
+# API Base URL (use production URL when ready)
+ORIVA_BASE_URL=https://api.oriva.io
+```
+
+**🔐 Security Note**: Never commit `.env` to version control. Add it to `.gitignore`.
+
+## Step 3: Create Your First Integration
+
+Create `index.js`:
+
+```javascript
+require('dotenv').config();
+const fetch = require('node-fetch');
+
+const ORIVA_BASE_URL = process.env.ORIVA_BASE_URL || 'https://api.oriva.io';
+const ORIVA_API_KEY = process.env.ORIVA_API_KEY;
+
+// Reusable API client
+async function callOrivaAPI(endpoint, options = {}) {
+  if (!ORIVA_API_KEY) {
+    throw new Error('ORIVA_API_KEY not configured');
+  }
+
+  const url = `${ORIVA_BASE_URL}${endpoint}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${ORIVA_API_KEY}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Example 1: Get current user
+async function getCurrentUser() {
+  try {
+    const data = await callOrivaAPI('/api/v1/user/me');
+    console.log('✅ Current User:', data.data);
+    return data.data;
+  } catch (error) {
+    console.error('❌ Error fetching user:', error.message);
+  }
+}
+
+// Example 2: List available profiles
+async function listProfiles() {
+  try {
+    const data = await callOrivaAPI('/api/v1/profiles/available');
+    console.log('✅ Available Profiles:', data.data.length);
+    return data.data;
+  } catch (error) {
+    console.error('❌ Error fetching profiles:', error.message);
+  }
+}
+
+// Example 3: Browse marketplace apps
+async function browseMarketplace() {
+  try {
+    const data = await callOrivaAPI('/api/v1/marketplace/apps?limit=5');
+    console.log('✅ Marketplace Apps:', data.data.length);
+    data.data.forEach(app => {
+      console.log(`  - ${app.name} (${app.category})`);
+    });
+    return data.data;
+  } catch (error) {
+    console.error('❌ Error fetching marketplace:', error.message);
+  }
+}
+
+// Run all examples
+async function main() {
+  console.log('🚀 Testing Oriva Platform API Integration\n');
+
+  await getCurrentUser();
+  console.log();
+
+  await listProfiles();
+  console.log();
+
+  await browseMarketplace();
+  console.log();
+
+  console.log('✨ Integration test complete!');
+}
+
+main();
+```
+
+## Step 4: Run Your Integration
+
+```bash
+# Run the integration
+node index.js
+```
+
+**Expected Output**:
+```
+🚀 Testing Oriva Platform API Integration
+
+✅ Current User: { id: 'ext_user_...', name: '...' }
+
+✅ Available Profiles: 2
+
+✅ Marketplace Apps: 5
+  - Task Manager Pro (productivity)
+  - Code Reviewer (development)
+  - Analytics Dashboard (analytics)
+  ...
+
+✨ Integration test complete!
+```
+
+## TypeScript Version
+
+For TypeScript projects, create `index.ts`:
 
 ```typescript
-// src/config/auth.config.ts
-export const authConfig = {
-    // Your app's authentication settings
-    redirectUrl: 'http://localhost:3000/dashboard',
-    scope: ['read:profile', 'write:data'],
-    // Session settings
-    sessionDuration: 7200, // 2 hours
-    refreshEnabled: true
-};
+import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+
+dotenv.config();
+
+interface OrivaResponse<T> {
+  ok: boolean;
+  success: boolean;
+  data: T;
+  meta?: any;
+}
+
+class OrivaClient {
+  private baseUrl: string;
+  private apiKey: string;
+
+  constructor() {
+    this.baseUrl = process.env.ORIVA_BASE_URL || 'https://api.oriva.io';
+    this.apiKey = process.env.ORIVA_API_KEY || '';
+
+    if (!this.apiKey) {
+      throw new Error('ORIVA_API_KEY environment variable required');
+    }
+  }
+
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error((error as any).error || `HTTP ${response.status}`);
+    }
+
+    return response.json() as Promise<T>;
+  }
+
+  async getCurrentUser() {
+    return this.request<OrivaResponse<any>>('/api/v1/user/me');
+  }
+
+  async listProfiles() {
+    return this.request<OrivaResponse<any[]>>('/api/v1/profiles/available');
+  }
+
+  async browseMarketplace(limit = 10) {
+    return this.request<OrivaResponse<any[]>>(`/api/v1/marketplace/apps?limit=${limit}`);
+  }
+}
+
+// Usage
+async function main() {
+  const client = new OrivaClient();
+
+  try {
+    const user = await client.getCurrentUser();
+    console.log('User:', user.data);
+
+    const profiles = await client.listProfiles();
+    console.log('Profiles:', profiles.data.length);
+
+    const apps = await client.browseMarketplace(5);
+    console.log('Apps:', apps.data.length);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+main();
 ```
 
-## Step 4: Run Your First Development Session
-
-```bash
-# Start the development server
-npm run dev
-
-# Your app will be available at http://localhost:3000
-```
-
-## Step 5: Test the Integration
-
-1. Open your browser to `http://localhost:3000`
-2. Click "Connect with Oriva"
-3. Authenticate with your developer credentials
-4. You should see your profile data loaded
+Run with: `npx ts-node index.ts`
 
 ## What's Next?
 
-### Essential Reads
-- [Localhost Development Guide](./SECURE-localhost-development.md) - Set up local development with real data
-- [Authentication Patterns](./authentication-patterns.md) - Implement secure auth flows
-- [API Headers Reference](./api-headers-reference.md) - Complete API documentation
+### Essential Patterns for Building Integrations
 
-### Build Your First Feature
+**1. Server-Side Proxy Pattern** (Recommended for web apps):
 
-Try implementing a simple feature to get familiar with the platform:
+```javascript
+// server.js - Your backend API
+const express = require('express');
+const fetch = require('node-fetch');
+require('dotenv').config();
 
-```typescript
-// Example: Fetch user's workspace data
-import { OrivaClient } from '@oriva/sdk';
+const app = express();
 
-const client = new OrivaClient({
-    apiKey: process.env.ORIVA_API_KEY,
-    clientId: process.env.ORIVA_CLIENT_ID
+// Proxy endpoint - keeps API key secure
+app.get('/api/oriva-proxy/user/me', async (req, res) => {
+  try {
+    const response = await fetch('https://api.oriva.io/api/v1/user/me', {
+      headers: {
+        'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`
+      }
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-async function getWorkspaceData(userId: string) {
+app.listen(3000);
+```
+
+**2. Error Handling with Retry**:
+
+```javascript
+async function callOrivaWithRetry(endpoint, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
     try {
-        const workspace = await client.workspaces.get(userId);
-        return workspace;
+      return await callOrivaAPI(endpoint);
     } catch (error) {
-        console.error('Failed to fetch workspace:', error);
-        return null;
+      if (i === maxRetries - 1) throw error;
+
+      // Exponential backoff
+      await new Promise(resolve =>
+        setTimeout(resolve, Math.pow(2, i) * 1000)
+      );
     }
+  }
 }
 ```
+
+**3. Response Caching**:
+
+```javascript
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedData(endpoint) {
+  const cached = cache.get(endpoint);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
+  const data = await callOrivaAPI(endpoint);
+  cache.set(endpoint, { data, timestamp: Date.now() });
+  return data;
+}
+```
+
+### Next Steps
+
+- **[API Endpoints Index](./api-endpoints-index.md)** - Complete endpoint reference
+- **[API Reference](./api-reference-complete.md)** - Full API documentation
+- **[Authentication Patterns](./authentication-patterns.md)** - Secure auth flows
+- **[Error Handling Guide](./api-troubleshooting-guide.md)** - Debug common issues
 
 ## Common First-Time Issues
 

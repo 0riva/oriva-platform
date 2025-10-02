@@ -49,26 +49,47 @@ Create powerful integrations that extend Oriva's functionality:
 
 ## 🚀 Quick Start
 
-Ready to build your first Oriva integration? Follow our comprehensive [Start Guide](docs/START_GUIDE.md) to:
+Choose your path based on your goal:
 
-- 📝 **Register your app** with the Oriva platform
-- 🔐 **Set up authentication** and API access
-- 🛠️ **Build your integration** using our REST API
-- 📦 **Publish to marketplace** and reach users worldwide
+### **🎯 I Want To Validate the API Works** (5 minutes)
+Perfect for quickly evaluating if Oriva fits your use case.
 
-**[🚀 Get Started Now →](docs/START_GUIDE.md)**
+→ **[Start the 5-Minute API Test](docs/public/developer-guide/5-minute-api-test.md)**
+
+Test your API key and see real data in under 5 minutes.
+
+### **🚀 I Want To Build a Real Integration** (15+ minutes)
+Complete step-by-step guide from setup to production deployment.
+
+→ **[Open the Developer Start Guide](docs/START_GUIDE.md)**
+
+Comprehensive walkthrough with progressive learning paths (Levels 1-3).
+
+### **📖 I Need To Look Up Specific Endpoints**
+Quick reference guide for all 50+ API endpoints with examples.
+
+→ **[Browse the API Endpoints Index](docs/public/developer-guide/api-endpoints-index.md)**
+
+Find endpoints by category, see authentication requirements, get cURL examples.
+
+### **💻 I Want Working Code Examples**
+Production-ready integration examples you can copy and customize.
+
+→ **[View Code Examples](examples/)**
+
+Includes basic integration, server proxy patterns, and TypeScript examples.
 
 ## 🔗 API Overview
 
 The Oriva Platform provides comprehensive APIs for:
 
-- **🏪 Marketplace** - Browse, install, and manage apps
-- **👨‍💻 Developer** - Create, publish, and analyze your apps  
-- **📚 Core Platform** - Access repositories, issues, pull requests, and user data
+- **🏪 Marketplace** - Browse, install, and manage apps ([endpoints](docs/public/developer-guide/api-endpoints-index.md#marketplace))
+- **👨‍💻 Developer** - Create, publish, and manage your apps ([endpoints](docs/public/developer-guide/api-endpoints-index.md#developer-apps))
+- **📚 Core Platform** - Access profiles, groups, and user data ([endpoints](docs/public/developer-guide/api-endpoints-index.md#user--authentication))
 - **🔒 Privacy-First Features** - Multi-profile management with complete data isolation
 - **👥 Group Management** - Secure group access with sanitized member data
 
-[**View Complete API Reference →**](docs/START_GUIDE.md#api-endpoints)
+**[→ View All 50+ API Endpoints](docs/public/developer-guide/api-endpoints-index.md)**
 
 ## 🔐 Authentication & Privacy
 

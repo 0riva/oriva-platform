@@ -63,10 +63,11 @@ app.get('/api/oriva-proxy/profiles', async (req, res) => {
 
 ### Success Response Format
 
-All endpoints return consistent structure:
+All endpoints return consistent structure with dual boolean flags for compatibility:
 
 ```json
 {
+  "ok": true,
   "success": true,
   "data": {
     // Endpoint-specific data object or array
@@ -77,18 +78,34 @@ All endpoints return consistent structure:
 }
 ```
 
+**Field Descriptions**:
+- `ok` (boolean): Request succeeded (legacy compatibility)
+- `success` (boolean): Request succeeded (modern apps)
+- `data` (object|array): Response payload
+- `meta` (object, optional): Metadata like pagination
+
+**Note**: Both `ok` and `success` are provided for compatibility. New integrations should use `success`.
+
 ### Error Response Format
 
 ```json
 {
+  "ok": false,
   "success": false,
   "error": "Error message description",
-  "error_code": "VALIDATION_ERROR",
-  "details": {
-    // Optional error details for validation errors
-  }
+  "message": "Error message description",
+  "code": "VALIDATION_ERROR",
+  "details": []
 }
 ```
+
+**Error Field Descriptions**:
+- `ok` (boolean): false for errors
+- `success` (boolean): false for errors
+- `error` (string): Human-readable error message
+- `message` (string): Same as error (for compatibility)
+- `code` (string): Machine-readable error code
+- `details` (array): Additional error information
 
 ### Pagination Response Format
 
@@ -377,6 +394,481 @@ const response = await fetch('/api/oriva-proxy/marketplace/installed', {
   "meta": {
     "total_count": 8,
     "active_count": 6
+  }
+}
+```
+
+---
+
+## 🛠️ Developer App Management
+
+### GET /api/v1/developer/apps
+
+**Description**: List all apps you've created as a developer
+
+**Authentication**: API key required (must be developer)
+
+**Query Parameters**:
+- None (automatically filtered to your apps)
+
+**Request:**
+```javascript
+const response = await fetch('/api/oriva-proxy/developer/apps', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_app_xyz123",
+      "name": "My Awesome App",
+      "slug": "my-awesome-app",
+      "tagline": "Short description",
+      "description": "Full app description",
+      "category": "productivity",
+      "icon_url": "https://example.com/icon.png",
+      "screenshots": ["url1", "url2"],
+      "version": "1.0.0",
+      "status": "draft",
+      "is_active": false,
+      "install_count": 0,
+      "developer_id": "ext_user_abc",
+      "developer_name": "Your Name",
+      "created_at": "2025-01-26T10:00:00Z",
+      "updated_at": "2025-01-26T10:00:00Z"
+    }
+  ]
+}
+```
+
+**Status Values**:
+- `draft` - App being edited, not submitted
+- `pending_review` - Submitted, awaiting admin review
+- `approved` - Approved and visible in marketplace
+- `rejected` - Rejected by admin, can resubmit
+
+---
+
+### POST /api/v1/developer/apps
+
+**Description**: Create a new marketplace application
+
+**Authentication**: API key required
+
+**Request Body:**
+```json
+{
+  "name": "My App",
+  "slug": "my-app",
+  "tagline": "Short description",
+  "description": "Full description",
+  "category": "productivity",
+  "icon_url": "https://example.com/icon.png",
+  "screenshots": ["https://example.com/screen1.png"],
+  "execution_url": "https://myapp.com",
+  "homepage_url": "https://myapp.com",
+  "privacy_policy_url": "https://myapp.com/privacy",
+  "terms_url": "https://myapp.com/terms",
+  "pricing_model": "free",
+  "version": "1.0.0"
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "id": "ext_app_new123",
+    "name": "My App",
+    "status": "draft",
+    "created_at": "2025-01-26T10:00:00Z",
+    ...
+  }
+}
+```
+
+---
+
+### PUT /api/v1/developer/apps/:appId
+
+**Description**: Update an existing app (cannot change status)
+
+**Authentication**: API key required (must own the app)
+
+**Request Body:** (same as POST, all fields optional)
+
+**Response:** Updated app object
+
+**Notes**:
+- Cannot update `status` field via this endpoint
+- Use submit/resubmit endpoints to change status
+
+---
+
+### DELETE /api/v1/developer/apps/:appId
+
+**Description**: Delete an app (only if in draft status)
+
+**Authentication**: API key required (must own the app)
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "message": "App deleted successfully"
+}
+```
+
+**Restrictions**:
+- Can only delete apps with status `draft`
+- Returns 403 error if app is submitted, approved, or rejected
+
+---
+
+### POST /api/v1/developer/apps/:appId/submit
+
+**Description**: Submit app for marketplace review
+
+**Authentication**: API key required (must own the app)
+
+**Request Body:** None required
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "id": "ext_app_xyz123",
+    "status": "pending_review",
+    "submitted_at": "2025-01-26T10:00:00Z",
+    ...
+  }
+}
+```
+
+**Requirements**:
+- App must be in `draft` status
+- Returns 404 if app not found or already submitted
+
+---
+
+### POST /api/v1/developer/apps/:appId/resubmit
+
+**Description**: Resubmit app after rejection
+
+**Authentication**: API key required (must own the app)
+
+**Request Body:** Optional resubmission notes
+```json
+{
+  "notes": "Fixed issues mentioned in review"
+}
+```
+
+**Response:** Updated app with status `pending_review`
+
+**Requirements**:
+- App must be in `rejected` status
+
+---
+
+## 🏪 Marketplace Extended Endpoints
+
+### GET /api/v1/marketplace/trending
+
+**Description**: Get trending apps based on install count
+
+**Authentication**: API key required
+
+**Query Parameters**:
+- `limit` (optional): Max apps to return (default: 10, max: 50)
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_app_xyz",
+      "name": "Trending App",
+      "slug": "trending-app",
+      "tagline": "Popular app",
+      "category": "productivity",
+      "icon_url": "https://example.com/icon.png",
+      "install_count": 5000,
+      "developer_name": "Dev Name"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/v1/marketplace/featured
+
+**Description**: Get featured apps (curated by admin)
+
+**Authentication**: API key required
+
+**Query Parameters**:
+- `limit` (optional): Max apps to return (default: 6, max: 50)
+
+**Response:** Same format as trending endpoint
+
+**Notes**:
+- Only apps with `is_featured` flag set to true
+- Ordered by `featured_order` field
+
+---
+
+### POST /api/v1/marketplace/install/:appId
+
+**Description**: Install an app for the authenticated user
+
+**Authentication**: Auth token required (user-specific)
+
+**Request Body:**
+```json
+{
+  "profile_id": "ext_profile_xyz",
+  "settings": {
+    "custom_setting": "value"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "installation_id": "ext_install_abc",
+    "app_id": "ext_app_xyz",
+    "profile_id": "ext_profile_xyz",
+    "installed_at": "2025-01-26T10:00:00Z",
+    "is_active": true,
+    "settings": {}
+  }
+}
+```
+
+---
+
+### DELETE /api/v1/marketplace/uninstall/:appId
+
+**Description**: Uninstall an app
+
+**Authentication**: Auth token required
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "message": "App uninstalled successfully"
+}
+```
+
+---
+
+## 👥 Sessions, Team & Analytics
+
+### GET /api/v1/sessions
+
+**Description**: List user's sessions
+
+**Authentication**: API key required
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_session_xyz",
+      "name": "Team Standup",
+      "start_time": "2025-01-27T09:00:00Z",
+      "duration": 30,
+      "participants": 5
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/v1/sessions/upcoming
+
+**Description**: List upcoming sessions
+
+**Authentication**: API key required
+
+**Response:** Same format as /sessions
+
+---
+
+### GET /api/v1/team/members
+
+**Description**: Get team members
+
+**Authentication**: API key required
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "memberId": "ext_member_xyz",
+      "displayName": "John Doe",
+      "role": "member",
+      "joinedAt": "2024-01-15T10:00:00Z",
+      "avatar": "https://example.com/avatar.jpg"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/v1/analytics/summary
+
+**Description**: Get analytics summary
+
+**Authentication**: API key required
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "total_entries": 125,
+    "total_sessions": 42,
+    "active_users": 15,
+    "period": "last_30_days"
+  }
+}
+```
+
+---
+
+## 📝 Content Endpoints
+
+### GET /api/v1/entries
+
+**Description**: List entries with filtering
+
+**Authentication**: API key required
+
+**Query Parameters**:
+- `limit` (optional): Items per page (default: 50, max: 100)
+- `offset` (optional): Pagination offset
+- `profile_id` (optional): Filter by profile
+- `group_id` (optional): Filter by group
+- `audience` (optional): Filter by audience type (public, private, group_only)
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_entry_xyz",
+      "content": "Entry content",
+      "audience": "public",
+      "created_at": "2025-01-26T10:00:00Z",
+      "author": {
+        "id": "ext_user_abc",
+        "name": "John Doe"
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "total": 125
+    }
+  }
+}
+```
+
+---
+
+## 🛡️ Admin Endpoints
+
+### GET /api/v1/admin/apps/pending
+
+**Description**: List apps pending review (admin only)
+
+**Authentication**: Admin token required
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_app_xyz",
+      "name": "Pending App",
+      "status": "pending_review",
+      "submitted_at": "2025-01-25T10:00:00Z",
+      "developer_name": "Developer Name"
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/v1/admin/apps/:appId/review
+
+**Description**: Approve or reject an app submission (admin only)
+
+**Authentication**: Admin token required
+
+**Request Body:**
+```json
+{
+  "status": "approved",
+  "reviewerNotes": "Looks good, approved for marketplace"
+}
+```
+
+**Status Options**:
+- `approved` - Approve and publish to marketplace
+- `rejected` - Reject and allow resubmission
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "id": "ext_app_xyz",
+    "status": "approved",
+    "reviewed_at": "2025-01-26T10:00:00Z",
+    "reviewed_by": "ext_admin_abc",
+    "reviewer_notes": "Looks good, approved for marketplace"
   }
 }
 ```

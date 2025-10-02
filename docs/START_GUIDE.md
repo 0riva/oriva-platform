@@ -6,18 +6,28 @@ Welcome to the Oriva Platform! This guide will help you build powerful integrati
 
 ## 🧭 **Quick Navigation**
 
-**For Quick Reference (AI Agents):**
+<details>
+<summary><strong>🤖 Quick Reference for AI Agents</strong> (click to expand)</summary>
+
+Jump directly to reference sections:
 - **[API Endpoints Summary](#-api-endpoints)** - Complete endpoint reference with examples
 - **[Environment Setup](#-step-2-set-up-authentication)** - Configuration patterns and examples
 - **[Security Patterns](#-production-security-architecture)** - BFF proxy implementation examples
 - **[Error Handling](#-common-issues)** - Troubleshooting patterns and solutions
 
-**For Step-by-Step Learning (Humans):**
+</details>
+
+<details open>
+<summary><strong>👤 Step-by-Step Guide for Human Developers</strong> (recommended path)</summary>
+
+Complete walkthrough from beginner to marketplace:
 - **[Prerequisites & Setup](#-prerequisites)** - System requirements and account setup
 - **[3-Level Learning Path](#-learning-path)** - Progressive complexity levels
 - **[5-Step Integration Process](#-step-1-register-your-app)** - Complete guided walkthrough
 - **[Testing & Publishing](#-step-5-publish-to-marketplace)** - Validation and marketplace submission
 - **[Specialized Guides](#-developer-resources--specialized-guides)** - Deep-dive documentation links
+
+</details>
 
 [![API Version](https://img.shields.io/badge/API-v1.0-blue)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)]()
@@ -44,10 +54,18 @@ By the end of this guide, you'll have:
 ### 🟢 **Level 1: Quick Validation (20 minutes)**
 *"I want to test if this API works for my use case"*
 
-1. **[5-Minute API Test](./public/developer-guide/5-minute-api-test.md)** - Verify your API key
-2. **[15-Minute Web App](./public/developer-guide/15-minute-web-app.md)** - Build working integration
+**Choose your validation approach:**
 
-**✅ Success Milestone**: You can see your Oriva user data in a web browser
+**Option A: Fastest Path** (5 minutes)
+- **[5-Minute API Test](./public/developer-guide/5-minute-api-test.md)** - Standalone test script
+- Perfect for quick evaluation before committing to integration
+
+**Option B: Integrated Learning** (20 minutes)
+- Follow **Steps 1-2 below** for inline validation with learning
+- Includes authentication setup and first API calls
+- Better if you're ready to start building
+
+**✅ Success Milestone**: You can see your Oriva user data and understand authentication
 
 ### 🟡 **Level 2: Production Setup (2 hours)**
 *"I want to build a real app for users"*
@@ -187,8 +205,6 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **✅ If you see your user data**: Proceed to Step 2
 **❌ If you get an error**: Check your API key format and regenerate if needed
-
-**💡 Quick Alternative**: Use our **[5-Minute API Test](./public/developer-guide/5-minute-api-test.md)** for a more user-friendly validation.
 
 ---
 

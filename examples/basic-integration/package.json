@@ -1,0 +1,22 @@
+{
+  "name": "oriva-basic-integration-example",
+  "version": "1.0.0",
+  "description": "Basic integration example for Oriva Platform API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node index.js"
+  },
+  "keywords": [
+    "oriva",
+    "api",
+    "integration",
+    "example"
+  ],
+  "author": "Oriva Team",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "node-fetch": "^2.7.0"
+  }
+}

@@ -18,6 +18,11 @@
 
 ## 📚 Complete Documentation Index
 
+### 📖 Getting Started (Start Here!)
+- **[Quick Start Guide](./quick-start.md)** - 15-minute integration with working code
+- **[API Endpoints Index](./api-endpoints-index.md)** - 📌 **Quick reference for all 50+ endpoints**
+- **[Complete API Reference](./api-reference-complete.md)** - Full endpoint documentation with examples
+
 ### 🛡️ Security & Authentication
 - **[Authentication Patterns](./authentication-patterns.md)** - Secure authentication flows and session management
 - **[SECURITY WARNING](./SECURITY-WARNING.md)** - Critical security alerts and vulnerable patterns to avoid
@@ -28,9 +33,6 @@
 - **[Migration Guide](./migration-guide-from-url-auth.md)** - Upgrade from URL-based to secure authentication
 - **[API Headers Reference](./api-headers-reference.md)** - Complete header documentation with security best practices
 - **[API Troubleshooting Guide](./api-troubleshooting-guide.md)** - Systematic debugging and issue resolution
-
-### 📖 Getting Started
-- **[Quick Start Guide](./quick-start.md)** - Fast setup with secure defaults
 
 ## 🛡️ Security-First Approach
 
