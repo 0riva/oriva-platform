@@ -178,7 +178,7 @@ export default async function handler(req: NextRequest) {
     }
 
     // Parse context
-    const context: AdContext = await req.json();
+    const context = await req.json() as AdContext;
 
     // Validate required fields
     if (!context.placement) {
@@ -209,7 +209,7 @@ export default async function handler(req: NextRequest) {
       throw new Error(`Database fetch failed: ${response.status}`);
     }
 
-    const campaigns = await response.json();
+    const campaigns = await response.json() as any[];
 
     // Filter eligible campaigns
     const eligible = campaigns.filter((c: any) => isCampaignEligible(c));

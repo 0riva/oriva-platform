@@ -16,6 +16,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "types": ["node"],
+    "paths": {
+      "next": ["../node_modules/next"],
+      "next/server": ["../node_modules/next/server"]
+    },
     "baseUrl": "..",
     "rootDir": "..",
     "typeRoots": ["../node_modules/@types"]

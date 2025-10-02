@@ -184,7 +184,7 @@ function detectImpressionStuffing(impressions: any[]): FraudSignal | null {
     return acc;
   }, {} as Record<string, number>);
 
-  const stuffedPages = Object.values(impressionsPerPage).filter(count => count > 3);
+  const stuffedPages = Object.values(impressionsPerPage).filter((count: number) => count > 3);
 
   if (stuffedPages.length >= 3) {
     return {
@@ -362,6 +362,12 @@ export default async function handler(
       return res.status(400).json({ error: 'campaign_id is required' });
     }
 
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid authentication' });
+    }
+
     // Get campaign with targeting
     const { data: campaign, error: campaignError } = await supabase
       .from('ad_campaigns')
@@ -371,6 +377,11 @@ export default async function handler(
 
     if (campaignError || !campaign) {
       return res.status(404).json({ error: 'Campaign not found' });
+    }
+
+    // Verify campaign ownership
+    if (campaign.user_id !== user.id) {
+      return res.status(403).json({ error: 'Unauthorized access to campaign' });
     }
 
     // Calculate lookback timestamp

@@ -275,7 +275,13 @@ export default async function handler(
       return res.status(400).json({ error: 'campaign_id is required' });
     }
 
-    // Get campaign
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid authentication' });
+    }
+
+    // Get campaign with ownership verification
     const { data: campaign, error: campaignError } = await supabase
       .from('affiliate_campaigns')
       .select('*')
@@ -284,6 +290,11 @@ export default async function handler(
 
     if (campaignError || !campaign) {
       return res.status(404).json({ error: 'Campaign not found' });
+    }
+
+    // Verify campaign ownership
+    if (campaign.affiliate_id !== user.id) {
+      return res.status(403).json({ error: 'Unauthorized access to campaign' });
     }
 
     // Calculate lookback timestamp

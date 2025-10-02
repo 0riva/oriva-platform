@@ -42,6 +42,27 @@ function isValidShortCode(code: string): boolean {
 }
 
 /**
+ * Validate redirect URL to prevent open redirect vulnerabilities
+ * Only allow http/https protocols and optionally whitelist domains
+ */
+function isValidRedirectUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+
+  try {
+    const parsed = new URL(url);
+    // Only allow http/https protocols (prevents javascript:, data:, etc.)
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return false;
+    }
+    // URL is valid
+    return true;
+  } catch {
+    // Invalid URL format
+    return false;
+  }
+}
+
+/**
  * Extract short code from URL path
  */
 function getShortCodeFromPath(pathname: string): string | null {
@@ -69,7 +90,7 @@ async function fetchUrlFromDatabase(shortCode: string) {
     throw new Error(`Database fetch failed: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any[];
   return data.length > 0 ? data[0] : null;
 }
 
@@ -83,6 +104,8 @@ async function trackClick(
 ): Promise<void> {
   try {
     // Extract context from request
+    // Note: geo and ip are available in Edge Runtime but not in standard Next.js types
+    const reqWithGeo = req as any;
     const context = {
       short_code: shortCode,
       url_id: urlData.id,
@@ -90,12 +113,12 @@ async function trackClick(
       affiliate_id: urlData.affiliate_id,
       referrer: req.headers.get('referer') || undefined,
       user_agent: req.headers.get('user-agent') || undefined,
-      ip_address: req.headers.get('x-forwarded-for') || req.ip,
-      country: req.geo?.country,
-      region: req.geo?.region,
-      city: req.geo?.city,
-      latitude: req.geo?.latitude,
-      longitude: req.geo?.longitude,
+      ip_address: req.headers.get('x-forwarded-for') || reqWithGeo.ip,
+      country: reqWithGeo.geo?.country,
+      region: reqWithGeo.geo?.region,
+      city: reqWithGeo.geo?.city,
+      latitude: reqWithGeo.geo?.latitude,
+      longitude: reqWithGeo.geo?.longitude,
     };
 
     // Send to tracking endpoint (fire and forget)
@@ -189,7 +212,13 @@ export default async function handler(req: NextRequest) {
       });
     }
 
-    // 5. Redirect to target URL
+    // 5. Validate target URL before redirect (security)
+    if (!isValidRedirectUrl(targetUrl)) {
+      console.warn(`Invalid redirect URL: ${targetUrl}`);
+      return NextResponse.redirect(new URL(DEFAULT_REDIRECT, req.url));
+    }
+
+    // 6. Redirect to target URL
     const duration = Date.now() - startTime;
     console.log(`Redirect: ${shortCode} -> ${targetUrl} (${duration}ms)`);
 
