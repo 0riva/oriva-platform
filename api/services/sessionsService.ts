@@ -18,6 +18,8 @@ import {
   validateUuid,
   validateSessionType,
   validateQualityScore,
+  validateInsightType,
+  validateConfidence,
   SessionType,
 } from '../utils/validation';
 
@@ -71,6 +73,7 @@ export const createSession = async (
   input: CreateSessionRequest
 ): Promise<SessionResponse> => {
   validateUuid(userId, 'user_id');
+  validateRequired(input.session_type, 'session_type');
   const sessionType = validateSessionType(input.session_type);
 
   const db = createQueryBuilder(req);
@@ -117,10 +120,18 @@ export const updateSession = async (
   const db = createQueryBuilder(req);
 
   // Verify session exists and belongs to user
-  const existingSession = await executeQuery<SessionResponse>(
-    () => db.from('sessions').select('*').eq('id', sessionId).eq('user_id', userId).single(),
-    'verify session ownership'
-  );
+  let existingSession: SessionResponse;
+  try {
+    existingSession = await executeQuery<SessionResponse>(
+      () => db.from('sessions').select('*').eq('id', sessionId).eq('user_id', userId).single(),
+      'verify session ownership'
+    );
+  } catch (error) {
+    if (error instanceof DatabaseError && error.code === 'NOT_FOUND') {
+      throw new DatabaseError('Session not found', 'SESSION_NOT_FOUND', undefined);
+    }
+    throw error;
+  }
 
   // Build update object
   const updateData: Partial<UpdateSessionRequest> = {};
@@ -140,6 +151,14 @@ export const updateSession = async (
   }
 
   if (updates.insights_generated !== undefined) {
+    // Validate each insight
+    updates.insights_generated.forEach((insight, index) => {
+      validateRequired(insight.insight_type, `insights_generated[${index}].insight_type`);
+      validateRequired(insight.content, `insights_generated[${index}].content`);
+      validateRequired(insight.confidence, `insights_generated[${index}].confidence`);
+      validateInsightType(insight.insight_type);
+      validateConfidence(insight.confidence, `insights_generated[${index}].confidence`);
+    });
     updateData.insights_generated = updates.insights_generated;
   }
 
@@ -218,10 +237,7 @@ export const listUserSessions = async (
     query = query.range(filters.offset, filters.offset + filters.limit - 1);
   }
 
-  const sessions = await executeQuery<SessionResponse[]>(
-    () => query,
-    'list sessions'
-  );
+  const sessions = await executeQuery<SessionResponse[]>(() => query, 'list sessions');
 
   return { sessions };
 };
@@ -297,10 +313,7 @@ export const getUserSessionStats = async (
   // Calculate statistics
   const stats = {
     total_sessions: sessions.length,
-    total_duration_seconds: sessions.reduce(
-      (sum, s) => sum + (s.duration_seconds || 0),
-      0
-    ),
+    total_duration_seconds: sessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0),
     total_messages: sessions.reduce((sum, s) => sum + s.message_count, 0),
     avg_quality_score:
       sessions.filter((s) => s.quality_score !== null && s.quality_score !== undefined).length > 0

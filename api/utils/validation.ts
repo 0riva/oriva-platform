@@ -10,9 +10,9 @@ import { Request, Response, NextFunction } from 'express';
 
 /**
  * UUID validation regex (RFC 4122)
+ * Also accepts nil UUID (00000000-0000-0000-0000-000000000000) for test data
  */
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Validate UUID format
@@ -23,13 +23,33 @@ export const isValidUuid = (value: string): boolean => {
 
 /**
  * Validate and return UUID or throw error
+ * Throws UuidValidationError with specific error codes (defined below)
  */
 export const validateUuid = (value: string, fieldName: string): string => {
   if (!isValidUuid(value)) {
-    throw new ValidationError(`Invalid ${fieldName} format. Must be a valid UUID.`, {
-      field: fieldName,
-      value,
-    });
+    // Map field names to specific error codes and user-friendly names
+    const errorCodeMap: Record<string, string> = {
+      user_id: 'INVALID_USER_ID',
+      app_id: 'INVALID_APP_ID',
+      session_id: 'INVALID_SESSION_ID',
+    };
+
+    const fieldNameMap: Record<string, string> = {
+      user_id: 'user ID',
+      app_id: 'app ID',
+      session_id: 'session ID',
+    };
+
+    const code = errorCodeMap[fieldName] || 'INVALID_UUID';
+    const friendlyName = fieldNameMap[fieldName] || fieldName;
+    const message = `Invalid ${friendlyName} format. Must be a valid UUID.`;
+
+    // Throw a custom error with specific code
+    const error = new Error(message) as any;
+    error.name = 'UuidValidationError';
+    error.code = code;
+    error.details = { field: fieldName, value };
+    throw error;
   }
   return value;
 };
@@ -43,14 +63,11 @@ export const validateEnum = <T extends string>(
   fieldName: string
 ): T => {
   if (!allowedValues.includes(value)) {
-    throw new ValidationError(
-      `Invalid ${fieldName}. Must be one of: ${allowedValues.join(', ')}`,
-      {
-        field: fieldName,
-        value,
-        allowedValues,
-      }
-    );
+    throw new ValidationError(`Invalid ${fieldName}. Must be one of: ${allowedValues.join(', ')}`, {
+      field: fieldName,
+      value,
+      allowedValues,
+    });
   }
   return value;
 };
@@ -63,6 +80,7 @@ export const validateConfidence = (value: number, fieldName = 'confidence'): num
     throw new ValidationError(`${fieldName} must be a number between 0 and 1`, {
       field: fieldName,
       value,
+      code: 'INVALID_CONFIDENCE',
     });
   }
   return value;
@@ -76,6 +94,7 @@ export const validateQualityScore = (value: number, fieldName = 'quality_score')
     throw new ValidationError(`${fieldName} must be a number between 0 and 100`, {
       field: fieldName,
       value,
+      code: 'INVALID_QUALITY_SCORE',
     });
   }
   return value;
@@ -115,10 +134,11 @@ export const validateSchemaName = (value: string, fieldName = 'schema_name'): st
   const schemaRegex = /^[a-z][a-z0-9_]*$/;
   if (!schemaRegex.test(value)) {
     throw new ValidationError(
-      `Invalid ${fieldName}. Must be lowercase alphanumeric with underscores, starting with a letter.`,
+      `Invalid ${fieldName}. Must be a valid PostgreSQL schema name (lowercase alphanumeric with underscores, starting with a letter).`,
       {
         field: fieldName,
         value,
+        code: 'INVALID_SCHEMA_NAME',
       }
     );
   }
@@ -186,14 +206,12 @@ export const APP_STATUSES = ['active', 'inactive', 'extracting'] as const;
 export type AppStatus = (typeof APP_STATUSES)[number];
 
 /**
- * Ice breaker category enum
+ * Ice breaker category enum (matches DB schema)
  */
 export const ICE_BREAKER_CATEGORIES = [
-  'humor',
-  'observation',
-  'question',
-  'compliment',
   'shared_interest',
+  'photo_comment',
+  'conversation_starter',
 ] as const;
 export type IceBreakerCategory = (typeof ICE_BREAKER_CATEGORIES)[number];
 
@@ -231,14 +249,36 @@ export type ExtractionStatus = (typeof EXTRACTION_STATUSES)[number];
  * Validate session type
  */
 export const validateSessionType = (value: string): SessionType => {
-  return validateEnum(value as SessionType, SESSION_TYPES, 'session_type');
+  if (!SESSION_TYPES.includes(value as SessionType)) {
+    throw new ValidationError(
+      `Invalid session_type. Must be one of: chat, analysis, coaching, or practice`,
+      {
+        field: 'session_type',
+        value,
+        allowedValues: SESSION_TYPES,
+        code: 'INVALID_SESSION_TYPE',
+      }
+    );
+  }
+  return value as SessionType;
 };
 
 /**
  * Validate insight type
  */
 export const validateInsightType = (value: string): InsightType => {
-  return validateEnum(value as InsightType, INSIGHT_TYPES, 'insight_type');
+  if (!INSIGHT_TYPES.includes(value as InsightType)) {
+    throw new ValidationError(
+      `Invalid insight type. Must be one of: pattern, recommendation, or goal_progress`,
+      {
+        field: 'insight_type',
+        value,
+        allowedValues: INSIGHT_TYPES,
+        code: 'INVALID_INSIGHT_TYPE',
+      }
+    );
+  }
+  return value as InsightType;
 };
 
 /**

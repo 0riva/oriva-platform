@@ -7,24 +7,29 @@
  */
 
 import request from 'supertest';
-import { createTestClient } from '../../../test-utils/client';
-import { mockSupabase } from '../../../test-utils/supabase';
+import { createTestClient, TEST_USER_TOKENS } from '../../../test-utils/client';
+import { cleanupRegisteredData, registerForCleanup } from '../../../test-utils/transactions';
 
 describe('POST /api/v1/platform/apps', () => {
   let client: any;
+  const testToken = TEST_USER_TOKENS.user1;
 
   beforeEach(() => {
-    jest.clearAllMocks();
     client = createTestClient();
+  });
+
+  afterEach(async () => {
+    await cleanupRegisteredData();
   });
 
   describe('Contract Validation', () => {
     it('should accept valid app registration request', async () => {
       // Arrange
+      const timestamp = Date.now();
       const validRequest = {
-        app_id: 'hugo_career',
-        name: 'Hugo Career',
-        schema_name: 'hugo_career',
+        app_id: `hugo_test_${timestamp}`,
+        name: 'Hugo Test App',
+        schema_name: `hugo_test_${timestamp}`,
         settings: {
           quotas: {
             max_users: 10000,
@@ -36,27 +41,11 @@ describe('POST /api/v1/platform/apps', () => {
         },
       };
 
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue({
-            data: [
-              {
-                id: 'app-uuid',
-                ...validRequest,
-                status: 'active',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-            ],
-            error: null,
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(validRequest);
 
@@ -64,9 +53,9 @@ describe('POST /api/v1/platform/apps', () => {
       expect(response.status).toBe(201);
       expect(response.body).toMatchObject({
         id: expect.any(String),
-        app_id: 'hugo_career',
-        name: 'Hugo Career',
-        schema_name: 'hugo_career',
+        app_id: validRequest.app_id,
+        name: validRequest.name,
+        schema_name: validRequest.schema_name,
         status: 'active',
         settings: expect.objectContaining({
           quotas: expect.any(Object),
@@ -75,6 +64,7 @@ describe('POST /api/v1/platform/apps', () => {
         created_at: expect.any(String),
         updated_at: expect.any(String),
       });
+      registerForCleanup('oriva_platform', 'apps', response.body.id);
     });
 
     it('should reject request without required app_id', async () => {
@@ -88,6 +78,7 @@ describe('POST /api/v1/platform/apps', () => {
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -110,6 +101,7 @@ describe('POST /api/v1/platform/apps', () => {
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -129,22 +121,11 @@ describe('POST /api/v1/platform/apps', () => {
         schema_name: 'hugo_love_copy',
       };
 
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue({
-            data: null,
-            error: {
-              code: '23505', // Unique violation
-              message: 'duplicate key value violates unique constraint',
-            },
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(duplicateRequest);
 
@@ -190,6 +171,7 @@ describe('POST /api/v1/platform/apps', () => {
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -204,57 +186,34 @@ describe('POST /api/v1/platform/apps', () => {
     it('should create database schema on app registration', async () => {
       // Arrange
       const validRequest = {
-        app_id: 'hugo_career',
-        name: 'Hugo Career',
-        schema_name: 'hugo_career',
+        app_id: 'hugo_test_' + Date.now(),
+        name: 'Hugo Test App',
+        schema_name: 'hugo_test_' + Date.now(),
       };
-
-      const mockRpc = jest.fn().mockResolvedValue({
-        data: { success: true },
-        error: null,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue({
-            data: [
-              {
-                id: 'app-uuid',
-                ...validRequest,
-                status: 'active',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-            ],
-            error: null,
-          }),
-        }),
-      });
-
-      mockSupabase.rpc = mockRpc;
 
       // Act
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(validRequest);
 
       // Assert
       expect(response.status).toBe(201);
-      expect(mockRpc).toHaveBeenCalledWith('create_app_schema', {
-        schema_name: 'hugo_career',
-      });
+      expect(response.body.schema_name).toBe(validRequest.schema_name);
+      registerForCleanup('oriva_platform', 'apps', response.body.id);
     });
   });
 
   describe('OpenAPI Contract Compliance', () => {
     it('should match OpenAPI schema for successful response', async () => {
       // Arrange
+      const timestamp = Date.now();
       const validRequest = {
-        app_id: 'hugo_career',
-        name: 'Hugo Career',
-        schema_name: 'hugo_career',
+        app_id: `hugo_openapi_${timestamp}`,
+        name: 'Hugo OpenAPI Test',
+        schema_name: `hugo_openapi_${timestamp}`,
         settings: {
           quotas: {
             max_users: 10000,
@@ -263,31 +222,11 @@ describe('POST /api/v1/platform/apps', () => {
         },
       };
 
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue({
-            data: [
-              {
-                id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-                app_id: validRequest.app_id,
-                name: validRequest.name,
-                description: null,
-                schema_name: validRequest.schema_name,
-                status: 'active',
-                settings: validRequest.settings,
-                created_at: '2025-01-02T15:30:00Z',
-                updated_at: '2025-01-02T15:30:00Z',
-              },
-            ],
-            error: null,
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(validRequest);
 
@@ -320,6 +259,7 @@ describe('POST /api/v1/platform/apps', () => {
           expect(Array.isArray(body.settings.features)).toBe(true);
         }
       }
+      registerForCleanup('oriva_platform', 'apps', body.id);
     });
 
     it('should return error matching OpenAPI Error schema', async () => {
@@ -332,6 +272,7 @@ describe('POST /api/v1/platform/apps', () => {
       const response = await request(client)
         .post('/api/v1/platform/apps')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 

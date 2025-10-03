@@ -41,11 +41,12 @@ export const errorHandler: ErrorRequestHandler = (
   });
 
   // Handle specific error types
-  if (error instanceof ValidationError) {
+  if (error instanceof ValidationError || error.name === 'UuidValidationError') {
+    const errorDetails = (error as any).details || {};
     res.status(400).json({
-      code: error.code,
+      code: errorDetails.code || (error as any).code || 'VALIDATION_ERROR',
       message: error.message,
-      details: error.details,
+      details: errorDetails,
     } as ErrorResponse);
     return;
   }
@@ -74,8 +75,13 @@ export const errorHandler: ErrorRequestHandler = (
 const getStatusCodeForDatabaseError = (code: string): number => {
   switch (code) {
     case 'NOT_FOUND':
+    case 'USER_NOT_FOUND':
+    case 'APP_NOT_FOUND':
+    case 'SESSION_NOT_FOUND':
       return 404;
     case 'DUPLICATE_RECORD':
+    case 'PROFILE_EXISTS':
+    case 'APP_ID_EXISTS':
       return 409;
     case 'FOREIGN_KEY_VIOLATION':
     case 'MISSING_REQUIRED_FIELD':
@@ -132,11 +138,9 @@ export const createSuccessResponse = <T>(data: T): T => {
 /**
  * Request timeout middleware
  */
-export const requestTimeout = (timeoutMs = 30000): ((
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => void) => {
+export const requestTimeout = (
+  timeoutMs = 30000
+): ((req: Request, res: Response, next: NextFunction) => void) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const timeout = setTimeout(() => {
       res.status(504).json({

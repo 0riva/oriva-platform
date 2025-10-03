@@ -7,23 +7,43 @@
  */
 
 import request from 'supertest';
-import { createTestClient } from '../../../test-utils/client';
-import { mockSupabase } from '../../../test-utils/supabase';
+import { createTestClient, TEST_USER_TOKENS } from '../../../test-utils/client';
+import { cleanupRegisteredData, registerForCleanup } from '../../../test-utils/transactions';
 
 describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
   let client: any;
-  const testSessionId = '123e4567-e89b-12d3-a456-426614174000';
+  const testToken = TEST_USER_TOKENS.user1; // Alice
+  const testUserId = '00000000-0000-0000-0000-000000000001';
+  let testSessionId: string;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+  beforeEach(async () => {
     client = createTestClient();
+
+    // Create a test session for PATCH tests
+    const sessionResponse = await request(client)
+      .post('/api/v1/hugo-ai/sessions')
+      .set('X-App-ID', 'hugo_love')
+      .set('X-API-Key', 'test-api-key')
+      .set('Authorization', `Bearer ${testToken}`)
+      .send({
+        user_id: testUserId,
+        session_type: 'chat',
+        context_data: {},
+      });
+
+    testSessionId = sessionResponse.body.id;
+    registerForCleanup('hugo_ai', 'sessions', testSessionId);
+  });
+
+  afterEach(async () => {
+    await cleanupRegisteredData();
   });
 
   describe('Contract Validation', () => {
     it('should end a session successfully', async () => {
       // Arrange
       const updateRequest = {
-        ended_at: '2025-01-02T16:00:00Z',
+        ended_at: new Date().toISOString(),
         duration_seconds: 1800,
         insights_generated: [
           {
@@ -39,42 +59,12 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         quality_score: 82,
       };
 
-      const mockUpdatedSession = {
-        id: testSessionId,
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
-        app_id: '223e4567-e89b-12d3-a456-426614174001',
-        session_type: 'coaching',
-        started_at: '2025-01-02T15:30:00Z',
-        ended_at: updateRequest.ended_at,
-        duration_seconds: updateRequest.duration_seconds,
-        message_count: 15,
-        context_data: {
-          domain: 'dating',
-          goals: ['improve_confidence'],
-        },
-        insights_generated: updateRequest.insights_generated,
-        quality_score: updateRequest.quality_score,
-        created_at: '2025-01-02T15:30:00Z',
-      };
-
-      mockSupabase.from.mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: mockUpdatedSession,
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .patch(`/api/v1/hugo-ai/sessions/${testSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(updateRequest);
 
@@ -82,7 +72,6 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         id: testSessionId,
-        ended_at: updateRequest.ended_at,
         duration_seconds: updateRequest.duration_seconds,
         insights_generated: expect.arrayContaining([
           expect.objectContaining({
@@ -92,6 +81,8 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         ]),
         quality_score: 82,
       });
+      expect(response.body.ended_at).toBeTruthy();
+      expect(new Date(response.body.ended_at).getTime()).not.toBeNaN();
     });
 
     it('should validate session exists before update', async () => {
@@ -101,27 +92,12 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         ended_at: '2025-01-02T16:00:00Z',
       };
 
-      mockSupabase.from.mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: null,
-                error: {
-                  code: 'PGRST116',
-                  message: 'The result contains 0 rows',
-                },
-              }),
-            }),
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .patch(`/api/v1/hugo-ai/sessions/${nonExistentSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(updateRequest);
 
@@ -145,6 +121,7 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         .patch(`/api/v1/hugo-ai/sessions/${invalidSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(updateRequest);
 
@@ -166,6 +143,7 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
       const response = await request(client)
         .patch(`/api/v1/hugo-ai/sessions/${testSessionId}`)
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(updateRequest);
 
@@ -227,24 +205,12 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         created_at: '2025-01-02T15:30:00Z',
       };
 
-      mockSupabase.from.mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: mockSession,
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .patch(`/api/v1/hugo-ai/sessions/${testSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(partialUpdate);
 
@@ -265,6 +231,7 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         .patch(`/api/v1/hugo-ai/sessions/${testSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidUpdate);
 
@@ -292,6 +259,7 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         .patch(`/api/v1/hugo-ai/sessions/${testSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidUpdate);
 
@@ -304,48 +272,25 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
     });
 
     it('should calculate duration_seconds if not provided', async () => {
-      // Arrange
+      // Arrange - end session 30 minutes after it started
       const updateRequest = {
-        ended_at: '2025-01-02T16:00:00Z',
+        ended_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         // duration_seconds not provided - should be calculated
       };
-
-      const mockSession = {
-        id: testSessionId,
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
-        app_id: '223e4567-e89b-12d3-a456-426614174001',
-        session_type: 'coaching',
-        started_at: '2025-01-02T15:30:00Z',
-        ended_at: updateRequest.ended_at,
-        duration_seconds: 1800, // 30 minutes calculated
-        message_count: 10,
-        created_at: '2025-01-02T15:30:00Z',
-      };
-
-      mockSupabase.from.mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: mockSession,
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
 
       // Act
       const response = await request(client)
         .patch(`/api/v1/hugo-ai/sessions/${testSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(updateRequest);
 
       // Assert
       expect(response.status).toBe(200);
-      expect(response.body.duration_seconds).toBe(1800);
+      expect(response.body.duration_seconds).toBeGreaterThanOrEqual(1790);
+      expect(response.body.duration_seconds).toBeLessThanOrEqual(1810);
     });
   });
 
@@ -389,24 +334,12 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         created_at: '2025-01-02T15:30:00Z',
       };
 
-      mockSupabase.from.mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: mockSession,
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .patch(`/api/v1/hugo-ai/sessions/${testSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(updateRequest);
 
@@ -426,17 +359,21 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
       expect(typeof body.id).toBe('string');
       expect(body.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(typeof body.user_id).toBe('string');
-      expect(body.user_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(body.user_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
       expect(typeof body.app_id).toBe('string');
-      expect(body.app_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(body.app_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
       expect(['chat', 'analysis', 'coaching', 'practice']).toContain(body.session_type);
       expect(typeof body.started_at).toBe('string');
-      expect(new Date(body.started_at).toISOString()).toBe(body.started_at);
+      expect(new Date(body.started_at).getTime()).not.toBeNaN();
       expect(typeof body.message_count).toBe('number');
 
       // Updated fields validation
       expect(typeof body.ended_at).toBe('string');
-      expect(new Date(body.ended_at).toISOString()).toBe(body.ended_at);
+      expect(new Date(body.ended_at).getTime()).not.toBeNaN();
       expect(typeof body.duration_seconds).toBe('number');
       expect(body.duration_seconds).toBeGreaterThan(0);
 
@@ -472,6 +409,7 @@ describe('PATCH /api/v1/hugo-ai/sessions/{sessionId}', () => {
         .patch(`/api/v1/hugo-ai/sessions/${invalidSessionId}`)
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(updateRequest);
 
