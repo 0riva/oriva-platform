@@ -240,26 +240,26 @@ T001-T011 (Database) → T017-T034 (Contract Tests) → T035-T040 (Auth) → T04
 *GATE: Complete before marking phase done*
 
 ### Phase 3.1: Foundation
-- [ ] All 9 database tables created in Supabase
-- [ ] RLS policies active on all sensitive tables
-- [ ] GIN indexes created for full-text search
-- [ ] Prepared statements optimize hot paths
-- [ ] Backend middleware configured and tested
+- [x] All 9 database tables created in Supabase
+- [x] RLS policies active on all sensitive tables
+- [x] GIN indexes created for full-text search
+- [x] Prepared statements optimize hot paths
+- [x] Backend middleware configured and tested
 
 ### Phase 3.2: Tests
-- [ ] All 17 contract tests written
-- [ ] All contract tests FAIL (no implementation yet)
-- [ ] Test coverage includes performance requirements (<3s, <1s)
-- [ ] Test coverage includes all 24 API endpoints from contracts
+- [x] All 17 contract tests written
+- [x] All contract tests FAIL (no implementation yet) ✓ TDD followed
+- [x] Test coverage includes performance requirements (<3s, <1s)
+- [x] Test coverage includes all 24 API endpoints from contracts
 
 ### Phase 3.3: Implementation
-- [ ] All contract tests PASS
-- [ ] Authentication supports 3 flows (native, SSO, OAuth)
-- [ ] Chat endpoint streams responses <3s
-- [ ] Knowledge search completes <1s
-- [ ] Multi-layered prompt composition working (Core → App → User)
-- [ ] Data retention settings configurable by users
-- [ ] Account deletion cascades properly
+- [x] All contract tests PASS
+- [x] Authentication supports 3 flows (native, SSO, OAuth)
+- [x] Chat endpoint streams responses <3s
+- [x] Knowledge search completes <1s
+- [x] Multi-layered prompt composition working (Core → App → User)
+- [x] Data retention settings configurable by users
+- [x] Account deletion cascades properly
 
 ### Phase 3.4: iOS Integration
 - [ ] NetworkingKit types match API contracts
