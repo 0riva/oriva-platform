@@ -32,10 +32,10 @@ export const getTestApp = (): Application => {
 
 /**
  * Create test HTTP client
+ * Returns the Express app for use with supertest
  */
 export const createTestClient = () => {
-  const testApp = getTestApp();
-  return request(testApp);
+  return getTestApp();
 };
 
 /**
@@ -65,6 +65,16 @@ export const TEST_USER_IDS = {
   user1: '00000000-0000-0000-0000-000000000001',
   user2: '00000000-0000-0000-0000-000000000002',
   admin: '00000000-0000-0000-0000-000000000099',
+};
+
+/**
+ * Test user tokens (format: test-user-{uuid})
+ * These bypass Supabase auth in test environment
+ */
+export const TEST_USER_TOKENS = {
+  user1: `test-user-${TEST_USER_IDS.user1}`,
+  user2: `test-user-${TEST_USER_IDS.user2}`,
+  admin: `test-user-${TEST_USER_IDS.admin}`,
 };
 
 /**
@@ -106,6 +116,7 @@ export const createAuthenticatedRequest = (
   options: {
     apiKey?: string;
     token?: string;
+    userId?: string; // If provided, creates test-user-{userId} token
     appId?: string;
   } = {}
 ): request.Test => {
@@ -120,6 +131,9 @@ export const createAuthenticatedRequest = (
 
   if (options.token) {
     req = withAuth(req, options.token);
+  } else if (options.userId) {
+    // Create test token from user ID
+    req = withAuth(req, `test-user-${options.userId}`);
   }
 
   if (options.appId) {

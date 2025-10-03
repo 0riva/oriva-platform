@@ -68,7 +68,8 @@ export const schemaRouter = async (
 
     // Look up app in oriva_platform.apps
     const { data: app, error: appError } = await supabase
-      .from('oriva_platform.apps')
+      .schema('oriva_platform')
+      .from('apps')
       .select('id, app_id, name, schema_name, status')
       .eq('app_id', appId)
       .single<AppRecord>();
@@ -92,9 +93,11 @@ export const schemaRouter = async (
     }
 
     // Set schema search path for this request
-    const { error: pathError } = await supabase.rpc('set_request_schema_path', {
-      p_app_id: appId,
-    });
+    const { error: pathError } = await supabase
+      .schema('oriva_platform')
+      .rpc('set_request_schema_path', {
+        p_app_id: appId,
+      });
 
     if (pathError) {
       console.error('Failed to set schema path:', pathError);
@@ -180,9 +183,7 @@ export const getSupabase = (req: Request): SupabaseClient => {
 /**
  * Get app context from request
  */
-export const getAppContext = (
-  req: Request
-): NonNullable<Request['appContext']> => {
+export const getAppContext = (req: Request): NonNullable<Request['appContext']> => {
   if (!req.appContext) {
     throw new Error('App context not initialized. Schema routing middleware required.');
   }

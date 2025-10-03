@@ -32,11 +32,7 @@ interface UserRecord {
  * API Key authentication middleware
  * Validates X-API-Key header against environment configuration
  */
-export const requireApiKey = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const requireApiKey = (req: Request, res: Response, next: NextFunction): void => {
   const apiKey = req.header('X-API-Key');
 
   if (!apiKey) {
@@ -87,6 +83,37 @@ export const requireAuth = async (
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
+    // Test mode: Allow test tokens to bypass Supabase auth
+    if (process.env.NODE_ENV === 'test' && token.startsWith('test-user-')) {
+      // Extract user ID from test token format: "test-user-{uuid}"
+      const userId = token.replace('test-user-', '');
+
+      // Load user record from database
+      const supabase = getSupabase(req);
+      const { data: userRecord, error: userError } = await supabase
+        .schema('oriva_platform')
+        .from('users')
+        .select('id, email, full_name')
+        .eq('id', userId)
+        .single<UserRecord>();
+
+      if (userError || !userRecord) {
+        res.status(401).json({
+          code: 'USER_NOT_FOUND',
+          message: 'Test user account not found',
+        });
+        return;
+      }
+
+      req.user = {
+        id: userRecord.id,
+        email: userRecord.email,
+      };
+
+      next();
+      return;
+    }
+
     // Verify JWT with Supabase
     const supabase = getSupabase(req);
     const {
@@ -105,7 +132,8 @@ export const requireAuth = async (
 
     // Load full user record from oriva_platform.users
     const { data: userRecord, error: userError } = await supabase
-      .from('oriva_platform.users')
+      .schema('oriva_platform')
+      .from('users')
       .select('id, email, full_name')
       .eq('id', user.id)
       .single<UserRecord>();
@@ -167,7 +195,8 @@ export const requireAppAccess = async (
 
     // Check user_app_access
     const { data: access, error } = await supabase
-      .from('oriva_platform.user_app_access')
+      .schema('oriva_platform')
+      .from('user_app_access')
       .select('role, status')
       .eq('user_id', userId)
       .eq('app_id', appUuid)
