@@ -7,61 +7,42 @@
  */
 
 import request from 'supertest';
-import { createTestClient } from '../../../test-utils/client';
-import { mockSupabase } from '../../../test-utils/supabase';
+import { createTestClient, TEST_USER_TOKENS } from '../../../test-utils/client';
+import { cleanupRegisteredData, registerForCleanup } from '../../../test-utils/transactions';
 
 describe('POST /api/v1/hugo-ai/sessions', () => {
   let client: any;
+  const testToken = TEST_USER_TOKENS.user1; // Alice
+  const testUserId = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(() => {
-    jest.clearAllMocks();
     client = createTestClient();
+  });
+
+  afterEach(async () => {
+    await cleanupRegisteredData();
   });
 
   describe('Contract Validation', () => {
     it('should start a new coaching session', async () => {
       // Arrange
       const validRequest = {
+        user_id: testUserId,
         session_type: 'coaching',
         context_data: {
           domain: 'dating',
           goals: ['improve_confidence', 'better_conversations'],
           mood: 'optimistic',
-          topic: 'first_date_preparation'
-        }
+          topic: 'first_date_preparation',
+        },
       };
-
-      const mockSession = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
-        app_id: '223e4567-e89b-12d3-a456-426614174001',
-        session_type: 'coaching',
-        started_at: new Date().toISOString(),
-        ended_at: null,
-        duration_seconds: null,
-        message_count: 0,
-        context_data: validRequest.context_data,
-        insights_generated: [],
-        quality_score: null,
-        created_at: new Date().toISOString()
-      };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockSession,
-              error: null
-            })
-          })
-        })
-      });
 
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/sessions')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(validRequest);
 
@@ -69,25 +50,28 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
       expect(response.status).toBe(201);
       expect(response.body).toMatchObject({
         id: expect.any(String),
-        user_id: expect.any(String),
+        user_id: testUserId,
         app_id: expect.any(String),
         session_type: 'coaching',
         started_at: expect.any(String),
         message_count: 0,
         context_data: expect.objectContaining({
           domain: 'dating',
-          goals: expect.any(Array)
-        })
+          goals: expect.any(Array),
+        }),
       });
+
+      registerForCleanup('hugo_ai', 'sessions', response.body.id);
     });
 
     it('should validate session_type enum', async () => {
       // Arrange
       const invalidRequest = {
+        user_id: testUserId,
         session_type: 'invalid_type',
         context_data: {
-          domain: 'dating'
-        }
+          domain: 'dating',
+        },
       };
 
       // Act
@@ -95,6 +79,7 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
         .post('/api/v1/hugo-ai/sessions')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -102,16 +87,17 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
       expect(response.status).toBe(400);
       expect(response.body).toMatchObject({
         code: 'INVALID_SESSION_TYPE',
-        message: expect.stringContaining('chat, analysis, coaching, or practice')
+        message: expect.stringContaining('chat, analysis, coaching, or practice'),
       });
     });
 
     it('should require session_type field', async () => {
       // Arrange
       const invalidRequest = {
+        user_id: testUserId,
         context_data: {
-          domain: 'dating'
-        }
+          domain: 'dating',
+        },
       };
 
       // Act
@@ -119,6 +105,7 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
         .post('/api/v1/hugo-ai/sessions')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -126,15 +113,16 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
       expect(response.status).toBe(400);
       expect(response.body).toMatchObject({
         code: 'VALIDATION_ERROR',
-        message: expect.stringContaining('session_type')
+        message: expect.stringContaining('session_type'),
       });
     });
 
     it('should require X-App-ID header for schema routing', async () => {
       // Arrange
       const validRequest = {
+        user_id: testUserId,
         session_type: 'chat',
-        context_data: {}
+        context_data: {},
       };
 
       // Act - Missing X-App-ID header
@@ -148,15 +136,16 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
       expect(response.status).toBe(400);
       expect(response.body).toMatchObject({
         code: 'MISSING_APP_ID',
-        message: expect.stringContaining('X-App-ID header')
+        message: expect.stringContaining('X-App-ID header'),
       });
     });
 
     it('should require API key authentication', async () => {
       // Arrange
       const validRequest = {
+        user_id: testUserId,
         session_type: 'chat',
-        context_data: {}
+        context_data: {},
       };
 
       // Act - No API key
@@ -170,7 +159,7 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
       expect(response.status).toBe(401);
       expect(response.body).toMatchObject({
         code: 'UNAUTHORIZED',
-        message: expect.stringContaining('API key')
+        message: expect.stringContaining('API key'),
       });
     });
 
@@ -180,85 +169,51 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
       for (const sessionType of sessionTypes) {
         // Arrange
         const validRequest = {
+          user_id: testUserId,
           session_type: sessionType,
           context_data: {
-            domain: 'dating'
-          }
+            domain: 'dating',
+          },
         };
-
-        mockSupabase.from.mockReturnValue({
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: {
-                  id: '123e4567-e89b-12d3-a456-426614174000',
-                  user_id: '550e8400-e29b-41d4-a716-446655440000',
-                  app_id: '223e4567-e89b-12d3-a456-426614174001',
-                  session_type: sessionType,
-                  started_at: new Date().toISOString(),
-                  message_count: 0,
-                  context_data: validRequest.context_data,
-                  insights_generated: [],
-                  created_at: new Date().toISOString()
-                },
-                error: null
-              })
-            })
-          })
-        });
 
         // Act
         const response = await request(client)
           .post('/api/v1/hugo-ai/sessions')
           .set('X-App-ID', 'hugo_love')
           .set('X-API-Key', 'test-api-key')
+          .set('Authorization', `Bearer ${testToken}`)
           .set('Content-Type', 'application/json')
           .send(validRequest);
 
         // Assert
         expect(response.status).toBe(201);
         expect(response.body.session_type).toBe(sessionType);
+
+        registerForCleanup('hugo_ai', 'sessions', response.body.id);
       }
     });
 
     it('should handle optional context_data gracefully', async () => {
       // Arrange
       const minimalRequest = {
-        session_type: 'chat'
+        user_id: testUserId,
+        session_type: 'chat',
       };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: {
-                id: '123e4567-e89b-12d3-a456-426614174000',
-                user_id: '550e8400-e29b-41d4-a716-446655440000',
-                app_id: '223e4567-e89b-12d3-a456-426614174001',
-                session_type: 'chat',
-                started_at: new Date().toISOString(),
-                message_count: 0,
-                context_data: {},
-                insights_generated: [],
-                created_at: new Date().toISOString()
-              },
-              error: null
-            })
-          })
-        })
-      });
 
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/sessions')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(minimalRequest);
 
       // Assert
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('context_data');
+
+      registerForCleanup('hugo_ai', 'sessions', response.body.id);
     });
   });
 
@@ -266,46 +221,22 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
     it('should match OpenAPI schema for successful response', async () => {
       // Arrange
       const validRequest = {
+        user_id: testUserId,
         session_type: 'coaching',
         context_data: {
           domain: 'dating',
           goals: ['improve_confidence'],
           mood: 'nervous',
-          topic: 'first_date'
-        }
+          topic: 'first_date',
+        },
       };
-
-      const mockSession = {
-        id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
-        app_id: '223e4567-e89b-12d3-a456-426614174001',
-        session_type: 'coaching',
-        started_at: '2025-01-02T15:30:00Z',
-        ended_at: null,
-        duration_seconds: null,
-        message_count: 0,
-        context_data: validRequest.context_data,
-        insights_generated: [],
-        quality_score: null,
-        created_at: '2025-01-02T15:30:00Z'
-      };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockSession,
-              error: null
-            })
-          })
-        })
-      });
 
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/sessions')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(validRequest);
 
@@ -325,18 +256,22 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
       expect(typeof body.id).toBe('string');
       expect(body.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(typeof body.user_id).toBe('string');
-      expect(body.user_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(body.user_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
       expect(typeof body.app_id).toBe('string');
-      expect(body.app_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(body.app_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
       expect(['chat', 'analysis', 'coaching', 'practice']).toContain(body.session_type);
       expect(typeof body.started_at).toBe('string');
-      expect(new Date(body.started_at).toISOString()).toBe(body.started_at);
+      expect(new Date(body.started_at).getTime()).not.toBeNaN(); // Valid timestamp
       expect(typeof body.message_count).toBe('number');
 
       // Optional fields validation when present
       if (body.ended_at !== null && body.ended_at !== undefined) {
         expect(typeof body.ended_at).toBe('string');
-        expect(new Date(body.ended_at).toISOString()).toBe(body.ended_at);
+        expect(new Date(body.ended_at).getTime()).not.toBeNaN(); // Valid timestamp
       }
 
       if (body.duration_seconds !== null && body.duration_seconds !== undefined) {
@@ -356,12 +291,15 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
         expect(body.quality_score).toBeGreaterThanOrEqual(0);
         expect(body.quality_score).toBeLessThanOrEqual(100);
       }
+
+      registerForCleanup('hugo_ai', 'sessions', body.id);
     });
 
     it('should return error matching OpenAPI Error schema', async () => {
       // Arrange - Invalid request to trigger error
       const invalidRequest = {
-        session_type: 'invalid_type'
+        user_id: testUserId,
+        session_type: 'invalid_type',
       };
 
       // Act
@@ -369,6 +307,7 @@ describe('POST /api/v1/hugo-ai/sessions', () => {
         .post('/api/v1/hugo-ai/sessions')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 

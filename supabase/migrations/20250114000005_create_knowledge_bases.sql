@@ -32,11 +32,18 @@ CREATE INDEX IF NOT EXISTS kb_app_ids_idx ON hugo_knowledge_bases USING GIN(app_
 CREATE INDEX IF NOT EXISTS kb_active_idx ON hugo_knowledge_bases(is_active) WHERE is_active = true;
 
 -- Constraints
-ALTER TABLE hugo_knowledge_bases ADD CONSTRAINT kb_app_ids_check
-  CHECK (array_length(app_ids, 1) > 0);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'kb_app_ids_check') THEN
+    ALTER TABLE hugo_knowledge_bases ADD CONSTRAINT kb_app_ids_check
+      CHECK (array_length(app_ids, 1) > 0);
+  END IF;
 
-ALTER TABLE hugo_knowledge_bases ADD CONSTRAINT kb_entry_count_check
-  CHECK (entry_count >= 0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'kb_entry_count_check') THEN
+    ALTER TABLE hugo_knowledge_bases ADD CONSTRAINT kb_entry_count_check
+      CHECK (entry_count >= 0);
+  END IF;
+END $$;
 
 -- Comments
 COMMENT ON TABLE hugo_knowledge_bases IS 'Domain expertise collections (e.g., Intimacy Code)';

@@ -19,8 +19,8 @@ import { validateRequired, validateUuid } from '../utils/validation';
  * Create profile request
  */
 export interface CreateProfileRequest {
+  user_id?: string;
   profile_data: Record<string, unknown>;
-  preferences?: Record<string, unknown>;
 }
 
 /**
@@ -28,7 +28,6 @@ export interface CreateProfileRequest {
  */
 export interface UpdateProfileRequest {
   profile_data?: Record<string, unknown>;
-  preferences?: Record<string, unknown>;
 }
 
 /**
@@ -38,7 +37,6 @@ export interface ProfileResponse {
   id: string;
   user_id: string;
   profile_data: Record<string, unknown>;
-  preferences?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -78,11 +76,7 @@ export const createProfile = async (
   );
 
   if (existingProfile) {
-    throw new DatabaseError(
-      'Profile already exists for this user',
-      'DUPLICATE_RECORD',
-      undefined
-    );
+    throw new DatabaseError('Profile already exists for this user', 'PROFILE_EXISTS', undefined);
   }
 
   // Create profile in app-specific schema
@@ -93,7 +87,6 @@ export const createProfile = async (
         .insert({
           user_id: userId,
           profile_data: input.profile_data,
-          preferences: input.preferences || {},
         })
         .select()
         .single(),
@@ -106,10 +99,7 @@ export const createProfile = async (
 /**
  * Get profile by user ID
  */
-export const getProfile = async (
-  req: Request,
-  userId: string
-): Promise<ProfileResponse> => {
+export const getProfile = async (req: Request, userId: string): Promise<ProfileResponse> => {
   validateUuid(userId, 'user_id');
 
   const db = createQueryBuilder(req);
@@ -151,14 +141,6 @@ export const updateProfile = async (
     };
   }
 
-  if (updates.preferences !== undefined) {
-    // Merge with existing preferences
-    updateData.preferences = {
-      ...(existingProfile.preferences || {}),
-      ...updates.preferences,
-    };
-  }
-
   // Update profile
   const updatedProfile = await executeQuery<ProfileResponse>(
     () => db.from('profiles').update(updateData).eq('user_id', userId).select().single(),
@@ -176,10 +158,7 @@ export const deleteProfile = async (req: Request, userId: string): Promise<void>
 
   const db = createQueryBuilder(req);
 
-  await executeQuery(
-    () => db.from('profiles').delete().eq('user_id', userId),
-    'delete profile'
-  );
+  await executeQuery(() => db.from('profiles').delete().eq('user_id', userId), 'delete profile');
 };
 
 /**
@@ -218,10 +197,7 @@ export const listProfiles = async (
     query = query.range(filters.offset, filters.offset + filters.limit - 1);
   }
 
-  const profiles = await executeQuery<ProfileResponse[]>(
-    () => query,
-    'list profiles'
-  );
+  const profiles = await executeQuery<ProfileResponse[]>(() => query, 'list profiles');
 
   return { profiles };
 };
@@ -233,7 +209,6 @@ export const getProfileStats = async (
   req: Request
 ): Promise<{
   total_profiles: number;
-  profiles_with_preferences: number;
 }> => {
   const db = createQueryBuilder(req);
 
@@ -244,9 +219,6 @@ export const getProfileStats = async (
 
   const stats = {
     total_profiles: profiles.length,
-    profiles_with_preferences: profiles.filter(
-      (p) => p.preferences && Object.keys(p.preferences).length > 0
-    ).length,
   };
 
   return stats;
@@ -305,7 +277,7 @@ export const updateProfileField = async (
 };
 
 /**
- * Update preference field
+ * Update preference field (stored within profile_data)
  */
 export const updatePreferenceField = async (
   req: Request,
@@ -324,10 +296,13 @@ export const updatePreferenceField = async (
     'get profile'
   );
 
-  // Update preference
-  const updatedPreferences = {
-    ...(existingProfile.preferences || {}),
-    [key]: value,
+  // Update preference within profile_data
+  const updatedProfileData = {
+    ...existingProfile.profile_data,
+    preferences: {
+      ...((existingProfile.profile_data.preferences as Record<string, unknown>) || {}),
+      [key]: value,
+    },
   };
 
   // Update profile
@@ -335,7 +310,7 @@ export const updatePreferenceField = async (
     () =>
       db
         .from('profiles')
-        .update({ preferences: updatedPreferences })
+        .update({ profile_data: updatedProfileData })
         .eq('user_id', userId)
         .select()
         .single(),

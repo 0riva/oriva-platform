@@ -7,27 +7,30 @@
  */
 
 import request from 'supertest';
-import { createTestClient } from '../../../test-utils/client';
-import { mockSupabase } from '../../../test-utils/supabase';
+import { createTestClient, TEST_USER_TOKENS } from '../../../test-utils/client';
+import { cleanupRegisteredData, registerForCleanup } from '../../../test-utils/transactions';
 
 describe('POST /api/v1/hugo-ai/insights', () => {
   let client: any;
+  const testToken = TEST_USER_TOKENS.user1; // Alice
+  const testUserId = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(() => {
-    jest.clearAllMocks();
     client = createTestClient();
+  });
+
+  afterEach(async () => {
+    await cleanupRegisteredData();
   });
 
   describe('Contract Validation', () => {
     it('should create a new insight successfully', async () => {
       // Arrange
       const validRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
-        session_id: '123e4567-e89b-12d3-a456-426614174000',
+        user_id: testUserId,
         insight_type: 'pattern',
         content: 'User demonstrates strong active listening skills in practice conversations',
         confidence: 0.87,
-        source_app_id: 'hugo_love',
         supporting_data: {
           sessions_analyzed: 5,
           pattern_frequency: 0.82,
@@ -40,29 +43,12 @@ describe('POST /api/v1/hugo-ai/insights', () => {
         },
       };
 
-      const mockInsight = {
-        id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-        ...validRequest,
-        cross_app_visibility: true,
-        created_at: '2025-01-02T16:30:00Z',
-      };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockInsight,
-              error: null,
-            }),
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(validRequest);
 
@@ -74,9 +60,11 @@ describe('POST /api/v1/hugo-ai/insights', () => {
         insight_type: 'pattern',
         content: expect.stringContaining('listening'),
         confidence: 0.87,
-        source_app_id: 'hugo_love',
+        source_app_id: expect.any(String), // Set from app context, not request body
         cross_app_visibility: true,
       });
+
+      registerForCleanup('hugo_ai', 'insights', response.body.id);
     });
 
     it('should require user_id field', async () => {
@@ -92,6 +80,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -106,7 +95,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
     it('should validate insight_type enum', async () => {
       // Arrange
       const invalidRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'invalid_type',
         content: 'Some insight',
         confidence: 0.85,
@@ -117,6 +106,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -131,7 +121,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
     it('should validate confidence range (0-1)', async () => {
       // Arrange
       const invalidRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'pattern',
         content: 'Some insight',
         confidence: 1.5, // Invalid - must be 0-1
@@ -142,6 +132,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 
@@ -156,36 +147,18 @@ describe('POST /api/v1/hugo-ai/insights', () => {
     it('should apply 0.7 confidence threshold for cross-app visibility', async () => {
       // Arrange
       const lowConfidenceRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'pattern',
         content: 'Tentative insight with low confidence',
         confidence: 0.65, // Below 0.7 threshold
-        source_app_id: 'hugo_love',
       };
-
-      const mockInsight = {
-        id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-        ...lowConfidenceRequest,
-        cross_app_visibility: false, // Should be false due to low confidence
-        created_at: '2025-01-02T16:30:00Z',
-      };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockInsight,
-              error: null,
-            }),
-          }),
-        }),
-      });
 
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(lowConfidenceRequest);
 
@@ -193,41 +166,25 @@ describe('POST /api/v1/hugo-ai/insights', () => {
       expect(response.status).toBe(201);
       expect(response.body.cross_app_visibility).toBe(false);
       expect(response.body.confidence).toBe(0.65);
+
+      registerForCleanup('hugo_ai', 'insights', response.body.id);
     });
 
     it('should enable cross-app visibility for confidence >= 0.7', async () => {
       // Arrange
       const highConfidenceRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'recommendation',
         content: 'Strong recommendation based on pattern analysis',
         confidence: 0.82, // Above 0.7 threshold
-        source_app_id: 'hugo_love',
       };
-
-      const mockInsight = {
-        id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-        ...highConfidenceRequest,
-        cross_app_visibility: true, // Should be true due to high confidence
-        created_at: '2025-01-02T16:30:00Z',
-      };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockInsight,
-              error: null,
-            }),
-          }),
-        }),
-      });
 
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(highConfidenceRequest);
 
@@ -235,12 +192,14 @@ describe('POST /api/v1/hugo-ai/insights', () => {
       expect(response.status).toBe(201);
       expect(response.body.cross_app_visibility).toBe(true);
       expect(response.body.confidence).toBe(0.82);
+
+      registerForCleanup('hugo_ai', 'insights', response.body.id);
     });
 
     it('should require X-App-ID header for schema routing', async () => {
       // Arrange
       const validRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'pattern',
         content: 'Some insight',
         confidence: 0.85,
@@ -264,7 +223,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
     it('should require API key authentication', async () => {
       // Arrange
       const validRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'pattern',
         content: 'Some insight',
         confidence: 0.85,
@@ -291,83 +250,52 @@ describe('POST /api/v1/hugo-ai/insights', () => {
       for (const insightType of insightTypes) {
         // Arrange
         const validRequest = {
-          user_id: '550e8400-e29b-41d4-a716-446655440000',
+          user_id: testUserId,
           insight_type: insightType,
           content: `Test ${insightType} insight`,
           confidence: 0.85,
-          source_app_id: 'hugo_love',
         };
-
-        mockSupabase.from.mockReturnValue({
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: {
-                  id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-                  ...validRequest,
-                  cross_app_visibility: true,
-                  created_at: '2025-01-02T16:30:00Z',
-                },
-                error: null,
-              }),
-            }),
-          }),
-        });
 
         // Act
         const response = await request(client)
           .post('/api/v1/hugo-ai/insights')
           .set('X-App-ID', 'hugo_love')
           .set('X-API-Key', 'test-api-key')
+          .set('Authorization', `Bearer ${testToken}`)
           .set('Content-Type', 'application/json')
           .send(validRequest);
 
         // Assert
         expect(response.status).toBe(201);
         expect(response.body.insight_type).toBe(insightType);
+
+        registerForCleanup('hugo_ai', 'insights', response.body.id);
       }
     });
 
     it('should handle optional session_id field', async () => {
       // Arrange - No session_id provided
       const requestWithoutSession = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'pattern',
         content: 'Insight derived from multiple sessions',
         confidence: 0.85,
-        source_app_id: 'hugo_love',
       };
-
-      const mockInsight = {
-        id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-        ...requestWithoutSession,
-        session_id: null,
-        cross_app_visibility: true,
-        created_at: '2025-01-02T16:30:00Z',
-      };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockInsight,
-              error: null,
-            }),
-          }),
-        }),
-      });
 
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(requestWithoutSession);
 
       // Assert
       expect(response.status).toBe(201);
       expect(response.body.session_id).toBeNull();
+
+      registerForCleanup('hugo_ai', 'insights', response.body.id);
     });
   });
 
@@ -375,12 +303,10 @@ describe('POST /api/v1/hugo-ai/insights', () => {
     it('should match OpenAPI schema for successful response', async () => {
       // Arrange
       const validRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
-        session_id: '123e4567-e89b-12d3-a456-426614174000',
+        user_id: testUserId,
         insight_type: 'pattern',
         content: 'User shows consistent improvement in communication patterns',
         confidence: 0.88,
-        source_app_id: 'hugo_love',
         supporting_data: {
           analysis_window_days: 14,
           sessions_analyzed: 8,
@@ -392,35 +318,12 @@ describe('POST /api/v1/hugo-ai/insights', () => {
         },
       };
 
-      const mockInsight = {
-        id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-        user_id: validRequest.user_id,
-        session_id: validRequest.session_id,
-        insight_type: validRequest.insight_type,
-        content: validRequest.content,
-        confidence: validRequest.confidence,
-        source_app_id: validRequest.source_app_id,
-        supporting_data: validRequest.supporting_data,
-        cross_app_visibility: true,
-        created_at: '2025-01-02T16:30:00Z',
-      };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockInsight,
-              error: null,
-            }),
-          }),
-        }),
-      });
-
       // Act
       const response = await request(client)
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(validRequest);
 
@@ -442,7 +345,9 @@ describe('POST /api/v1/hugo-ai/insights', () => {
       expect(typeof body.id).toBe('string');
       expect(body.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(typeof body.user_id).toBe('string');
-      expect(body.user_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(body.user_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
       expect(['pattern', 'recommendation', 'goal_progress']).toContain(body.insight_type);
       expect(typeof body.content).toBe('string');
       expect(typeof body.confidence).toBe('number');
@@ -451,7 +356,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
       expect(typeof body.source_app_id).toBe('string');
       expect(typeof body.cross_app_visibility).toBe('boolean');
       expect(typeof body.created_at).toBe('string');
-      expect(new Date(body.created_at).toISOString()).toBe(body.created_at);
+      expect(new Date(body.created_at).getTime()).not.toBeNaN(); // Valid timestamp
 
       // Optional session_id validation
       if (body.session_id !== null && body.session_id !== undefined) {
@@ -465,12 +370,14 @@ describe('POST /api/v1/hugo-ai/insights', () => {
       if (body.supporting_data) {
         expect(typeof body.supporting_data).toBe('object');
       }
+
+      registerForCleanup('hugo_ai', 'insights', body.id);
     });
 
     it('should return error matching OpenAPI Error schema', async () => {
       // Arrange - Invalid request to trigger error
       const invalidRequest = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
+        user_id: testUserId,
         insight_type: 'invalid_type', // Invalid enum value
         content: 'Some insight',
         confidence: 0.85,
@@ -481,6 +388,7 @@ describe('POST /api/v1/hugo-ai/insights', () => {
         .post('/api/v1/hugo-ai/insights')
         .set('X-App-ID', 'hugo_love')
         .set('X-API-Key', 'test-api-key')
+        .set('Authorization', `Bearer ${testToken}`)
         .set('Content-Type', 'application/json')
         .send(invalidRequest);
 

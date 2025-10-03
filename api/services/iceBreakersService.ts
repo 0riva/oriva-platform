@@ -116,13 +116,7 @@ export const getIceBreaker = async (
   const db = createQueryBuilder(req);
 
   const iceBreaker = await executeQuery<IceBreakerResponse>(
-    () =>
-      db
-        .from('ice_breakers')
-        .select('*')
-        .eq('id', iceBreakerId)
-        .eq('user_id', userId)
-        .single(),
+    () => db.from('ice_breakers').select('*').eq('id', iceBreakerId).eq('user_id', userId).single(),
     'get ice breaker'
   );
 
@@ -166,11 +160,7 @@ export const listUserIceBreakers = async (
 
   // Apply style filter
   if (filters?.style) {
-    const style = validateEnum(
-      filters.style as IceBreakerStyle,
-      ICE_BREAKER_STYLES,
-      'style'
-    );
+    const style = validateEnum(filters.style as IceBreakerStyle, ICE_BREAKER_STYLES, 'style');
     query = query.eq('style', style);
   }
 
@@ -184,10 +174,7 @@ export const listUserIceBreakers = async (
     query = query.range(filters.offset, filters.offset + filters.limit - 1);
   }
 
-  const iceBreakers = await executeQuery<IceBreakerResponse[]>(
-    () => query,
-    'list ice breakers'
-  );
+  const iceBreakers = await executeQuery<IceBreakerResponse[]>(() => query, 'list ice breakers');
 
   return { ice_breakers: iceBreakers };
 };
@@ -229,11 +216,7 @@ export const getSuggestedIceBreakers = async (
 
   // Apply style filter
   if (filters?.style) {
-    const style = validateEnum(
-      filters.style as IceBreakerStyle,
-      ICE_BREAKER_STYLES,
-      'style'
-    );
+    const style = validateEnum(filters.style as IceBreakerStyle, ICE_BREAKER_STYLES, 'style');
     query = query.eq('style', style);
   }
 
@@ -303,12 +286,7 @@ export const deleteIceBreaker = async (
   const db = createQueryBuilder(req);
 
   await executeQuery(
-    () =>
-      db
-        .from('ice_breakers')
-        .delete()
-        .eq('id', iceBreakerId)
-        .eq('user_id', userId),
+    () => db.from('ice_breakers').delete().eq('id', iceBreakerId).eq('user_id', userId),
     'delete ice breaker'
   );
 };
@@ -402,12 +380,7 @@ export const updateIceBreaker = async (
   // Verify ice breaker exists and belongs to user
   await executeQuery<{ id: string }>(
     () =>
-      db
-        .from('ice_breakers')
-        .select('id')
-        .eq('id', iceBreakerId)
-        .eq('user_id', userId)
-        .single(),
+      db.from('ice_breakers').select('id').eq('id', iceBreakerId).eq('user_id', userId).single(),
     'verify ice breaker ownership'
   );
 
@@ -428,11 +401,7 @@ export const updateIceBreaker = async (
   }
 
   if (updates.style !== undefined) {
-    updateData.style = validateEnum(
-      updates.style as IceBreakerStyle,
-      ICE_BREAKER_STYLES,
-      'style'
-    );
+    updateData.style = validateEnum(updates.style as IceBreakerStyle, ICE_BREAKER_STYLES, 'style');
   }
 
   if (updates.context_tags !== undefined) {
@@ -445,15 +414,74 @@ export const updateIceBreaker = async (
 
   // Update ice breaker
   const updatedIceBreaker = await executeQuery<IceBreakerResponse>(
-    () =>
-      db
-        .from('ice_breakers')
-        .update(updateData)
-        .eq('id', iceBreakerId)
-        .select()
-        .single(),
+    () => db.from('ice_breakers').update(updateData).eq('id', iceBreakerId).select().single(),
     'update ice breaker'
   );
 
   return updatedIceBreaker;
+};
+
+/**
+ * Ice breaker response for profile-based queries (matches actual DB schema)
+ */
+export interface ProfileIceBreakerResponse {
+  id: string;
+  profile_id: string;
+  content: string;
+  category: IceBreakerCategory;
+  confidence: number;
+  personalization_factors?: Record<string, unknown>;
+  created_at: string;
+}
+
+/**
+ * Get ice breakers for a specific profile
+ * This matches the actual database schema: profile_id, content, category, confidence
+ */
+export const getIceBreakersForProfile = async (
+  req: Request,
+  profileId: string,
+  filters?: {
+    category?: string;
+    min_confidence?: number;
+    limit?: number;
+  }
+): Promise<{ ice_breakers: ProfileIceBreakerResponse[] }> => {
+  validateUuid(profileId, 'profile_id');
+
+  const db = createQueryBuilder(req);
+
+  // Build query
+  let query = db
+    .from('ice_breakers')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('confidence', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  // Apply category filter
+  if (filters?.category) {
+    const category = validateEnum(
+      filters.category as IceBreakerCategory,
+      ICE_BREAKER_CATEGORIES,
+      'category'
+    );
+    query = query.eq('category', category);
+  }
+
+  // Apply minimum confidence filter
+  if (filters?.min_confidence !== undefined) {
+    query = query.gte('confidence', filters.min_confidence);
+  }
+
+  // Apply limit (default to 10 if not specified)
+  const limit = filters?.limit !== undefined ? filters.limit : 10;
+  query = query.limit(limit);
+
+  const iceBreakers = await executeQuery<ProfileIceBreakerResponse[]>(
+    () => query,
+    'get ice breakers for profile'
+  );
+
+  return { ice_breakers: iceBreakers };
 };

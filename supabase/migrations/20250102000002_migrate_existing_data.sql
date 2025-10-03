@@ -25,16 +25,33 @@ BEGIN
         WHERE table_schema = 'public' AND table_name = 'users'
     ) THEN
         -- Migrate users from public.users to oriva_platform.users
-        INSERT INTO oriva_platform.users (id, email, full_name, auth_provider, created_at, updated_at)
-        SELECT
-            id,
-            email,
-            full_name,
-            COALESCE(auth_provider, 'oriva_sso'),
-            created_at,
-            updated_at
-        FROM public.users
-        ON CONFLICT (id) DO NOTHING;
+        -- Check if auth_provider column exists, otherwise use default
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'auth_provider'
+        ) THEN
+            INSERT INTO oriva_platform.users (id, email, full_name, auth_provider, created_at, updated_at)
+            SELECT
+                id,
+                email,
+                full_name,
+                COALESCE(auth_provider, 'oriva_sso'),
+                created_at,
+                updated_at
+            FROM public.users
+            ON CONFLICT (id) DO NOTHING;
+        ELSE
+            INSERT INTO oriva_platform.users (id, email, full_name, auth_provider, created_at, updated_at)
+            SELECT
+                id,
+                email,
+                full_name,
+                'oriva_sso', -- Default since column doesn't exist
+                created_at,
+                updated_at
+            FROM public.users
+            ON CONFLICT (id) DO NOTHING;
+        END IF;
 
         RAISE NOTICE 'Migrated % users from public.users to oriva_platform.users',
             (SELECT COUNT(*) FROM oriva_platform.users);
@@ -80,37 +97,39 @@ END $$;
 -- =============================================================================
 
 DO $$
+DECLARE
+    v_has_user_id BOOLEAN;
+    v_profile_columns TEXT;
 BEGIN
     IF EXISTS (
         SELECT 1 FROM information_schema.tables
         WHERE table_schema = 'public' AND table_name = 'profiles'
     ) THEN
-        -- Migrate profiles from public.profiles to hugo_love.profiles
-        INSERT INTO hugo_love.profiles (id, user_id, app_id, profile_data, created_at, updated_at)
-        SELECT
-            id,
-            user_id,
-            'hugo_love',
-            -- Convert existing columns to JSONB profile_data
-            jsonb_build_object(
-                'age', age,
-                'gender', gender,
-                'bio', bio,
-                'interests', interests,
-                'location', location,
-                'looking_for', looking_for,
-                'relationship_goals', relationship_goals,
-                'dating_preferences', dating_preferences,
-                'photos', photos,
-                'personality_traits', personality_traits
-            ),
-            created_at,
-            updated_at
-        FROM public.profiles
-        ON CONFLICT (user_id) DO NOTHING;
+        -- Check if user_id column exists
+        SELECT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'user_id'
+        ) INTO v_has_user_id;
 
-        RAISE NOTICE 'Migrated % profiles to hugo_love.profiles',
-            (SELECT COUNT(*) FROM hugo_love.profiles);
+        IF v_has_user_id THEN
+            -- Try to migrate profiles with dynamic column handling
+            -- Build a safe JSONB object from whatever columns exist
+            INSERT INTO hugo_love.profiles (id, user_id, app_id, profile_data, created_at, updated_at)
+            SELECT
+                COALESCE(id, gen_random_uuid()),
+                user_id,
+                'hugo_love',
+                to_jsonb(public.profiles.*) - 'id' - 'user_id' - 'created_at' - 'updated_at',
+                COALESCE(created_at, NOW()),
+                COALESCE(updated_at, NOW())
+            FROM public.profiles
+            ON CONFLICT (user_id) DO NOTHING;
+
+            RAISE NOTICE 'Migrated % profiles to hugo_love.profiles',
+                (SELECT COUNT(*) FROM hugo_love.profiles);
+        ELSE
+            RAISE NOTICE 'public.profiles table exists but has incompatible structure (no user_id), skipping profile migration';
+        END IF;
     ELSE
         RAISE NOTICE 'No public.profiles table found, skipping profile migration';
     END IF;

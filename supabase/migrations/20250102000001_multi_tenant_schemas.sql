@@ -226,30 +226,8 @@ CREATE TRIGGER update_hugo_career_profiles_updated_at BEFORE UPDATE ON hugo_care
 -- =============================================================================
 -- SEED DATA (Initial Apps)
 -- =============================================================================
-
--- Insert Hugo Love app
-INSERT INTO oriva_platform.apps (id, app_id, name, description, schema_name, status, settings)
-VALUES (
-    '123e4567-e89b-12d3-a456-426614174000',
-    'hugo_love',
-    'Hugo Love',
-    'AI-powered dating coach for meaningful connections',
-    'hugo_love',
-    'active',
-    '{"features": ["coaching", "profile_optimization", "ice_breakers"], "quotas": {"max_users": 10000}}'::jsonb
-) ON CONFLICT (app_id) DO NOTHING;
-
--- Insert Hugo Career app
-INSERT INTO oriva_platform.apps (id, app_id, name, description, schema_name, status, settings)
-VALUES (
-    '223e4567-e89b-12d3-a456-426614174001',
-    'hugo_career',
-    'Hugo Career',
-    'AI-powered career development coach',
-    'hugo_career',
-    'active',
-    '{"features": ["interview_prep", "resume_review", "career_planning"], "quotas": {"max_users": 5000}}'::jsonb
-) ON CONFLICT (app_id) DO NOTHING;
+-- NOTE: App seed data moved to supabase/seed.sql for test data consistency
+-- Migration creates only the schema structure, seed.sql provides test data
 
 -- =============================================================================
 -- HELPER FUNCTIONS
@@ -280,5 +258,33 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 COMMENT ON FUNCTION get_app_schema IS 'Get schema name for an app_id';
+
+-- =============================================================================
+-- PERMISSIONS - Grant schema access to anon, authenticated, and service_role
+-- =============================================================================
+
+-- Grant USAGE on all schemas to all roles
+GRANT USAGE ON SCHEMA oriva_platform TO anon, authenticated, service_role;
+GRANT USAGE ON SCHEMA hugo_ai TO anon, authenticated, service_role;
+GRANT USAGE ON SCHEMA hugo_love TO anon, authenticated, service_role;
+GRANT USAGE ON SCHEMA hugo_career TO anon, authenticated, service_role;
+
+-- Grant SELECT on all tables (RLS will handle row-level security for anon/authenticated)
+GRANT SELECT ON ALL TABLES IN SCHEMA oriva_platform TO anon, authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA hugo_ai TO anon, authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA hugo_love TO anon, authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA hugo_career TO anon, authenticated, service_role;
+
+-- Grant INSERT, UPDATE, DELETE (service_role gets full access, bypasses RLS)
+GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA oriva_platform TO authenticated, service_role;
+GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA hugo_ai TO authenticated, service_role;
+GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA hugo_love TO authenticated, service_role;
+GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA hugo_career TO authenticated, service_role;
+
+-- Grant sequence usage for ID generation
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA oriva_platform TO authenticated, service_role;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA hugo_ai TO authenticated, service_role;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA hugo_love TO authenticated, service_role;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA hugo_career TO authenticated, service_role;
 
 COMMIT;

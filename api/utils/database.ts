@@ -42,11 +42,7 @@ export const handleDatabaseError = (error: PostgrestError, operation: string): n
       );
 
     case '23503': // Foreign key violation
-      throw new DatabaseError(
-        'Referenced record does not exist',
-        'FOREIGN_KEY_VIOLATION',
-        error
-      );
+      throw new DatabaseError('Referenced record does not exist', 'FOREIGN_KEY_VIOLATION', error);
 
     case '23502': // Not null violation
       throw new DatabaseError('Required field is missing', 'MISSING_REQUIRED_FIELD', error);
@@ -79,28 +75,29 @@ export class SchemaQueryBuilder {
   }
 
   /**
-   * Get table name with schema prefix
+   * Determine schema for a given table name
    */
-  private getTableName(tableName: string): string {
+  private getSchemaForTable(tableName: string): string {
     // Hugo AI tables always use hugo_ai schema
     if (['sessions', 'insights'].includes(tableName)) {
-      return `hugo_ai.${tableName}`;
+      return 'hugo_ai';
     }
 
     // Platform tables always use oriva_platform schema
     if (['users', 'apps', 'user_app_access', 'extraction_manifests'].includes(tableName)) {
-      return `oriva_platform.${tableName}`;
+      return 'oriva_platform';
     }
 
     // App-specific tables use current schema
-    return `${this.schemaName}.${tableName}`;
+    return this.schemaName;
   }
 
   /**
-   * Select query
+   * Select query with schema routing
    */
   public from(tableName: string): ReturnType<SupabaseClient['from']> {
-    return this.supabase.from(this.getTableName(tableName));
+    const schema = this.getSchemaForTable(tableName);
+    return this.supabase.schema(schema).from(tableName);
   }
 
   /**
@@ -132,7 +129,9 @@ export const createQueryBuilder = (req: Request): SchemaQueryBuilder => {
  * Execute database operation with error handling
  */
 export async function executeQuery<T>(
-  operation: () => Promise<{ data: T | null; error: PostgrestError | null }> | PromiseLike<{ data: T | null; error: PostgrestError | null }>,
+  operation: () =>
+    | Promise<{ data: T | null; error: PostgrestError | null }>
+    | PromiseLike<{ data: T | null; error: PostgrestError | null }>,
   operationName: string
 ): Promise<T> {
   const { data, error } = await operation();
@@ -152,10 +151,12 @@ export async function executeQuery<T>(
  * Execute database operation that may return null (e.g., optional selects)
  */
 export async function executeQueryOptional<T>(
-  operation: () => Promise<{ data: T | null; error: PostgrestError | null }> | PromiseLike<{ data: T | null; error: PostgrestError | null }>,
+  operation: () =>
+    | Promise<{ data: T | null; error: PostgrestError | null }>
+    | PromiseLike<{ data: T | null; error: PostgrestError | null }>,
   operationName: string
 ): Promise<T | null> {
-  const { data, error} = await operation();
+  const { data, error } = await operation();
 
   if (error) {
     handleDatabaseError(error, operationName);
@@ -167,10 +168,7 @@ export async function executeQueryOptional<T>(
 /**
  * Calculate duration in seconds from start and end timestamps
  */
-export const calculateDuration = (
-  startedAt: string,
-  endedAt: string | null
-): number | null => {
+export const calculateDuration = (startedAt: string, endedAt: string | null): number | null => {
   if (!endedAt) {
     return null;
   }
@@ -245,11 +243,7 @@ export async function withTransaction<T>(
 /**
  * Build JSONB query conditions
  */
-export const buildJsonbFilter = (
-  field: string,
-  key: string,
-  value: unknown
-): string => {
+export const buildJsonbFilter = (field: string, key: string, value: unknown): string => {
   return `${field}->>'${key}'.eq.${value}`;
 };
 

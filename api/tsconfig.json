@@ -24,15 +24,16 @@
     "rootDir": "..",
     "typeRoots": ["../node_modules/@types"]
   },
-  "include": [
-    "./**/*.ts",
-    "./**/*.js",
-    "../src/**/*.ts"
-  ],
+  "include": ["./**/*.ts", "./**/*.js", "../src/**/*.ts"],
   "exclude": [
     "../node_modules",
     "../dist",
     "../tests",
+    "../src/**/__tests__",
+    "../src/**/test-utils",
+    "../src/**/*.test.ts",
+    "../src/**/*.test.js",
+    "**/__tests__",
     "**/*.test.ts",
     "**/*.test.js"
   ]

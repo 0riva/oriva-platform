@@ -9,6 +9,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey } from '../middleware/auth';
+import { optionalSchemaRouter } from '../middleware/schemaRouter';
 import {
   registerApp,
   listApps,
@@ -20,6 +21,9 @@ import {
 } from '../services/platformAppsService';
 
 const router = Router();
+
+// Platform routes need schema router for database access (even without X-App-ID)
+router.use(optionalSchemaRouter);
 
 /**
  * POST /api/v1/platform/apps

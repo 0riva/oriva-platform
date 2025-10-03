@@ -40,14 +40,23 @@ CREATE INDEX IF NOT EXISTS ke_tags_idx ON hugo_knowledge_entries USING GIN(tags)
 CREATE INDEX IF NOT EXISTS ke_popular_idx ON hugo_knowledge_entries(access_count DESC);
 
 -- Constraints
-ALTER TABLE hugo_knowledge_entries ADD CONSTRAINT ke_content_check
-  CHECK (length(title) > 0 AND length(content) > 0);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ke_content_check') THEN
+    ALTER TABLE hugo_knowledge_entries ADD CONSTRAINT ke_content_check
+      CHECK (length(title) > 0 AND length(content) > 0);
+  END IF;
 
-ALTER TABLE hugo_knowledge_entries ADD CONSTRAINT ke_section_number_check
-  CHECK (section_number IS NULL OR section_number >= 0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ke_section_number_check') THEN
+    ALTER TABLE hugo_knowledge_entries ADD CONSTRAINT ke_section_number_check
+      CHECK (section_number IS NULL OR section_number >= 0);
+  END IF;
 
-ALTER TABLE hugo_knowledge_entries ADD CONSTRAINT ke_access_count_check
-  CHECK (access_count >= 0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ke_access_count_check') THEN
+    ALTER TABLE hugo_knowledge_entries ADD CONSTRAINT ke_access_count_check
+      CHECK (access_count >= 0);
+  END IF;
+END $$;
 
 -- Function to update search_vector
 CREATE OR REPLACE FUNCTION update_ke_search_vector()
@@ -62,6 +71,7 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- Trigger to auto-update search_vector
+DROP TRIGGER IF EXISTS ke_search_vector_update ON hugo_knowledge_entries;
 CREATE TRIGGER ke_search_vector_update
   BEFORE INSERT OR UPDATE OF title, content, tags
   ON hugo_knowledge_entries

@@ -92,10 +92,7 @@ export const getUserApps = async (
     query = query.eq('status', 'active');
   }
 
-  const result = await executeQuery<any>(
-    () => query,
-    'get user apps'
-  ) as UserAppAccess[];
+  const result = (await executeQuery<any>(() => query, 'get user apps')) as UserAppAccess[];
 
   // Check if user exists (empty result could mean no access or user doesn't exist)
   if (result.length === 0) {
@@ -110,7 +107,14 @@ export const getUserApps = async (
     }
   }
 
-  return { apps: result };
+  // Normalize timestamps to ISO 8601 format (Postgres returns with microseconds)
+  const normalizedResult = result.map((item) => ({
+    ...item,
+    joined_at: new Date(item.joined_at).toISOString(),
+    last_active_at: item.last_active_at ? new Date(item.last_active_at).toISOString() : undefined,
+  }));
+
+  return { apps: normalizedResult };
 };
 
 /**

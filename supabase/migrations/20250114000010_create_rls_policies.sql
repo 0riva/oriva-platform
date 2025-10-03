@@ -4,31 +4,34 @@
 -- Dependencies: T001-T009 (all tables must exist)
 
 -- ============================================================================
--- DROP ALL EXISTING POLICIES FIRST
+-- DROP ALL EXISTING POLICIES FIRST (old and new names)
 -- ============================================================================
 
--- Users table
-DROP POLICY IF EXISTS "Users can insert own profile" ON users;
-DROP POLICY IF EXISTS "Users can update own profile" ON users;
-DROP POLICY IF EXISTS "Users can view own profile" ON users;
-DROP POLICY IF EXISTS users_self_update ON users;
+-- Users table (drop all variants)
+DROP POLICY IF EXISTS "Users can insert own profile" ON oriva_platform.users;
+DROP POLICY IF EXISTS "Users can update own profile" ON oriva_platform.users;
+DROP POLICY IF EXISTS "Users can view own profile" ON oriva_platform.users;
+DROP POLICY IF EXISTS users_self_update ON oriva_platform.users;
+DROP POLICY IF EXISTS users_select_own ON oriva_platform.users;
+DROP POLICY IF EXISTS users_update_own ON oriva_platform.users;
 
--- Hugo tables
-DROP POLICY IF EXISTS "Users can insert their own memories" ON hugo_collaboration_memory;
-DROP POLICY IF EXISTS "Users can update their own memories" ON hugo_collaboration_memory;
-DROP POLICY IF EXISTS "Users can view their own memories" ON hugo_collaboration_memory;
-DROP POLICY IF EXISTS "Users can view their own profile" ON hugo_user_profiles;
-DROP POLICY IF EXISTS context_kb_read_access ON hugo_knowledge_base;
-DROP POLICY IF EXISTS context_kb_system_only ON hugo_knowledge_base;
+-- Hugo Love tables (created by earlier migrations in this batch)
+DROP POLICY IF EXISTS conversations_user_access ON hugo_conversations;
+DROP POLICY IF EXISTS messages_user_access ON hugo_messages;
+DROP POLICY IF EXISTS up_user_access ON hugo_user_progress;
+DROP POLICY IF EXISTS um_user_access ON hugo_user_memories;
+
+-- Note: Hugo AI Vision tables (hugo_collaboration_memory, hugo_user_profiles, hugo_knowledge_base)
+-- are created by later migration 20250929044708_hugo_ai_tables.sql and have their own RLS policies
 
 -- ============================================================================
 -- USERS TABLE - Users can only see/update their own profile
 -- ============================================================================
 
-CREATE POLICY users_select_own ON users
+CREATE POLICY users_select_own ON oriva_platform.users
   FOR SELECT USING (id = auth.uid());
 
-CREATE POLICY users_update_own ON users
+CREATE POLICY users_update_own ON oriva_platform.users
   FOR UPDATE USING (id = auth.uid());
 
 -- No INSERT policy - user creation handled by backend auth flow
@@ -82,8 +85,8 @@ CREATE POLICY um_user_access ON hugo_user_memories
 -- COMMENTS
 -- ============================================================================
 
-COMMENT ON POLICY users_select_own ON users IS 'Users can view their own profile';
-COMMENT ON POLICY users_update_own ON users IS 'Users can update their own profile';
+COMMENT ON POLICY users_select_own ON oriva_platform.users IS 'Users can view their own profile';
+COMMENT ON POLICY users_update_own ON oriva_platform.users IS 'Users can update their own profile';
 COMMENT ON POLICY conversations_user_access ON hugo_conversations IS 'Users can CRUD their own conversations';
 COMMENT ON POLICY messages_user_access ON hugo_messages IS 'Users can CRUD hugo_messages in their conversations';
 COMMENT ON POLICY up_user_access ON hugo_user_progress IS 'Users can CRUD their own progress';

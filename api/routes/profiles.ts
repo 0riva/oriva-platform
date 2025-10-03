@@ -47,6 +47,35 @@ router.post(
     }
 
     const input: CreateProfileRequest = req.body;
+
+    // Validate user_id is provided
+    if (!input.user_id) {
+      res.status(400).json({
+        code: 'VALIDATION_ERROR',
+        message: 'user_id is required',
+      });
+      return;
+    }
+
+    // Validate user_id format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(input.user_id)) {
+      res.status(400).json({
+        code: 'INVALID_USER_ID',
+        message: 'Invalid user ID format',
+      });
+      return;
+    }
+
+    // Validate user_id matches authenticated user
+    if (input.user_id !== userId) {
+      res.status(403).json({
+        code: 'FORBIDDEN',
+        message: 'Cannot create profile for another user',
+      });
+      return;
+    }
+
     const profile: ProfileResponse = await createProfile(req, userId, input);
     res.status(201).json(profile);
   })
@@ -123,11 +152,12 @@ router.get(
 
 /**
  * GET /api/v1/apps/profiles
- * List all profiles (admin only)
+ * List all profiles (requires authentication and app access)
  */
 router.get(
   '/',
   requireApiKey,
+  requireAuthentication,
   requireAppAccess,
   asyncHandler(async (req, res) => {
     const filters = {

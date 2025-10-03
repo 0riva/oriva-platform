@@ -19,6 +19,7 @@ import {
   deleteIceBreaker,
   getUserIceBreakerStats,
   updateIceBreaker,
+  getIceBreakersForProfile,
   CreateIceBreakerRequest,
   IceBreakerResponse,
 } from '../services/iceBreakersService';
@@ -75,7 +76,8 @@ router.get(
 
 /**
  * GET /api/v1/apps/ice-breakers
- * List user's ice breakers with filters
+ * Get ice breakers for a specific profile (hugo_love feature)
+ * Requires profile_id query parameter
  */
 router.get(
   '/',
@@ -83,22 +85,46 @@ router.get(
   requireAuthentication,
   requireAppAccess,
   asyncHandler(async (req, res) => {
-    const userId = req.user?.id;
+    const profileId = req.query.profile_id as string | undefined;
 
-    if (!userId) {
-      res.status(401).json({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
+    // Require profile_id parameter
+    if (!profileId) {
+      res.status(400).json({
+        code: 'VALIDATION_ERROR',
+        message: 'profile_id query parameter is required',
+      });
+      return;
+    }
+
+    // Validate profile_id format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(profileId)) {
+      res.status(400).json({
+        code: 'INVALID_PROFILE_ID',
+        message: 'Invalid profile ID format',
+      });
+      return;
+    }
+
+    // Check if this feature is supported for the current app (only hugo_love has ice_breakers table)
+    const appId = req.headers['x-app-id'] as string;
+    if (appId !== 'hugo_love') {
+      res.status(404).json({
+        code: 'FEATURE_NOT_SUPPORTED',
+        message: 'Ice breakers are not available for this app',
+      });
       return;
     }
 
     const filters = {
       category: req.query.category as string | undefined,
-      style: req.query.style as string | undefined,
-      context_tag: req.query.context_tag as string | undefined,
+      min_confidence: req.query.min_confidence
+        ? parseFloat(req.query.min_confidence as string)
+        : undefined,
       limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-      offset: req.query.offset ? parseInt(req.query.offset as string) : undefined,
     };
 
-    const result = await listUserIceBreakers(req, userId, filters);
+    const result = await getIceBreakersForProfile(req, profileId, filters);
     res.status(200).json(result);
   })
 );

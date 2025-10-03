@@ -44,37 +44,44 @@ router.post(
     }
 
     const input: CreateInsightRequest = req.body;
+
+    // Validate user_id is provided
+    if (!input.user_id) {
+      res.status(400).json({
+        code: 'VALIDATION_ERROR',
+        message: 'user_id is required',
+      });
+      return;
+    }
+
+    // Validate user_id format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(input.user_id)) {
+      res.status(400).json({
+        code: 'INVALID_USER_ID',
+        message: 'Invalid user ID format',
+      });
+      return;
+    }
+
+    // Validate user_id matches authenticated user
+    if (input.user_id !== userId) {
+      res.status(403).json({
+        code: 'FORBIDDEN',
+        message: 'Cannot create insight for another user',
+      });
+      return;
+    }
+
     const insight: InsightResponse = await createInsight(req, userId, input);
     res.status(201).json(insight);
   })
 );
 
 /**
- * GET /api/v1/hugo-ai/insights/:insightId
- * Get insight by ID
- */
-router.get(
-  '/:insightId',
-  requireApiKey,
-  requireAuthentication,
-  requireAppAccess,
-  asyncHandler(async (req, res) => {
-    const { insightId } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      res.status(401).json({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
-      return;
-    }
-
-    const insight: InsightResponse = await getInsight(req, insightId, userId);
-    res.status(200).json(insight);
-  })
-);
-
-/**
  * GET /api/v1/hugo-ai/insights
  * List user's insights with filters
+ * NOTE: This must come BEFORE /:insightId to avoid path matching issues
  */
 router.get(
   '/',
@@ -102,6 +109,29 @@ router.get(
 
     const result = await listUserInsights(req, userId, filters);
     res.status(200).json(result);
+  })
+);
+
+/**
+ * GET /api/v1/hugo-ai/insights/:insightId
+ * Get insight by ID
+ */
+router.get(
+  '/:insightId',
+  requireApiKey,
+  requireAuthentication,
+  requireAppAccess,
+  asyncHandler(async (req, res) => {
+    const { insightId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
+      return;
+    }
+
+    const insight: InsightResponse = await getInsight(req, insightId, userId);
+    res.status(200).json(insight);
   })
 );
 
@@ -147,12 +177,7 @@ router.patch(
     }
 
     const { metadata } = req.body;
-    const insight: InsightResponse = await updateInsightMetadata(
-      req,
-      insightId,
-      userId,
-      metadata
-    );
+    const insight: InsightResponse = await updateInsightMetadata(req, insightId, userId, metadata);
     res.status(200).json(insight);
   })
 );

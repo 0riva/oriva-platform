@@ -2,87 +2,26 @@
  * Contract Test: GET /api/v1/platform/users/{userId}/apps
  * Task: T008
  *
- * TDD Phase: RED - Test written before implementation
- * This test MUST fail initially before implementation
+ * TDD Phase: GREEN - Testing with real database
+ * Uses seeded test data from database
  */
 
 import request from 'supertest';
 import { createTestClient } from '../../../test-utils/client';
-import { mockSupabase } from '../../../test-utils/supabase';
 
 describe('GET /api/v1/platform/users/{userId}/apps', () => {
-  let client: any;
-  const testUserId = '550e8400-e29b-41d4-a716-446655440000';
+  // Use actual user IDs from seed data
+  const testUserId = '00000000-0000-0000-0000-000000000002'; // Bob Smith - has access to both hugo_love and hugo_career
+  const singleAppUserId = '00000000-0000-0000-0000-000000000001'; // Alice Johnson - only hugo_love
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    client = createTestClient();
-  });
+  // Note: createTestClient() returns supertest agent, use directly without request() wrapper
 
   describe('Contract Validation', () => {
     it("should return user's accessible apps with roles", async () => {
       // Arrange
-      const mockUserApps = [
-        {
-          app: {
-            id: '123e4567-e89b-12d3-a456-426614174000',
-            app_id: 'hugo_love',
-            name: 'Hugo Love',
-            description: 'Dating coach app',
-            schema_name: 'hugo_love',
-            status: 'active',
-            settings: {
-              features: ['coaching', 'profile_optimization'],
-            },
-            created_at: '2025-01-01T00:00:00Z',
-            updated_at: '2025-01-01T00:00:00Z',
-          },
-          role: 'user',
-          status: 'active',
-          joined_at: '2025-01-15T10:00:00Z',
-          last_active_at: '2025-01-20T14:30:00Z',
-          settings: {
-            notifications_enabled: true,
-            theme: 'dark',
-          },
-        },
-        {
-          app: {
-            id: '223e4567-e89b-12d3-a456-426614174001',
-            app_id: 'hugo_career',
-            name: 'Hugo Career',
-            description: 'Career development coach',
-            schema_name: 'hugo_career',
-            status: 'active',
-            settings: {
-              features: ['interview_prep', 'resume_review'],
-            },
-            created_at: '2025-01-02T00:00:00Z',
-            updated_at: '2025-01-02T00:00:00Z',
-          },
-          role: 'admin',
-          status: 'active',
-          joined_at: '2025-01-10T08:00:00Z',
-          last_active_at: '2025-01-19T16:45:00Z',
-          settings: {
-            notifications_enabled: false,
-          },
-        },
-      ];
+      const client = createTestClient();
 
-      // Mock the join query for user_app_access with apps
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({
-              data: mockUserApps,
-              error: null,
-            }),
-          }),
-        }),
-      });
-
-      // Act
+      // Act - Bob has access to both hugo_love and hugo_career from seed data
       const response = await request(client)
         .get(`/api/v1/platform/users/${testUserId}/apps`)
         .set('X-API-Key', 'test-api-key');
@@ -91,7 +30,7 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('apps');
       expect(Array.isArray(response.body.apps)).toBe(true);
-      expect(response.body.apps).toHaveLength(2);
+      expect(response.body.apps.length).toBeGreaterThanOrEqual(2); // Bob has at least 2 apps
 
       // Validate structure
       const firstApp = response.body.apps[0];
@@ -106,39 +45,15 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
         role: expect.stringMatching(/^(user|admin|owner)$/),
         joined_at: expect.any(String),
       });
+
+      // Verify Bob has access to both apps from seed data
+      const appIds = response.body.apps.map((a: any) => a.app.app_id);
+      expect(appIds).toContain('hugo_love');
+      expect(appIds).toContain('hugo_career');
     });
 
     it('should filter by app status when provided', async () => {
-      // Arrange
-      const activeApps = [
-        {
-          app: {
-            id: '123e4567-e89b-12d3-a456-426614174000',
-            app_id: 'hugo_love',
-            name: 'Hugo Love',
-            schema_name: 'hugo_love',
-            status: 'active',
-            created_at: '2025-01-01T00:00:00Z',
-            updated_at: '2025-01-01T00:00:00Z',
-          },
-          role: 'user',
-          status: 'active',
-          joined_at: '2025-01-15T10:00:00Z',
-        },
-      ];
-
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              order: jest.fn().mockResolvedValue({
-                data: activeApps,
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
+      const client = createTestClient();
 
       // Act
       const response = await request(client)
@@ -147,24 +62,18 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
 
       // Assert
       expect(response.status).toBe(200);
-      expect(response.body.apps).toHaveLength(1);
-      expect(response.body.apps[0].status).toBe('active');
+      expect(response.body.apps.length).toBeGreaterThan(0);
+      // All returned apps should have active status
+      response.body.apps.forEach((item: any) => {
+        expect(item.app.status).toBe('active');
+      });
     });
 
     it('should return 404 for non-existent user', async () => {
-      // Arrange
+      // Arrange - Use a valid UUID that doesn't exist in database
       const nonExistentUserId = '999e8400-e29b-41d4-a716-446655440999';
 
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({
-              data: [],
-              error: null,
-            }),
-          }),
-        }),
-      });
+      const client = createTestClient();
 
       // Act
       const response = await request(client)
@@ -183,6 +92,8 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
       // Arrange
       const invalidUserId = 'not-a-uuid';
 
+      const client = createTestClient();
+
       // Act
       const response = await request(client)
         .get(`/api/v1/platform/users/${invalidUserId}/apps`)
@@ -197,6 +108,8 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
     });
 
     it('should require API key authentication', async () => {
+      const client = createTestClient();
+
       // Act - No API key
       const response = await request(client).get(`/api/v1/platform/users/${testUserId}/apps`);
 
@@ -209,35 +122,7 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
     });
 
     it('should include only active user-app relationships by default', async () => {
-      // Arrange
-      const userAppsWithMixed = [
-        {
-          app: {
-            id: '123e4567-e89b-12d3-a456-426614174000',
-            app_id: 'hugo_love',
-            name: 'Hugo Love',
-            schema_name: 'hugo_love',
-            status: 'active',
-          },
-          role: 'user',
-          status: 'active',
-          joined_at: '2025-01-15T10:00:00Z',
-        },
-        // Suspended and deleted relationships filtered out
-      ];
-
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              order: jest.fn().mockResolvedValue({
-                data: userAppsWithMixed,
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
+      const client = createTestClient();
 
       // Act
       const response = await request(client)
@@ -246,51 +131,17 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
 
       // Assert
       expect(response.status).toBe(200);
-      expect(response.body.apps).toHaveLength(1);
+      expect(response.body.apps.length).toBeGreaterThan(0);
+      // All user-app relationships should be active (from seed data all are active)
       expect(response.body.apps.every((a: any) => a.status === 'active')).toBe(true);
     });
   });
 
   describe('OpenAPI Contract Compliance', () => {
     it('should match OpenAPI schema for successful response', async () => {
-      // Arrange
-      const mockUserApps = [
-        {
-          app: {
-            id: 'c3a4f7d8-e9b1-4c2a-8f5e-1b3d5f7a9c2e',
-            app_id: 'hugo_love',
-            name: 'Hugo Love',
-            description: 'Dating coach',
-            schema_name: 'hugo_love',
-            status: 'active',
-            settings: {
-              quotas: {
-                max_users: 10000,
-              },
-              features: ['coaching'],
-            },
-            created_at: '2025-01-01T00:00:00Z',
-            updated_at: '2025-01-01T00:00:00Z',
-          },
-          role: 'user',
-          status: 'active',
-          joined_at: '2025-01-15T10:00:00Z',
-          last_active_at: '2025-01-20T14:30:00Z',
-        },
-      ];
+      const client = createTestClient();
 
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({
-              data: mockUserApps,
-              error: null,
-            }),
-          }),
-        }),
-      });
-
-      // Act
+      // Act - Use real database data
       const response = await request(client)
         .get(`/api/v1/platform/users/${testUserId}/apps`)
         .set('X-API-Key', 'test-api-key');
@@ -302,6 +153,7 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
       // Response wrapper
       expect(body).toHaveProperty('apps');
       expect(Array.isArray(body.apps)).toBe(true);
+      expect(body.apps.length).toBeGreaterThan(0);
 
       // Validate each user-app relationship
       body.apps.forEach((item: any) => {
@@ -342,6 +194,8 @@ describe('GET /api/v1/platform/users/{userId}/apps', () => {
     it('should return error matching OpenAPI Error schema', async () => {
       // Arrange - Invalid userId to trigger error
       const invalidUserId = 'invalid-uuid-format';
+
+      const client = createTestClient();
 
       // Act
       const response = await request(client)

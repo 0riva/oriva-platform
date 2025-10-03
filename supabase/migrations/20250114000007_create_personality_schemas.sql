@@ -39,17 +39,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS ps_unique_active_schema ON hugo_personality_sc
   WHERE status = 'active' AND rollout_percentage = 100;
 
 -- Constraints
-ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_layer_check
-  CHECK (layer IN ('base', 'overlay'));
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ps_layer_check') THEN
+    ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_layer_check
+      CHECK (layer IN ('base', 'overlay'));
+  END IF;
 
-ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_status_check
-  CHECK (status IN ('draft', 'testing', 'active', 'archived'));
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ps_status_check') THEN
+    ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_status_check
+      CHECK (status IN ('draft', 'testing', 'active', 'archived'));
+  END IF;
 
-ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_rollout_check
-  CHECK (rollout_percentage BETWEEN 0 AND 100);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ps_rollout_check') THEN
+    ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_rollout_check
+      CHECK (rollout_percentage BETWEEN 0 AND 100);
+  END IF;
 
-ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_overlay_parent_check
-  CHECK ((layer = 'overlay' AND parent_schema_id IS NOT NULL) OR (layer = 'base' AND parent_schema_id IS NULL));
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ps_overlay_parent_check') THEN
+    ALTER TABLE hugo_personality_schemas ADD CONSTRAINT ps_overlay_parent_check
+      CHECK ((layer = 'overlay' AND parent_schema_id IS NOT NULL) OR (layer = 'base' AND parent_schema_id IS NULL));
+  END IF;
+END $$;
 
 -- Comments
 COMMENT ON TABLE hugo_personality_schemas IS 'Coaching personality definitions with layering support';
@@ -59,7 +70,15 @@ COMMENT ON COLUMN hugo_personality_schemas.rollout_percentage IS 'Gradual deploy
 COMMENT ON COLUMN hugo_personality_schemas.status IS 'Lifecycle: draft → testing → active → archived';
 
 -- Now add the FK constraint to hugo_apps table
-ALTER TABLE hugo_apps ADD COLUMN personality_schema_id UUID REFERENCES hugo_personality_schemas(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'hugo_apps' AND column_name = 'personality_schema_id'
+  ) THEN
+    ALTER TABLE hugo_apps ADD COLUMN personality_schema_id UUID REFERENCES hugo_personality_schemas(id);
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS apps_personality_idx ON hugo_apps(personality_schema_id);
 
 COMMENT ON COLUMN hugo_apps.personality_schema_id IS 'Reference to active personality schema';

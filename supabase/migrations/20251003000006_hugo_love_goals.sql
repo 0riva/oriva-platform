@@ -8,10 +8,17 @@ CREATE TABLE IF NOT EXISTS hugo_love.goals (
   -- User reference (foreign key to oriva_platform.users)
   user_id UUID NOT NULL REFERENCES oriva_platform.users(id) ON DELETE CASCADE,
 
-  -- Goal details (SMART criteria)
+  -- Goal details (SMART criteria per spec lines 273-282)
   title TEXT NOT NULL CHECK (length(title) > 0 AND length(title) <= 200),
   description TEXT CHECK (length(description) <= 2000),
-  target_date DATE NOT NULL,
+
+  -- SMART fields (Specific, Measurable, Achievable, Relevant, Time-bound)
+  specific TEXT NOT NULL CHECK (length(specific) >= 20),
+  measurable TEXT NOT NULL,
+  achievable TEXT NOT NULL,
+  relevant TEXT NOT NULL CHECK (length(relevant) >= 20),
+  time_bound DATE NOT NULL,
+  target_date DATE NOT NULL, -- Alias for time_bound for backward compat
 
   -- Progress tracking
   current_progress INT NOT NULL DEFAULT 0 CHECK (current_progress >= 0 AND current_progress <= 100),
@@ -28,8 +35,17 @@ CREATE TABLE IF NOT EXISTS hugo_love.goals (
     'conflict_resolution', 'personal_growth', 'other'
   )),
 
-  -- Milestones (JSONB array of milestone objects)
-  milestones JSONB DEFAULT '[]',
+  -- Milestones (per spec lines 283-284: parallel arrays)
+  milestones JSONB DEFAULT '[]', -- Array of milestone strings
+  completed_milestones JSONB DEFAULT '[]', -- Parallel array of booleans
+
+  -- Reminders (per spec lines 286-287)
+  reminder_frequency TEXT DEFAULT 'weekly' CHECK (reminder_frequency IN ('daily', 'weekly', 'custom')),
+  custom_reminder_dates JSONB, -- Array of ISO8601 date strings if frequency='custom'
+
+  -- Status and visibility (per spec lines 288-289)
+  partner_visible BOOLEAN NOT NULL DEFAULT FALSE,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed', 'archived')),
 
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -112,10 +128,34 @@ CREATE TRIGGER update_hugo_love_goals_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+-- Validation constraint: milestones and completed_milestones must have same length
+CREATE OR REPLACE FUNCTION hugo_love.validate_goal_milestones()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Ensure milestones and completed_milestones have same length
+  IF jsonb_array_length(NEW.milestones) != jsonb_array_length(NEW.completed_milestones) THEN
+    RAISE EXCEPTION 'milestones and completed_milestones must have same length (spec validation line 294)';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER validate_goal_milestones_trigger
+  BEFORE INSERT OR UPDATE ON hugo_love.goals
+  FOR EACH ROW
+  EXECUTE FUNCTION hugo_love.validate_goal_milestones();
+
 -- Comments for documentation
-COMMENT ON TABLE hugo_love.goals IS 'SMART goals with partner sharing (FR-063)';
-COMMENT ON COLUMN hugo_love.goals.title IS 'Specific, measurable goal title (max 200 chars)';
-COMMENT ON COLUMN hugo_love.goals.target_date IS 'Time-bound deadline (SMART criteria)';
+COMMENT ON TABLE hugo_love.goals IS 'SMART goals with partner sharing (FR-063) per spec data-model.md lines 269-305';
+COMMENT ON COLUMN hugo_love.goals.specific IS 'SMART-S: Specific details (min 20 chars)';
+COMMENT ON COLUMN hugo_love.goals.measurable IS 'SMART-M: Measurable criteria';
+COMMENT ON COLUMN hugo_love.goals.achievable IS 'SMART-A: Achievable plan';
+COMMENT ON COLUMN hugo_love.goals.relevant IS 'SMART-R: Relevant reasoning (min 20 chars)';
+COMMENT ON COLUMN hugo_love.goals.time_bound IS 'SMART-T: Time-bound deadline';
+COMMENT ON COLUMN hugo_love.goals.target_date IS 'Alias for time_bound';
+COMMENT ON COLUMN hugo_love.goals.milestones IS 'JSONB array of milestone strings (spec line 283)';
+COMMENT ON COLUMN hugo_love.goals.completed_milestones IS 'JSONB parallel array of booleans (spec line 284)';
 COMMENT ON COLUMN hugo_love.goals.is_shared_with_partner IS 'Shared goals visible to both partners';
 COMMENT ON COLUMN hugo_love.goals.partner_connection_id IS 'UUID of partner (from match or partner connection)';
-COMMENT ON COLUMN hugo_love.goals.milestones IS 'JSONB array of milestone objects: [{title, completed, date}, ...]';
+COMMENT ON COLUMN hugo_love.goals.status IS 'Goal lifecycle status (spec line 289)';

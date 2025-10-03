@@ -26,15 +26,24 @@ CREATE TABLE IF NOT EXISTS hugo_messages (
 CREATE INDEX IF NOT EXISTS messages_conversation_idx ON hugo_messages(conversation_id, created_at);
 CREATE INDEX IF NOT EXISTS messages_role_idx ON hugo_messages(role);
 
--- Constraints
-ALTER TABLE hugo_messages ADD CONSTRAINT messages_role_check
-  CHECK (role IN ('user', 'assistant'));
+-- Constraints (using DO block for IF NOT EXISTS)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'messages_role_check') THEN
+    ALTER TABLE hugo_messages ADD CONSTRAINT messages_role_check
+      CHECK (role IN ('user', 'assistant'));
+  END IF;
 
-ALTER TABLE hugo_messages ADD CONSTRAINT messages_content_check
-  CHECK (length(content) > 0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'messages_content_check') THEN
+    ALTER TABLE hugo_messages ADD CONSTRAINT messages_content_check
+      CHECK (length(content) > 0);
+  END IF;
 
-ALTER TABLE hugo_messages ADD CONSTRAINT messages_confidence_check
-  CHECK (confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0));
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'messages_confidence_check') THEN
+    ALTER TABLE hugo_messages ADD CONSTRAINT messages_confidence_check
+      CHECK (confidence_score IS NULL OR (confidence_score >= 0.0 AND confidence_score <= 1.0));
+  END IF;
+END $$;
 
 -- RLS
 ALTER TABLE hugo_messages ENABLE ROW LEVEL SECURITY;

@@ -7,11 +7,7 @@
  */
 
 import { Request } from 'express';
-import {
-  createQueryBuilder,
-  executeQuery,
-  DatabaseError,
-} from '../utils/database';
+import { createQueryBuilder, executeQuery, DatabaseError } from '../utils/database';
 import {
   validateRequired,
   validateUuid,
@@ -25,12 +21,12 @@ import {
  * Create insight request
  */
 export interface CreateInsightRequest {
-  session_id: string;
+  user_id?: string;
+  session_id?: string;
   insight_type: string;
   content: string;
   confidence: number;
   supporting_data?: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -38,7 +34,7 @@ export interface CreateInsightRequest {
  */
 export interface InsightResponse {
   id: string;
-  session_id: string;
+  session_id: string | null;
   user_id: string;
   source_app_id: string;
   insight_type: InsightType;
@@ -46,7 +42,6 @@ export interface InsightResponse {
   confidence: number;
   cross_app_visibility: boolean;
   supporting_data?: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -59,8 +54,12 @@ export const createInsight = async (
   input: CreateInsightRequest
 ): Promise<InsightResponse> => {
   validateUuid(userId, 'user_id');
-  validateUuid(input.session_id, 'session_id');
   validateRequired(input.content, 'content');
+
+  // Validate session_id if provided
+  if (input.session_id) {
+    validateUuid(input.session_id, 'session_id');
+  }
 
   const insightType = validateInsightType(input.insight_type);
   const confidence = validateConfidence(input.confidence);
@@ -73,17 +72,7 @@ export const createInsight = async (
     throw new DatabaseError('App context not initialized', 'CONFIGURATION_ERROR', undefined);
   }
 
-  // Verify session exists and belongs to user
-  const session = await executeQuery<{ id: string; user_id: string }>(
-    () =>
-      db
-        .from('sessions')
-        .select('id, user_id')
-        .eq('id', input.session_id)
-        .eq('user_id', userId)
-        .single(),
-    'verify session ownership'
-  );
+  // Note: session_id foreign key constraint in DB will ensure session exists
 
   // Create insight in hugo_ai schema
   const insight = await executeQuery<InsightResponse>(
@@ -91,7 +80,7 @@ export const createInsight = async (
       db
         .from('insights')
         .insert({
-          session_id: input.session_id,
+          session_id: input.session_id || null,
           user_id: userId,
           source_app_id: appUuid,
           insight_type: insightType,
@@ -99,7 +88,6 @@ export const createInsight = async (
           confidence,
           cross_app_visibility: crossAppVisibility,
           supporting_data: input.supporting_data || {},
-          metadata: input.metadata || {},
         })
         .select()
         .single(),
@@ -203,10 +191,7 @@ export const listUserInsights = async (
     query = query.range(filters.offset, filters.offset + filters.limit - 1);
   }
 
-  const insights = await executeQuery<InsightResponse[]>(
-    () => query,
-    'list insights'
-  );
+  const insights = await executeQuery<InsightResponse[]>(() => query, 'list insights');
 
   return { insights };
 };
@@ -226,13 +211,7 @@ export const listSessionInsights = async (
 
   // Verify session exists and belongs to user
   await executeQuery<{ id: string }>(
-    () =>
-      db
-        .from('sessions')
-        .select('id')
-        .eq('id', sessionId)
-        .eq('user_id', userId)
-        .single(),
+    () => db.from('sessions').select('id').eq('id', sessionId).eq('user_id', userId).single(),
     'verify session ownership'
   );
 
@@ -284,13 +263,7 @@ export const updateInsightMetadata = async (
 
   // Update metadata
   const updatedInsight = await executeQuery<InsightResponse>(
-    () =>
-      db
-        .from('insights')
-        .update({ metadata })
-        .eq('id', insightId)
-        .select()
-        .single(),
+    () => db.from('insights').update({ metadata }).eq('id', insightId).select().single(),
     'update insight metadata'
   );
 

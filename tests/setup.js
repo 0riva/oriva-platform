@@ -3,71 +3,30 @@
  * This file runs before all tests to set up the test environment
  */
 
-const { initTestApp } = require('./utils/testHelpers');
+// Load environment variables FIRST before any other code
+require('dotenv').config();
 
 // Mock environment variables for testing
 process.env.NODE_ENV = 'test';
 process.env.NO_SERVER = 'true';
-process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'test_service_key';
+
+// Override with test values where needed
 process.env.ORIVA_CORE_API_URL = 'https://test.oriva-core.co';
 process.env.ORIVA_CORE_API_KEY = 'test_core_key';
 
-// Mock the hashAPIKey function directly by overriding it in the API
-// We'll do this after the app is loaded
+// Ensure test API keys are set (from .env or fallback)
+process.env.API_KEY_PLATFORM = process.env.API_KEY_PLATFORM || 'test-api-key';
+process.env.API_KEY_HUGO_LOVE = process.env.API_KEY_HUGO_LOVE || 'test-api-key-hugo-love';
+process.env.API_KEY_HUGO_CAREER = process.env.API_KEY_HUGO_CAREER || 'test-api-key-hugo-career';
 
-// Mock Supabase before requiring the app
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    from: jest.fn((table) => ({
-      select: jest.fn(() => ({
-        eq: jest.fn((column, value) => ({
-          eq: jest.fn((_column2, _value2) => ({
-            single: jest.fn(() => {
-              // Mock API key lookup with chained .eq() calls
-              if (table === 'developer_api_keys' && column === 'key_hash') {
-                // The hash for 'oriva_pk_test_valid_key' (we'll use this as our test key)
-                if (value === 'test_hash_for_valid_key') {
-                  return Promise.resolve({
-                    data: {
-                      id: 'key_123',
-                      user_id: 'user_123',
-                      name: 'Test Extension',
-                      permissions: ['user:read', 'entries:read', 'templates:read'],
-                      usage_count: 42,
-                      is_active: true,
-                      created_at: '2024-01-01T00:00:00Z'
-                    },
-                    error: null
-                  });
-                } else {
-                  return Promise.resolve({ data: null, error: { message: 'No rows found' } });
-                }
-              }
-              
-              // Default response
-              return Promise.resolve({ data: null, error: null });
-            })
-          }))
-        }))
-      }))
-    }))
-  }))
-}));
-
-// Initialize the test app
-const api = require('../api/index.ts');
-initTestApp(api.app || api.default || api);
+// Use local Supabase for tests (Docker instance with seeded test data)
+// From: supabase status
+process.env.SUPABASE_URL = 'http://127.0.0.1:54321';
+process.env.SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+// Service role key bypasses RLS - required for API server
+process.env.SUPABASE_SERVICE_ROLE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
 // Global test timeout
 jest.setTimeout(10000);
-
-// Suppress console.log during tests (optional)
-// global.console = {
-//   ...console,
-//   log: jest.fn(),
-//   debug: jest.fn(),
-//   info: jest.fn(),
-//   warn: jest.fn(),
-//   error: jest.fn(),
-// };

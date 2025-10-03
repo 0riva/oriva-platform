@@ -18,17 +18,20 @@ SELECT
   (
     SELECT json_agg(
       json_build_object(
-        'id', m.id,
-        'role', m.role,
-        'content', m.content,
-        'created_at', m.created_at
-      ) ORDER BY m.created_at DESC
+        'id', msg.id,
+        'role', msg.role,
+        'content', msg.content,
+        'created_at', msg.created_at
+      ) ORDER BY msg.created_at DESC
     )
-    FROM hugo_messages m
-    JOIN hugo_conversations c ON c.id = m.conversation_id
-    WHERE c.user_id = $2 AND c.app_id = a.id
-    ORDER BY m.created_at DESC
-    LIMIT 10
+    FROM (
+      SELECT m.id, m.role, m.content, m.created_at
+      FROM hugo_messages m
+      JOIN hugo_conversations c ON c.id = m.conversation_id
+      WHERE c.user_id = $2 AND c.app_id = a.id
+      ORDER BY m.created_at DESC
+      LIMIT 10
+    ) msg
   ) as recent_messages,
   up.progress_data,
   up.current_focus_area,
@@ -41,7 +44,6 @@ WHERE a.app_id = $1
   AND a.is_active = true
 GROUP BY a.id, ps.id, up.id;
 
-COMMENT ON TEXT SEARCH CONFIGURATION pg_catalog."english" IS 'Prepared statement: get_chat_context($1=app_id, $2=user_id) - retrieves full context for chat message';
 
 -- ============================================================================
 -- HOT PATH 2: Search Knowledge Base (executed for every message)
@@ -71,7 +73,6 @@ WHERE
 ORDER BY relevance DESC
 LIMIT $3;
 
-COMMENT ON TEXT SEARCH CONFIGURATION pg_catalog."english" IS 'Prepared statement: search_knowledge($1=query, $2=app_id, $3=limit) - full-text search in knowledge base';
 
 -- ============================================================================
 -- HOT PATH 3: Get User Context (user profile, progress, memories)
@@ -82,8 +83,7 @@ PREPARE get_user_context(uuid, text) AS
 SELECT
   u.id,
   u.email,
-  u.preferences,
-  u.subscription_tier,
+  u.full_name,
   up.progress_data,
   up.milestones_reached,
   up.current_focus_area,
@@ -104,12 +104,11 @@ SELECT
       AND (um.expires_at IS NULL OR um.expires_at > now())
     LIMIT 20
   ) as memories
-FROM users u
+FROM oriva_platform.users u
 LEFT JOIN hugo_user_progress up ON up.user_id = u.id
   AND up.app_id = (SELECT id FROM hugo_apps WHERE app_id = $2)
 WHERE u.id = $1;
 
-COMMENT ON TEXT SEARCH CONFIGURATION pg_catalog."english" IS 'Prepared statement: get_user_context($1=user_id, $2=app_id) - retrieves user profile, progress, and memories';
 
 -- ============================================================================
 -- HOT PATH 4: Get Recent Conversations (for conversation history UI)
@@ -142,7 +141,6 @@ WHERE c.user_id = $1
 ORDER BY c.last_message_at DESC
 LIMIT $3;
 
-COMMENT ON TEXT SEARCH CONFIGURATION pg_catalog."english" IS 'Prepared statement: get_recent_conversations($1=user_id, $2=app_id, $3=limit) - retrieves recent hugo_conversations with last message';
 
 -- ============================================================================
 -- HELPER FUNCTIONS for prepared statements

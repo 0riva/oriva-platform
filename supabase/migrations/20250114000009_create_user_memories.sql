@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS hugo_user_memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES oriva_platform.users(id) ON DELETE CASCADE,
   app_id UUID NOT NULL REFERENCES hugo_apps(id),
   conversation_id UUID REFERENCES hugo_conversations(id) ON DELETE SET NULL,
 
@@ -22,6 +22,17 @@ CREATE TABLE IF NOT EXISTS hugo_user_memories (
   expires_at TIMESTAMPTZ
 );
 
+-- Add app_id column if missing (for existing tables)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'hugo_user_memories' AND column_name = 'app_id'
+  ) THEN
+    ALTER TABLE hugo_user_memories ADD COLUMN app_id UUID NOT NULL REFERENCES hugo_apps(id);
+  END IF;
+END $$;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS um_user_app_idx ON hugo_user_memories(user_id, app_id);
 CREATE INDEX IF NOT EXISTS um_type_idx ON hugo_user_memories(memory_type);
@@ -29,17 +40,28 @@ CREATE INDEX IF NOT EXISTS um_importance_idx ON hugo_user_memories(importance DE
 CREATE INDEX IF NOT EXISTS um_expires_idx ON hugo_user_memories(expires_at) WHERE expires_at IS NOT NULL;
 
 -- Constraints
-ALTER TABLE hugo_user_memories ADD CONSTRAINT um_memory_type_check
-  CHECK (memory_type IN ('conversation_context', 'user_preference', 'milestone', 'insight'));
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'um_memory_type_check') THEN
+    ALTER TABLE hugo_user_memories ADD CONSTRAINT um_memory_type_check
+      CHECK (memory_type IN ('conversation_context', 'user_preference', 'milestone', 'insight'));
+  END IF;
 
-ALTER TABLE hugo_user_memories ADD CONSTRAINT um_content_check
-  CHECK (length(content) > 0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'um_content_check') THEN
+    ALTER TABLE hugo_user_memories ADD CONSTRAINT um_content_check
+      CHECK (length(content) > 0);
+  END IF;
 
-ALTER TABLE hugo_user_memories ADD CONSTRAINT um_importance_check
-  CHECK (importance >= 0.0 AND importance <= 1.0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'um_importance_check') THEN
+    ALTER TABLE hugo_user_memories ADD CONSTRAINT um_importance_check
+      CHECK (importance >= 0.0 AND importance <= 1.0);
+  END IF;
 
-ALTER TABLE hugo_user_memories ADD CONSTRAINT um_decay_check
-  CHECK (relevance_decay_rate >= 0.0 AND relevance_decay_rate <= 1.0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'um_decay_check') THEN
+    ALTER TABLE hugo_user_memories ADD CONSTRAINT um_decay_check
+      CHECK (relevance_decay_rate >= 0.0 AND relevance_decay_rate <= 1.0);
+  END IF;
+END $$;
 
 -- RLS
 ALTER TABLE hugo_user_memories ENABLE ROW LEVEL SECURITY;
