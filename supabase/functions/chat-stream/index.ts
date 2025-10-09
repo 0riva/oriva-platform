@@ -63,13 +63,16 @@ serve(async (req) => {
       userId = req.headers.get('x-dev-user-id') || '00000000-0000-0000-0000-000000000001';
       console.log(`DEV MODE: Using user ID ${userId}`);
     } else {
-      // Production mode - check for dev header first (for testing), then require JWT
-      const devUserId = req.headers.get('x-dev-user-id');
+      // Production mode - check for dev user ID (header OR query param), then require JWT
+      // Query param fallback for iOS/HTTP2 header stripping issue
+      const url = new URL(req.url);
+      const devUserId = req.headers.get('x-dev-user-id') || url.searchParams.get('dev_user_id');
 
       if (devUserId) {
         // Testing mode: use provided dev user ID
         userId = devUserId;
-        console.log(`PRODUCTION TEST MODE: Using dev user ID ${userId}`);
+        const source = req.headers.get('x-dev-user-id') ? 'header' : 'query_param';
+        console.log(`PRODUCTION TEST MODE: Using dev user ID ${userId} from ${source}`);
       } else {
         // Normal production: require JWT
         const authHeader = req.headers.get('Authorization');
