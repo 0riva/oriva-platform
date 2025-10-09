@@ -51,35 +51,44 @@ serve(async (req) => {
       userId = req.headers.get('x-dev-user-id') || '00000000-0000-0000-0000-000000000001';
       console.log(`DEV MODE: Using user ID ${userId}`);
     } else {
-      // Production mode - require JWT
-      const authHeader = req.headers.get('Authorization');
-      if (!authHeader) {
-        return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // Production mode - check for dev header first (for testing), then require JWT
+      const devUserId = req.headers.get('x-dev-user-id');
+
+      if (devUserId) {
+        // Testing mode: use provided dev user ID
+        userId = devUserId;
+        console.log(`PRODUCTION TEST MODE: Using dev user ID ${userId}`);
+      } else {
+        // Normal production: require JWT
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Create Supabase client with user context
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+          global: {
+            headers: { Authorization: authHeader },
+          },
         });
+
+        // Get user from JWT
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+        if (authError || !user) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        userId = user.id;
       }
-
-      // Create Supabase client with user context
-      const supabase = createClient(supabaseUrl, supabaseKey, {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      });
-
-      // Get user from JWT
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      userId = user.id;
     }
 
     // Create Supabase client for data operations (service role key bypasses RLS)
