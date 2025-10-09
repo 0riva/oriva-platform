@@ -23,6 +23,18 @@ serve(async (req) => {
   }
 
   try {
+    // DEBUG: Log all incoming headers to diagnose x-dev-user-id issue
+    console.log('=== INCOMING REQUEST HEADERS ===');
+    for (const [key, value] of req.headers.entries()) {
+      // Mask sensitive tokens but show header presence
+      if (key.toLowerCase() === 'authorization' || key.toLowerCase() === 'apikey') {
+        console.log(`${key}: ${value.substring(0, 20)}...`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
+    console.log('=== END HEADERS ===');
+
     // Parse request body
     const body = await req.json();
     const conversationId = body.conversation_id || body.conversationId;
