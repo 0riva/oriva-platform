@@ -5,8 +5,9 @@
 -- Enable RLS on entries table
 ALTER TABLE entries ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can only SELECT their own entries
+-- Policy: Users can only SELECT their own entries (idempotent)
 -- Users can read entries where the profile_id matches their authenticated profile
+DROP POLICY IF EXISTS "Users can read their own entries" ON entries;
 CREATE POLICY "Users can read their own entries"
 ON entries
 FOR SELECT
@@ -17,6 +18,7 @@ USING (
 );
 
 -- Policy: Users can only INSERT entries for their own profile
+DROP POLICY IF EXISTS "Users can create their own entries" ON entries;
 CREATE POLICY "Users can create their own entries"
 ON entries
 FOR INSERT
@@ -27,6 +29,7 @@ WITH CHECK (
 );
 
 -- Policy: Users can only UPDATE their own entries
+DROP POLICY IF EXISTS "Users can update their own entries" ON entries;
 CREATE POLICY "Users can update their own entries"
 ON entries
 FOR UPDATE
@@ -42,6 +45,7 @@ WITH CHECK (
 );
 
 -- Policy: Users can only DELETE their own entries
+DROP POLICY IF EXISTS "Users can delete their own entries" ON entries;
 CREATE POLICY "Users can delete their own entries"
 ON entries
 FOR DELETE

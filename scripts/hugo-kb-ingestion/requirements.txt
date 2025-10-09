@@ -1,0 +1,30 @@
+# Hugo Love Knowledge Base Ingestion Pipeline
+# Python 3.11+ required
+
+# PDF processing
+pdfplumber==0.10.3
+
+# Text chunking and embeddings
+langchain==0.3.0
+langchain-community==0.3.0
+langchain-text-splitters==0.3.0
+
+# OpenAI API for embeddings
+openai==1.54.0
+
+# Supabase client
+supabase==2.3.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Progress bars
+tqdm==4.66.1
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+
+# Type checking (optional)
+mypy==1.7.1

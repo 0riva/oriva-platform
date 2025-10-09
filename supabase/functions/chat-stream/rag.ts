@@ -3,7 +3,7 @@
  * pgvector similarity search for TIC chunks
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 export interface TICChunk {
   id: string;
@@ -19,13 +19,11 @@ export interface TICChunk {
 export async function searchTICChunks(
   query: string,
   stage: string,
-  supabaseUrl: string,
-  supabaseKey: string,
+  supabase: SupabaseClient,
   limit: number = 5
 ): Promise<TICChunk[]> {
   try {
-    // Create Supabase client
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Use provided Supabase client (already configured with schema headers)
 
     // Generate embedding for query using OpenAI
     const queryEmbedding = await generateQueryEmbedding(query);

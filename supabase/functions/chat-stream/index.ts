@@ -150,8 +150,7 @@ serve(async (req) => {
     const ragChunks = await searchTICChunks(
       message,
       coachingContext.currentStage,
-      supabaseUrl,
-      supabaseKey,
+      supabase, // Pass configured client with schema headers
       5 // top 5 chunks
     );
 

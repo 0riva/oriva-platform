@@ -48,25 +48,30 @@ CREATE TABLE IF NOT EXISTS platform_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Foreign key to hugo_apps
-ALTER TABLE platform_events
-  ADD CONSTRAINT fk_platform_events_app_id
-  FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+-- Foreign key to hugo_apps (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_platform_events_app_id') THEN
+    ALTER TABLE platform_events
+      ADD CONSTRAINT fk_platform_events_app_id
+      FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- Indexes for platform_events
-CREATE INDEX idx_platform_events_app_user_time
+CREATE INDEX IF NOT EXISTS idx_platform_events_app_user_time
   ON platform_events(app_id, user_id, created_at DESC);
 
-CREATE INDEX idx_platform_events_category_type
+CREATE INDEX IF NOT EXISTS idx_platform_events_category_type
   ON platform_events(event_category, event_type, created_at DESC);
 
-CREATE INDEX idx_platform_events_user_time
+CREATE INDEX IF NOT EXISTS idx_platform_events_user_time
   ON platform_events(user_id, timestamp DESC);
 
-CREATE INDEX idx_platform_events_entity
+CREATE INDEX IF NOT EXISTS idx_platform_events_entity
   ON platform_events(entity_type, entity_id);
 
-CREATE INDEX idx_platform_events_data
+CREATE INDEX IF NOT EXISTS idx_platform_events_data
   ON platform_events USING GIN (event_data jsonb_path_ops);
 
 -- Comments
@@ -113,28 +118,33 @@ CREATE TABLE IF NOT EXISTS platform_notifications (
   CONSTRAINT unique_app_external_id UNIQUE (app_id, external_id)
 );
 
--- Foreign key to hugo_apps
-ALTER TABLE platform_notifications
-  ADD CONSTRAINT fk_platform_notifications_app_id
-  FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+-- Foreign key to hugo_apps (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_platform_notifications_app_id') THEN
+    ALTER TABLE platform_notifications
+      ADD CONSTRAINT fk_platform_notifications_app_id
+      FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- Indexes for platform_notifications
-CREATE INDEX idx_platform_notifications_user_time
+CREATE INDEX IF NOT EXISTS idx_platform_notifications_user_time
   ON platform_notifications(user_id, created_at DESC);
 
-CREATE INDEX idx_platform_notifications_app_user_time
+CREATE INDEX IF NOT EXISTS idx_platform_notifications_app_user_time
   ON platform_notifications(app_id, user_id, created_at DESC);
 
-CREATE INDEX idx_platform_notifications_type
+CREATE INDEX IF NOT EXISTS idx_platform_notifications_type
   ON platform_notifications(notification_type);
 
-CREATE INDEX idx_platform_notifications_context_data
+CREATE INDEX IF NOT EXISTS idx_platform_notifications_context_data
   ON platform_notifications USING GIN (context_data jsonb_path_ops);
 
 -- Index for notification queries by user and expiry
 -- Note: Cannot use NOW() in index predicate (not IMMUTABLE)
 -- Queries must filter expires_at at runtime
-CREATE INDEX idx_platform_notifications_user_expiry
+CREATE INDEX IF NOT EXISTS idx_platform_notifications_user_expiry
   ON platform_notifications(user_id, created_at DESC, expires_at);
 
 -- Comments
@@ -176,10 +186,10 @@ CREATE TABLE IF NOT EXISTS notification_state (
 );
 
 -- Indexes for notification_state
-CREATE INDEX idx_notification_state_user_status_time
+CREATE INDEX IF NOT EXISTS idx_notification_state_user_status_time
   ON notification_state(user_id, status, updated_at DESC);
 
-CREATE INDEX idx_notification_state_notification
+CREATE INDEX IF NOT EXISTS idx_notification_state_notification
   ON notification_state(notification_id);
 
 -- Comments
@@ -220,16 +230,21 @@ CREATE TABLE IF NOT EXISTS app_webhooks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Foreign key to hugo_apps
-ALTER TABLE app_webhooks
-  ADD CONSTRAINT fk_app_webhooks_app_id
-  FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+-- Foreign key to hugo_apps (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_app_webhooks_app_id') THEN
+    ALTER TABLE app_webhooks
+      ADD CONSTRAINT fk_app_webhooks_app_id
+      FOREIGN KEY (app_id) REFERENCES hugo_apps(app_id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- Indexes for app_webhooks
-CREATE INDEX idx_app_webhooks_app_id
+CREATE INDEX IF NOT EXISTS idx_app_webhooks_app_id
   ON app_webhooks(app_id);
 
-CREATE INDEX idx_app_webhooks_active
+CREATE INDEX IF NOT EXISTS idx_app_webhooks_active
   ON app_webhooks(is_active)
   WHERE is_active = true;
 
@@ -270,17 +285,17 @@ CREATE TABLE IF NOT EXISTS webhook_delivery_log (
 );
 
 -- Indexes for webhook_delivery_log
-CREATE INDEX idx_webhook_delivery_log_webhook_time
+CREATE INDEX IF NOT EXISTS idx_webhook_delivery_log_webhook_time
   ON webhook_delivery_log(webhook_id, delivered_at DESC);
 
-CREATE INDEX idx_webhook_delivery_log_event
+CREATE INDEX IF NOT EXISTS idx_webhook_delivery_log_event
   ON webhook_delivery_log(event_id);
 
-CREATE INDEX idx_webhook_delivery_log_success_time
+CREATE INDEX IF NOT EXISTS idx_webhook_delivery_log_success_time
   ON webhook_delivery_log(success, delivered_at DESC);
 
 -- Partial index for failed deliveries needing retry
-CREATE INDEX idx_webhook_delivery_log_retry
+CREATE INDEX IF NOT EXISTS idx_webhook_delivery_log_retry
   ON webhook_delivery_log(webhook_id, delivered_at)
   WHERE success = false AND delivery_attempt < 5;
 
@@ -302,15 +317,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply timestamp update trigger to tables with updated_at column
+-- Apply timestamp update trigger to tables with updated_at column (idempotent)
+DROP TRIGGER IF EXISTS update_platform_notifications_timestamp ON platform_notifications;
 CREATE TRIGGER update_platform_notifications_timestamp
   BEFORE UPDATE ON platform_notifications
   FOR EACH ROW EXECUTE FUNCTION update_transaction_timestamp();
 
+DROP TRIGGER IF EXISTS update_notification_state_timestamp ON notification_state;
 CREATE TRIGGER update_notification_state_timestamp
   BEFORE UPDATE ON notification_state
   FOR EACH ROW EXECUTE FUNCTION update_transaction_timestamp();
 
+DROP TRIGGER IF EXISTS update_app_webhooks_timestamp ON app_webhooks;
 CREATE TRIGGER update_app_webhooks_timestamp
   BEFORE UPDATE ON app_webhooks
   FOR EACH ROW EXECUTE FUNCTION update_transaction_timestamp();
@@ -331,6 +349,10 @@ ALTER TABLE webhook_delivery_log ENABLE ROW LEVEL SECURITY;
 -- ============================================================================
 
 -- Apps can view their own events
+DROP POLICY IF EXISTS "Apps can view their own events" ON platform_events;
+DROP POLICY IF EXISTS "Apps can view their own events" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can view their own events" ON notification_state;
+DROP POLICY IF EXISTS "Apps can view their own events" ON app_webhooks;
 CREATE POLICY "Apps can view their own events"
   ON platform_events FOR SELECT
   USING (
@@ -340,11 +362,19 @@ CREATE POLICY "Apps can view their own events"
   );
 
 -- Service role can create events (via API)
+DROP POLICY IF EXISTS "Service can create events" ON platform_events;
+DROP POLICY IF EXISTS "Service can create events" ON platform_notifications;
+DROP POLICY IF EXISTS "Service can create events" ON notification_state;
+DROP POLICY IF EXISTS "Service can create events" ON app_webhooks;
 CREATE POLICY "Service can create events"
   ON platform_events FOR INSERT
   WITH CHECK (true); -- Service role only
 
 -- Users can view their own events
+DROP POLICY IF EXISTS "Users can view their own events" ON platform_events;
+DROP POLICY IF EXISTS "Users can view their own events" ON platform_notifications;
+DROP POLICY IF EXISTS "Users can view their own events" ON notification_state;
+DROP POLICY IF EXISTS "Users can view their own events" ON app_webhooks;
 CREATE POLICY "Users can view their own events"
   ON platform_events FOR SELECT
   USING (auth.uid() = user_id);
@@ -354,6 +384,10 @@ CREATE POLICY "Users can view their own events"
 -- ============================================================================
 
 -- Apps can view their own notifications
+DROP POLICY IF EXISTS "Apps can view their own notifications" ON platform_events;
+DROP POLICY IF EXISTS "Apps can view their own notifications" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can view their own notifications" ON notification_state;
+DROP POLICY IF EXISTS "Apps can view their own notifications" ON app_webhooks;
 CREATE POLICY "Apps can view their own notifications"
   ON platform_notifications FOR SELECT
   USING (
@@ -363,6 +397,10 @@ CREATE POLICY "Apps can view their own notifications"
   );
 
 -- Apps can create notifications for their users
+DROP POLICY IF EXISTS "Apps can create notifications" ON platform_events;
+DROP POLICY IF EXISTS "Apps can create notifications" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can create notifications" ON notification_state;
+DROP POLICY IF EXISTS "Apps can create notifications" ON app_webhooks;
 CREATE POLICY "Apps can create notifications"
   ON platform_notifications FOR INSERT
   WITH CHECK (
@@ -372,6 +410,10 @@ CREATE POLICY "Apps can create notifications"
   );
 
 -- Apps can delete their own notifications
+DROP POLICY IF EXISTS "Apps can delete their own notifications" ON platform_events;
+DROP POLICY IF EXISTS "Apps can delete their own notifications" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can delete their own notifications" ON notification_state;
+DROP POLICY IF EXISTS "Apps can delete their own notifications" ON app_webhooks;
 CREATE POLICY "Apps can delete their own notifications"
   ON platform_notifications FOR DELETE
   USING (
@@ -381,6 +423,10 @@ CREATE POLICY "Apps can delete their own notifications"
   );
 
 -- Users can view notifications for them
+DROP POLICY IF EXISTS "Users can view their notifications" ON platform_events;
+DROP POLICY IF EXISTS "Users can view their notifications" ON platform_notifications;
+DROP POLICY IF EXISTS "Users can view their notifications" ON notification_state;
+DROP POLICY IF EXISTS "Users can view their notifications" ON app_webhooks;
 CREATE POLICY "Users can view their notifications"
   ON platform_notifications FOR SELECT
   USING (auth.uid() = user_id);
@@ -390,21 +436,37 @@ CREATE POLICY "Users can view their notifications"
 -- ============================================================================
 
 -- Users can view their own notification state
+DROP POLICY IF EXISTS "Users can view their notification state" ON platform_events;
+DROP POLICY IF EXISTS "Users can view their notification state" ON platform_notifications;
+DROP POLICY IF EXISTS "Users can view their notification state" ON notification_state;
+DROP POLICY IF EXISTS "Users can view their notification state" ON app_webhooks;
 CREATE POLICY "Users can view their notification state"
   ON notification_state FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Service can create notification state (auto-created with notification)
+DROP POLICY IF EXISTS "Service can create notification state" ON platform_events;
+DROP POLICY IF EXISTS "Service can create notification state" ON platform_notifications;
+DROP POLICY IF EXISTS "Service can create notification state" ON notification_state;
+DROP POLICY IF EXISTS "Service can create notification state" ON app_webhooks;
 CREATE POLICY "Service can create notification state"
   ON notification_state FOR INSERT
   WITH CHECK (true); -- Service role only
 
 -- Users can update their own notification state
+DROP POLICY IF EXISTS "Users can update their notification state" ON platform_events;
+DROP POLICY IF EXISTS "Users can update their notification state" ON platform_notifications;
+DROP POLICY IF EXISTS "Users can update their notification state" ON notification_state;
+DROP POLICY IF EXISTS "Users can update their notification state" ON app_webhooks;
 CREATE POLICY "Users can update their notification state"
   ON notification_state FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Apps can update notification state for their notifications
+DROP POLICY IF EXISTS "Apps can update notification state" ON platform_events;
+DROP POLICY IF EXISTS "Apps can update notification state" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can update notification state" ON notification_state;
+DROP POLICY IF EXISTS "Apps can update notification state" ON app_webhooks;
 CREATE POLICY "Apps can update notification state"
   ON notification_state FOR UPDATE
   USING (
@@ -422,6 +484,10 @@ CREATE POLICY "Apps can update notification state"
 -- ============================================================================
 
 -- Apps can view their own webhooks
+DROP POLICY IF EXISTS "Apps can view their own webhooks" ON platform_events;
+DROP POLICY IF EXISTS "Apps can view their own webhooks" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can view their own webhooks" ON notification_state;
+DROP POLICY IF EXISTS "Apps can view their own webhooks" ON app_webhooks;
 CREATE POLICY "Apps can view their own webhooks"
   ON app_webhooks FOR SELECT
   USING (
@@ -431,6 +497,10 @@ CREATE POLICY "Apps can view their own webhooks"
   );
 
 -- Apps can create their own webhooks
+DROP POLICY IF EXISTS "Apps can create webhooks" ON platform_events;
+DROP POLICY IF EXISTS "Apps can create webhooks" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can create webhooks" ON notification_state;
+DROP POLICY IF EXISTS "Apps can create webhooks" ON app_webhooks;
 CREATE POLICY "Apps can create webhooks"
   ON app_webhooks FOR INSERT
   WITH CHECK (
@@ -440,6 +510,10 @@ CREATE POLICY "Apps can create webhooks"
   );
 
 -- Apps can update their own webhooks
+DROP POLICY IF EXISTS "Apps can update their own webhooks" ON platform_events;
+DROP POLICY IF EXISTS "Apps can update their own webhooks" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can update their own webhooks" ON notification_state;
+DROP POLICY IF EXISTS "Apps can update their own webhooks" ON app_webhooks;
 CREATE POLICY "Apps can update their own webhooks"
   ON app_webhooks FOR UPDATE
   USING (
@@ -449,6 +523,10 @@ CREATE POLICY "Apps can update their own webhooks"
   );
 
 -- Apps can delete their own webhooks
+DROP POLICY IF EXISTS "Apps can delete their own webhooks" ON platform_events;
+DROP POLICY IF EXISTS "Apps can delete their own webhooks" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can delete their own webhooks" ON notification_state;
+DROP POLICY IF EXISTS "Apps can delete their own webhooks" ON app_webhooks;
 CREATE POLICY "Apps can delete their own webhooks"
   ON app_webhooks FOR DELETE
   USING (
@@ -462,6 +540,11 @@ CREATE POLICY "Apps can delete their own webhooks"
 -- ============================================================================
 
 -- Apps can view delivery logs for their webhooks
+DROP POLICY IF EXISTS "Apps can view their webhook delivery logs" ON platform_events;
+DROP POLICY IF EXISTS "Apps can view their webhook delivery logs" ON platform_notifications;
+DROP POLICY IF EXISTS "Apps can view their webhook delivery logs" ON notification_state;
+DROP POLICY IF EXISTS "Apps can view their webhook delivery logs" ON app_webhooks;
+DROP POLICY IF EXISTS "Apps can view their webhook delivery logs" ON webhook_delivery_log;
 CREATE POLICY "Apps can view their webhook delivery logs"
   ON webhook_delivery_log FOR SELECT
   USING (
@@ -475,6 +558,11 @@ CREATE POLICY "Apps can view their webhook delivery logs"
   );
 
 -- Service can create delivery logs
+DROP POLICY IF EXISTS "Service can create delivery logs" ON platform_events;
+DROP POLICY IF EXISTS "Service can create delivery logs" ON platform_notifications;
+DROP POLICY IF EXISTS "Service can create delivery logs" ON notification_state;
+DROP POLICY IF EXISTS "Service can create delivery logs" ON app_webhooks;
+DROP POLICY IF EXISTS "Service can create delivery logs" ON webhook_delivery_log;
 CREATE POLICY "Service can create delivery logs"
   ON webhook_delivery_log FOR INSERT
   WITH CHECK (true); -- Service role only
