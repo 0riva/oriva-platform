@@ -104,13 +104,17 @@ serve(async (req) => {
     }
 
     // Create Supabase client for data operations (service role key bypasses RLS)
+    // NOTE: Schema must be set via REST headers, not client config
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
-      db: {
-        schema: 'hugo_love',
+      global: {
+        headers: {
+          'Accept-Profile': 'hugo_love',
+          'Content-Profile': 'hugo_love',
+        },
       },
     });
 
