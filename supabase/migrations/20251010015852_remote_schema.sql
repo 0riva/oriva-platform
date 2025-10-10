@@ -1573,8 +1573,7 @@ BEGIN
     developer_mode,
     themecrumbs_enabled,
     themecrumbs_position,
-    group_visibility_settings,
-    preferences
+    group_visibility_settings
   )
   VALUES (
     NEW.id,
@@ -1586,7 +1585,6 @@ BEGIN
     false,
     true,
     'topic',
-    '{}'::jsonb,
     '{}'::jsonb
   );
 
