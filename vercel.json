@@ -35,6 +35,10 @@
       "destination": "/api/v1/marketplace"
     },
     {
+      "source": "/api/v1/topics/:path*",
+      "destination": "/api/v1/topics"
+    },
+    {
       "source": "/api/v1/apps/:appId/events",
       "destination": "/api/v1/events?appId=$appId"
     },
