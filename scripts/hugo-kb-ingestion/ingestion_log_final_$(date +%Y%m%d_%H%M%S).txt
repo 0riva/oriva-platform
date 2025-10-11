@@ -1,0 +1,66 @@
+
+🚀 Hugo Love Knowledge Base Ingestion Pipeline
+============================================================
+📂 Input directory: /Users/cosmic/Documents/MySecondBrain/Hugo/HugoLoveKB
+📄 Found 12 PDF files
+🤖 OpenAI model: text-embedding-3-small
+🗄️  Supabase: https://cbzgvlkizkdfjmbrosav.supabase.co
+============================================================
+
+Processing PDFs:   0%|          | 0/12 [00:00<?, ?it/s]Processing PDFs:   8%|▊         | 1/12 [00:01<00:12,  1.10s/it]Processing PDFs:  25%|██▌       | 3/12 [00:02<00:05,  1.60it/s]Processing PDFs:  42%|████▏     | 5/12 [00:02<00:02,  3.01it/s]Processing PDFs:  50%|█████     | 6/12 [00:02<00:01,  3.65it/s]Processing PDFs:  58%|█████▊    | 7/12 [00:02<00:01,  3.39it/s]Processing PDFs:  75%|███████▌  | 9/12 [00:02<00:00,  5.14it/s]Processing PDFs:  92%|█████████▏| 11/12 [00:07<00:01,  1.03s/it]Processing PDFs: 100%|██████████| 12/12 [00:07<00:00,  1.20it/s]Processing PDFs: 100%|██████████| 12/12 [00:07<00:00,  1.59it/s]
+  ✅ TIC 7 Conversations To Love - Mobile Version.pdf: 149 chunks
+  ✅ TIC Workbook 2 - Vital Connection.pdf: 11 chunks
+  ✅ TIC - 15 Things Report.pdf: 37 chunks
+  ✅ TIC Cheatsheet - Matchmaking Reflections.pdf: 2 chunks
+  ✅ TIC Workbook 4 - Big Pay-Off.pdf: 9 chunks
+  ✅ TIC Workbook 1 - Celebration.pdf: 17 chunks
+  ✅ TIC 7 Conversations To Love 3-Pager.pdf: 7 chunks
+  ✅ TIC Cheatsheet - Top 5 Reasons Men Leave.pdf: 2 chunks
+  ✅ TIC Cheatsheet - Date Night Dynamo.pdf: 2 chunks
+  ✅ TIC Workbook 3 - Love-Spark.pdf: 14 chunks
+  ✅ TIC - The Intimacy Code - mobile version.pdf: 629 chunks
+  ✅ TIC Workbook 5 - Spiral Effect.pdf: 18 chunks
+
+📊 Chunking Summary
+  Total PDFs processed: 12
+  Total chunks generated: 897
+
+🧠 Generating embeddings...
+Generating embeddings for 897 chunks...
+  Processed 100/897 chunks
+  Processed 200/897 chunks
+  Processed 300/897 chunks
+  Processed 400/897 chunks
+  Processed 500/897 chunks
+  Processed 600/897 chunks
+  Processed 700/897 chunks
+  Processed 800/897 chunks
+  Processed 897/897 chunks
+✅ Generated 897 embeddings
+
+📤 Uploading to Supabase...
+Uploading 897 chunks to Supabase...
+  Uploaded 100/897 chunks
+  Uploaded 200/897 chunks
+  Uploaded 300/897 chunks
+  Uploaded 400/897 chunks
+  Uploaded 500/897 chunks
+  Uploaded 600/897 chunks
+  Uploaded 700/897 chunks
+  Uploaded 800/897 chunks
+  Uploaded 897/897 chunks
+✅ Upload complete: 897 succeeded, 0 failed
+
+============================================================
+✅ Pipeline Complete!
+============================================================
+📄 PDFs processed: 12
+🧩 Chunks generated: 897
+🧠 Embeddings created: 897
+📤 Uploaded to Supabase: 897 chunks
+
+🔍 Verify in Supabase:
+   SELECT COUNT(*) FROM hugo_love.document_chunks;
+   -- Expected: ~897
+
+🎉 Knowledge base ingestion successful!

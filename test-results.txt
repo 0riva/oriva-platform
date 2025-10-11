@@ -1,0 +1,4135 @@
+
+> oriva-platform@1.0.0 test
+> jest --config=jest.config.js
+
+watchman warning: Recrawled this watch 7 times, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/cosmic/Documents/oriva-platform' ; watchman watch-project '/Users/cosmic/Documents/oriva-platform'`
+
+🔧 Setting up test environment...
+✅ Test environment ready
+[SETUP] API Keys configured: {
+  platform: 'test-api-key',
+  hugoLove: 'test-api-key-hugo-love',
+  hugoCareer: 'test-api-key-hugo-career'
+}
+FAIL tests/contract/notifications/webhooks/list.test.ts
+  GET /api/v1/apps/:appId/webhooks - Contract Tests
+    ✕ should list app webhooks (25 ms)
+    ✕ should exclude webhook_secret from response (4 ms)
+    ✕ should return empty array for app with no webhooks (5 ms)
+    ✕ should enforce authentication (3 ms)
+    ✕ should enforce app isolation (3 ms)
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should list app webhooks
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should exclude webhook_secret from response
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should return empty array for app with no webhooks
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should enforce app isolation
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/webhooks/create.test.ts
+  POST /api/v1/apps/:appId/webhooks - Contract Tests
+    ✕ should create valid webhook (26 ms)
+    ✕ should reject non-HTTPS URL (4 ms)
+    ✕ should reject empty subscribed_events (4 ms)
+    ✕ should enforce authentication (2 ms)
+    ✕ should enforce rate limits (9 ms)
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should create valid webhook
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should reject non-HTTPS URL
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should reject empty subscribed_events
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should enforce rate limits
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/delete.test.ts
+  DELETE /api/v1/notifications/:id - Contract Tests
+    ✕ should delete notification (7 ms)
+    ✕ should enforce app authorization (8 ms)
+    ✕ should return 404 for non-existent notification (3 ms)
+    ✕ should enforce authentication (4 ms)
+    ✕ should cascade delete notification_state (1 ms)
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should delete notification
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should enforce app authorization
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should return 404 for non-existent notification
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should cascade delete notification_state
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/query.test.ts
+  GET /api/v1/users/:userId/notifications - Contract Tests
+    ✕ should return notification list for user (53 ms)
+    ✕ should filter by status (unread) (2 ms)
+    ✕ should filter by app_id (2 ms)
+    ✕ should support pagination (4 ms)
+    ✕ should exclude expired notifications (2 ms)
+    ✕ should enforce authentication (3 ms)
+    ✕ should enforce user isolation (2 ms)
+    ✕ should include app branding (1 ms)
+    ✕ should sort by priority then created_at DESC (2 ms)
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should return notification list for user
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should filter by status (unread)
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should filter by app_id
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should support pagination
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should exclude expired notifications
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should enforce user isolation
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should include app branding
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should sort by priority then created_at DESC
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/webhooks/delete.test.ts
+  DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests
+    ✕ should delete webhook (21 ms)
+    ✕ should return 404 for non-existent webhook (1 ms)
+    ✕ should enforce authentication (2 ms)
+    ✕ should enforce app authorization (2 ms)
+
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should delete webhook
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should return 404 for non-existent webhook
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce app authorization
+
+    AggregateError:
+
+
+FAIL tests/contracts/marketplace-search.test.ts
+  Marketplace Search API
+    POST /api/v1/marketplace/search
+      Basic Text Search
+        ✕ should search items by query string in title
+        ✕ should search items by query string in description
+        ✕ should return empty results for non-matching query
+        ✕ should handle empty query string gracefully
+      Filters
+        ✕ should filter search results by item_type
+        ✕ should filter search results by price range
+        ✕ should filter search results by category_id
+        ✕ should filter search results by seller_id
+        ✕ should combine multiple filters
+      Sorting
+        ✕ should sort results by price ascending
+        ✕ should sort results by price descending
+        ✕ should sort results by created_at (newest first)
+        ✕ should default to relevance sorting when no sort specified
+      Pagination
+        ✕ should paginate search results (1 ms)
+        ✕ should return correct page of results
+        ✕ should enforce maximum limit of 100
+      Status Filtering
+        ✕ should only return active items by default
+        ✕ should not return draft items in search results
+      Semantic Search (if available)
+        ✕ should find semantically related items
+        ✕ should fallback to text search if semantic search fails
+      Error Handling
+        ✕ should require authentication
+        ✕ should validate invalid sort field (1 ms)
+        ✕ should validate invalid order value
+        ✕ should handle invalid price range
+      Rate Limiting
+        ✕ should enforce rate limits on search endpoint
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should search items by query string in title
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should search items by query string in description
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should return empty results for non-matching query
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should handle empty query string gracefully
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by item_type
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by price range
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by category_id
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by seller_id
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should combine multiple filters
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should sort results by price ascending
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should sort results by price descending
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should sort results by created_at (newest first)
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should default to relevance sorting when no sort specified
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Pagination › should paginate search results
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Pagination › should return correct page of results
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Pagination › should enforce maximum limit of 100
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Status Filtering › should only return active items by default
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Status Filtering › should not return draft items in search results
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Semantic Search (if available) › should find semantically related items
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Semantic Search (if available) › should fallback to text search if semantic search fails
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should require authentication
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should validate invalid sort field
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should validate invalid order value
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should handle invalid price range
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Rate Limiting › should enforce rate limits on search endpoint
+
+    AggregateError:
+
+
+FAIL tests/contracts/marketplace-categories.test.ts
+  Marketplace Categories API
+    GET /api/v1/marketplace/categories
+      Basic Functionality
+        ✕ should return list of marketplace categories (1 ms)
+        ✕ should return categories with required fields
+        ✕ should include standard marketplace categories (1 ms)
+      Category Hierarchy
+        ✕ should support parent-child category relationships
+        ✕ should optionally return only top-level categories
+        ✕ should return subcategories for a specific parent
+      Item Counts
+        ✕ should return accurate item counts per category
+        ✕ should only count active items in item_count
+        ✕ should optionally include inactive items in count
+      Category Metadata
+        ✕ should include category icons if available
+        ✕ should include category display order
+        ✕ should return categories in display order by default
+      Filtering and Search
+        ✕ should filter categories by search query
+        ✕ should return empty array for non-matching search
+        ✕ should filter categories with minimum item count
+        ✕ should exclude empty categories when requested
+      Response Format
+        ✕ should include total count of categories
+        ✕ should return consistent slugs
+      Caching Headers
+        ✕ should include appropriate cache headers
+      Error Handling
+        ✕ should require authentication (1 ms)
+        ✕ should reject invalid parent_id format
+        ✕ should handle invalid min_items value
+        ✕ should return empty array for non-existent parent_id
+      Rate Limiting
+        ✕ should enforce rate limits on categories endpoint
+      Special Categories
+        ✕ should include "All" or uncategorized option if items exist without category
+        ✕ should not return disabled/archived categories by default
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Basic Functionality › should return list of marketplace categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Basic Functionality › should return categories with required fields
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Basic Functionality › should include standard marketplace categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Hierarchy › should support parent-child category relationships
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Hierarchy › should optionally return only top-level categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Hierarchy › should return subcategories for a specific parent
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Item Counts › should return accurate item counts per category
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Item Counts › should only count active items in item_count
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Item Counts › should optionally include inactive items in count
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Metadata › should include category icons if available
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Metadata › should include category display order
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Metadata › should return categories in display order by default
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should filter categories by search query
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should return empty array for non-matching search
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should filter categories with minimum item count
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should exclude empty categories when requested
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Response Format › should include total count of categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Response Format › should return consistent slugs
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Caching Headers › should include appropriate cache headers
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should require authentication
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should reject invalid parent_id format
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should handle invalid min_items value
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should return empty array for non-existent parent_id
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Rate Limiting › should enforce rate limits on categories endpoint
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Special Categories › should include "All" or uncategorized option if items exist without category
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Special Categories › should not return disabled/archived categories by default
+
+    AggregateError:
+
+
+FAIL tests/integration/notification-sync.test.ts
+  Integration: Notification Synchronization
+    T013: Third-party app creates notification
+      ✕ should create notification from Work Buddy and verify full workflow (21 ms)
+    T014: User dismisses notification in Oriva Core
+      ✕ should handle dismissal workflow and trigger webhooks
+    T015: User dismisses notification in third-party app
+      ✕ should sync dismissal from third-party app to Oriva Core
+    T016: User clicks notification action
+      ✕ should handle click action and record event data
+    T017: Multiple apps send notifications
+      ✕ should aggregate notifications from multiple apps with proper sorting
+
+  ● Integration: Notification Synchronization › T013: Third-party app creates notification › should create notification from Work Buddy and verify full workflow
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T014: User dismisses notification in Oriva Core › should handle dismissal workflow and trigger webhooks
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T015: User dismisses notification in third-party app › should sync dismissal from third-party app to Oriva Core
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T016: User clicks notification action › should handle click action and record event data
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T017: Multiple apps send notifications › should aggregate notifications from multiple apps with proper sorting
+
+    AggregateError:
+
+
+PASS tests/affiliate/campaigns.test.ts
+  Affiliate Campaign API
+    POST /api/affiliate/campaigns/create
+      ✓ should create affiliate campaign with percentage commission (2 ms)
+      ✓ should create campaign with fixed commission amount (1 ms)
+      ✓ should validate commission rate is within bounds (0-100%)
+      ✓ should require authentication (1 ms)
+      ✓ should verify item ownership before creating campaign
+      ✓ should prevent creating campaign for non-marketplace items (1 ms)
+      ✓ should generate unique campaign ID
+      ✓ should set default values for optional fields
+    GET /api/affiliate/campaigns
+      ✓ should list all campaigns for affiliate (4 ms)
+      ✓ should filter campaigns by status (2 ms)
+      ✓ should include item details with campaigns
+      ✓ should include campaign performance metrics
+      ✓ should sort campaigns by creation date (newest first)
+      ✓ should paginate campaign results (1 ms)
+    Campaign Validation
+      ✓ should validate required fields
+      ✓ should validate campaign name length
+      ✓ should validate commission type is either percentage or fixed (1 ms)
+      ✓ should require fixed_commission_cents when type is fixed
+      ✓ should require commission_rate when type is percentage
+    Campaign Permissions
+      ✓ should only allow item owner to create campaigns
+      ✓ should only allow affiliate to view their own campaigns
+      ✓ should allow item owner to deactivate any campaign for their item
+    Edge Cases
+      ✓ should handle campaigns with no conversions
+      ✓ should handle expired campaigns gracefully (1 ms)
+      ✓ should handle campaigns with max conversions reached
+      ✓ should handle concurrent campaign creation
+
+FAIL tests/contracts/conversations.test.ts
+  Conversations API Contracts
+    POST /api/v1/conversations - T031
+      ✕ should create a new conversation
+      ✕ should create conversation with auto-generated title if not provided
+      ✕ should reject conversation creation without authentication
+      ✕ should reject conversation creation without X-App-ID
+    GET /api/v1/conversations - T032
+      ✕ should list user conversations
+      ✕ should list conversations sorted by last_message_at descending
+      ✕ should support pagination with limit parameter
+      ✕ should support pagination with offset parameter
+      ✕ should filter conversations by status (active)
+      ✕ should filter conversations by status (closed)
+      ✕ should only show conversations for current user (FR-014)
+      ✕ should reject list without authentication
+    GET /api/v1/conversations/:id - T033
+      ✕ should get conversation by ID with messages
+      ✕ should include messages in chronological order
+      ✕ should reject get with invalid conversation ID format
+      ✕ should reject get with non-existent conversation ID
+      ✕ should reject get for conversation owned by different user
+    DELETE /api/v1/conversations/:id - T034
+      ✕ should delete conversation and cascade to messages (FR-021)
+      ✕ should reject delete with invalid conversation ID format
+      ✕ should reject delete for non-existent conversation
+      ✕ should reject delete for conversation owned by different user
+      ✕ should reject delete without authentication
+      ✕ should handle graceful 404 on double delete
+
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should create a new conversation
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should create conversation with auto-generated title if not provided
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should reject conversation creation without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should reject conversation creation without X-App-ID
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should list user conversations
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should list conversations sorted by last_message_at descending
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should support pagination with limit parameter
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should support pagination with offset parameter
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should filter conversations by status (active)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should filter conversations by status (closed)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should only show conversations for current user (FR-014)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should reject list without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should get conversation by ID with messages
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should include messages in chronological order
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should reject get with invalid conversation ID format
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should reject get with non-existent conversation ID
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should reject get for conversation owned by different user
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should delete conversation and cascade to messages (FR-021)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should delete conversation and cascade to messages (FR-021)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete with invalid conversation ID format
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete with invalid conversation ID format
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for non-existent conversation
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for non-existent conversation
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for conversation owned by different user
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for conversation owned by different user
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should handle graceful 404 on double delete
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should handle graceful 404 on double delete
+
+    AggregateError:
+
+
+FAIL tests/contract/events/publish.test.ts
+  POST /api/v1/apps/:appId/events - Contract Tests
+    ✕ should accept valid event payload (25 ms)
+    ✕ should reject invalid event_category (3 ms)
+    ✕ should reject missing required fields (1 ms)
+    ✕ should enforce authentication (4 ms)
+    ✕ should enforce rate limits (114 ms)
+    ✕ should validate app_id exists (190 ms)
+    ✕ should accept JSONB event_data (10 ms)
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should accept valid event payload
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should reject invalid event_category
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should reject missing required fields
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should enforce rate limits
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should validate app_id exists
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should accept JSONB event_data
+
+    AggregateError:
+
+
+FAIL tests/contracts/knowledge.test.ts
+  Knowledge API Contracts
+    POST /api/v1/hugo/knowledge/search - T023
+      ✕ should search knowledge base with valid query
+      ✕ should return results ranked by relevance
+      ✕ should handle query without exact matches gracefully (FR-008)
+      ✕ should filter by category when specified
+      ✕ should respect max_results parameter
+      ✕ should respect min_relevance threshold
+      ✕ should only return knowledge from current app (FR-009)
+    POST /api/v1/hugo/knowledge/search - Validation - T024
+      ✕ should reject search without authentication
+      ✕ should reject search without X-App-ID header
+      ✕ should reject search with missing query
+      ✕ should reject search with empty query (1 ms)
+      ✕ should reject search with query exceeding max length
+      ✕ should reject invalid max_results (below minimum)
+      ✕ should reject invalid max_results (above maximum)
+      ✕ should reject invalid min_relevance (below 0)
+      ✕ should reject invalid min_relevance (above 1)
+    Knowledge Search - Performance - T025
+      ✕ should complete search within 1 second (FR-028)
+      ✕ should handle concurrent searches efficiently
+    Knowledge Search - Edge Cases - T026
+      ✕ should handle special characters in query
+      ✕ should handle unicode characters in query
+      ✕ should handle very short queries
+      ✕ should handle queries with only stopwords
+      ✕ should track access count when entries are returned
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should search knowledge base with valid query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should return results ranked by relevance
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should handle query without exact matches gracefully (FR-008)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should filter by category when specified
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should respect max_results parameter
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should respect min_relevance threshold
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should only return knowledge from current app (FR-009)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search without authentication
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search without X-App-ID header
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search with missing query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search with empty query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search with query exceeding max length
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid max_results (below minimum)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid max_results (above maximum)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid min_relevance (below 0)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid min_relevance (above 1)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Performance - T025 › should complete search within 1 second (FR-028)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Performance - T025 › should handle concurrent searches efficiently
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle special characters in query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle unicode characters in query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle very short queries
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle queries with only stopwords
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should track access count when entries are returned
+
+    AggregateError:
+
+
+PASS tests/affiliate/resolve.test.ts
+  Affiliate URL Resolution Edge Function
+    Performance Requirements
+      ✓ should resolve cached URL in <100ms (1 ms)
+      ✓ should resolve uncached URL from DB in <100ms
+    Cache Behavior
+      ✓ should check Redis cache first (1 ms)
+      ✓ should cache DB results with 24-hour TTL
+      ✓ should handle Redis failures gracefully (9 ms)
+    Short Code Resolution
+      ✓ should resolve valid short code (1 ms)
+      ✓ should return empty array for invalid short code
+      ✓ should handle expired URLs (1 ms)
+    Click Tracking
+      ✓ should extract click context from request headers (1 ms)
+      ✓ should track click asynchronously (non-blocking) (5 ms)
+      ✓ should handle tracking failures gracefully
+    Geo-location
+      ✓ should capture Vercel Edge geo data
+      ✓ should handle missing geo data (1 ms)
+    Error Handling
+      ✓ should redirect to homepage on invalid short code
+      ✓ should handle database errors
+      ✓ should handle malformed short codes (1 ms)
+    Security
+      ✓ should sanitize short code input
+      ✓ should prevent SQL injection in short code
+      ✓ should rate limit by IP address (3 ms)
+    Edge Cases
+      ✓ should handle concurrent requests for same short code
+      ✓ should handle very long URLs (3 ms)
+      ✓ should handle special characters in URLs
+
+PASS tests/advertising/fraud.test.ts
+  Advertising Fraud Scoring
+    Click Fraud Detection
+      ✓ should detect bot clicks via user agent (1 ms)
+      ✓ should detect rapid clicking from same IP
+      ✓ should detect clicks without impressions
+      ✓ should detect click rate anomalies (CTR > 10%) (1 ms)
+    Impression Fraud Detection
+      ✓ should detect impression stuffing (multiple ads per page)
+      ✓ should detect hidden/non-viewable impressions
+      ✓ should detect impressions with unrealistic duration (<1s)
+      ✓ should calculate viewability rate
+    Conversion Fraud Detection
+      ✓ should detect conversions without clicks
+      ✓ should detect unrealistic conversion time (<5s) (1 ms)
+      ✓ should detect duplicate conversions from same user
+      ✓ should detect conversion rate anomalies (> 25%)
+    Geographic Anomalies
+      ✓ should detect traffic from unexpected countries
+      ✓ should detect single-country domination (> 90%)
+      ✓ should detect VPN/datacenter IP ranges
+    Device Fingerprinting
+      ✓ should detect bot-like device patterns
+      ✓ should detect unusual device-to-impression ratio
+      ✓ should track device consistency across clicks (1 ms)
+    Fraud Score Calculation
+      ✓ should calculate weighted fraud score
+      ✓ should categorize fraud severity
+      ✓ should aggregate fraud signals by type
+    Fraud Scoring API
+      ✓ should accept campaign_id for scoring
+      ✓ should return fraud score and breakdown (1 ms)
+      ✓ should validate campaign exists
+      ✓ should require authentication
+    Recommended Actions
+      ✓ should recommend pause for score > 0.7
+      ✓ should recommend review for score 0.5-0.7
+      ✓ should recommend monitor for score < 0.5
+    Edge Cases
+      ✓ should handle campaigns with no activity
+      ✓ should handle missing device info
+      ✓ should handle concurrent scoring requests (1 ms)
+
+PASS tests/affiliate/fraud.test.ts
+  Affiliate Fraud Detection
+    Suspicious Click Detection
+      ✓ should detect rapid clicks from same IP (1 ms)
+      ✓ should detect bot user agents
+      ✓ should detect unusual click patterns (same user-agent + IP combo)
+      ✓ should flag clicks without referer
+    Conversion Rate Anomalies
+      ✓ should detect unusually high conversion rate (> 50%)
+      ✓ should detect unusually low conversion rate (< 0.1%)
+      ✓ should calculate baseline conversion rate for comparison
+      ✓ should flag campaign if conversion rate deviates >3x from baseline
+    IP Analysis
+      ✓ should detect clicks from VPN/proxy IP ranges (1 ms)
+      ✓ should detect clicks from same IP across multiple campaigns
+      ✓ should track geographic distribution of clicks
+      ✓ should flag unusual geographic patterns (all clicks from one country)
+    Alert Generation
+      ✓ should generate alert for fraud score > 0.7
+      ✓ should include alert details with evidence (1 ms)
+      ✓ should categorize alert severity based on fraud score (1 ms)
+      ✓ should create alert record in database
+    Fraud Detection API
+      ✓ should accept campaign_id for fraud analysis (1 ms)
+      ✓ should return fraud score and evidence (5 ms)
+      ✓ should validate campaign exists before analysis (1 ms)
+      ✓ should require authentication for fraud detection
+    Fraud Metrics Aggregation
+      ✓ should calculate total fraud alerts by severity (1 ms)
+      ✓ should calculate fraud rate across all campaigns
+      ✓ should track fraud detection over time
+    Edge Cases
+      ✓ should handle campaign with no clicks
+      ✓ should handle missing IP data
+      ✓ should handle concurrent fraud detection requests (1 ms)
+
+PASS tests/advertising/serve.test.ts
+  Ad Serving Edge Function
+    Performance Requirements
+      ✓ should select ad in <50ms with cached segments (1 ms)
+      ✓ should select ad in <50ms without cached segments (1 ms)
+    Segment-based Targeting
+      ✓ should use cached user segments for targeting
+      ✓ should compute segments on cache miss
+      ✓ should handle missing segments gracefully (1 ms)
+    Real-time Relevance Scoring
+      ✓ should score ad based on segment match
+      ✓ should score ad based on keyword match
+      ✓ should factor in bid amount (20% weight)
+      ✓ should calculate total relevance score (1 ms)
+      ✓ should reject ads with score below threshold
+    Budget Validation
+      ✓ should check daily budget remaining
+      ✓ should exclude campaigns that exhausted budget
+      ✓ should check campaign is within date range
+      ✓ should exclude expired campaigns (1 ms)
+    Ad Selection
+      ✓ should return highest scoring ad
+      ✓ should return null if no ads meet threshold
+      ✓ should include creative with selected ad
+    Impression Tracking
+      ✓ should track impression asynchronously (non-blocking)
+      ✓ should handle tracking failures gracefully (1 ms)
+      ✓ should include placement context in impression
+    Fraud Prevention
+      ✓ should detect suspicious request patterns
+      ✓ should validate user agent
+      ✓ should check for duplicate impressions
+    Placement Support
+      ✓ should serve ads for feed placement (1 ms)
+      ✓ should serve ads for sidebar placement
+      ✓ should reject invalid placements
+    Context Enrichment
+      ✓ should extract thread keywords from context
+      ✓ should extract user interests from context
+      ✓ should handle missing context gracefully
+    Edge Cases
+      ✓ should handle no active campaigns
+      ✓ should handle all campaigns with zero budget
+      ✓ should handle concurrent ad requests (2 ms)
+      ✓ should handle Redis cache failures (13 ms)
+
+FAIL tests/contracts/auth.test.ts
+  Authentication API Contracts
+    POST /api/v1/auth/register - T017
+      ✕ should register a new user with valid data (12 ms)
+      ✕ should reject registration with missing email (4 ms)
+      ✕ should reject registration with invalid email format (5 ms)
+      ✕ should reject registration with weak password (2 ms)
+      ✕ should reject duplicate email registration (2 ms)
+    POST /api/v1/auth/login - T018
+      ✕ should login with valid credentials (2 ms)
+      ✕ should reject login with invalid email (1 ms)
+      ✕ should reject login with invalid password (1 ms)
+      ✕ should reject login with missing credentials (2 ms)
+    GET /api/v1/auth/profile - T019
+      ✕ should get user profile with valid token (1 ms)
+      ✕ should reject profile request without token (1 ms)
+      ✕ should reject profile request with invalid token (1 ms)
+    PUT /api/v1/auth/profile - T019
+      ✕ should update user preferences (2 ms)
+      ✕ should reject invalid data_retention_days (5 ms)
+    POST /api/v1/auth/token/refresh - T020
+      ✕ should refresh access token with valid refresh token (2 ms)
+      ✕ should reject refresh with invalid token (1 ms)
+      ✕ should reject refresh with missing token (1 ms)
+    POST /api/v1/auth/logout - T021
+      ✕ should logout user with valid token (3 ms)
+      ✕ should reject logout without token (1 ms)
+      ✕ should handle logout with already logged out token gracefully (2 ms)
+    DELETE /api/v1/auth/account - T022
+      ✕ should require password confirmation (2 ms)
+      ✕ should reject account deletion with incorrect password (2 ms)
+      ✕ should reject account deletion without authentication (2 ms)
+      ✕ should verify account deletion cascades to all user data (2 ms)
+    Rate Limiting - T017-T022
+      ✕ should enforce rate limits for unauthenticated users (1 ms)
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should register a new user with valid data
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject registration with missing email
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject registration with invalid email format
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject registration with weak password
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject duplicate email registration
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should login with valid credentials
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should reject login with invalid email
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should reject login with invalid password
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should reject login with missing credentials
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › GET /api/v1/auth/profile - T019 › should get user profile with valid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › GET /api/v1/auth/profile - T019 › should reject profile request without token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › GET /api/v1/auth/profile - T019 › should reject profile request with invalid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › PUT /api/v1/auth/profile - T019 › should update user preferences
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › PUT /api/v1/auth/profile - T019 › should reject invalid data_retention_days
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/token/refresh - T020 › should refresh access token with valid refresh token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/token/refresh - T020 › should reject refresh with invalid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/token/refresh - T020 › should reject refresh with missing token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/logout - T021 › should logout user with valid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/logout - T021 › should reject logout without token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/logout - T021 › should handle logout with already logged out token gracefully
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should require password confirmation
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should reject account deletion with incorrect password
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should reject account deletion without authentication
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should verify account deletion cascades to all user data
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › Rate Limiting - T017-T022 › should enforce rate limits for unauthenticated users
+
+    AggregateError:
+
+
+FAIL tests/contracts/marketplace.test.ts
+  Marketplace Items API Contracts
+    GET /api/v1/marketplace/items - T041
+      ✕ should list marketplace items without authentication
+      ✕ should support pagination parameters
+      ✕ should filter by item_type
+      ✕ should filter by price range
+      ✕ should reject invalid pagination parameters
+    POST /api/v1/marketplace/items - T042
+      ✕ should create a marketplace item with valid data
+      ✕ should reject item creation without authentication
+      ✕ should reject item creation with missing required fields
+      ✕ should reject item creation with invalid price
+      ✕ should reject item creation with invalid item_type
+    GET /api/v1/marketplace/items/:id - T043
+      ✕ should get item details by ID
+      ✕ should return 404 for non-existent item
+      ✕ should return 400 for invalid item ID format
+    PUT /api/v1/marketplace/items/:id - T043
+      ✕ should update item with valid data
+      ✕ should reject update without authentication
+      ✕ should reject update by non-owner
+      ✕ should reject update with invalid status transition
+    DELETE /api/v1/marketplace/items/:id - T043
+      ✕ should delete item by owner
+      ✕ should reject deletion without authentication
+      ✕ should return 404 when deleting non-existent item
+    Rate Limiting - T041-T043
+      ✕ should enforce rate limits for unauthenticated users
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should list marketplace items without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should support pagination parameters
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should filter by item_type
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should filter by price range
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should reject invalid pagination parameters
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should create a marketplace item with valid data
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation with missing required fields
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation with invalid price
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation with invalid item_type
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items/:id - T043 › should get item details by ID
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items/:id - T043 › should return 404 for non-existent item
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items/:id - T043 › should return 400 for invalid item ID format
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should update item with valid data
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should reject update without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should reject update by non-owner
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should reject update with invalid status transition
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › DELETE /api/v1/marketplace/items/:id - T043 › should delete item by owner
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › DELETE /api/v1/marketplace/items/:id - T043 › should reject deletion without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › DELETE /api/v1/marketplace/items/:id - T043 › should return 404 when deleting non-existent item
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › Rate Limiting - T041-T043 › should enforce rate limits for unauthenticated users
+
+    AggregateError:
+
+
+PASS tests/semantic/suggestions.test.ts
+  Contextual Marketplace Suggestions
+    User Context Analysis
+      ✓ should analyze user interests from history (1 ms)
+      ✓ should extract user skill level from activity
+      ✓ should identify user role/persona
+    Thread Context Integration
+      ✓ should combine thread analysis with user context
+      ✓ should boost suggestions matching user interests (1 ms)
+    Suggestion Ranking
+      ✓ should rank by relevance score
+      ✓ should apply freshness decay to old items
+      ✓ should boost popular items
+    Personalization
+      ✓ should filter out previously purchased items (1 ms)
+      ✓ should respect user preferences for content type
+      ✓ should adjust for user budget range
+    Diversity and Exploration
+      ✓ should ensure category diversity in suggestions
+      ✓ should include exploration items (lower relevance, high potential)
+    API Request Handling
+      ✓ should accept user_id and optional thread_id
+      ✓ should return paginated suggestions
+      ✓ should include suggestion metadata
+      ✓ should validate user exists (1 ms)
+      ✓ should require authentication
+    Suggestion Quality
+      ✓ should filter low-quality items
+      ✓ should boost items from trusted sellers
+    Edge Cases
+      ✓ should handle user with no history
+      ✓ should handle empty suggestion pool
+      ✓ should handle concurrent suggestion requests (1 ms)
+
+PASS tests/semantic/analyze.test.ts
+  Semantic Thread Analysis
+    Content Analysis
+      ✓ should extract keywords from thread content (1 ms)
+      ✓ should identify buying signals in content
+      ✓ should detect expertise/service needs
+      ✓ should extract product categories from content
+    Intent Detection
+      ✓ should detect purchase intent
+      ✓ should detect research intent (1 ms)
+      ✓ should detect service request intent
+      ✓ should score intent confidence (1 ms)
+    Commerce Opportunity Scoring
+      ✓ should calculate opportunity score based on intent + keywords
+      ✓ should identify high-value opportunities (score > 0.7)
+      ✓ should prioritize opportunities by score (1 ms)
+    Hugo AI Integration
+      ✓ should call Hugo AI for semantic analysis
+      ✓ should extract marketplace-relevant topics
+      ✓ should handle Hugo AI errors gracefully
+    Thread Context Analysis
+      ✓ should analyze thread participants for targeting
+      ✓ should track thread engagement metrics
+      ✓ should identify thread urgency
+    Marketplace Suggestion Generation
+      ✓ should generate product suggestions from analysis
+      ✓ should limit suggestions based on confidence threshold
+      ✓ should include suggestion reasoning
+    API Request Handling
+      ✓ should accept thread_id for analysis (1 ms)
+      ✓ should return analysis with suggestions
+      ✓ should validate thread exists before analysis (1 ms)
+      ✓ should require authentication
+    Edge Cases
+      ✓ should handle empty thread content
+      ✓ should handle non-English content gracefully
+      ✓ should handle very long thread content
+      ✓ should handle concurrent analysis requests (1 ms)
+
+PASS tests/affiliate/commissions.test.ts
+  Affiliate Commission Calculation
+    Percentage Commission Calculation
+      ✓ should calculate 15% commission on $100 sale
+      ✓ should calculate 20% commission on $250.50 sale
+      ✓ should handle 100% commission rate
+      ✓ should handle 1% commission rate
+      ✓ should round commission to nearest cent
+    Fixed Commission Calculation
+      ✓ should use fixed commission amount regardless of sale price (1 ms)
+      ✓ should handle large fixed commissions
+      ✓ should handle small fixed commissions
+    Commission Validation
+      ✓ should reject negative commission rates
+      ✓ should reject commission rates over 100%
+      ✓ should reject zero commission rate
+      ✓ should accept valid commission rates (1-100%) (1 ms)
+      ✓ should reject negative sale amounts
+      ✓ should reject zero sale amounts
+    Commission Type Validation
+      ✓ should require commission_rate for percentage type
+      ✓ should require fixed_commission_cents for fixed type
+      ✓ should reject percentage campaign without rate
+      ✓ should reject fixed campaign without amount
+    Multi-Currency Handling
+      ✓ should calculate commission in USD (1 ms)
+      ✓ should calculate commission in EUR
+      ✓ should maintain currency consistency
+    Commission Calculation API
+      ✓ should calculate commission for valid conversion
+      ✓ should store commission with conversion record
+      ✓ should validate campaign exists before calculating
+      ✓ should validate transaction exists before calculating (1 ms)
+    Edge Cases
+      ✓ should handle very small sale amounts
+      ✓ should handle very large sale amounts
+      ✓ should handle fractional percentages (converted to decimals)
+      ✓ should prevent commission exceeding sale amount
+      ✓ should handle zero fixed commission (edge case)
+      ✓ should calculate commission for refunded transactions
+    Commission Aggregation
+      ✓ should sum multiple commissions
+      ✓ should calculate average commission
+      ✓ should track commission by date range (1 ms)
+
+FAIL tests/integration/webhook-delivery.test.ts
+  Integration: Webhook Delivery
+    T018: App subscribes to platform events
+      ✕ should deliver webhook with HMAC signature when event occurs (17 ms)
+    T019: Webhook retry on failure
+      ✕ should retry failed webhooks with exponential backoff (2 ms)
+      ✕ should disable webhook after 100 consecutive failures (2 ms)
+    Webhook signature validation
+      ✕ should allow apps to verify webhook authenticity using HMAC (2 ms)
+
+  ● Integration: Webhook Delivery › T018: App subscribes to platform events › should deliver webhook with HMAC signature when event occurs
+
+    AggregateError:
+
+
+  ● Integration: Webhook Delivery › T019: Webhook retry on failure › should retry failed webhooks with exponential backoff
+
+    AggregateError:
+
+
+  ● Integration: Webhook Delivery › T019: Webhook retry on failure › should disable webhook after 100 consecutive failures
+
+    AggregateError:
+
+
+  ● Integration: Webhook Delivery › Webhook signature validation › should allow apps to verify webhook authenticity using HMAC
+
+    AggregateError:
+
+
+  console.error
+    Error occurred: {
+      name: 'DatabaseError',
+      message: 'User not found',
+      stack: 'DatabaseError: User not found\n' +
+        '    at getUserApps (/Users/cosmic/Documents/oriva-platform/api/services/userAppsService.ts:109:13)\n' +
+        '    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/api/routes/userApps.ts:41:42',
+      url: '/api/v1/platform/users/999e8400-e29b-41d4-a716-446655440999/apps',
+      method: 'GET',
+      body: {}
+    }
+
+      32 | ): void => {
+      33 |   // Log error for debugging
+    > 34 |   console.error('Error occurred:', {
+         |           ^
+      35 |     name: error.name,
+      36 |     message: error.message,
+      37 |     stack: error.stack,
+
+      at errorHandler (api/middleware/errorHandler.ts:34:11)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:71:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at node_modules/express/lib/router/index.js:646:15
+      at next (node_modules/express/lib/router/index.js:265:14)
+      at next (node_modules/express/lib/router/route.js:141:14)
+
+  console.error
+    Error occurred: {
+      name: 'UuidValidationError',
+      message: 'Invalid user ID format. Must be a valid UUID.',
+      stack: 'UuidValidationError: Invalid user ID format. Must be a valid UUID.\n' +
+        '    at validateUuid (/Users/cosmic/Documents/oriva-platform/api/utils/validation.ts:49:19)\n' +
+        '    at getUserApps (/Users/cosmic/Documents/oriva-platform/api/services/userAppsService.ts:56:15)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/api/routes/userApps.ts:41:59\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/api/middleware/errorHandler.ts:110:21\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/route.js:149:13)\n' +
+        '    at requireApiKey (/Users/cosmic/Documents/oriva-platform/api/middleware/auth.ts:61:3)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/route.js:149:13)\n' +
+        '    at Route.dispatch (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/route.js:119:3)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:284:15\n' +
+        '    at param (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:365:14)\n' +
+        '    at param (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:376:14)\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:421:3)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at optionalSchemaRouter (/Users/cosmic/Documents/oriva-platform/api/middleware/schemaRouter.ts:165:5)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at Function.handle (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:175:3)\n' +
+        '    at router (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:47:12)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/api/middleware/errorHandler.ts:155:5\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at urlencodedParser (/Users/cosmic/Documents/oriva-platform/node_modules/body-parser/lib/types/urlencoded.js:94:7)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at jsonParser (/Users/cosmic/Documents/oriva-platform/node_modules/body-parser/lib/types/json.js:113:7)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at compression (/Users/cosmic/Documents/oriva-platform/node_modules/compression/index.js:243:5)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at cors (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:188:7)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:224:17\n' +
+        '    at originCallback (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:214:15)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:219:13\n' +
+        '    at optionsCallback (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:199:9)\n' +
+        '    at corsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:204:7)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:531:6)\n' +
+        '    at xXssProtectionMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:311:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xPoweredByMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:304:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xPermittedCrossDomainPoliciesMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:297:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xFrameOptionsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:281:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xDownloadOptionsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:261:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xDnsPrefetchControlMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:254:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xContentTypeOptionsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:246:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at strictTransportSecurityMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:239:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at referrerPolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:207:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at originAgentClusterMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:182:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at crossOriginResourcePolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:175:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at crossOriginOpenerPolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:159:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at contentSecurityPolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:124:4)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at helmetMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:533:6)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/rou'... 678 more characters,
+      url: '/api/v1/platform/users/not-a-uuid/apps',
+      method: 'GET',
+      body: {}
+    }
+
+      32 | ): void => {
+      33 |   // Log error for debugging
+    > 34 |   console.error('Error occurred:', {
+         |           ^
+      35 |     name: error.name,
+      36 |     message: error.message,
+      37 |     stack: error.stack,
+
+      at errorHandler (api/middleware/errorHandler.ts:34:11)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:71:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at node_modules/express/lib/router/index.js:646:15
+      at next (node_modules/express/lib/router/index.js:265:14)
+      at next (node_modules/express/lib/router/route.js:141:14)
+
+  console.error
+    Error occurred: {
+      name: 'UuidValidationError',
+      message: 'Invalid user ID format. Must be a valid UUID.',
+      stack: 'UuidValidationError: Invalid user ID format. Must be a valid UUID.\n' +
+        '    at validateUuid (/Users/cosmic/Documents/oriva-platform/api/utils/validation.ts:49:19)\n' +
+        '    at getUserApps (/Users/cosmic/Documents/oriva-platform/api/services/userAppsService.ts:56:15)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/api/routes/userApps.ts:41:59\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/api/middleware/errorHandler.ts:110:21\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/route.js:149:13)\n' +
+        '    at requireApiKey (/Users/cosmic/Documents/oriva-platform/api/middleware/auth.ts:61:3)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/route.js:149:13)\n' +
+        '    at Route.dispatch (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/route.js:119:3)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:284:15\n' +
+        '    at param (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:365:14)\n' +
+        '    at param (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:376:14)\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:421:3)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at optionalSchemaRouter (/Users/cosmic/Documents/oriva-platform/api/middleware/schemaRouter.ts:165:5)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at Function.handle (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:175:3)\n' +
+        '    at router (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:47:12)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/api/middleware/errorHandler.ts:155:5\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at urlencodedParser (/Users/cosmic/Documents/oriva-platform/node_modules/body-parser/lib/types/urlencoded.js:94:7)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at jsonParser (/Users/cosmic/Documents/oriva-platform/node_modules/body-parser/lib/types/json.js:113:7)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at compression (/Users/cosmic/Documents/oriva-platform/node_modules/compression/index.js:243:5)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at cors (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:188:7)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:224:17\n' +
+        '    at originCallback (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:214:15)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:219:13\n' +
+        '    at optionsCallback (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:199:9)\n' +
+        '    at corsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/cors/lib/index.js:204:7)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:328:13)\n' +
+        '    at /Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:286:9\n' +
+        '    at Function.process_params (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:346:12)\n' +
+        '    at next (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/index.js:280:10)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:531:6)\n' +
+        '    at xXssProtectionMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:311:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xPoweredByMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:304:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xPermittedCrossDomainPoliciesMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:297:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xFrameOptionsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:281:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xDownloadOptionsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:261:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xDnsPrefetchControlMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:254:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at xContentTypeOptionsMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:246:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at strictTransportSecurityMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:239:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at referrerPolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:207:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at originAgentClusterMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:182:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at crossOriginResourcePolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:175:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at crossOriginOpenerPolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:159:3)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at contentSecurityPolicyMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:124:4)\n' +
+        '    at internalNext (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:529:6)\n' +
+        '    at helmetMiddleware (/Users/cosmic/Documents/oriva-platform/node_modules/helmet/index.cjs:533:6)\n' +
+        '    at Layer.handle [as handle_request] (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/router/layer.js:95:5)\n' +
+        '    at trim_prefix (/Users/cosmic/Documents/oriva-platform/node_modules/express/lib/rou'... 678 more characters,
+      url: '/api/v1/platform/users/invalid-uuid-format/apps',
+      method: 'GET',
+      body: {}
+    }
+
+      32 | ): void => {
+      33 |   // Log error for debugging
+    > 34 |   console.error('Error occurred:', {
+         |           ^
+      35 |     name: error.name,
+      36 |     message: error.message,
+      37 |     stack: error.stack,
+
+      at errorHandler (api/middleware/errorHandler.ts:34:11)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:71:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at node_modules/express/lib/router/index.js:646:15
+      at next (node_modules/express/lib/router/index.js:265:14)
+      at next (node_modules/express/lib/router/route.js:141:14)
+
+PASS tests/contract/platform/test_user_apps.test.ts
+  GET /api/v1/platform/users/{userId}/apps
+    Contract Validation
+      ✓ should return user's accessible apps with roles (40 ms)
+      ✓ should filter by app status when provided (9 ms)
+      ✓ should return 404 for non-existent user (39 ms)
+      ✓ should validate UUID format for userId (10 ms)
+      ✓ should require API key authentication (2 ms)
+      ✓ should include only active user-app relationships by default (10 ms)
+    OpenAPI Contract Compliance
+      ✓ should match OpenAPI schema for successful response (19 ms)
+      ✓ should return error matching OpenAPI Error schema (6 ms)
+
+PASS tests/integration/test_server_setup.test.ts
+  Multi-Tenant Server Setup
+    Server Initialization
+      ✓ should create Express app successfully
+      ✓ should respond to health check (7 ms)
+    Platform Routes Registration
+      ✓ should have POST /api/v1/platform/apps endpoint (13 ms)
+      ✓ should have GET /api/v1/platform/apps endpoint (2 ms)
+      ✓ should have GET /api/v1/platform/users/:userId/apps endpoint (2 ms)
+      ✓ should have POST /api/v1/platform/extraction/prepare endpoint (2 ms)
+    Hugo AI Routes Registration
+      ✓ should have POST /api/v1/hugo-ai/sessions endpoint (22 ms)
+      ✓ should have GET /api/v1/hugo-ai/insights endpoint (14 ms)
+    App Routes Registration
+      ✓ should have POST /api/v1/apps/profiles endpoint (14 ms)
+      ✓ should have GET /api/v1/apps/ice-breakers endpoint (14 ms)
+    Error Handling
+      ✓ should return 404 for undefined routes (2 ms)
+      ✓ should handle errors with proper JSON format (2 ms)
+    Security Headers
+      ✓ should include security headers (1 ms)
+
+PASS tests/contract/platform/test_apps_get.test.ts
+  GET /api/v1/platform/apps
+    Contract Validation
+      ✓ should return list of available apps (15 ms)
+      ✓ should filter apps by status when provided (9 ms)
+      ✓ should require API key authentication (3 ms)
+      ✓ should support pagination parameters (6 ms)
+    OpenAPI Contract Compliance
+      ✓ should match OpenAPI schema for successful response (9 ms)
+      ✓ should return error matching OpenAPI Error schema (9 ms)
+
+PASS tests/contract/apps/test_ice_breakers_get.test.ts
+  GET /api/v1/apps/ice-breakers
+    Contract Validation - Hugo Love Ice Breakers
+      ✓ should return personalized ice breakers for hugo_love (63 ms)
+      ✓ should only work for hugo_love app (app-specific feature) (33 ms)
+      ✓ should return 404 for unsupported apps like hugo_career (25 ms)
+      ✓ should require profile_id query parameter (20 ms)
+      ✓ should validate profile_id UUID format (31 ms)
+      ✓ should require X-App-ID header (4 ms)
+      ✓ should require API key authentication (14 ms)
+      ✓ should support limit parameter (28 ms)
+      ✓ should filter by minimum confidence (25 ms)
+      ✓ should filter by category (28 ms)
+      ✓ should return empty array when no ice breakers available (30 ms)
+    OpenAPI Contract Compliance
+      ✓ should match OpenAPI schema for successful response (67 ms)
+      ✓ should return error matching OpenAPI Error schema (74 ms)
+
+FAIL tests/contract/platform/test_apps_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_apps_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/platform/test_extraction_prepare.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_extraction_prepare.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+PASS tests/contract/apps/test_profiles_get.test.ts
+  GET /api/v1/apps/profiles
+    Contract Validation - Hugo Love Profiles
+      ✓ should list dating profiles from hugo_love schema (133 ms)
+      ✓ should support pagination parameters (62 ms)
+      ✓ should require X-App-ID header for schema routing (4 ms)
+      ✓ should require API key authentication (39 ms)
+      ✓ should return JSONB profile_data structures (117 ms)
+    Contract Validation - Hugo Career Profiles
+      ✓ should list profiles from hugo_career schema (107 ms)
+      ✓ should isolate profiles between apps (106 ms)
+    OpenAPI Contract Compliance
+      ✓ should match OpenAPI schema for successful response (156 ms)
+      ✓ should return error matching OpenAPI Error schema (3 ms)
+
+PASS tests/contract/hugo-ai/test_insights_get.test.ts
+  GET /api/v1/hugo-ai/insights
+    Contract Validation
+      ✓ should return user insights with cross-app data (140 ms)
+      ✓ should filter by confidence threshold (94 ms)
+      ✓ should filter by insight_type (89 ms)
+      ✓ should filter by source_app_id (120 ms)
+      ✓ should require authentication (54 ms)
+      ✓ should reject invalid Bearer token format (43 ms)
+      ✓ should require X-App-ID header for schema routing (6 ms)
+      ✓ should require API key authentication (22 ms)
+      ✓ should only return insights with cross_app_visibility=true from other apps (44 ms)
+      ✓ should support pagination parameters (162 ms)
+    OpenAPI Contract Compliance
+      ✓ should match OpenAPI schema for successful response (137 ms)
+      ✓ should return error matching OpenAPI Error schema (3 ms)
+
+FAIL tests/contract/platform/test_extraction_execute.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_extraction_execute.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/platform/test_user_delete_gdpr.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_user_delete_gdpr.test.ts[0m:[93m13[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m13[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/hugo-ai/test_sessions_patch.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/hugo-ai/test_sessions_patch.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/integration/websocket-realtime.test.ts
+  Integration: Real-time Notification Updates via WebSocket
+    T020: Real-time notification updates
+      ✕ should broadcast notification events to multiple WebSocket clients (4 ms)
+      ✕ should handle notification expiry and remove from all clients (2 ms)
+      ✕ should enforce per-user connection limits (2009 ms)
+      ✕ should maintain connection state across reconnects (4 ms)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should broadcast notification events to multiple WebSocket clients
+
+    Test functions cannot both take a 'done' callback and return something. Either use a 'done' callback, or return a promise.
+    Returned value: Promise {}
+
+      37 |   // T020: Real-time notification updates
+      38 |   describe('T020: Real-time notification updates', () => {
+    > 39 |     it('should broadcast notification events to multiple WebSocket clients', async (done) => {
+         |       ^
+      40 |       let client1: WebSocket;
+      41 |       let client2: WebSocket;
+      42 |       let notificationId: string;
+
+      at tests/integration/websocket-realtime.test.ts:39:7
+      at tests/integration/websocket-realtime.test.ts:38:11
+      at Object.<anonymous> (tests/integration/websocket-realtime.test.ts:14:9)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should handle notification expiry and remove from all clients
+
+    Test functions cannot both take a 'done' callback and return something. Either use a 'done' callback, or return a promise.
+    Returned value: Promise {}
+
+      193 |     }, 20000);
+      194 |
+    > 195 |     it('should handle notification expiry and remove from all clients', async (done) => {
+          |       ^
+      196 |       let client1: WebSocket;
+      197 |       let client2: WebSocket;
+      198 |       let notificationId: string;
+
+      at tests/integration/websocket-realtime.test.ts:195:7
+      at tests/integration/websocket-realtime.test.ts:38:11
+      at Object.<anonymous> (tests/integration/websocket-realtime.test.ts:14:9)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    Expected done to be called once, but it was called multiple times.
+
+      308 |         // Cleanup
+      309 |         connections.forEach((ws) => ws.close());
+    > 310 |         done();
+          |         ^
+      311 |       });
+      312 |
+      313 |       rejectedConnection.on('error', () => {
+
+      at WebSocket.<anonymous> (tests/integration/websocket-realtime.test.ts:310:9)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    Expected done to be called once, but it was called multiple times.
+
+      308 |         // Cleanup
+      309 |         connections.forEach((ws) => ws.close());
+    > 310 |         done();
+          |         ^
+      311 |       });
+      312 |
+      313 |       rejectedConnection.on('error', () => {
+
+      at WebSocket.<anonymous> (tests/integration/websocket-realtime.test.ts:310:9)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should maintain connection state across reconnects
+
+    Test functions cannot both take a 'done' callback and return something. Either use a 'done' callback, or return a promise.
+    Returned value: Promise {}
+
+      325 |     }, 10000);
+      326 |
+    > 327 |     it('should maintain connection state across reconnects', async (done) => {
+          |       ^
+      328 |       let client: WebSocket;
+      329 |       const receivedEvents: any[] = [];
+      330 |       let notificationId: string;
+
+      at tests/integration/websocket-realtime.test.ts:327:7
+      at tests/integration/websocket-realtime.test.ts:38:11
+      at Object.<anonymous> (tests/integration/websocket-realtime.test.ts:14:9)
+
+FAIL tests/contract/hugo-ai/test_sessions_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/hugo-ai/test_sessions_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/hugo-ai/test_insights_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/hugo-ai/test_insights_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/notifications/update.test.ts (5.285 s)
+  PATCH /api/v1/notifications/:id - Contract Tests
+    ✕ should mark notification as read (23 ms)
+    ✕ should dismiss notification (2 ms)
+    ✕ should mark as clicked (3 ms)
+    ✕ should handle idempotent dismissal (6 ms)
+    ✕ should reject invalid status transition (2 ms)
+    ✕ should enforce authentication (9 ms)
+    ✕ should return 404 for non-existent notification (2 ms)
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should mark notification as read
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should dismiss notification
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should mark as clicked
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should handle idempotent dismissal
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should reject invalid status transition
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should return 404 for non-existent notification
+
+    AggregateError:
+
+
+FAIL tests/contract/apps/test_profiles_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/apps/test_profiles_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/notifications/create.test.ts (5.254 s)
+  POST /api/v1/apps/:appId/notifications - Contract Tests
+    ✕ should create valid notification (135 ms)
+    ✕ should reject title > 200 chars (7 ms)
+    ✕ should reject empty title (2 ms)
+    ✕ should reject body > 1000 chars (3 ms)
+    ✕ should reject invalid priority (2 ms)
+    ✕ should prevent duplicate external_id (1 ms)
+    ✕ should enforce authentication (2 ms)
+    ✕ should enforce rate limits (239 ms)
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should create valid notification
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject title > 200 chars
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject empty title
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject body > 1000 chars
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject invalid priority
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should prevent duplicate external_id
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should enforce rate limits
+
+    AggregateError:
+
+
+FAIL tests/contract/events/query.test.ts (5.308 s)
+  GET /api/v1/apps/:appId/events - Contract Tests
+    ✕ should retrieve event list with pagination (125 ms)
+    ✕ should filter by event_category (2 ms)
+    ✕ should filter by event_type (3 ms)
+    ✕ should filter by date range (5 ms)
+    ✕ should support pagination with limit and offset (2 ms)
+    ✕ should enforce authentication (2 ms)
+    ✕ should enforce app isolation - apps only see their own events (3 ms)
+    ✕ should return 404 for non-existent app (3 ms)
+    ✕ should sort events by created_at DESC (4 ms)
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should retrieve event list with pagination
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should filter by event_category
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should filter by event_type
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should filter by date range
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should support pagination with limit and offset
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should enforce app isolation - apps only see their own events
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should return 404 for non-existent app
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should sort events by created_at DESC
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/webhooks/update.test.ts (5.305 s)
+  PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests
+    ✕ should update webhook URL (22 ms)
+    ✕ should update subscribed_events (4 ms)
+    ✕ should toggle is_active (2 ms)
+    ✕ should return 404 for non-existent webhook (2 ms)
+    ✕ should enforce authentication (2 ms)
+    ✕ should enforce app authorization (1 ms)
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should update webhook URL
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should update subscribed_events
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should toggle is_active
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should return 404 for non-existent webhook
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce app authorization
+
+    AggregateError:
+
+
+FAIL tests/integration/test_schema_isolation.test.ts
+  ● Test suite failed to run
+
+    [96mtests/integration/test_schema_isolation.test.ts[0m:[93m14[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m14[0m import { mockSupabase } from '../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/integration/test_cross_app_insights.test.ts
+  ● Test suite failed to run
+
+    [96mtests/integration/test_cross_app_insights.test.ts[0m:[93m14[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m14[0m import { mockSupabase } from '../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contracts/chat.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contracts/chat.test.ts[0m:[93m92[0m:[93m42[0m - [91merror[0m[90m TS2339: [0mProperty 'length' does not exist on type 'unknown'.
+
+    [7m92[0m         if (doneEvent!.knowledge_sources.length > 0) {
+    [7m  [0m [91m                                         ~~~~~~[0m
+
+(node:40139) [JEST-01] DeprecationWarning: 'matchers' property was accessed on [Object] after it was soft deleted
+  Jest deletes objects that were set on the global scope between test files to reduce memory leaks.
+  Currently it only "soft" deletes them and emits this warning if those objects were accessed after their deletion.
+  In future versions of Jest, this behavior will change to "on", which will likely fail tests.
+  You can change the behavior in your test configuration now to reduce memory usage.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:40139) [JEST-01] DeprecationWarning: 'currentlyRunningTest' property was accessed on [Object] after it was soft deleted
+  Jest deletes objects that were set on the global scope between test files to reduce memory leaks.
+  Currently it only "soft" deletes them and emits this warning if those objects were accessed after their deletion.
+  In future versions of Jest, this behavior will change to "on", which will likely fail tests.
+  You can change the behavior in your test configuration now to reduce memory usage.
+FAIL tests/contract/events/stream.test.ts (12.318 s)
+  WSS /api/v1/events/stream - Contract Tests
+    ✕ should accept WebSocket connection with valid token (20 ms)
+    ✕ should reject WebSocket connection with invalid token (37 ms)
+    ✕ should acknowledge event subscription message (3 ms)
+    ✕ should broadcast events when published (5011 ms)
+    ✕ should limit concurrent connections per user (2003 ms)
+    ✕ should handle heartbeat ping/pong (2 ms)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should accept WebSocket connection with valid token
+
+    Failed: [AggregateError]
+
+      28 |
+      29 |     ws.on('error', (error) => {
+    > 30 |       done(error);
+         |       ^
+      31 |     });
+      32 |   }, 10000);
+      33 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:30:7)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1041:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should reject WebSocket connection with invalid token
+
+    Expected done to be called once, but it was called multiple times.
+
+      49 |       // Closed due to auth failure
+      50 |       expect(code).toBeGreaterThan(1000);
+    > 51 |       done();
+         |       ^
+      52 |     });
+      53 |   }, 10000);
+      54 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:51:7)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should reject WebSocket connection with invalid token
+
+    Expected done to be called once, but it was called multiple times.
+
+      49 |       // Closed due to auth failure
+      50 |       expect(code).toBeGreaterThan(1000);
+    > 51 |       done();
+         |       ^
+      52 |     });
+      53 |   }, 10000);
+      54 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:51:7)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should acknowledge event subscription message
+
+    Failed: [AggregateError]
+
+      80 |
+      81 |     ws.on('error', (error) => {
+    > 82 |       done(error);
+         |       ^
+      83 |     });
+      84 |   }, 10000);
+      85 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:82:7)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1041:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should broadcast events when published
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should broadcast events when published
+
+    No event received within timeout
+
+      119 |     setTimeout(() => {
+      120 |       ws.close();
+    > 121 |       done(new Error('No event received within timeout'));
+          |            ^
+      122 |     }, 5000);
+      123 |   }, 10000);
+      124 |
+
+      at Timeout._onTimeout (tests/contract/events/stream.test.ts:121:12)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should handle heartbeat ping/pong
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      166 |
+      167 |     ws.on('close', () => {
+    > 168 |       expect(pongReceived).toBe(true);
+          |                            ^
+      169 |       done();
+      170 |     });
+      171 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:168:28)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should handle heartbeat ping/pong
+
+    Failed: [AggregateError]
+
+      171 |
+      172 |     ws.on('error', (error) => {
+    > 173 |       done(error);
+          |       ^
+      174 |     });
+      175 |   }, 10000);
+      176 | });
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:173:7)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1041:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Summary of all failing tests
+FAIL tests/contract/notifications/webhooks/list.test.ts
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should list app webhooks
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should exclude webhook_secret from response
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should return empty array for app with no webhooks
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/webhooks - Contract Tests › should enforce app isolation
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/webhooks/create.test.ts
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should create valid webhook
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should reject non-HTTPS URL
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should reject empty subscribed_events
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/webhooks - Contract Tests › should enforce rate limits
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/delete.test.ts
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should delete notification
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should enforce app authorization
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should return 404 for non-existent notification
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/notifications/:id - Contract Tests › should cascade delete notification_state
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/query.test.ts
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should return notification list for user
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should filter by status (unread)
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should filter by app_id
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should support pagination
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should exclude expired notifications
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should enforce user isolation
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should include app branding
+
+    AggregateError:
+
+
+  ● GET /api/v1/users/:userId/notifications - Contract Tests › should sort by priority then created_at DESC
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/webhooks/delete.test.ts
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should delete webhook
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should return 404 for non-existent webhook
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● DELETE /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce app authorization
+
+    AggregateError:
+
+
+FAIL tests/contracts/marketplace-search.test.ts
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should search items by query string in title
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should search items by query string in description
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should return empty results for non-matching query
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Basic Text Search › should handle empty query string gracefully
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by item_type
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by price range
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by category_id
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should filter search results by seller_id
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Filters › should combine multiple filters
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should sort results by price ascending
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should sort results by price descending
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should sort results by created_at (newest first)
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Sorting › should default to relevance sorting when no sort specified
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Pagination › should paginate search results
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Pagination › should return correct page of results
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Pagination › should enforce maximum limit of 100
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Status Filtering › should only return active items by default
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Status Filtering › should not return draft items in search results
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Semantic Search (if available) › should find semantically related items
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Semantic Search (if available) › should fallback to text search if semantic search fails
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should require authentication
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should validate invalid sort field
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should validate invalid order value
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Error Handling › should handle invalid price range
+
+    AggregateError:
+
+
+  ● Marketplace Search API › POST /api/v1/marketplace/search › Rate Limiting › should enforce rate limits on search endpoint
+
+    AggregateError:
+
+
+FAIL tests/contracts/marketplace-categories.test.ts
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Basic Functionality › should return list of marketplace categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Basic Functionality › should return categories with required fields
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Basic Functionality › should include standard marketplace categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Hierarchy › should support parent-child category relationships
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Hierarchy › should optionally return only top-level categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Hierarchy › should return subcategories for a specific parent
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Item Counts › should return accurate item counts per category
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Item Counts › should only count active items in item_count
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Item Counts › should optionally include inactive items in count
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Metadata › should include category icons if available
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Metadata › should include category display order
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Category Metadata › should return categories in display order by default
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should filter categories by search query
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should return empty array for non-matching search
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should filter categories with minimum item count
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Filtering and Search › should exclude empty categories when requested
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Response Format › should include total count of categories
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Response Format › should return consistent slugs
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Caching Headers › should include appropriate cache headers
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should require authentication
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should reject invalid parent_id format
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should handle invalid min_items value
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Error Handling › should return empty array for non-existent parent_id
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Rate Limiting › should enforce rate limits on categories endpoint
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Special Categories › should include "All" or uncategorized option if items exist without category
+
+    AggregateError:
+
+
+  ● Marketplace Categories API › GET /api/v1/marketplace/categories › Special Categories › should not return disabled/archived categories by default
+
+    AggregateError:
+
+
+FAIL tests/integration/notification-sync.test.ts
+  ● Integration: Notification Synchronization › T013: Third-party app creates notification › should create notification from Work Buddy and verify full workflow
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T014: User dismisses notification in Oriva Core › should handle dismissal workflow and trigger webhooks
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T015: User dismisses notification in third-party app › should sync dismissal from third-party app to Oriva Core
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T016: User clicks notification action › should handle click action and record event data
+
+    AggregateError:
+
+
+  ● Integration: Notification Synchronization › T017: Multiple apps send notifications › should aggregate notifications from multiple apps with proper sorting
+
+    AggregateError:
+
+
+FAIL tests/contracts/conversations.test.ts
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should create a new conversation
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should create conversation with auto-generated title if not provided
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should reject conversation creation without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › POST /api/v1/conversations - T031 › should reject conversation creation without X-App-ID
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should list user conversations
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should list conversations sorted by last_message_at descending
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should support pagination with limit parameter
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should support pagination with offset parameter
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should filter conversations by status (active)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should filter conversations by status (closed)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should only show conversations for current user (FR-014)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations - T032 › should reject list without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should get conversation by ID with messages
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should include messages in chronological order
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should reject get with invalid conversation ID format
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should reject get with non-existent conversation ID
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › GET /api/v1/conversations/:id - T033 › should reject get for conversation owned by different user
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should delete conversation and cascade to messages (FR-021)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should delete conversation and cascade to messages (FR-021)
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete with invalid conversation ID format
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete with invalid conversation ID format
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for non-existent conversation
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for non-existent conversation
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for conversation owned by different user
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete for conversation owned by different user
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should reject delete without authentication
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should handle graceful 404 on double delete
+
+    AggregateError:
+
+
+  ● Conversations API Contracts › DELETE /api/v1/conversations/:id - T034 › should handle graceful 404 on double delete
+
+    AggregateError:
+
+
+FAIL tests/contract/events/publish.test.ts
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should accept valid event payload
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should reject invalid event_category
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should reject missing required fields
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should enforce rate limits
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should validate app_id exists
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/events - Contract Tests › should accept JSONB event_data
+
+    AggregateError:
+
+
+FAIL tests/contracts/knowledge.test.ts
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should search knowledge base with valid query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should return results ranked by relevance
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should handle query without exact matches gracefully (FR-008)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should filter by category when specified
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should respect max_results parameter
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should respect min_relevance threshold
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - T023 › should only return knowledge from current app (FR-009)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search without authentication
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search without X-App-ID header
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search with missing query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search with empty query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject search with query exceeding max length
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid max_results (below minimum)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid max_results (above maximum)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid min_relevance (below 0)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › POST /api/v1/hugo/knowledge/search - Validation - T024 › should reject invalid min_relevance (above 1)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Performance - T025 › should complete search within 1 second (FR-028)
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Performance - T025 › should handle concurrent searches efficiently
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle special characters in query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle unicode characters in query
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle very short queries
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should handle queries with only stopwords
+
+    AggregateError:
+
+
+  ● Knowledge API Contracts › Knowledge Search - Edge Cases - T026 › should track access count when entries are returned
+
+    AggregateError:
+
+
+FAIL tests/contracts/auth.test.ts
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should register a new user with valid data
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject registration with missing email
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject registration with invalid email format
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject registration with weak password
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/register - T017 › should reject duplicate email registration
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should login with valid credentials
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should reject login with invalid email
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should reject login with invalid password
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/login - T018 › should reject login with missing credentials
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › GET /api/v1/auth/profile - T019 › should get user profile with valid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › GET /api/v1/auth/profile - T019 › should reject profile request without token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › GET /api/v1/auth/profile - T019 › should reject profile request with invalid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › PUT /api/v1/auth/profile - T019 › should update user preferences
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › PUT /api/v1/auth/profile - T019 › should reject invalid data_retention_days
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/token/refresh - T020 › should refresh access token with valid refresh token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/token/refresh - T020 › should reject refresh with invalid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/token/refresh - T020 › should reject refresh with missing token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/logout - T021 › should logout user with valid token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/logout - T021 › should reject logout without token
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › POST /api/v1/auth/logout - T021 › should handle logout with already logged out token gracefully
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should require password confirmation
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should reject account deletion with incorrect password
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should reject account deletion without authentication
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › DELETE /api/v1/auth/account - T022 › should verify account deletion cascades to all user data
+
+    AggregateError:
+
+
+  ● Authentication API Contracts › Rate Limiting - T017-T022 › should enforce rate limits for unauthenticated users
+
+    AggregateError:
+
+
+FAIL tests/contracts/marketplace.test.ts
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should list marketplace items without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should support pagination parameters
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should filter by item_type
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should filter by price range
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items - T041 › should reject invalid pagination parameters
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should create a marketplace item with valid data
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation with missing required fields
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation with invalid price
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › POST /api/v1/marketplace/items - T042 › should reject item creation with invalid item_type
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items/:id - T043 › should get item details by ID
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items/:id - T043 › should return 404 for non-existent item
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › GET /api/v1/marketplace/items/:id - T043 › should return 400 for invalid item ID format
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should update item with valid data
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should reject update without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should reject update by non-owner
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › PUT /api/v1/marketplace/items/:id - T043 › should reject update with invalid status transition
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › DELETE /api/v1/marketplace/items/:id - T043 › should delete item by owner
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › DELETE /api/v1/marketplace/items/:id - T043 › should reject deletion without authentication
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › DELETE /api/v1/marketplace/items/:id - T043 › should return 404 when deleting non-existent item
+
+    AggregateError:
+
+
+  ● Marketplace Items API Contracts › Rate Limiting - T041-T043 › should enforce rate limits for unauthenticated users
+
+    AggregateError:
+
+
+FAIL tests/integration/webhook-delivery.test.ts
+  ● Integration: Webhook Delivery › T018: App subscribes to platform events › should deliver webhook with HMAC signature when event occurs
+
+    AggregateError:
+
+
+  ● Integration: Webhook Delivery › T019: Webhook retry on failure › should retry failed webhooks with exponential backoff
+
+    AggregateError:
+
+
+  ● Integration: Webhook Delivery › T019: Webhook retry on failure › should disable webhook after 100 consecutive failures
+
+    AggregateError:
+
+
+  ● Integration: Webhook Delivery › Webhook signature validation › should allow apps to verify webhook authenticity using HMAC
+
+    AggregateError:
+
+
+FAIL tests/contract/platform/test_apps_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_apps_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/platform/test_extraction_prepare.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_extraction_prepare.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/platform/test_extraction_execute.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_extraction_execute.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/platform/test_user_delete_gdpr.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/platform/test_user_delete_gdpr.test.ts[0m:[93m13[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m13[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/hugo-ai/test_sessions_patch.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/hugo-ai/test_sessions_patch.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/integration/websocket-realtime.test.ts
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should broadcast notification events to multiple WebSocket clients
+
+    Test functions cannot both take a 'done' callback and return something. Either use a 'done' callback, or return a promise.
+    Returned value: Promise {}
+
+      37 |   // T020: Real-time notification updates
+      38 |   describe('T020: Real-time notification updates', () => {
+    > 39 |     it('should broadcast notification events to multiple WebSocket clients', async (done) => {
+         |       ^
+      40 |       let client1: WebSocket;
+      41 |       let client2: WebSocket;
+      42 |       let notificationId: string;
+
+      at tests/integration/websocket-realtime.test.ts:39:7
+      at tests/integration/websocket-realtime.test.ts:38:11
+      at Object.<anonymous> (tests/integration/websocket-realtime.test.ts:14:9)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should handle notification expiry and remove from all clients
+
+    Test functions cannot both take a 'done' callback and return something. Either use a 'done' callback, or return a promise.
+    Returned value: Promise {}
+
+      193 |     }, 20000);
+      194 |
+    > 195 |     it('should handle notification expiry and remove from all clients', async (done) => {
+          |       ^
+      196 |       let client1: WebSocket;
+      197 |       let client2: WebSocket;
+      198 |       let notificationId: string;
+
+      at tests/integration/websocket-realtime.test.ts:195:7
+      at tests/integration/websocket-realtime.test.ts:38:11
+      at Object.<anonymous> (tests/integration/websocket-realtime.test.ts:14:9)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    AggregateError:
+
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    Expected done to be called once, but it was called multiple times.
+
+      308 |         // Cleanup
+      309 |         connections.forEach((ws) => ws.close());
+    > 310 |         done();
+          |         ^
+      311 |       });
+      312 |
+      313 |       rejectedConnection.on('error', () => {
+
+      at WebSocket.<anonymous> (tests/integration/websocket-realtime.test.ts:310:9)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should enforce per-user connection limits
+
+    Expected done to be called once, but it was called multiple times.
+
+      308 |         // Cleanup
+      309 |         connections.forEach((ws) => ws.close());
+    > 310 |         done();
+          |         ^
+      311 |       });
+      312 |
+      313 |       rejectedConnection.on('error', () => {
+
+      at WebSocket.<anonymous> (tests/integration/websocket-realtime.test.ts:310:9)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● Integration: Real-time Notification Updates via WebSocket › T020: Real-time notification updates › should maintain connection state across reconnects
+
+    Test functions cannot both take a 'done' callback and return something. Either use a 'done' callback, or return a promise.
+    Returned value: Promise {}
+
+      325 |     }, 10000);
+      326 |
+    > 327 |     it('should maintain connection state across reconnects', async (done) => {
+          |       ^
+      328 |       let client: WebSocket;
+      329 |       const receivedEvents: any[] = [];
+      330 |       let notificationId: string;
+
+      at tests/integration/websocket-realtime.test.ts:327:7
+      at tests/integration/websocket-realtime.test.ts:38:11
+      at Object.<anonymous> (tests/integration/websocket-realtime.test.ts:14:9)
+
+FAIL tests/contract/hugo-ai/test_sessions_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/hugo-ai/test_sessions_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/hugo-ai/test_insights_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/hugo-ai/test_insights_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/notifications/update.test.ts (5.285 s)
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should mark notification as read
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should dismiss notification
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should mark as clicked
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should handle idempotent dismissal
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should reject invalid status transition
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/notifications/:id - Contract Tests › should return 404 for non-existent notification
+
+    AggregateError:
+
+
+FAIL tests/contract/apps/test_profiles_post.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contract/apps/test_profiles_post.test.ts[0m:[93m11[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m11[0m import { mockSupabase } from '../../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contract/notifications/create.test.ts (5.254 s)
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should create valid notification
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject title > 200 chars
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject empty title
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject body > 1000 chars
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should reject invalid priority
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should prevent duplicate external_id
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● POST /api/v1/apps/:appId/notifications - Contract Tests › should enforce rate limits
+
+    AggregateError:
+
+
+FAIL tests/contract/events/query.test.ts (5.308 s)
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should retrieve event list with pagination
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should filter by event_category
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should filter by event_type
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should filter by date range
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should support pagination with limit and offset
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should enforce app isolation - apps only see their own events
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should return 404 for non-existent app
+
+    AggregateError:
+
+
+  ● GET /api/v1/apps/:appId/events - Contract Tests › should sort events by created_at DESC
+
+    AggregateError:
+
+
+FAIL tests/contract/notifications/webhooks/update.test.ts (5.305 s)
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should update webhook URL
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should update subscribed_events
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should toggle is_active
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should return 404 for non-existent webhook
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce authentication
+
+    AggregateError:
+
+
+  ● PATCH /api/v1/apps/:appId/webhooks/:id - Contract Tests › should enforce app authorization
+
+    AggregateError:
+
+
+FAIL tests/integration/test_schema_isolation.test.ts
+  ● Test suite failed to run
+
+    [96mtests/integration/test_schema_isolation.test.ts[0m:[93m14[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m14[0m import { mockSupabase } from '../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/integration/test_cross_app_insights.test.ts
+  ● Test suite failed to run
+
+    [96mtests/integration/test_cross_app_insights.test.ts[0m:[93m14[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../test-utils/supabase' or its corresponding type declarations.
+
+    [7m14[0m import { mockSupabase } from '../../test-utils/supabase';
+    [7m  [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+FAIL tests/contracts/chat.test.ts
+  ● Test suite failed to run
+
+    [96mtests/contracts/chat.test.ts[0m:[93m92[0m:[93m42[0m - [91merror[0m[90m TS2339: [0mProperty 'length' does not exist on type 'unknown'.
+
+    [7m92[0m         if (doneEvent!.knowledge_sources.length > 0) {
+    [7m  [0m [91m                                         ~~~~~~[0m
+
+FAIL tests/contract/events/stream.test.ts (12.318 s)
+  ● WSS /api/v1/events/stream - Contract Tests › should accept WebSocket connection with valid token
+
+    Failed: [AggregateError]
+
+      28 |
+      29 |     ws.on('error', (error) => {
+    > 30 |       done(error);
+         |       ^
+      31 |     });
+      32 |   }, 10000);
+      33 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:30:7)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1041:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should reject WebSocket connection with invalid token
+
+    Expected done to be called once, but it was called multiple times.
+
+      49 |       // Closed due to auth failure
+      50 |       expect(code).toBeGreaterThan(1000);
+    > 51 |       done();
+         |       ^
+      52 |     });
+      53 |   }, 10000);
+      54 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:51:7)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should reject WebSocket connection with invalid token
+
+    Expected done to be called once, but it was called multiple times.
+
+      49 |       // Closed due to auth failure
+      50 |       expect(code).toBeGreaterThan(1000);
+    > 51 |       done();
+         |       ^
+      52 |     });
+      53 |   }, 10000);
+      54 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:51:7)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should acknowledge event subscription message
+
+    Failed: [AggregateError]
+
+      80 |
+      81 |     ws.on('error', (error) => {
+    > 82 |       done(error);
+         |       ^
+      83 |     });
+      84 |   }, 10000);
+      85 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:82:7)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1041:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should broadcast events when published
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should broadcast events when published
+
+    No event received within timeout
+
+      119 |     setTimeout(() => {
+      120 |       ws.close();
+    > 121 |       done(new Error('No event received within timeout'));
+          |            ^
+      122 |     }, 5000);
+      123 |   }, 10000);
+      124 |
+
+      at Timeout._onTimeout (tests/contract/events/stream.test.ts:121:12)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should limit concurrent connections per user
+
+    AggregateError:
+
+
+  ● WSS /api/v1/events/stream - Contract Tests › should handle heartbeat ping/pong
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      166 |
+      167 |     ws.on('close', () => {
+    > 168 |       expect(pongReceived).toBe(true);
+          |                            ^
+      169 |       done();
+      170 |     });
+      171 |
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:168:28)
+      at WebSocket.emitClose (node_modules/ws/lib/websocket.js:262:12)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1042:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+  ● WSS /api/v1/events/stream - Contract Tests › should handle heartbeat ping/pong
+
+    Failed: [AggregateError]
+
+      171 |
+      172 |     ws.on('error', (error) => {
+    > 173 |       done(error);
+          |       ^
+      174 |     });
+      175 |   }, 10000);
+      176 | });
+
+      at WebSocket.<anonymous> (tests/contract/events/stream.test.ts:173:7)
+      at emitErrorAndClose (node_modules/ws/lib/websocket.js:1041:13)
+      at ClientRequest.<anonymous> (node_modules/ws/lib/websocket.js:881:5)
+
+
+Test Suites: 31 failed, 14 passed, 45 total
+Tests:       227 failed, 284 passed, 511 total
+Snapshots:   0 total
+Time:        13.19 s
+Ran all test suites.
+🧹 Cleaning up test environment...
+✅ Test environment cleaned up

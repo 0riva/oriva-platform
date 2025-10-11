@@ -1,0 +1,7 @@
+# Override PostgREST JWT secret to use plain format instead of JWK
+# This fixes the JWT validation issue with authenticated user tokens
+version: '3.8'
+services:
+  rest:
+    environment:
+      PGRST_JWT_SECRET: 'super-secret-jwt-token-with-at-least-32-characters-long'

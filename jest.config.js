@@ -7,15 +7,12 @@ module.exports = {
   roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  collectCoverageFrom: [
-    'api/**/*.ts',
-    '!api/**/*.test.ts',
-    '!api/**/*.d.ts',
-  ],
+  collectCoverageFrom: ['api/**/*.ts', '!api/**/*.test.ts', '!api/**/*.d.ts'],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
   testTimeout: 15000, // 15s timeout for API tests
   globalSetup: '<rootDir>/tests/setup/global-setup.ts',
   globalTeardown: '<rootDir>/tests/setup/global-teardown.ts',
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
 };

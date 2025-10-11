@@ -1,0 +1,150 @@
+
+🚀 Hugo Love Knowledge Base Ingestion Pipeline
+============================================================
+📂 Input directory: /Users/cosmic/Documents/MySecondBrain/Hugo/HugoLoveKB
+📄 Found 12 PDF files
+🤖 OpenAI model: text-embedding-3-small
+🗄️  Supabase: http://127.0.0.1:54321
+============================================================
+
+Processing PDFs:   0%|          | 0/12 [00:00<?, ?it/s]Processing PDFs:   8%|▊         | 1/12 [00:01<00:11,  1.06s/it]Processing PDFs:  25%|██▌       | 3/12 [00:01<00:05,  1.68it/s]Processing PDFs:  42%|████▏     | 5/12 [00:02<00:02,  3.14it/s]Processing PDFs:  50%|█████     | 6/12 [00:02<00:01,  3.80it/s]Processing PDFs:  58%|█████▊    | 7/12 [00:02<00:01,  3.58it/s]Processing PDFs:  75%|███████▌  | 9/12 [00:02<00:00,  5.41it/s]Processing PDFs:  92%|█████████▏| 11/12 [00:07<00:00,  1.02it/s]Processing PDFs: 100%|██████████| 12/12 [00:07<00:00,  1.26it/s]Processing PDFs: 100%|██████████| 12/12 [00:07<00:00,  1.66it/s]
+  ✅ TIC 7 Conversations To Love - Mobile Version.pdf: 86 chunks
+  ✅ TIC Workbook 2 - Vital Connection.pdf: 8 chunks
+  ✅ TIC - 15 Things Report.pdf: 37 chunks
+  ✅ TIC Cheatsheet - Matchmaking Reflections.pdf: 1 chunks
+  ✅ TIC Workbook 4 - Big Pay-Off.pdf: 7 chunks
+  ✅ TIC Workbook 1 - Celebration.pdf: 11 chunks
+  ✅ TIC 7 Conversations To Love 3-Pager.pdf: 3 chunks
+  ✅ TIC Cheatsheet - Top 5 Reasons Men Leave.pdf: 1 chunks
+  ✅ TIC Cheatsheet - Date Night Dynamo.pdf: 1 chunks
+  ✅ TIC Workbook 3 - Love-Spark.pdf: 9 chunks
+  ✅ TIC - The Intimacy Code - mobile version.pdf: 406 chunks
+  ✅ TIC Workbook 5 - Spiral Effect.pdf: 12 chunks
+
+📊 Chunking Summary
+  Total PDFs processed: 12
+  Total chunks generated: 582
+
+🧠 Generating embeddings...
+Generating embeddings for 582 chunks...
+  Processed 5/582 chunks
+  Processed 10/582 chunks
+  Processed 15/582 chunks
+  Processed 20/582 chunks
+  Processed 25/582 chunks
+  Processed 30/582 chunks
+  Processed 35/582 chunks
+  Processed 40/582 chunks
+  Processed 45/582 chunks
+  Processed 50/582 chunks
+  Processed 55/582 chunks
+  Processed 60/582 chunks
+  Processed 65/582 chunks
+  Processed 70/582 chunks
+  Processed 75/582 chunks
+  Processed 80/582 chunks
+  Processed 85/582 chunks
+  Processed 90/582 chunks
+  Processed 95/582 chunks
+  Processed 100/582 chunks
+  Processed 105/582 chunks
+  Processed 110/582 chunks
+  Processed 115/582 chunks
+  Processed 120/582 chunks
+  Processed 125/582 chunks
+  Processed 130/582 chunks
+  Processed 135/582 chunks
+  Processed 140/582 chunks
+  Processed 145/582 chunks
+  Processed 150/582 chunks
+  Processed 155/582 chunks
+  Processed 160/582 chunks
+  Processed 165/582 chunks
+  Processed 170/582 chunks
+  Processed 175/582 chunks
+  Processed 180/582 chunks
+  Processed 185/582 chunks
+  Processed 190/582 chunks
+  Processed 195/582 chunks
+  Processed 200/582 chunks
+  Processed 205/582 chunks
+  Processed 210/582 chunks
+  Processed 215/582 chunks
+  Processed 220/582 chunks
+  Processed 225/582 chunks
+  Processed 230/582 chunks
+  Processed 235/582 chunks
+  Processed 240/582 chunks
+  Processed 245/582 chunks
+  Processed 250/582 chunks
+  Processed 255/582 chunks
+  Processed 260/582 chunks
+  Processed 265/582 chunks
+  Processed 270/582 chunks
+  Processed 275/582 chunks
+  Processed 280/582 chunks
+  Processed 285/582 chunks
+  Processed 290/582 chunks
+  Processed 295/582 chunks
+  Processed 300/582 chunks
+  Processed 305/582 chunks
+  Processed 310/582 chunks
+  Processed 315/582 chunks
+  Processed 320/582 chunks
+  Processed 325/582 chunks
+  Processed 330/582 chunks
+  Processed 335/582 chunks
+  Processed 340/582 chunks
+  Processed 345/582 chunks
+  Processed 350/582 chunks
+  Processed 355/582 chunks
+  Processed 360/582 chunks
+  Processed 365/582 chunks
+  Processed 370/582 chunks
+  Processed 375/582 chunks
+  Processed 380/582 chunks
+  Processed 385/582 chunks
+  Processed 390/582 chunks
+  Processed 395/582 chunks
+  Processed 400/582 chunks
+  Processed 405/582 chunks
+  Processed 410/582 chunks
+  Processed 415/582 chunks
+  Processed 420/582 chunks
+  Processed 425/582 chunks
+  Processed 430/582 chunks
+  Processed 435/582 chunks
+  Processed 440/582 chunks
+  Processed 445/582 chunks
+  Processed 450/582 chunks
+  Processed 455/582 chunks
+  Processed 460/582 chunks
+  Processed 465/582 chunks
+  Processed 470/582 chunks
+  Processed 475/582 chunks
+  Processed 480/582 chunks
+  Processed 485/582 chunks
+  Processed 490/582 chunks
+  Processed 495/582 chunks
+  Processed 500/582 chunks
+  Processed 505/582 chunks
+  Processed 510/582 chunks
+  Processed 515/582 chunks
+  Processed 520/582 chunks
+  Processed 525/582 chunks
+  Processed 530/582 chunks
+  Processed 535/582 chunks
+  Processed 540/582 chunks
+  Processed 545/582 chunks
+  Processed 550/582 chunks
+  Processed 555/582 chunks
+  Processed 560/582 chunks
+  Processed 565/582 chunks
+  Processed 570/582 chunks
+  Processed 575/582 chunks
+  Processed 580/582 chunks
+  Processed 582/582 chunks
+✅ Generated 582 embeddings
+
+📤 Uploading to Supabase...
+❌ Upload failed: Client.__init__() got an unexpected keyword argument 'proxy'

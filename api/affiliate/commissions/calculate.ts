@@ -73,22 +73,19 @@ export default async function handler(
   }
 
   try {
-    // Initialize Supabase client with service role (for system operations)
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ error: 'Authentication required' });
+    // Validate webhook signature (recommended approach for webhook endpoints)
+    // TODO: Implement proper webhook signature validation
+    // For now, verify the request comes from trusted source via API key
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || apiKey !== process.env.WEBHOOK_API_KEY) {
+      return res.status(401).json({ error: 'Invalid webhook authentication' });
     }
 
+    // Initialize Supabase client with service role (for system operations)
+    // Note: No user auth header passed - this is a system/webhook operation
     const supabase = createClient(
       process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
     // Validate request body
