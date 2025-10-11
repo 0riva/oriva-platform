@@ -8,6 +8,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { searchTICChunks } from './rag.ts';
 import { streamClaude } from './anthropic.ts';
 import { buildPrompt, CoachingContext, UserProfile } from './prompt.ts';
+import { extractContextFromMessage, updateCoachingContext } from './context-learner.ts';
+import { detectStage, updateStageIfNeeded } from './stage-detector.ts';
 
 // CORS headers for browser requests
 const corsHeaders = {
@@ -107,17 +109,14 @@ serve(async (req) => {
     }
 
     // Create Supabase client for data operations (service role key bypasses RLS)
-    // NOTE: Schema must be set via REST headers, not client config
+    // Schema set via db.schema config for supabase-js v2
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
-      global: {
-        headers: {
-          'Accept-Profile': 'hugo_love',
-          'Content-Profile': 'hugo_love',
-        },
+      db: {
+        schema: 'hugo_love',
       },
     });
 
@@ -149,15 +148,20 @@ serve(async (req) => {
       deal_breakers: profileData?.profile_data?.deal_breakers,
     };
 
-    // Search for relevant TIC chunks using RAG
-    const ragChunks = await searchTICChunks(
-      message,
-      coachingContext.currentStage,
-      supabase, // Pass configured client with schema headers
-      5 // top 5 chunks
-    );
-
-    console.log(`Found ${ragChunks.length} relevant TIC chunks`);
+    // Search for relevant TIC chunks using RAG (non-fatal)
+    let ragChunks = [];
+    try {
+      ragChunks = await searchTICChunks(
+        message,
+        coachingContext.currentStage,
+        supabase, // Pass configured client with schema headers
+        5 // top 5 chunks
+      );
+      console.log(`Found ${ragChunks.length} relevant TIC chunks`);
+    } catch (ragError) {
+      console.warn('RAG search failed (continuing without context):', ragError.message);
+      // Continue with empty chunks - RAG is optional for basic functionality
+    }
 
     // Build Claude prompt with all context
     const claudePrompt = buildPrompt(message, ragChunks, coachingContext, userProfile);
@@ -179,6 +183,12 @@ serve(async (req) => {
     } else {
       console.log('User message saved:', userMsgData?.id);
     }
+
+    // T046: Extract and update coaching context from user message
+    // This runs async and doesn't block the response stream
+    extractContextFromMessage(message)
+      .then((contextUpdate) => updateCoachingContext(supabase, userId, contextUpdate))
+      .catch((err) => console.error('Context learning failed (non-fatal):', err));
 
     // Create SSE stream
     const stream = new ReadableStream({
@@ -229,6 +239,41 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq('id', conversationId);
+
+          // T047: Stage Transition Intelligence (runs async, non-blocking)
+          // Fetch recent messages and detect if stage should change
+          supabase
+            .from('messages')
+            .select('role, content')
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: false })
+            .limit(10)
+            .then(({ data: recentMessages }) => {
+              if (recentMessages && recentMessages.length > 0) {
+                return detectStage(
+                  recentMessages.reverse(), // Chronological order
+                  {
+                    goals: coachingContext.goals,
+                    lifeEvents: coachingContext.lifeEvents,
+                    stickingPoints: coachingContext.stickingPoints,
+                    currentStage: coachingContext.currentStage,
+                  }
+                );
+              }
+              return null;
+            })
+            .then((detection) => {
+              if (detection) {
+                return updateStageIfNeeded(
+                  supabase,
+                  userId,
+                  conversationId,
+                  detection,
+                  coachingContext.currentStage
+                );
+              }
+            })
+            .catch((err) => console.error('Stage detection failed (non-fatal):', err));
 
           // Send done event
           const doneEvent = `event: done\ndata: ${JSON.stringify({ message_id: 'completed' })}\n\n`;

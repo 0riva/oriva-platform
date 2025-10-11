@@ -52,8 +52,8 @@ def upload_chunks(chunks: List[Dict], supabase_url: str = None, supabase_key: st
             records.append(record)
 
         try:
-            # Batch insert (use hugo_love schema)
-            response = supabase.schema("hugo_love").table("document_chunks").insert(records).execute()
+            # Batch insert (defaults to public schema)
+            response = supabase.table("document_chunks").insert(records).execute()
 
             success_count += len(records)
             print(f"  Uploaded {min(i + batch_size, total)}/{total} chunks")
@@ -65,7 +65,7 @@ def upload_chunks(chunks: List[Dict], supabase_url: str = None, supabase_key: st
             # Retry individual inserts
             for record in records:
                 try:
-                    supabase.schema("hugo_love").table("document_chunks").insert(record).execute()
+                    supabase.table("document_chunks").insert(record).execute()
                     success_count += 1
                     error_count -= 1
                 except Exception as chunk_error:

@@ -40,14 +40,28 @@ def chunk_pdf(pdf_path: str, metadata: Optional[Dict] = None) -> List[Dict]:
     if not text_by_page:
         return []
 
-    # Create text splitter (1000 char chunks ~= 250 tokens, 100 char overlap ~= 25 tokens)
-    # Using 4000 chars for 1000 tokens, 400 chars for 100 token overlap
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=4000,  # ~1000 tokens
-        chunk_overlap=400,  # ~100 tokens
-        separators=["\n\n", "\n", ". ", " ", ""],  # Semantic boundaries
-        length_function=len,
-    )
+    # Detect if this is a workbook (short pages with questions)
+    is_workbook = "workbook" in filename.lower()
+    avg_page_length = sum(len(p) for p in text_by_page) / max(len(text_by_page), 1)
+
+    # Use smaller chunks for workbooks to preserve question-level granularity
+    if is_workbook or avg_page_length < 1000:
+        # Workbook mode: smaller chunks (500 chars ~= 125 tokens)
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,  # ~125 tokens - preserves individual questions
+            chunk_overlap=50,  # ~12 tokens - minimal overlap
+            separators=["\n\n", "\n", "?", ". ", " ", ""],  # Include ? for question boundaries
+            length_function=len,
+        )
+    else:
+        # Book mode: medium chunks (2000 chars ~= 500 tokens)
+        # Optimized for dense content with multiple sections
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=2000,  # ~500 tokens - balances context and granularity
+            chunk_overlap=200,  # ~50 tokens - preserves section continuity
+            separators=["\n\n\n", "\n\n", "\n", ". ", " ", ""],  # Prioritize section breaks
+            length_function=len,
+        )
 
     # Split each page and track page numbers
     chunks = []
@@ -63,7 +77,7 @@ def chunk_pdf(pdf_path: str, metadata: Optional[Dict] = None) -> List[Dict]:
         for chunk_text in page_chunks:
             chunk_text = clean_chunk_text(chunk_text)
 
-            if len(chunk_text) < 100:  # Skip very small chunks
+            if len(chunk_text) < 50:  # Skip very small chunks (lowered from 100)
                 continue
 
             chunk = {
@@ -141,10 +155,14 @@ def clean_chunk_text(text: str) -> str:
     """
     Clean chunk text while preserving structure.
 
+    - Remove null bytes (causes PostgreSQL TEXT errors)
     - Remove excessive whitespace
     - Normalize line breaks
     - Preserve sentence boundaries
     """
+    # Remove null bytes that cause PostgreSQL errors
+    text = text.replace('\x00', '')
+
     # Replace multiple spaces with single space
     text = re.sub(r' +', ' ', text)
 

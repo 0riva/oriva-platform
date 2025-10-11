@@ -55,9 +55,9 @@ ${profile.deal_breakers ? `- Deal-breakers: ${profile.deal_breakers}` : ''}`;
   const coachingContextSection = `
 COACHING CONTEXT:
 - Current Stage: ${formatStage(context.currentStage)}
-${context.goals.length > 0 ? `- Goals: ${context.goals.join(', ')}` : ''}
-${context.lifeEvents.length > 0 ? `- Recent Events: ${context.lifeEvents.join(', ')}` : ''}
-${context.stickingPoints.length > 0 ? `- Challenges: ${context.stickingPoints.join(', ')}` : ''}`;
+${context.goals && context.goals.length > 0 ? `- Goals: ${context.goals.join(', ')}` : ''}
+${context.lifeEvents && context.lifeEvents.length > 0 ? `- Recent Events: ${context.lifeEvents.join(', ')}` : ''}
+${context.stickingPoints && context.stickingPoints.length > 0 ? `- Challenges: ${context.stickingPoints.join(', ')}` : ''}`;
 
   const ragContentSection =
     ragChunks.length > 0
