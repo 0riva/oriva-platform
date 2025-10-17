@@ -47,7 +47,7 @@ function isStrongPassword(password: string): boolean {
 }
 
 async function handleRegister(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const { email, password, name, preferences }: RegisterRequest = req.body;
+  const { email, password, name }: RegisterRequest = req.body;
 
   if (!email || !password) {
     throw validationError('Email and password are required');
@@ -58,7 +58,9 @@ async function handleRegister(req: VercelRequest, res: VercelResponse): Promise<
   }
 
   if (!isStrongPassword(password)) {
-    throw validationError('Password must be at least 8 characters with uppercase, lowercase, and numbers');
+    throw validationError(
+      'Password must be at least 8 characters with uppercase, lowercase, and numbers'
+    );
   }
 
   const supabase = getSupabaseClient();
@@ -160,7 +162,6 @@ async function handleLogout(req: VercelRequest, res: VercelResponse): Promise<vo
     return;
   }
 
-  const token = authHeader.replace('Bearer ', '');
   const supabase = getSupabaseClient();
 
   const { error } = await supabase.auth.signOut();
@@ -268,9 +269,10 @@ async function handleTokenRefresh(req: VercelRequest, res: VercelResponse): Prom
 
   const supabase = getSupabaseClient();
 
+  // Validate refresh token with Supabase and get new tokens
   const { data, error } = await supabase.auth.refreshSession({ refresh_token });
 
-  if (error || !data.session) {
+  if (error || !data.session || !data.user) {
     res.status(401).json({
       error: 'Invalid or expired refresh token',
       code: 'INVALID_REFRESH_TOKEN',
@@ -278,10 +280,12 @@ async function handleTokenRefresh(req: VercelRequest, res: VercelResponse): Prom
     return;
   }
 
+  // Return new tokens with proper response format for iOS client
   res.status(200).json({
     access_token: data.session.access_token,
     refresh_token: data.session.refresh_token,
     expires_at: data.session.expires_at,
+    token_type: 'Bearer',
   });
 }
 
