@@ -196,7 +196,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- HELPER FUNCTION: Get conversation messages
 -- ============================================================================
 CREATE OR REPLACE FUNCTION public.get_conversation_messages(
-  conversation_id uuid,
+  p_conversation_id uuid,
   limit_count int DEFAULT 50,
   offset_count int DEFAULT 0
 )
@@ -220,7 +220,7 @@ BEGIN
     dm.created_at,
     dm.updated_at
   FROM public.dm_messages dm
-  WHERE dm.conversation_id = $1
+  WHERE dm.conversation_id = p_conversation_id
   ORDER BY dm.created_at DESC
   LIMIT limit_count
   OFFSET offset_count;
