@@ -22,14 +22,14 @@ This runbook provides comprehensive guidance for monitoring, alerting, and respo
 
 ### Components
 
-| Component | Purpose | Access |
-|-----------|---------|--------|
-| **Vercel Analytics** | Function invocations, response times, errors | Vercel Dashboard |
-| **Vercel Speed Insights** | Real user monitoring (RUM), Core Web Vitals | Vercel Dashboard |
-| **Sentry** | Error tracking, performance monitoring, transactions | sentry.io |
-| **Custom Metrics** | Domain-specific metrics (chat, knowledge, tokens) | `/api/health`, `/api/alerts` |
-| **Supabase Dashboard** | Database performance, connection pool, queries | Supabase Console |
-| **Analytics Views** | SQL-based performance dashboards | Supabase SQL Editor |
+| Component                 | Purpose                                              | Access                       |
+| ------------------------- | ---------------------------------------------------- | ---------------------------- |
+| **Vercel Analytics**      | Function invocations, response times, errors         | Vercel Dashboard             |
+| **Vercel Speed Insights** | Real user monitoring (RUM), Core Web Vitals          | Vercel Dashboard             |
+| **Sentry**                | Error tracking, performance monitoring, transactions | sentry.io                    |
+| **Custom Metrics**        | Domain-specific metrics (chat, knowledge, tokens)    | `/api/health`, `/api/alerts` |
+| **Supabase Dashboard**    | Database performance, connection pool, queries       | Supabase Console             |
+| **Analytics Views**       | SQL-based performance dashboards                     | Supabase SQL Editor          |
 
 ### Monitoring Endpoints
 
@@ -54,6 +54,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 **Access**: Vercel Dashboard → Analytics
 
 **Key Metrics**:
+
 - Function invocations per minute
 - Response time (p50, p95, p99)
 - Error rate (4xx, 5xx)
@@ -62,6 +63,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 - Regional distribution
 
 **When to check**:
+
 - During deployments
 - After traffic spikes
 - When investigating performance issues
@@ -71,6 +73,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 **Access**: sentry.io → Performance
 
 **Key Views**:
+
 - Transaction overview (endpoints, durations)
 - Slow operations (outliers)
 - Error rate by endpoint
@@ -78,6 +81,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 - Release tracking
 
 **When to check**:
+
 - When error rate alerts trigger
 - After new deployments
 - User-reported issues
@@ -87,6 +91,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 **Access**: `GET /api/health`
 
 **Response Example**:
+
 ```json
 {
   "status": "healthy",
@@ -120,6 +125,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 ```
 
 **When to check**:
+
 - Real-time health monitoring
 - Alert investigation
 - Performance debugging
@@ -129,6 +135,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 **Access**: Supabase Console → Database → Performance
 
 **Key Metrics**:
+
 - Active connections
 - Connection pool utilization
 - Query execution time
@@ -137,6 +144,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 - Database CPU/memory usage
 
 **When to check**:
+
 - Database connection pool alerts
 - Slow query investigations
 - Capacity planning
@@ -148,6 +156,7 @@ curl https://api.oriva.ai/api/alerts?action=check | jq
 **Available Views**:
 
 #### Chat Performance
+
 ```sql
 SELECT * FROM analytics_chat_performance
 WHERE hour > NOW() - INTERVAL '24 hours'
@@ -156,6 +165,7 @@ LIMIT 24;
 ```
 
 #### Knowledge Search Performance
+
 ```sql
 SELECT * FROM analytics_knowledge_performance
 WHERE hour > NOW() - INTERVAL '24 hours'
@@ -163,6 +173,7 @@ ORDER BY hour DESC, category;
 ```
 
 #### SLO Compliance
+
 ```sql
 SELECT * FROM analytics_slo_compliance
 WHERE hour > NOW() - INTERVAL '24 hours'
@@ -170,6 +181,7 @@ ORDER BY hour DESC;
 ```
 
 #### Token Usage & Costs
+
 ```sql
 SELECT * FROM analytics_token_usage
 WHERE day > NOW() - INTERVAL '7 days'
@@ -177,6 +189,7 @@ ORDER BY day DESC, model;
 ```
 
 #### Slow Operations
+
 ```sql
 SELECT * FROM analytics_slow_operations
 ORDER BY generation_time_ms DESC
@@ -187,51 +200,52 @@ LIMIT 20;
 
 ### HTTP Metrics (Vercel Analytics)
 
-| Metric | Description | Healthy | Warning | Critical |
-|--------|-------------|---------|---------|----------|
-| `http_req_duration_p95` | 95th percentile response time | < 1000ms | < 3000ms | > 3000ms |
-| `http_req_duration_p99` | 99th percentile response time | < 1500ms | < 5000ms | > 5000ms |
-| `http_req_failed` | HTTP failure rate | < 1% | < 5% | > 5% |
-| `invocations_per_minute` | Request rate | Normal | High | Very High |
+| Metric                   | Description                   | Healthy  | Warning  | Critical  |
+| ------------------------ | ----------------------------- | -------- | -------- | --------- |
+| `http_req_duration_p95`  | 95th percentile response time | < 1000ms | < 3000ms | > 3000ms  |
+| `http_req_duration_p99`  | 99th percentile response time | < 1500ms | < 5000ms | > 5000ms  |
+| `http_req_failed`        | HTTP failure rate             | < 1%     | < 5%     | > 5%      |
+| `invocations_per_minute` | Request rate                  | Normal   | High     | Very High |
 
 ### Custom Metrics (api/lib/metrics.ts)
 
-| Metric | Description | Healthy | Warning | Critical |
-|--------|-------------|---------|---------|----------|
-| `chat.response_time` | Chat API response time | < 1000ms | < 3000ms | > 3000ms |
-| `chat.tokens_generated` | Tokens per chat response | < 1000 | < 2000 | > 4000 |
-| `chat.slow_response` | Responses > 5s | 0 | < 5/min | > 10/min |
-| `knowledge.search_latency` | Search query time | < 300ms | < 500ms | > 1000ms |
-| `knowledge.slow_search` | Searches > 1s | 0 | < 5/min | > 10/min |
-| `ai.tokens_used` | Total token consumption | Normal | High | Very High |
-| `api.response_time` | API endpoint latency | < 500ms | < 1000ms | > 3000ms |
-| `database.query_time` | Database query duration | < 100ms | < 300ms | > 500ms |
-| `database.slow_query` | Queries > 500ms | 0 | < 10/min | > 20/min |
-| `ratelimit.violation` | Rate limit hits (429) | < 1% | < 2% | > 5% |
+| Metric                     | Description              | Healthy  | Warning  | Critical  |
+| -------------------------- | ------------------------ | -------- | -------- | --------- |
+| `chat.response_time`       | Chat API response time   | < 1000ms | < 3000ms | > 3000ms  |
+| `chat.tokens_generated`    | Tokens per chat response | < 1000   | < 2000   | > 4000    |
+| `chat.slow_response`       | Responses > 5s           | 0        | < 5/min  | > 10/min  |
+| `knowledge.search_latency` | Search query time        | < 300ms  | < 500ms  | > 1000ms  |
+| `knowledge.slow_search`    | Searches > 1s            | 0        | < 5/min  | > 10/min  |
+| `ai.tokens_used`           | Total token consumption  | Normal   | High     | Very High |
+| `api.response_time`        | API endpoint latency     | < 500ms  | < 1000ms | > 3000ms  |
+| `database.query_time`      | Database query duration  | < 100ms  | < 300ms  | > 500ms   |
+| `database.slow_query`      | Queries > 500ms          | 0        | < 10/min | > 20/min  |
+| `ratelimit.violation`      | Rate limit hits (429)    | < 1%     | < 2%     | > 5%      |
 
 ### Database Metrics (Supabase)
 
-| Metric | Description | Healthy | Warning | Critical |
-|--------|-------------|---------|---------|----------|
-| `db_pool_utilization` | Connection pool usage | < 70% | < 90% | > 90% |
-| `db_pool_waiting_requests` | Queued connection requests | < 5 | < 20 | > 20 |
-| `db_pool_average_query_time` | Average query execution | < 100ms | < 300ms | > 500ms |
-| `db_cache_hit_rate` | Query cache efficiency | > 80% | > 60% | < 60% |
+| Metric                       | Description                | Healthy | Warning | Critical |
+| ---------------------------- | -------------------------- | ------- | ------- | -------- |
+| `db_pool_utilization`        | Connection pool usage      | < 70%   | < 90%   | > 90%    |
+| `db_pool_waiting_requests`   | Queued connection requests | < 5     | < 20    | > 20     |
+| `db_pool_average_query_time` | Average query execution    | < 100ms | < 300ms | > 500ms  |
+| `db_cache_hit_rate`          | Query cache efficiency     | > 80%   | > 60%   | < 60%    |
 
 ## Alert Response Procedures
 
 ### Alert Severity Levels
 
-| Severity | Response Time | Escalation | Examples |
-|----------|---------------|------------|----------|
-| **Critical** | Immediate | Page on-call | p95 > 3s, error rate > 5%, DB down |
-| **Error** | 15 minutes | Notify team | DB queries > 500ms, errors > 1% |
-| **Warning** | 1 hour | Monitor | p95 > 1s, searches > 500ms |
-| **Info** | 4 hours | Log only | Token usage high, cache miss rate |
+| Severity     | Response Time | Escalation   | Examples                           |
+| ------------ | ------------- | ------------ | ---------------------------------- |
+| **Critical** | Immediate     | Page on-call | p95 > 3s, error rate > 5%, DB down |
+| **Error**    | 15 minutes    | Notify team  | DB queries > 500ms, errors > 1%    |
+| **Warning**  | 1 hour        | Monitor      | p95 > 1s, searches > 500ms         |
+| **Info**     | 4 hours       | Log only     | Token usage high, cache miss rate  |
 
 ### Critical Alert: High Response Time (p95 > 3s)
 
 **Symptoms**:
+
 - Chat API p95 response time > 3000ms
 - Alert severity: Critical
 - User impact: Slow chat responses, poor UX
@@ -239,6 +253,7 @@ LIMIT 20;
 **Immediate Actions**:
 
 1. Check health endpoint for current metrics:
+
    ```bash
    curl https://api.oriva.ai/api/health | jq .metrics
    ```
@@ -246,6 +261,7 @@ LIMIT 20;
 2. Review Sentry performance dashboard for slow transactions
 
 3. Check database connection pool:
+
    ```bash
    curl https://api.oriva.ai/api/health | jq .checks.database
    ```
@@ -272,6 +288,7 @@ LIMIT 20;
 - **If traffic spike**: Scale function memory/timeout
 
 **Post-incident**:
+
 - Document root cause in incident report
 - Update runbook if new patterns discovered
 - Review and adjust alert thresholds if needed
@@ -279,6 +296,7 @@ LIMIT 20;
 ### Error Alert: High Error Rate (> 5%)
 
 **Symptoms**:
+
 - HTTP error rate > 5%
 - Alert severity: Critical/Error
 - User impact: Failed requests, broken functionality
@@ -286,6 +304,7 @@ LIMIT 20;
 **Immediate Actions**:
 
 1. Check recent alerts:
+
    ```bash
    curl https://api.oriva.ai/api/alerts?action=recent | jq
    ```
@@ -316,6 +335,7 @@ LIMIT 20;
 ### Warning Alert: Slow Knowledge Search (avg > 500ms)
 
 **Symptoms**:
+
 - Knowledge search average latency > 500ms
 - Alert severity: Warning
 - User impact: Slow search results
@@ -323,6 +343,7 @@ LIMIT 20;
 **Immediate Actions**:
 
 1. Check search performance metrics:
+
    ```sql
    SELECT * FROM analytics_knowledge_performance
    WHERE hour > NOW() - INTERVAL '1 hour'
@@ -350,6 +371,7 @@ LIMIT 20;
 ### Warning Alert: High Token Usage
 
 **Symptoms**:
+
 - Average tokens/request > 2000
 - Alert severity: Warning
 - User impact: Higher costs, potential rate limits
@@ -357,6 +379,7 @@ LIMIT 20;
 **Investigation Steps**:
 
 1. Check token usage by model:
+
    ```sql
    SELECT * FROM analytics_token_usage
    WHERE day > NOW() - INTERVAL '7 days'
@@ -380,14 +403,14 @@ LIMIT 20;
 
 ### Service Level Objectives
 
-| Metric | Target | Measurement Window |
-|--------|--------|-------------------|
-| **Availability** | 99.9% uptime | 30 days |
-| **Response Time (p95)** | < 1000ms | 24 hours |
-| **Response Time (p99)** | < 3000ms | 24 hours |
-| **Error Rate** | < 1% | 24 hours |
-| **Database Uptime** | 99.95% | 30 days |
-| **Knowledge Search Latency** | < 500ms avg | 24 hours |
+| Metric                       | Target       | Measurement Window |
+| ---------------------------- | ------------ | ------------------ |
+| **Availability**             | 99.9% uptime | 30 days            |
+| **Response Time (p95)**      | < 1000ms     | 24 hours           |
+| **Response Time (p99)**      | < 3000ms     | 24 hours           |
+| **Error Rate**               | < 1%         | 24 hours           |
+| **Database Uptime**          | 99.95%       | 30 days            |
+| **Knowledge Search Latency** | < 500ms avg  | 24 hours           |
 
 ### SLO Tracking Query
 
@@ -433,6 +456,7 @@ ORDER BY day DESC;
 ### Debugging Slow API Responses
 
 1. **Identify the slow endpoint**:
+
    ```bash
    curl https://api.oriva.ai/api/health | jq .metrics
    ```
@@ -443,6 +467,7 @@ ORDER BY day DESC;
    - Look for outliers and spans
 
 3. **Review database queries**:
+
    ```sql
    SELECT * FROM analytics_slow_operations
    WHERE generation_time_ms > 3000
@@ -451,6 +476,7 @@ ORDER BY day DESC;
    ```
 
 4. **Check connection pool status**:
+
    ```bash
    curl https://api.oriva.ai/api/health | jq .checks
    ```
@@ -468,11 +494,13 @@ ORDER BY day DESC;
    - Review error details and stack traces
 
 2. **Review Vercel function logs**:
+
    ```bash
    vercel logs [deployment-url]
    ```
 
 3. **Check database connectivity**:
+
    ```bash
    curl https://api.oriva.ai/api/health | jq .checks.database
    ```
@@ -493,11 +521,13 @@ ORDER BY day DESC;
 ### Debugging Database Performance
 
 1. **Check connection pool metrics**:
+
    ```bash
    curl https://api.oriva.ai/api/health
    ```
 
 2. **Review slow queries**:
+
    ```sql
    SELECT
      query,
@@ -510,6 +540,7 @@ ORDER BY day DESC;
    ```
 
 3. **Check for blocking queries**:
+
    ```sql
    SELECT
      pid,
@@ -532,16 +563,19 @@ ORDER BY day DESC;
 ### Issue: Database Connection Pool Exhausted
 
 **Symptoms**:
+
 - `db_pool_waiting_requests` > 20
 - Slow API responses
 - Timeouts on database queries
 
 **Causes**:
+
 - Traffic spike exceeding pool capacity
 - Connection leaks (not properly closed)
 - Slow queries holding connections
 
 **Resolution**:
+
 1. Increase `DB_POOL_MAX` environment variable (see [SCALING.md](./SCALING.md))
 2. Review code for connection leaks
 3. Optimize slow queries
@@ -550,16 +584,19 @@ ORDER BY day DESC;
 ### Issue: High Chat Response Times
 
 **Symptoms**:
+
 - `chat.response_time` p95 > 3000ms
 - User complaints about slow responses
 
 **Causes**:
+
 - OpenAI/Anthropic API latency
 - Large context window
 - Database query slow
 - Network latency
 
 **Resolution**:
+
 1. Check external API status pages
 2. Reduce context window size
 3. Implement response streaming
@@ -569,15 +606,18 @@ ORDER BY day DESC;
 ### Issue: Rate Limit Violations
 
 **Symptoms**:
+
 - High number of 429 responses
 - `ratelimit.violation` metric increasing
 
 **Causes**:
+
 - Legitimate user hitting limits
 - Automated scripts/bots
 - Rate limit config too strict
 
 **Resolution**:
+
 1. Review user patterns in logs
 2. Adjust rate limits for tier (see `api/middleware/userRateLimit.ts`)
 3. Implement progressive rate limiting
@@ -586,16 +626,19 @@ ORDER BY day DESC;
 ### Issue: High Token Usage Costs
 
 **Symptoms**:
+
 - `ai.tokens_used` trending upward
 - Higher than expected API costs
 
 **Causes**:
+
 - Verbose system prompts
 - Large context windows
 - Inefficient prompt engineering
 - Model selection (GPT-4 vs GPT-3.5)
 
 **Resolution**:
+
 1. Audit system prompts for verbosity
 2. Implement context pruning
 3. Use cheaper models for simple queries
@@ -604,24 +647,28 @@ ORDER BY day DESC;
 ## Maintenance and Review
 
 ### Daily Checks
+
 - [ ] Review error rate in Sentry
 - [ ] Check SLO compliance
 - [ ] Monitor token usage and costs
 - [ ] Review alert summary
 
 ### Weekly Checks
+
 - [ ] Analyze performance trends
 - [ ] Review slow query log
 - [ ] Check database connection pool trends
 - [ ] Capacity planning based on growth
 
 ### Monthly Checks
+
 - [ ] Review SLO compliance for month
 - [ ] Analyze error budget consumption
 - [ ] Performance regression analysis
 - [ ] Update alert thresholds based on patterns
 
 ### Version History
+
 - v1.0.0 (2025-09-29): Initial monitoring runbook (T079)
 
 ## Contacts

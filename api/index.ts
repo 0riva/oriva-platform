@@ -11,10 +11,7 @@ import winston from 'winston';
 import type { Logger } from 'winston';
 
 import type { AuthenticatedRequest, ApiMiddleware, ApiKeyInfo } from '../src/types/middleware/auth';
-import type {
-  ApiResponse,
-  PaginatedResponse
-} from '../src/types/api/responses';
+import type { ApiResponse, PaginatedResponse } from '../src/types/api/responses';
 import {
   AUDIENCE_TYPES,
   type AudienceType,
@@ -22,14 +19,14 @@ import {
   type Entry,
   type Group,
   type GroupMember,
-  type Profile
+  type Profile,
 } from '../src/types/database/entities';
 import type { MarketplaceApp } from '../src/types/database/marketplace';
 import {
   createAuthError,
   createDatabaseError,
   createValidationError,
-  toErrorResponse
+  toErrorResponse,
 } from '../src/types/errors';
 // Removed: createAuthMiddleware and createLegacyApiKeyMiddleware (not implemented)
 // import {
@@ -58,11 +55,13 @@ const logger: Logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    ...(process.env.NODE_ENV === 'production' ? [
-      new winston.transports.File({ filename: 'error.log', level: 'error' }),
-      new winston.transports.File({ filename: 'combined.log' })
-    ] : [])
-  ]
+    ...(process.env.NODE_ENV === 'production'
+      ? [
+          new winston.transports.File({ filename: 'error.log', level: 'error' }),
+          new winston.transports.File({ filename: 'combined.log' }),
+        ]
+      : []),
+  ],
 });
 
 const respondWithError = (
@@ -78,7 +77,7 @@ const respondWithError = (
     error: message,
     message,
     code,
-    details
+    details,
   });
 };
 
@@ -92,7 +91,7 @@ const toNumber = (value: unknown, fallback: number): number => {
 };
 
 const toStringParam = (value: unknown, fallback = ''): string =>
-  typeof value === 'string' ? value : Array.isArray(value) ? value[0] ?? fallback : fallback;
+  typeof value === 'string' ? value : Array.isArray(value) ? (value[0] ?? fallback) : fallback;
 
 const getLimit = (value: unknown, fallback: number, max?: number): number => {
   const parsed = toNumber(value, fallback);
@@ -108,7 +107,8 @@ const getOffset = (value: unknown, fallback: number): number => {
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-type ProfileRecord = Pick<Profile,
+type ProfileRecord = Pick<
+  Profile,
   | 'id'
   | 'username'
   | 'display_name'
@@ -190,14 +190,13 @@ type AuthenticatedHandler = (
   keyInfo: ApiKeyInfo
 ) => Promise<void> | void;
 
-const withAuthContext = (handler: AuthenticatedHandler) =>
-  async (req: Request, res: Response) => {
-    const context = getAuthContext(req, res);
-    if (!context) {
-      return;
-    }
-    await handler(context.authReq, res, context.keyInfo);
-  };
+const withAuthContext = (handler: AuthenticatedHandler) => async (req: Request, res: Response) => {
+  const context = getAuthContext(req, res);
+  if (!context) {
+    return;
+  }
+  await handler(context.authReq, res, context.keyInfo);
+};
 
 // Helper function to refresh CORS cache
 async function refreshCorsCache() {
@@ -215,7 +214,7 @@ async function refreshCorsCache() {
 
     // Extract domains from execution URLs
     const appDomains = apps
-      .map(app => {
+      .map((app) => {
         try {
           const url = new globalThis.URL(app.execution_url);
           return url.origin;
@@ -230,13 +229,13 @@ async function refreshCorsCache() {
       // Core Oriva domains (static origins)
       ...STATIC_CORS_ORIGINS,
       // Registered 3rd party app domains
-      ...appDomains
+      ...appDomains,
     ]);
     corsOriginCache.lastUpdated = Date.now();
 
     logger.info('CORS: Cache refreshed', {
       totalOrigins: corsOriginCache.data.size,
-      appOrigins: appDomains.length
+      appOrigins: appDomains.length,
     });
     return true;
   } catch (error) {
@@ -253,87 +252,94 @@ const STATIC_CORS_ORIGINS = process.env.CORS_ORIGIN?.split(',') || [
   'https://oriva.io',
   'https://www.oriva.io',
   'https://app.oriva.io',
-  'http://localhost:8081'  // Added for Oriva Core team development
+  'http://localhost:8081', // Added for Oriva Core team development
 ];
 
 // CORS cache for marketplace apps (loaded at startup)
 const corsOriginCache = {
   data: new Set(STATIC_CORS_ORIGINS), // Initialize with static origins
   lastUpdated: 0,
-  CACHE_TTL: 5 * 60 * 1000 // 5 minutes
+  CACHE_TTL: 5 * 60 * 1000, // 5 minutes
 };
 
 // Initialize CORS cache on startup
-refreshCorsCache().then(() => {
-  console.log('✅ CORS cache initialized with registered app domains');
-}).catch(error => {
-  console.warn('⚠️ Failed to initialize CORS cache, using static origins only:', error.message);
-  // Ensure static origins are still in cache if refresh failed
-  STATIC_CORS_ORIGINS.forEach(origin => corsOriginCache.data.add(origin));
-});
+refreshCorsCache()
+  .then(() => {
+    console.log('✅ CORS cache initialized with registered app domains');
+  })
+  .catch((error) => {
+    console.warn('⚠️ Failed to initialize CORS cache, using static origins only:', error.message);
+    // Ensure static origins are still in cache if refresh failed
+    STATIC_CORS_ORIGINS.forEach((origin) => corsOriginCache.data.add(origin));
+  });
 
 // Dynamic CORS for marketplace applications
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
 
-    // Development: Allow localhost
-    if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
-      return callback(null, true);
-    }
-
-    // Check against registered marketplace applications
-    if (corsOriginCache.data.has(origin)) {
-      console.log('✅ CORS: Registered marketplace origin allowed:', origin);
-      return callback(null, true);
-    }
-
-    // Other core origins - ALWAYS allowed (static, no dependencies)
-    const coreOrigins = [
-      'https://oriva.io',
-      'https://www.oriva.io',
-      'https://app.oriva.io'
-    ];
-
-    if (coreOrigins.includes(origin)) {
-      console.log('✅ CORS: Core origin allowed:', origin);
-      return callback(null, true);
-    }
-
-    // Check marketplace cache (synchronous only) - with safety checks
-    try {
-      if (corsOriginCache && corsOriginCache.data && corsOriginCache.data.has && corsOriginCache.data.has(origin)) {
-        console.log('✅ CORS: Marketplace origin allowed:', origin);
+      // Development: Allow localhost
+      if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
         return callback(null, true);
       }
-    } catch (error) {
-      console.error('❌ CORS: Cache check failed:', getErrorMessage(error));
-    }
 
-    // Log rejected origins for debugging
-    console.warn('❌ CORS: Origin rejected:', {
-      origin,
-      cacheExists: !!corsOriginCache,
-      cacheDataExists: !!corsOriginCache?.data,
-      cacheSize: corsOriginCache?.data?.size || 0,
-      cacheAge: corsOriginCache?.lastUpdated ? Date.now() - corsOriginCache.lastUpdated : 'unknown'
-    });
-    return callback(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Extension-ID',
-    'X-Client-ID',
-    'X-API-Key',
-    'User-Agent',
-    'X-User-ID',
-    'X-Request-ID'
-  ],
-  credentials: true
-}));
+      // Check against registered marketplace applications
+      if (corsOriginCache.data.has(origin)) {
+        console.log('✅ CORS: Registered marketplace origin allowed:', origin);
+        return callback(null, true);
+      }
+
+      // Other core origins - ALWAYS allowed (static, no dependencies)
+      const coreOrigins = ['https://oriva.io', 'https://www.oriva.io', 'https://app.oriva.io'];
+
+      if (coreOrigins.includes(origin)) {
+        console.log('✅ CORS: Core origin allowed:', origin);
+        return callback(null, true);
+      }
+
+      // Check marketplace cache (synchronous only) - with safety checks
+      try {
+        if (
+          corsOriginCache &&
+          corsOriginCache.data &&
+          corsOriginCache.data.has &&
+          corsOriginCache.data.has(origin)
+        ) {
+          console.log('✅ CORS: Marketplace origin allowed:', origin);
+          return callback(null, true);
+        }
+      } catch (error) {
+        console.error('❌ CORS: Cache check failed:', getErrorMessage(error));
+      }
+
+      // Log rejected origins for debugging
+      console.warn('❌ CORS: Origin rejected:', {
+        origin,
+        cacheExists: !!corsOriginCache,
+        cacheDataExists: !!corsOriginCache?.data,
+        cacheSize: corsOriginCache?.data?.size || 0,
+        cacheAge: corsOriginCache?.lastUpdated
+          ? Date.now() - corsOriginCache.lastUpdated
+          : 'unknown',
+      });
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Extension-ID',
+      'X-Client-ID',
+      'X-API-Key',
+      'User-Agent',
+      'X-User-ID',
+      'X-Request-ID',
+    ],
+    credentials: true,
+  })
+);
 
 // Ensure responses include both legacy and new contract fields
 app.use((req, res, next) => {
@@ -375,13 +381,22 @@ app.use((req, res, next) => {
 
     if (requestedHeaders && origin) {
       const currentAllowedHeaders = [
-        'content-type', 'authorization', 'x-extension-id', 'x-client-id',
-        'x-api-key', 'user-agent', 'x-user-id', 'x-request-id'
+        'content-type',
+        'authorization',
+        'x-extension-id',
+        'x-client-id',
+        'x-api-key',
+        'user-agent',
+        'x-user-id',
+        'x-request-id',
       ];
 
-      const requestedHeadersArray = requestedHeaders.toLowerCase().split(',').map(h => h.trim());
-      const blockedHeaders = requestedHeadersArray.filter(header =>
-        !currentAllowedHeaders.includes(header)
+      const requestedHeadersArray = requestedHeaders
+        .toLowerCase()
+        .split(',')
+        .map((h) => h.trim());
+      const blockedHeaders = requestedHeadersArray.filter(
+        (header) => !currentAllowedHeaders.includes(header)
       );
 
       if (blockedHeaders.length > 0) {
@@ -390,7 +405,7 @@ app.use((req, res, next) => {
           requestedHeaders: requestedHeadersArray,
           blockedHeaders,
           timestamp: new Date().toISOString(),
-          userAgent: req.headers['user-agent']
+          userAgent: req.headers['user-agent'],
         });
       }
     }
@@ -406,7 +421,7 @@ const limiter = rateLimit({
   max: API_RATE_LIMIT_MAX,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
 
@@ -421,7 +436,7 @@ app.use((req, res, next) => {
       status: res.statusCode,
       duration: `${duration}ms`,
       userAgent: req.get('User-Agent'),
-      ip: req.ip
+      ip: req.ip,
     });
   });
   next();
@@ -437,9 +452,13 @@ console.log('🔍 Environment Variables Debug:', {
   hasSupabaseUrl: !!supabaseUrl,
   hasServiceKey: !!supabaseServiceKey,
   hasAnonKey: !!supabaseAnonKey,
-  supabaseUrlSource: process.env.SUPABASE_URL ? 'SUPABASE_URL' : (process.env.EXPO_PUBLIC_SUPABASE_URL ? 'EXPO_PUBLIC_SUPABASE_URL' : 'MISSING'),
+  supabaseUrlSource: process.env.SUPABASE_URL
+    ? 'SUPABASE_URL'
+    : process.env.EXPO_PUBLIC_SUPABASE_URL
+      ? 'EXPO_PUBLIC_SUPABASE_URL'
+      : 'MISSING',
   nodeEnv: process.env.NODE_ENV,
-  supabaseUrlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING'
+  supabaseUrlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING',
 });
 
 if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
@@ -471,7 +490,10 @@ const RATE_LIMIT_MAX = 30; // 30 requests per minute per IP for dev endpoints
 
 const devRateLimiter: ApiMiddleware = (req, res, next) => {
   const now = Date.now();
-  const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  const ip =
+    req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
+    req.socket.remoteAddress ||
+    'unknown';
   const state = rateLimitState.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
 
   if (now > state.resetAt) {
@@ -510,7 +532,7 @@ const requireAdminToken: ApiMiddleware = (req, res, next) => {
     permissions: ['admin:full'],
     usageCount: 0,
     isActive: true,
-    authType: 'api_key' as const
+    authType: 'api_key' as const,
   };
   next();
 };
@@ -518,7 +540,10 @@ const requireAdminToken: ApiMiddleware = (req, res, next) => {
 // API Key validation using Supabase
 const hashAPIKey = async (key: string): Promise<string> => {
   try {
-    console.log('🔐 DEBUG: Starting hashAPIKey', { keyLength: key.length, keyPrefix: key.substring(0, 20) });
+    console.log('🔐 DEBUG: Starting hashAPIKey', {
+      keyLength: key.length,
+      keyPrefix: key.substring(0, 20),
+    });
 
     // Check if crypto.subtle is available
     if (!webcrypto?.subtle) {
@@ -530,9 +555,12 @@ const hashAPIKey = async (key: string): Promise<string> => {
     const data = encoder.encode(key);
     const hashBuffer = await webcrypto.subtle.digest('SHA-256', data);
     const hashArray = new Uint8Array(hashBuffer);
-    const hash = Array.from(hashArray, byte => byte.toString(16).padStart(2, '0')).join('');
+    const hash = Array.from(hashArray, (byte) => byte.toString(16).padStart(2, '0')).join('');
 
-    console.log('✅ DEBUG: hashAPIKey success', { hashLength: hash.length, hashPrefix: hash.substring(0, 16) });
+    console.log('✅ DEBUG: hashAPIKey success', {
+      hashLength: hash.length,
+      hashPrefix: hash.substring(0, 16),
+    });
     return hash;
   } catch (error) {
     console.error('❌ DEBUG: hashAPIKey failed', { error: getErrorMessage(error) });
@@ -541,7 +569,11 @@ const hashAPIKey = async (key: string): Promise<string> => {
 };
 
 // Import authentication and rate limiting middleware
-import { createAuthMiddleware, createOptionalAuthMiddleware, type ExpressAuthenticatedRequest } from '../src/middleware/auth';
+import {
+  createAuthMiddleware,
+  createOptionalAuthMiddleware,
+  type ExpressAuthenticatedRequest,
+} from '../src/middleware/auth';
 import { apiRateLimiter } from '../src/middleware/rateLimiter';
 
 // Authentication middleware (includes rate limiting)
@@ -558,9 +590,7 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
     }
 
     // Support both "Bearer token" and "token" formats
-    const apiKey = authHeader.startsWith('Bearer ')
-      ? authHeader.substring(7)
-      : authHeader;
+    const apiKey = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
 
     if (!apiKey) {
       respondWithError(res, 401, 'AUTH_REQUIRED', 'API key required');
@@ -603,7 +633,7 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
       usageCount: apiKeyRecord.usage_count || 0,
       isActive: apiKeyRecord.is_active,
       authType: 'api_key',
-      lastUsedAt: apiKeyRecord.last_used_at || undefined
+      lastUsedAt: apiKeyRecord.last_used_at || undefined,
     };
 
     // Update usage count and last_used_at (fire and forget)
@@ -611,17 +641,20 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
       .from('developer_api_keys')
       .update({
         usage_count: (apiKeyRecord.usage_count || 0) + 1,
-        last_used_at: new Date().toISOString()
+        last_used_at: new Date().toISOString(),
       })
       .eq('id', apiKeyRecord.id)
-      .then(() => {}, (err) => console.warn('Failed to update API key usage:', err));
+      .then(
+        () => {},
+        (err) => console.warn('Failed to update API key usage:', err)
+      );
 
     next();
   } catch (error) {
     logger.error('API key validation error', { error: getErrorMessage(error) });
     respondWithError(res, 500, 'AUTH_ERROR', 'Authentication error');
   }
-}
+};
 
 // Apply general API rate limiting to all routes
 app.use('/api', apiRateLimiter);
@@ -638,8 +671,8 @@ app.get('/health', (req, res) => {
       groups: '/api/v1/groups/*',
       user: '/api/v1/user/*',
       entries: '/api/v1/entries/*',
-      templates: '/api/v1/templates/*'
-    }
+      templates: '/api/v1/templates/*',
+    },
   });
 });
 
@@ -651,7 +684,7 @@ app.get('/api/v1/health', (req, res) => {
     version: '1.0.4',
     features: ['marketplace', 'profiles', 'groups', 'privacy-first'],
     deployment: 'fixed-routing',
-    test: 'routing-fix'
+    test: 'routing-fix',
   });
 });
 
@@ -661,10 +694,9 @@ app.get('/api/v1/test', (req, res) => {
     ok: true,
     success: true,
     message: 'API routing is working!',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
-
 
 // Debug endpoint to check CORS cache state (admin only)
 app.get('/api/v1/debug/cors', requireAdminToken, async (req, res) => {
@@ -691,24 +723,24 @@ app.get('/api/v1/debug/cors', requireAdminToken, async (req, res) => {
       timestamp: new Date().toISOString(),
       supabase: {
         connected: !testError,
-        error: testError?.message || null
+        error: testError?.message || null,
       },
       corsCache: {
         size: corsOriginCache.data.size,
         lastUpdated: new Date(corsOriginCache.lastUpdated).toISOString(),
         ageMs: cacheAge,
-        origins: cacheOrigins
+        origins: cacheOrigins,
       },
       marketplace: {
         totalApps: marketplaceApps?.length || 0,
         apps: marketplaceApps || [],
-        error: marketplaceError?.message || null
+        error: marketplaceError?.message || null,
       },
       environment: {
         hasSupabaseUrl: !!process.env.SUPABASE_URL || !!process.env.EXPO_PUBLIC_SUPABASE_URL,
         hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        nodeEnv: process.env.NODE_ENV
-      }
+        nodeEnv: process.env.NODE_ENV,
+      },
     });
   } catch (error) {
     logger.error('CORS debug endpoint error', { error });
@@ -725,7 +757,7 @@ const validateRequest: ApiMiddleware = (req, res, next) => {
   if (!errors.isEmpty()) {
     const details = errors
       .array()
-      .map(error => `${'param' in error ? error.param : 'unknown'}: ${error.msg}`);
+      .map((error) => `${'param' in error ? error.param : 'unknown'}: ${error.msg}`);
     const validationError = createValidationError('Validation failed', details);
     const status = validationError.status ?? 400;
     res.status(status).json(toErrorResponse(validationError));
@@ -743,11 +775,11 @@ const generateAPIKey = (prefix = 'oriva_pk_live_') => {
 
 // Backward compatibility mapping for old permission format
 const LEGACY_PERMISSION_MAPPING: Record<string, readonly string[]> = {
-  'profiles': ['user:read', 'profiles:read', 'profiles:write'],
-  'groups': ['groups:read', 'groups:write'],
-  'marketplace': ['marketplace:read'],
-  'entries': ['entries:read', 'entries:write'],
-  'templates': ['templates:read', 'templates:write']
+  profiles: ['user:read', 'profiles:read', 'profiles:write'],
+  groups: ['groups:read', 'groups:write'],
+  marketplace: ['marketplace:read'],
+  entries: ['entries:read', 'entries:write'],
+  templates: ['templates:read', 'templates:write'],
 };
 
 // Helper function to expand legacy permissions to granular permissions
@@ -758,7 +790,7 @@ const expandPermissions = (permissions: unknown[]): string[] => {
     return [];
   }
 
-  permissions.forEach(permission => {
+  permissions.forEach((permission) => {
     const key = String(permission);
     const legacyScopes = LEGACY_PERMISSION_MAPPING[key];
 
@@ -782,7 +814,11 @@ const AVAILABLE_PERMISSIONS = [
 
   // Profile permissions
   { scope: 'profiles:read', description: 'Read authorized user profiles', category: 'Profiles' },
-  { scope: 'profiles:write', description: 'Switch between authorized profiles', category: 'Profiles' },
+  {
+    scope: 'profiles:write',
+    description: 'Switch between authorized profiles',
+    category: 'Profiles',
+  },
 
   // Group permissions
   { scope: 'groups:read', description: 'Read user group memberships', category: 'Groups' },
@@ -798,7 +834,11 @@ const AVAILABLE_PERMISSIONS = [
   { scope: 'templates:write', description: 'Create and update templates', category: 'Templates' },
 
   // Marketplace permissions
-  { scope: 'marketplace:read', description: 'Browse public marketplace apps', category: 'Marketplace' },
+  {
+    scope: 'marketplace:read',
+    description: 'Browse public marketplace apps',
+    category: 'Marketplace',
+  },
 
   // Storage permissions
   { scope: 'storage:read', description: 'Read app-specific data only', category: 'Storage' },
@@ -807,7 +847,7 @@ const AVAILABLE_PERMISSIONS = [
   // UI permissions
   { scope: 'ui:notifications', description: 'Show notifications to user', category: 'UI' },
   { scope: 'ui:modals', description: 'Display modals', category: 'UI' },
-  { scope: 'ui:navigation', description: 'Navigate between screens', category: 'UI' }
+  { scope: 'ui:navigation', description: 'Navigate between screens', category: 'UI' },
 ];
 
 // Get available permissions for developer UI
@@ -815,19 +855,19 @@ app.get('/api/v1/dev/permissions', (req, res) => {
   res.json({
     ok: true,
     success: true,
-    data: AVAILABLE_PERMISSIONS
+    data: AVAILABLE_PERMISSIONS,
   });
 });
 
 // =============================================================================
 // 🚨 SECURITY NOTICE: API KEY MANAGEMENT
 // =============================================================================
-// 
+//
 // NEVER expose API key generation endpoints in public APIs!
-// 
+//
 // The following endpoints have been REMOVED for security:
 //   ❌ POST /api/v1/dev/generate-live-key - Key generation
-//   ❌ POST /api/v1/dev/generate-key - Legacy key generation  
+//   ❌ POST /api/v1/dev/generate-key - Legacy key generation
 //   ❌ GET /api/v1/dev/keys - List all keys
 //   ❌ POST /api/v1/dev/revoke-key - Revoke keys
 //
@@ -855,50 +895,56 @@ app.get('/api/v1/dev/permissions', (req, res) => {
 console.log('🔑 API keys will be validated against Supabase database');
 
 // User endpoints
-app.get('/api/v1/user/me', validateApiKey, withAuthContext(async (_req, res, keyInfo) => {
-  try {
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id')
-      .eq('account_id', keyInfo.userId)
-      .eq('is_active', true)
-      .eq('is_default', true)
-      .single();
+app.get(
+  '/api/v1/user/me',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(
+          'id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id'
+        )
+        .eq('account_id', keyInfo.userId)
+        .eq('is_active', true)
+        .eq('is_default', true)
+        .single();
 
-    if (error || !profile) {
-      logger.error('Failed to fetch user profile', { error });
-      respondWithError(res, 500, 'USER_PROFILE_ERROR', 'Failed to fetch user profile');
-      return;
-    }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: {
-        id: profile.account_id,
-        username: profile.username,
-        displayName: profile.display_name || profile.username,
-        email: keyInfo.authType === 'supabase_auth' ? keyInfo.name : null,
-        bio: profile.bio,
-        location: profile.location,
-        website: profile.website_url,
-        avatar: profile.avatar_url,
-        createdAt: profile.created_at,
-        updatedAt: profile.updated_at,
-        apiKeyInfo: {
-          keyId: keyInfo.id,
-          name: keyInfo.name,
-          userId: keyInfo.userId,
-          permissions: keyInfo.permissions,
-          usageCount: keyInfo.usageCount
-        }
+      if (error || !profile) {
+        logger.error('Failed to fetch user profile', { error });
+        respondWithError(res, 500, 'USER_PROFILE_ERROR', 'Failed to fetch user profile');
+        return;
       }
-    });
-  } catch (error) {
-    logger.error('User profile endpoint error', { error });
-    respondWithError(res, 500, 'INTERNAL_ERROR', 'Internal server error');
-  }
-}));
+
+      res.json({
+        ok: true,
+        success: true,
+        data: {
+          id: profile.account_id,
+          username: profile.username,
+          displayName: profile.display_name || profile.username,
+          email: keyInfo.authType === 'supabase_auth' ? keyInfo.name : null,
+          bio: profile.bio,
+          location: profile.location,
+          website: profile.website_url,
+          avatar: profile.avatar_url,
+          createdAt: profile.created_at,
+          updatedAt: profile.updated_at,
+          apiKeyInfo: {
+            keyId: keyInfo.id,
+            name: keyInfo.name,
+            userId: keyInfo.userId,
+            permissions: keyInfo.permissions,
+            usageCount: keyInfo.usageCount,
+          },
+        },
+      });
+    } catch (error) {
+      logger.error('User profile endpoint error', { error });
+      respondWithError(res, 500, 'INTERNAL_ERROR', 'Internal server error');
+    }
+  })
+);
 
 // Alternative plural endpoint for compatibility
 app.get('/api/v1/users/me', validateApiKey, async (req, res) => {
@@ -925,10 +971,10 @@ app.get('/api/v1/sessions', validateApiKey, async (req, res) => {
           page: 1,
           limit: 20,
           total: 0,
-          totalPages: 0
-        }
+          totalPages: 0,
+        },
       },
-      message: 'Sessions feature not yet implemented'
+      message: 'Sessions feature not yet implemented',
     });
   } catch (error) {
     logger.error('Failed to fetch sessions', { error });
@@ -944,7 +990,7 @@ app.get('/api/v1/sessions/upcoming', validateApiKey, async (req, res) => {
       ok: true,
       success: true,
       data: [],
-      message: 'Sessions feature not yet implemented'
+      message: 'Sessions feature not yet implemented',
     });
   } catch (error) {
     logger.error('Failed to fetch upcoming sessions', { error });
@@ -957,13 +1003,17 @@ app.get('/api/v1/sessions/upcoming', validateApiKey, async (req, res) => {
 // =============================================================================
 
 // Get team members
-app.get('/api/v1/team/members', validateApiKey, withAuthContext(async (_req, res, keyInfo) => {
-  try {
-    // Team concept maps to groups in Oriva Core
-    // Return user's group memberships as "team members"
-    const { data: groupMemberships, error } = await supabase
-      .from('group_members')
-      .select(`
+app.get(
+  '/api/v1/team/members',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      // Team concept maps to groups in Oriva Core
+      // Return user's group memberships as "team members"
+      const { data: groupMemberships, error } = await supabase
+        .from('group_members')
+        .select(
+          `
         groups!inner (
           id,
           name
@@ -976,290 +1026,326 @@ app.get('/api/v1/team/members', validateApiKey, withAuthContext(async (_req, res
         ),
         role,
         joined_at
-      `)
-      .eq('profile_id', keyInfo.userId)
-      .eq('is_active', true);
+      `
+        )
+        .eq('profile_id', keyInfo.userId)
+        .eq('is_active', true);
 
-    if (error) {
-      logger.error('Failed to fetch team members', { error, userId: keyInfo.userId });
+      if (error) {
+        logger.error('Failed to fetch team members', { error, userId: keyInfo.userId });
+        res.json({
+          ok: true,
+          success: true,
+          data: [],
+          meta: {
+            total: 0,
+            roles: [],
+          },
+          message: 'No team memberships found',
+        });
+        return;
+      }
+
+      type GroupMembershipRecord = {
+        role: string;
+        joined_at: string;
+        profiles: {
+          id: string;
+          display_name: string | null;
+          username: string;
+          avatar_url: string | null;
+        };
+        groups: {
+          name: string;
+        };
+      };
+
+      const memberships = (groupMemberships ?? []) as unknown as GroupMembershipRecord[];
+
+      const teamMembers = memberships.map((member) => ({
+        memberId: member.profiles.id,
+        name: member.profiles.display_name || member.profiles.username,
+        email: null as string | null,
+        role: member.role,
+        avatar: member.profiles.avatar_url,
+        status: 'active' as const,
+        joinedAt: member.joined_at,
+        groupName: member.groups.name,
+      }));
+
+      const roles = [...new Set(teamMembers.map((member) => member.role))];
+
       res.json({
         ok: true,
         success: true,
-        data: [],
+        data: teamMembers,
         meta: {
-          total: 0,
-          roles: []
+          total: teamMembers.length,
+          roles,
         },
-        message: 'No team memberships found'
       });
-      return;
+    } catch (error) {
+      logger.error('Failed to fetch team members', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'TEAM_MEMBERS_ERROR', 'Failed to fetch team members');
     }
-
-    type GroupMembershipRecord = {
-      role: string;
-      joined_at: string;
-      profiles: {
-        id: string;
-        display_name: string | null;
-        username: string;
-        avatar_url: string | null;
-      };
-      groups: {
-        name: string;
-      };
-    };
-
-    const memberships = ((groupMemberships ?? []) as unknown) as GroupMembershipRecord[];
-
-    const teamMembers = memberships.map(member => ({
-      memberId: member.profiles.id,
-      name: member.profiles.display_name || member.profiles.username,
-      email: null as string | null,
-      role: member.role,
-      avatar: member.profiles.avatar_url,
-      status: 'active' as const,
-      joinedAt: member.joined_at,
-      groupName: member.groups.name
-    }));
-
-    const roles = [...new Set(teamMembers.map(member => member.role))];
-
-    res.json({
-      ok: true,
-      success: true,
-      data: teamMembers,
-      meta: {
-        total: teamMembers.length,
-        roles
-      }
-    });
-  } catch (error) {
-    logger.error('Failed to fetch team members', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'TEAM_MEMBERS_ERROR', 'Failed to fetch team members');
-  }
-}));
+  })
+);
 
 // =============================================================================
 // ANALYTICS ENDPOINTS
 // =============================================================================
 
 // Get analytics summary
-app.get('/api/v1/analytics/summary', validateApiKey, withAuthContext(async (_req, res, keyInfo) => {
-  try {
-    // Get real analytics from database
-    const [
-      entriesCount,
-      responsesCount,
-      groupsCount,
-      installedAppsCount
-    ] = await Promise.all([
-      supabase.from('entries').select('*', { count: 'exact', head: true }).eq('profile_id', keyInfo.userId),
-      supabase.from('responses').select('*', { count: 'exact', head: true }).eq('profile_id', keyInfo.userId),
-      supabase.from('group_members').select('*', { count: 'exact', head: true }).eq('profile_id', keyInfo.userId).eq('is_active', true),
-      supabase.from('user_app_installs').select('*', { count: 'exact', head: true }).eq('user_id', keyInfo.userId).eq('is_active', true)
-    ]);
+app.get(
+  '/api/v1/analytics/summary',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      // Get real analytics from database
+      const [entriesCount, responsesCount, groupsCount, installedAppsCount] = await Promise.all([
+        supabase
+          .from('entries')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', keyInfo.userId),
+        supabase
+          .from('responses')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', keyInfo.userId),
+        supabase
+          .from('group_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', keyInfo.userId)
+          .eq('is_active', true),
+        supabase
+          .from('user_app_installs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', keyInfo.userId)
+          .eq('is_active', true),
+      ]);
 
-    const analytics = {
-      overview: {
-        totalEntries: entriesCount.count || 0,
-        totalResponses: responsesCount.count || 0,
-        totalGroups: groupsCount.count || 0,
-        installedApps: installedAppsCount.count || 0
-      },
-      metrics: {
-        entriesGrowth: 'N/A', // Would need historical data
-        responseGrowth: 'N/A',
-        groupActivity: 'N/A',
-        appUsage: 'N/A'
-      },
-      recentActivity: [], // Would need activity log table
-      timeRange: {
-        start: new Date(Date.now() - 604800000).toISOString(), // 7 days ago
-        end: new Date().toISOString()
-      }
-    };
+      const analytics = {
+        overview: {
+          totalEntries: entriesCount.count || 0,
+          totalResponses: responsesCount.count || 0,
+          totalGroups: groupsCount.count || 0,
+          installedApps: installedAppsCount.count || 0,
+        },
+        metrics: {
+          entriesGrowth: 'N/A', // Would need historical data
+          responseGrowth: 'N/A',
+          groupActivity: 'N/A',
+          appUsage: 'N/A',
+        },
+        recentActivity: [], // Would need activity log table
+        timeRange: {
+          start: new Date(Date.now() - 604800000).toISOString(), // 7 days ago
+          end: new Date().toISOString(),
+        },
+      };
 
-    res.json({
-      ok: true,
-      success: true,
-      data: analytics,
-      message: 'Real analytics based on user data'
-    });
-  } catch (error) {
-    logger.error('Failed to fetch analytics summary', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'ANALYTICS_ERROR', 'Failed to fetch analytics summary');
-  }
-}));
+      res.json({
+        ok: true,
+        success: true,
+        data: analytics,
+        message: 'Real analytics based on user data',
+      });
+    } catch (error) {
+      logger.error('Failed to fetch analytics summary', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'ANALYTICS_ERROR', 'Failed to fetch analytics summary');
+    }
+  })
+);
 
 // =============================================================================
 // AUTH ENDPOINTS
 // =============================================================================
 
 // Get auth profile (similar to user/me but focused on auth data)
-app.get('/api/v1/auth/profile', validateAuth, withAuthContext((_, res, keyInfo) => {
-  try {
-    res.json({
-      ok: true,
-      success: true,
-      data: {
-        id: keyInfo.userId,
-        email: keyInfo.authType === 'supabase_auth' ? keyInfo.name : null,
-        displayName: keyInfo.name,
-        avatar: null,
-        authType: keyInfo.authType,
-        permissions: keyInfo.permissions,
-        lastLogin: new Date().toISOString(),
-        accountStatus: 'active',
-        twoFactorEnabled: false,
-        emailVerified: true
-      }
-    });
-  } catch (error) {
-    logger.error('Failed to fetch auth profile', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'AUTH_PROFILE_ERROR', 'Failed to fetch auth profile');
-  }
-}));
+app.get(
+  '/api/v1/auth/profile',
+  validateAuth,
+  withAuthContext((_, res, keyInfo) => {
+    try {
+      res.json({
+        ok: true,
+        success: true,
+        data: {
+          id: keyInfo.userId,
+          email: keyInfo.authType === 'supabase_auth' ? keyInfo.name : null,
+          displayName: keyInfo.name,
+          avatar: null,
+          authType: keyInfo.authType,
+          permissions: keyInfo.permissions,
+          lastLogin: new Date().toISOString(),
+          accountStatus: 'active',
+          twoFactorEnabled: false,
+          emailVerified: true,
+        },
+      });
+    } catch (error) {
+      logger.error('Failed to fetch auth profile', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'AUTH_PROFILE_ERROR', 'Failed to fetch auth profile');
+    }
+  })
+);
 
 // =============================================================================
 // PROFILE ENDPOINTS
 // =============================================================================
 
 // Get available profiles for the extension
-app.get('/api/v1/profiles/available', validateApiKey, withAuthContext(async (_req, res, keyInfo) => {
-  try {
-    // Get real profiles from Supabase database (excluding anonymous profiles for third-party apps)
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select(
-        'id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id, is_active, is_default'
-      )
-      .eq('account_id', keyInfo.userId)
-      .eq('is_active', true)
-      .eq('is_anonymous', false)
-      .order('created_at', { ascending: true });
+app.get(
+  '/api/v1/profiles/available',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      // Get real profiles from Supabase database (excluding anonymous profiles for third-party apps)
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select(
+          'id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id, is_active, is_default'
+        )
+        .eq('account_id', keyInfo.userId)
+        .eq('is_active', true)
+        .eq('is_anonymous', false)
+        .order('created_at', { ascending: true });
 
-    if (error) {
-      logger.error('Failed to fetch profiles from database', { error, userId: keyInfo.userId });
-      const fallbackProfiles = [
-        {
-          profileId: 'ext_fallback_profile',
-          profileName: 'My Profile',
-          isActive: true,
-          avatar: null,
-          isDefault: true
-        }
-      ];
+      if (error) {
+        logger.error('Failed to fetch profiles from database', { error, userId: keyInfo.userId });
+        const fallbackProfiles = [
+          {
+            profileId: 'ext_fallback_profile',
+            profileName: 'My Profile',
+            isActive: true,
+            avatar: null,
+            isDefault: true,
+          },
+        ];
 
-    res.json({
-      ok: true,
-      success: true,
-      data: fallbackProfiles,
-      message: 'Using fallback data due to database error'
-    });
-      return;
-    }
+        res.json({
+          ok: true,
+          success: true,
+          data: fallbackProfiles,
+          message: 'Using fallback data due to database error',
+        });
+        return;
+      }
 
-    // Transform database profiles to API format
-    type ProfileRecord = {
-      id: string;
-      display_name: string | null;
-      username: string | null;
-      avatar_url: string | null;
-      is_active: boolean;
-      is_default: boolean;
-    };
-
-    const profileRecords = (profiles ?? []) as ProfileRecord[];
-    const transformedProfiles: ProfileSummary[] = profileRecords.map(profile => ({
-      profileId: profile.id,
-      profileName: profile.display_name ?? profile.username ?? 'Unnamed Profile',
-      isActive: Boolean(profile.is_active),
-      avatar: profile.avatar_url ?? null,
-      isDefault: Boolean(profile.is_default)
-    }));
-
-    const response: ApiResponse<ProfileSummary[]> = {
-      ok: true,
-      success: true,
-      data: transformedProfiles
-    };
-
-    res.json(response);
-  } catch (error) {
-    logger.error('Failed to fetch available profiles', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to fetch profiles');
-  }
-}));
-
-// Get currently active profile
-app.get('/api/v1/profiles/active', validateApiKey, withAuthContext(async (_req, res, keyInfo) => {
-  try {
-    // Get the default (primary) profile from Supabase database (excluding anonymous profiles for third-party apps)
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id, is_active, is_default')
-      .eq('account_id', keyInfo.userId)
-      .eq('is_active', true)
-      .eq('is_default', true)
-      .eq('is_anonymous', false)
-      .single();
-
-    if (error) {
-      logger.error('Failed to fetch active profile from database', { error, userId: keyInfo.userId });
-      const fallbackProfile = {
-        profileId: 'ext_fallback_active',
-        profileName: 'My Active Profile',
-        isActive: true,
-        avatar: null,
-        isDefault: true
+      // Transform database profiles to API format
+      type ProfileRecord = {
+        id: string;
+        display_name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+        is_active: boolean;
+        is_default: boolean;
       };
 
-      res.json({
+      const profileRecords = (profiles ?? []) as ProfileRecord[];
+      const transformedProfiles: ProfileSummary[] = profileRecords.map((profile) => ({
+        profileId: profile.id,
+        profileName: profile.display_name ?? profile.username ?? 'Unnamed Profile',
+        isActive: Boolean(profile.is_active),
+        avatar: profile.avatar_url ?? null,
+        isDefault: Boolean(profile.is_default),
+      }));
+
+      const response: ApiResponse<ProfileSummary[]> = {
         ok: true,
         success: true,
-        data: fallbackProfile,
-        message: 'Using fallback data due to database error'
-      });
-      return;
+        data: transformedProfiles,
+      };
+
+      res.json(response);
+    } catch (error) {
+      logger.error('Failed to fetch available profiles', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to fetch profiles');
     }
+  })
+);
 
-    // Transform database profile to API format
-    const profileRecord = profile as ProfileRecord;
-    const activeProfile: ActiveProfileSummary = {
-      profileId: profileRecord.id,
-      profileName: profileRecord.display_name ?? profileRecord.username ?? 'Unnamed Profile',
-      isActive: Boolean(profileRecord.is_active),
-      avatar: profileRecord.avatar_url ?? null,
-      isDefault: Boolean(profileRecord.is_default)
-    };
+// Get currently active profile
+app.get(
+  '/api/v1/profiles/active',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      // Get the default (primary) profile from Supabase database (excluding anonymous profiles for third-party apps)
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(
+          'id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id, is_active, is_default'
+        )
+        .eq('account_id', keyInfo.userId)
+        .eq('is_active', true)
+        .eq('is_default', true)
+        .eq('is_anonymous', false)
+        .single();
 
-    const response: ApiResponse<ActiveProfileSummary> = {
-      ok: true,
-      success: true,
-      data: activeProfile
-    };
+      if (error) {
+        logger.error('Failed to fetch active profile from database', {
+          error,
+          userId: keyInfo.userId,
+        });
+        const fallbackProfile = {
+          profileId: 'ext_fallback_active',
+          profileName: 'My Active Profile',
+          isActive: true,
+          avatar: null,
+          isDefault: true,
+        };
 
-    res.json(response);
-  } catch (error) {
-    logger.error('Failed to fetch active profile', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to fetch active profile');
-  }
-}));
+        res.json({
+          ok: true,
+          success: true,
+          data: fallbackProfile,
+          message: 'Using fallback data due to database error',
+        });
+        return;
+      }
+
+      // Transform database profile to API format
+      const profileRecord = profile as ProfileRecord;
+      const activeProfile: ActiveProfileSummary = {
+        profileId: profileRecord.id,
+        profileName: profileRecord.display_name ?? profileRecord.username ?? 'Unnamed Profile',
+        isActive: Boolean(profileRecord.is_active),
+        avatar: profileRecord.avatar_url ?? null,
+        isDefault: Boolean(profileRecord.is_default),
+      };
+
+      const response: ApiResponse<ActiveProfileSummary> = {
+        ok: true,
+        success: true,
+        data: activeProfile,
+      };
+
+      res.json(response);
+    } catch (error) {
+      logger.error('Failed to fetch active profile', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to fetch active profile');
+    }
+  })
+);
 
 // Update profile information
-app.put('/api/v1/profiles/:profileId',
+app.put(
+  '/api/v1/profiles/:profileId',
   validateApiKey,
-  param('profileId').matches(/^ext_[a-f0-9]{16}$/).withMessage('Invalid profile ID format'),
+  param('profileId')
+    .matches(/^ext_[a-f0-9]{16}$/)
+    .withMessage('Invalid profile ID format'),
   validateRequest,
   async (req: Request<ProfileRouteParams>, res: Response) => {
     try {
       const { profileId } = getProfileParams(req);
-      const { profileName, avatar, bio, location } = (req.body as Partial<{
-        profileName: string;
-        avatar: string;
-        bio: string | null;
-        location: string | null;
-      }>) ?? {};
+      const { profileName, avatar, bio, location } =
+        (req.body as Partial<{
+          profileName: string;
+          avatar: string;
+          bio: string | null;
+          location: string | null;
+        }>) ?? {};
 
       const updatedProfile = {
         profileId,
@@ -1268,25 +1354,32 @@ app.put('/api/v1/profiles/:profileId',
         avatar: avatar || 'https://example.com/avatars/updated-profile.jpg',
         bio: bio ?? null,
         location: location ?? null,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       res.json({
         ok: true,
         success: true,
         data: updatedProfile,
-        message: 'Profile updated successfully'
+        message: 'Profile updated successfully',
       });
     } catch (error) {
-      logger.error('Failed to update profile', { error, profileId: getProfileParams(req).profileId });
+      logger.error('Failed to update profile', {
+        error,
+        profileId: getProfileParams(req).profileId,
+      });
       respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to update profile');
     }
-  });
+  }
+);
 
 // Switch to a different profile
-app.post('/api/v1/profiles/:profileId/activate',
+app.post(
+  '/api/v1/profiles/:profileId/activate',
   validateApiKey,
-  param('profileId').matches(/^ext_[a-f0-9]{16}$/).withMessage('Invalid profile ID format'),
+  param('profileId')
+    .matches(/^ext_[a-f0-9]{16}$/)
+    .withMessage('Invalid profile ID format'),
   validateRequest,
   async (req: Request<ProfileRouteParams>, res: Response) => {
     try {
@@ -1297,25 +1390,33 @@ app.post('/api/v1/profiles/:profileId/activate',
         success: true,
         data: {
           activeProfile: profileId,
-          switchedAt: new Date().toISOString()
-        }
+          switchedAt: new Date().toISOString(),
+        },
       });
     } catch (error) {
-      logger.error('Failed to switch profile', { error, profileId: getProfileParams(req).profileId });
+      logger.error('Failed to switch profile', {
+        error,
+        profileId: getProfileParams(req).profileId,
+      });
       respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to switch profile');
     }
-  });
+  }
+);
 
 // =============================================================================
 // GROUP ENDPOINTS
 // =============================================================================
 
 // Get user's groups
-app.get('/api/v1/groups', validateApiKey, withAuthContext(async (_req, res, keyInfo) => {
-  try {
-    const { data: groupMemberships, error: membershipError } = await supabase
-      .from('group_members')
-      .select(`
+app.get(
+  '/api/v1/groups',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      const { data: groupMemberships, error: membershipError } = await supabase
+        .from('group_members')
+        .select(
+          `
         group_id,
         role,
         groups!inner (
@@ -1325,68 +1426,74 @@ app.get('/api/v1/groups', validateApiKey, withAuthContext(async (_req, res, keyI
           is_active,
           created_at
         )
-      `)
-      .eq('profile_id', keyInfo.userId)
-      .eq('is_active', true);
-
-    if (membershipError) {
-      logger.error('Failed to fetch group memberships', { membershipError, userId: keyInfo.userId });
-      res.json({
-        ok: true,
-        success: true,
-        data: [],
-        message: 'No groups found or database error'
-      });
-      return;
-    }
-
-    type GroupMembershipRow = {
-      group_id: string;
-      role: string;
-      groups: {
-        id: string;
-        name: string;
-        description: string | null;
-        is_active: boolean;
-        created_at: string;
-      };
-    };
-
-    const memberships = ((groupMemberships ?? []) as unknown) as GroupMembershipRow[];
-    const groups: GroupSummary[] = [];
-
-    for (const membership of memberships) {
-      const { count: memberCount } = await supabase
-        .from('group_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('group_id', membership.group_id)
+      `
+        )
+        .eq('profile_id', keyInfo.userId)
         .eq('is_active', true);
 
-      groups.push({
-        groupId: membership.groups.id,
-        groupName: membership.groups.name,
-        memberCount: memberCount || 0,
-        isActive: membership.groups.is_active,
-        role: membership.role,
-        description: membership.groups.description
-      });
+      if (membershipError) {
+        logger.error('Failed to fetch group memberships', {
+          membershipError,
+          userId: keyInfo.userId,
+        });
+        res.json({
+          ok: true,
+          success: true,
+          data: [],
+          message: 'No groups found or database error',
+        });
+        return;
+      }
+
+      type GroupMembershipRow = {
+        group_id: string;
+        role: string;
+        groups: {
+          id: string;
+          name: string;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+        };
+      };
+
+      const memberships = (groupMemberships ?? []) as unknown as GroupMembershipRow[];
+      const groups: GroupSummary[] = [];
+
+      for (const membership of memberships) {
+        const { count: memberCount } = await supabase
+          .from('group_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('group_id', membership.group_id)
+          .eq('is_active', true);
+
+        groups.push({
+          groupId: membership.groups.id,
+          groupName: membership.groups.name,
+          memberCount: memberCount || 0,
+          isActive: membership.groups.is_active,
+          role: membership.role,
+          description: membership.groups.description,
+        });
+      }
+
+      const response: ApiResponse<GroupSummary[]> = {
+        ok: true,
+        success: true,
+        data: groups,
+      };
+
+      res.json(response);
+    } catch (error) {
+      logger.error('Failed to fetch groups', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'GROUPS_ERROR', 'Failed to fetch groups');
     }
-
-    const response: ApiResponse<GroupSummary[]> = {
-      ok: true,
-      success: true,
-      data: groups
-    };
-
-    res.json(response);
-  } catch (error) {
-    logger.error('Failed to fetch groups', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'GROUPS_ERROR', 'Failed to fetch groups');
-  }
-}));
+  })
+);
 
 // Get group members
-app.get('/api/v1/groups/:groupId/members',
+app.get(
+  '/api/v1/groups/:groupId/members',
   validateApiKey,
   param('groupId').isUUID().withMessage('Invalid group ID format'),
   validateRequest,
@@ -1409,7 +1516,8 @@ app.get('/api/v1/groups/:groupId/members',
 
       const { data: members, error: membersError } = await supabase
         .from('group_members')
-        .select(`
+        .select(
+          `
           id,
           role,
           joined_at,
@@ -1419,7 +1527,8 @@ app.get('/api/v1/groups/:groupId/members',
             username,
             avatar_url
           )
-        `)
+        `
+        )
         .eq('group_id', groupId)
         .eq('is_active', true)
         .order('joined_at', { ascending: true });
@@ -1442,26 +1551,33 @@ app.get('/api/v1/groups/:groupId/members',
         };
       };
 
-      const formattedMembers: TeamMember[] = ((members ?? []) as unknown as GroupMemberRow[]).map(member => ({
-        memberId: member.profiles.id,
-        displayName: member.profiles.display_name || member.profiles.username,
-        role: member.role,
-        joinedAt: member.joined_at,
-        avatar: member.profiles.avatar_url
-      }));
+      const formattedMembers: TeamMember[] = ((members ?? []) as unknown as GroupMemberRow[]).map(
+        (member) => ({
+          memberId: member.profiles.id,
+          displayName: member.profiles.display_name || member.profiles.username,
+          role: member.role,
+          joinedAt: member.joined_at,
+          avatar: member.profiles.avatar_url,
+        })
+      );
 
       const response: ApiResponse<TeamMember[]> = {
         ok: true,
         success: true,
-        data: formattedMembers
+        data: formattedMembers,
       };
 
       res.json(response);
     } catch (error) {
-      logger.error('Failed to fetch group members', { error, groupId: getGroupParams(req).groupId, userId: keyInfo.userId });
+      logger.error('Failed to fetch group members', {
+        error,
+        groupId: getGroupParams(req).groupId,
+        userId: keyInfo.userId,
+      });
       respondWithError(res, 500, 'GROUP_MEMBERS_ERROR', 'Failed to fetch group members');
     }
-  }));
+  })
+);
 
 // Entries endpoints
 app.get('/api/v1/entries', validateApiKey, async (req, res) => {
@@ -1500,7 +1616,12 @@ app.get('/api/v1/entries', validateApiKey, async (req, res) => {
     const { data: entries, error } = await query;
 
     if (error) {
-      logger.error('Failed to fetch entries', { error, offset, limit, userId: authReq.authContext.userId });
+      logger.error('Failed to fetch entries', {
+        error,
+        offset,
+        limit,
+        userId: authReq.authContext.userId,
+      });
       res.json({
         ok: true,
         success: true,
@@ -1510,10 +1631,10 @@ app.get('/api/v1/entries', validateApiKey, async (req, res) => {
             page: Math.floor(offset / limit) + 1,
             limit,
             total: 0,
-            totalPages: 0
-          }
+            totalPages: 0,
+          },
         },
-        message: 'Using empty dataset due to query error'
+        message: 'Using empty dataset due to query error',
       });
       return;
     }
@@ -1529,14 +1650,14 @@ app.get('/api/v1/entries', validateApiKey, async (req, res) => {
     };
 
     const entryRows = (entries ?? []) as EntryRow[];
-    const items: Entry[] = entryRows.map(entry => ({
+    const items: Entry[] = entryRows.map((entry) => ({
       id: entry.id,
       title: entry.title,
       content: entry.content,
       profile_id: entry.profile_id,
       created_at: entry.created_at,
       updated_at: entry.updated_at,
-      audience_type: normalizeAudienceType(entry.audience_type)
+      audience_type: normalizeAudienceType(entry.audience_type),
     }));
 
     const total = items.length;
@@ -1544,14 +1665,14 @@ app.get('/api/v1/entries', validateApiKey, async (req, res) => {
       page: Math.floor(offset / limit) + 1,
       limit,
       total,
-      totalPages: limit === 0 ? 0 : Math.ceil(total / limit)
+      totalPages: limit === 0 ? 0 : Math.ceil(total / limit),
     };
 
     const response: PaginatedResponse<Entry> = {
       ok: true,
       success: true,
       data: items,
-      meta: { pagination }
+      meta: { pagination },
     };
 
     res.json(response);
@@ -1572,9 +1693,9 @@ app.get('/api/v1/templates', validateApiKey, (req, res) => {
         page: 1,
         limit: 20,
         total: 0,
-        totalPages: 0
-      }
-    }
+        totalPages: 0,
+      },
+    },
   });
 });
 
@@ -1583,7 +1704,7 @@ app.get('/api/v1/storage', validateApiKey, (req, res) => {
   res.json({
     ok: true,
     success: true,
-    data: {}
+    data: {},
   });
 });
 
@@ -1593,8 +1714,8 @@ app.post('/api/v1/ui/notifications', validateApiKey, (req, res) => {
     ok: true,
     success: true,
     data: {
-      id: 'notification_123'
-    }
+      id: 'notification_123',
+    },
   });
 });
 
@@ -1603,254 +1724,287 @@ app.post('/api/v1/ui/notifications', validateApiKey, (req, res) => {
 // =============================================================================
 
 // Get developer's apps
-app.get('/api/v1/developer/apps', validateApiKey, withAuthContext(async (_req, res, keyInfo) => {
-  try {
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .select('*')
-      .eq('developer_id', keyInfo.userId)
-      .order('created_at', { ascending: false });
+app.get(
+  '/api/v1/developer/apps',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .select('*')
+        .eq('developer_id', keyInfo.userId)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      logger.error('Failed to fetch developer apps', { error, userId: keyInfo.userId });
-      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Failed to fetch developer apps');
-      return;
+      if (error) {
+        logger.error('Failed to fetch developer apps', { error, userId: keyInfo.userId });
+        respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Failed to fetch developer apps');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data: (data ?? []) as MarketplaceApp[],
+      });
+    } catch (error) {
+      logger.error('Developer apps endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: (data ?? []) as MarketplaceApp[]
-    });
-  } catch (error) {
-    logger.error('Developer apps endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
-  }
-}));
+  })
+);
 
 // Get single app details
-app.get('/api/v1/developer/apps/:appId', validateApiKey, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
+app.get(
+  '/api/v1/developer/apps/:appId',
+  validateApiKey,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
 
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .select('*')
-      .eq('id', appId)
-      .eq('developer_id', keyInfo.userId)
-      .single();
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .select('*')
+        .eq('id', appId)
+        .eq('developer_id', keyInfo.userId)
+        .single();
 
-    if (error || !data) {
-      respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found');
-      return;
+      if (error || !data) {
+        respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data: data as MarketplaceApp,
+      });
+    } catch (error) {
+      logger.error('Developer app detail endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: data as MarketplaceApp
-    });
-  } catch (error) {
-    logger.error('Developer app detail endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
-  }
-}));
+  })
+);
 
 // Create new app
-app.post('/api/v1/developer/apps', validateApiKey, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const payload = req.body as Partial<MarketplaceApp>;
-    const now = new Date().toISOString();
+app.post(
+  '/api/v1/developer/apps',
+  validateApiKey,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const payload = req.body as Partial<MarketplaceApp>;
+      const now = new Date().toISOString();
 
-    const appRecord: Partial<MarketplaceApp> = {
-      ...payload,
-      developer_id: keyInfo.userId,
-      developer_name: keyInfo.name ?? 'Developer',
-      status: 'draft',
-      is_active: false,
-      install_count: 0,
-      created_at: now,
-      updated_at: now
-    };
+      const appRecord: Partial<MarketplaceApp> = {
+        ...payload,
+        developer_id: keyInfo.userId,
+        developer_name: keyInfo.name ?? 'Developer',
+        status: 'draft',
+        is_active: false,
+        install_count: 0,
+        created_at: now,
+        updated_at: now,
+      };
 
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .insert(appRecord)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .insert(appRecord)
+        .select()
+        .single();
 
-    if (error || !data) {
-      logger.error('Failed to create app', { error, userId: keyInfo.userId });
-      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Failed to create app');
-      return;
+      if (error || !data) {
+        logger.error('Failed to create app', { error, userId: keyInfo.userId });
+        respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Failed to create app');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data: data as MarketplaceApp,
+      });
+    } catch (error) {
+      logger.error('Create app endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: data as MarketplaceApp
-    });
-  } catch (error) {
-    logger.error('Create app endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
-  }
-}));
+  })
+);
 
 // Update app
-app.put('/api/v1/developer/apps/:appId', validateApiKey, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
-    const now = new Date().toISOString();
-    const updates: Partial<MarketplaceApp> = {
-      ...(req.body as Partial<MarketplaceApp>),
-      updated_at: now
-    };
+app.put(
+  '/api/v1/developer/apps/:appId',
+  validateApiKey,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
+      const now = new Date().toISOString();
+      const updates: Partial<MarketplaceApp> = {
+        ...(req.body as Partial<MarketplaceApp>),
+        updated_at: now,
+      };
 
-    delete (updates as Record<string, unknown>).status;
+      delete (updates as Record<string, unknown>).status;
 
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .update(updates)
-      .eq('id', appId)
-      .eq('developer_id', keyInfo.userId)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .update(updates)
+        .eq('id', appId)
+        .eq('developer_id', keyInfo.userId)
+        .select()
+        .single();
 
-    if (error || !data) {
-      respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found or unauthorized');
-      return;
+      if (error || !data) {
+        respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found or unauthorized');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data: data as MarketplaceApp,
+      });
+    } catch (error) {
+      logger.error('Update app endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: data as MarketplaceApp
-    });
-  } catch (error) {
-    logger.error('Update app endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
-  }
-}));
+  })
+);
 
 // Delete app (only if in draft status)
-app.delete('/api/v1/developer/apps/:appId', validateApiKey, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
+app.delete(
+  '/api/v1/developer/apps/:appId',
+  validateApiKey,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
 
-    const { data: app } = await supabase
-      .from('plugin_marketplace_apps')
-      .select('status')
-      .eq('id', appId)
-      .eq('developer_id', keyInfo.userId)
-      .single();
+      const { data: app } = await supabase
+        .from('plugin_marketplace_apps')
+        .select('status')
+        .eq('id', appId)
+        .eq('developer_id', keyInfo.userId)
+        .single();
 
-    if (!app) {
-      respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found');
-      return;
+      if (!app) {
+        respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found');
+        return;
+      }
+
+      if (app.status !== 'draft') {
+        respondWithError(
+          res,
+          403,
+          'INVALID_STATE',
+          'Cannot delete apps that are not in draft status'
+        );
+        return;
+      }
+
+      const { error } = await supabase
+        .from('plugin_marketplace_apps')
+        .delete()
+        .eq('id', appId)
+        .eq('developer_id', keyInfo.userId);
+
+      if (error) {
+        logger.error('Failed to delete app', { error, appId, userId: keyInfo.userId });
+        respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Failed to delete app');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        message: 'App deleted successfully',
+      });
+    } catch (error) {
+      logger.error('Delete app endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
     }
-
-    if (app.status !== 'draft') {
-      respondWithError(res, 403, 'INVALID_STATE', 'Cannot delete apps that are not in draft status');
-      return;
-    }
-
-    const { error } = await supabase
-      .from('plugin_marketplace_apps')
-      .delete()
-      .eq('id', appId)
-      .eq('developer_id', keyInfo.userId);
-
-    if (error) {
-      logger.error('Failed to delete app', { error, appId, userId: keyInfo.userId });
-      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Failed to delete app');
-      return;
-    }
-
-    res.json({
-      ok: true,
-      success: true,
-      message: 'App deleted successfully'
-    });
-  } catch (error) {
-    logger.error('Delete app endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
-  }
-}));
+  })
+);
 
 // Submit app for review
-app.post('/api/v1/developer/apps/:appId/submit', validateApiKey, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
-    const now = new Date().toISOString();
+app.post(
+  '/api/v1/developer/apps/:appId/submit',
+  validateApiKey,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
+      const now = new Date().toISOString();
 
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .update({
-        status: 'pending_review',
-        submitted_at: now,
-        updated_at: now
-      })
-      .eq('id', appId)
-      .eq('developer_id', keyInfo.userId)
-      .eq('status', 'draft')
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .update({
+          status: 'pending_review',
+          submitted_at: now,
+          updated_at: now,
+        })
+        .eq('id', appId)
+        .eq('developer_id', keyInfo.userId)
+        .eq('status', 'draft')
+        .select()
+        .single();
 
-    if (error || !data) {
-      respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found or already submitted');
-      return;
+      if (error || !data) {
+        respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found or already submitted');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data: data as MarketplaceApp,
+      });
+    } catch (error) {
+      logger.error('Submit app endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: data as MarketplaceApp
-    });
-  } catch (error) {
-    logger.error('Submit app endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
-  }
-}));
+  })
+);
 
 // Resubmit app after rejection
-app.post('/api/v1/developer/apps/:appId/resubmit', validateApiKey, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
-    const now = new Date().toISOString();
-    const updates = req.body as Partial<MarketplaceApp>;
+app.post(
+  '/api/v1/developer/apps/:appId/resubmit',
+  validateApiKey,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
+      const now = new Date().toISOString();
+      const updates = req.body as Partial<MarketplaceApp>;
 
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .update({
-        ...updates,
-        status: 'pending_review',
-        submitted_at: now,
-        updated_at: now,
-        reviewer_notes: null,
-        reviewed_at: null,
-        reviewed_by: null
-      })
-      .eq('id', appId)
-      .eq('developer_id', keyInfo.userId)
-      .eq('status', 'rejected')
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .update({
+          ...updates,
+          status: 'pending_review',
+          submitted_at: now,
+          updated_at: now,
+          reviewer_notes: null,
+          reviewed_at: null,
+          reviewed_by: null,
+        })
+        .eq('id', appId)
+        .eq('developer_id', keyInfo.userId)
+        .eq('status', 'rejected')
+        .select()
+        .single();
 
-    if (error || !data) {
-      respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found or not in rejected status');
-      return;
+      if (error || !data) {
+        respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found or not in rejected status');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data: data as MarketplaceApp,
+      });
+    } catch (error) {
+      logger.error('Resubmit app endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: data as MarketplaceApp
-    });
-  } catch (error) {
-    logger.error('Resubmit app endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'DEVELOPER_APPS_ERROR', 'Internal server error');
-  }
-}));
+  })
+);
 
 // =============================================================================
 // MARKETPLACE ENDPOINTS
@@ -1866,7 +2020,8 @@ app.get('/api/v1/marketplace/apps', validateApiKey, async (req, res) => {
 
     let query = supabase
       .from('plugin_marketplace_apps')
-      .select(`
+      .select(
+        `
         id,
         name,
         slug,
@@ -1883,7 +2038,8 @@ app.get('/api/v1/marketplace/apps', validateApiKey, async (req, res) => {
         developer_name,
         created_at,
         updated_at
-      `)
+      `
+      )
       .eq('status', 'approved')
       .eq('is_active', true)
       .order('install_count', { ascending: false });
@@ -1894,13 +2050,21 @@ app.get('/api/v1/marketplace/apps', validateApiKey, async (req, res) => {
 
     if (searchTerm) {
       const escaped = searchTerm.replace(/%/g, '\\%').replace(/_/g, '\\_');
-      query = query.or(`name.ilike.%${escaped}%,tagline.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+      query = query.or(
+        `name.ilike.%${escaped}%,tagline.ilike.%${escaped}%,description.ilike.%${escaped}%`
+      );
     }
 
     const { data, error } = await query.range(offset, offset + limit - 1);
 
     if (error) {
-      logger.error('Failed to fetch marketplace apps', { error, limit, offset, categoryFilter, searchTerm });
+      logger.error('Failed to fetch marketplace apps', {
+        error,
+        limit,
+        offset,
+        categoryFilter,
+        searchTerm,
+      });
       respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
       return;
     }
@@ -1910,20 +2074,20 @@ app.get('/api/v1/marketplace/apps', validateApiKey, async (req, res) => {
       page: limit === 0 ? 1 : Math.floor(offset / limit) + 1,
       limit,
       total: apps.length,
-      totalPages: limit === 0 ? 0 : Math.ceil(apps.length / limit)
+      totalPages: limit === 0 ? 0 : Math.ceil(apps.length / limit),
     };
 
     const response: PaginatedResponse<MarketplaceApp> = {
       ok: true,
       success: true,
       data: apps,
-      meta: { pagination }
+      meta: { pagination },
     };
 
     res.json(response);
   } catch (error) {
     logger.error('Marketplace apps endpoint error', { error });
-      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
+    respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
   }
 });
 
@@ -1934,7 +2098,8 @@ app.get('/api/v1/marketplace/trending', validateApiKey, async (req, res) => {
 
     const { data, error } = await supabase
       .from('plugin_marketplace_apps')
-      .select(`
+      .select(
+        `
         id,
         name,
         slug,
@@ -1943,7 +2108,8 @@ app.get('/api/v1/marketplace/trending', validateApiKey, async (req, res) => {
         icon_url,
         install_count,
         developer_name
-      `)
+      `
+      )
       .eq('status', 'approved')
       .eq('is_active', true)
       .order('install_count', { ascending: false })
@@ -1958,11 +2124,11 @@ app.get('/api/v1/marketplace/trending', validateApiKey, async (req, res) => {
     res.json({
       ok: true,
       success: true,
-      data: (data ?? []) as MarketplaceApp[]
+      data: (data ?? []) as MarketplaceApp[],
     });
   } catch (error) {
     logger.error('Trending apps endpoint error', { error });
-      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
+    respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
   }
 });
 
@@ -1973,7 +2139,8 @@ app.get('/api/v1/marketplace/featured', validateApiKey, async (req, res) => {
 
     const { data, error } = await supabase
       .from('plugin_marketplace_apps')
-      .select(`
+      .select(
+        `
         id,
         name,
         slug,
@@ -1982,7 +2149,8 @@ app.get('/api/v1/marketplace/featured', validateApiKey, async (req, res) => {
         icon_url,
         install_count,
         developer_name
-      `)
+      `
+      )
       .eq('status', 'approved')
       .eq('is_active', true)
       .eq('is_featured', true)
@@ -1998,11 +2166,11 @@ app.get('/api/v1/marketplace/featured', validateApiKey, async (req, res) => {
     res.json({
       ok: true,
       success: true,
-      data: (data ?? []) as MarketplaceApp[]
+      data: (data ?? []) as MarketplaceApp[],
     });
   } catch (error) {
     logger.error('Featured apps endpoint error', { error });
-      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
+    respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
   }
 });
 
@@ -2022,7 +2190,7 @@ app.get('/api/v1/marketplace/categories', validateApiKey, async (_req, res) => {
     }
 
     const categoryCounts = new Map<string, number>();
-    (data ?? []).forEach(app => {
+    (data ?? []).forEach((app) => {
       if (app?.category) {
         categoryCounts.set(app.category, (categoryCounts.get(app.category) ?? 0) + 1);
       }
@@ -2030,13 +2198,13 @@ app.get('/api/v1/marketplace/categories', validateApiKey, async (_req, res) => {
 
     const formatted = Array.from(categoryCounts.entries()).map(([category, count]) => ({
       category,
-      count
+      count,
     }));
 
     res.json({
       ok: true,
       success: true,
-      data: formatted
+      data: formatted,
     });
   } catch (error) {
     logger.error('Categories endpoint error', { error });
@@ -2048,10 +2216,10 @@ app.get('/api/v1/marketplace/categories', validateApiKey, async (_req, res) => {
 app.get('/api/v1/marketplace/apps/:appId', validateApiKey, async (req, res) => {
   const { appId } = getAppParams(req);
   try {
-    
     const { data, error } = await supabase
       .from('plugin_marketplace_apps')
-      .select(`
+      .select(
+        `
         *,
         plugin_versions (
           id,
@@ -2059,7 +2227,8 @@ app.get('/api/v1/marketplace/apps/:appId', validateApiKey, async (req, res) => {
           release_notes,
           created_at
         )
-      `)
+      `
+      )
       .eq('id', appId)
       .eq('status', 'approved')
       .single();
@@ -2072,7 +2241,7 @@ app.get('/api/v1/marketplace/apps/:appId', validateApiKey, async (req, res) => {
     res.json({
       ok: true,
       success: true,
-      data
+      data,
     });
   } catch (error) {
     logger.error('App detail endpoint error', { error, appId });
@@ -2081,14 +2250,18 @@ app.get('/api/v1/marketplace/apps/:appId', validateApiKey, async (req, res) => {
 });
 
 // Get user's installed apps
-app.get('/api/v1/marketplace/installed', validateAuth, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const limit = getLimit(req.query.limit, 50, 100);
-    const offset = getOffset(req.query.offset, 0);
+app.get(
+  '/api/v1/marketplace/installed',
+  validateAuth,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const limit = getLimit(req.query.limit, 50, 100);
+      const offset = getOffset(req.query.offset, 0);
 
-    const { data, error } = await supabase
-      .from('user_app_installs')
-      .select(`
+      const { data, error } = await supabase
+        .from('user_app_installs')
+        .select(
+          `
         id,
         app_id,
         installed_at,
@@ -2106,176 +2279,193 @@ app.get('/api/v1/marketplace/installed', validateAuth, withAuthContext(async (re
           developer_name,
           install_count
         )
-      `)
-      .eq('user_id', keyInfo.userId)
-      .eq('is_active', true)
-      .order('installed_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      `
+        )
+        .eq('user_id', keyInfo.userId)
+        .eq('is_active', true)
+        .order('installed_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
-    if (error) {
-      logger.error('Failed to fetch installed apps', { error, userId: keyInfo.userId });
+      if (error) {
+        logger.error('Failed to fetch installed apps', { error, userId: keyInfo.userId });
+        respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
+        return;
+      }
+
+      type InstallRow = {
+        id: string;
+        app_id: string;
+        installed_at: string;
+        is_active: boolean;
+        app_settings: Record<string, unknown> | null;
+        plugin_marketplace_apps: MarketplaceApp;
+      };
+
+      const installs: InstalledAppSummary[] = ((data ?? []) as unknown as InstallRow[]).map(
+        (install) => ({
+          installationId: install.id,
+          installedAt: install.installed_at,
+          isActive: install.is_active,
+          settings: install.app_settings,
+          app: install.plugin_marketplace_apps,
+        })
+      );
+
+      const pagination = {
+        page: limit === 0 ? 1 : Math.floor(offset / limit) + 1,
+        limit,
+        total: installs.length,
+        totalPages: limit === 0 ? 0 : Math.ceil(installs.length / limit),
+      };
+
+      const response: PaginatedResponse<InstalledAppSummary> = {
+        ok: true,
+        success: true,
+        data: installs,
+        meta: { pagination },
+      };
+
+      res.json(response);
+    } catch (error) {
+      logger.error('Installed apps endpoint error', { error, userId: keyInfo.userId });
       respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
-      return;
     }
-
-    type InstallRow = {
-      id: string;
-      app_id: string;
-      installed_at: string;
-      is_active: boolean;
-      app_settings: Record<string, unknown> | null;
-      plugin_marketplace_apps: MarketplaceApp;
-    };
-
-    const installs: InstalledAppSummary[] = ((data ?? []) as unknown as InstallRow[]).map(install => ({
-      installationId: install.id,
-      installedAt: install.installed_at,
-      isActive: install.is_active,
-      settings: install.app_settings,
-      app: install.plugin_marketplace_apps
-    }));
-
-    const pagination = {
-      page: limit === 0 ? 1 : Math.floor(offset / limit) + 1,
-      limit,
-      total: installs.length,
-      totalPages: limit === 0 ? 0 : Math.ceil(installs.length / limit)
-    };
-
-    const response: PaginatedResponse<InstalledAppSummary> = {
-      ok: true,
-      success: true,
-      data: installs,
-      meta: { pagination }
-    };
-
-    res.json(response);
-  } catch (error) {
-    logger.error('Installed apps endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
-  }
-}));
+  })
+);
 
 // Install an app
-app.post('/api/v1/marketplace/install/:appId', validateAuth, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
-    const { settings = {} } = req.body as { settings?: Record<string, unknown> };
+app.post(
+  '/api/v1/marketplace/install/:appId',
+  validateAuth,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
+      const { settings = {} } = req.body as { settings?: Record<string, unknown> };
 
-    const { data: app, error: appError } = await supabase
-      .from('plugin_marketplace_apps')
-      .select('id, name, status')
-      .eq('id', appId)
-      .eq('status', 'approved')
-      .eq('is_active', true)
-      .single();
+      const { data: app, error: appError } = await supabase
+        .from('plugin_marketplace_apps')
+        .select('id, name, status')
+        .eq('id', appId)
+        .eq('status', 'approved')
+        .eq('is_active', true)
+        .single();
 
-    if (appError || !app) {
-      respondWithError(res, 404, 'APP_NOT_FOUND', 'App not found or not available for installation');
-      return;
-    }
-
-    const { data: existingInstall } = await supabase
-      .from('user_app_installs')
-      .select('id')
-      .eq('user_id', keyInfo.userId)
-      .eq('app_id', appId)
-      .eq('is_active', true)
-      .single();
-
-    if (existingInstall) {
-      respondWithError(res, 409, 'APP_ALREADY_INSTALLED', 'App is already installed');
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const { data: installation, error: installError } = await supabase
-      .from('user_app_installs')
-      .insert({
-        user_id: keyInfo.userId,
-        app_id: appId,
-        installed_at: now,
-        is_active: true,
-        app_settings: settings
-      })
-      .select()
-      .single();
-
-    if (installError || !installation) {
-      logger.error('Failed to install app', { installError, appId, userId: keyInfo.userId });
-      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to install app');
-      return;
-    }
-
-    await supabase.rpc('increment_install_count', { app_id_in: appId });
-
-    res.json({
-      ok: true,
-      success: true,
-      data: {
-        installationId: installation.id,
-        appId,
-        installedAt: installation.installed_at,
-        message: `Successfully installed ${app.name}`
+      if (appError || !app) {
+        respondWithError(
+          res,
+          404,
+          'APP_NOT_FOUND',
+          'App not found or not available for installation'
+        );
+        return;
       }
-    });
-  } catch (error) {
-    logger.error('Install app endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
-  }
-}));
+
+      const { data: existingInstall } = await supabase
+        .from('user_app_installs')
+        .select('id')
+        .eq('user_id', keyInfo.userId)
+        .eq('app_id', appId)
+        .eq('is_active', true)
+        .single();
+
+      if (existingInstall) {
+        respondWithError(res, 409, 'APP_ALREADY_INSTALLED', 'App is already installed');
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const { data: installation, error: installError } = await supabase
+        .from('user_app_installs')
+        .insert({
+          user_id: keyInfo.userId,
+          app_id: appId,
+          installed_at: now,
+          is_active: true,
+          app_settings: settings,
+        })
+        .select()
+        .single();
+
+      if (installError || !installation) {
+        logger.error('Failed to install app', { installError, appId, userId: keyInfo.userId });
+        respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to install app');
+        return;
+      }
+
+      await supabase.rpc('increment_install_count', { app_id_in: appId });
+
+      res.json({
+        ok: true,
+        success: true,
+        data: {
+          installationId: installation.id,
+          appId,
+          installedAt: installation.installed_at,
+          message: `Successfully installed ${app.name}`,
+        },
+      });
+    } catch (error) {
+      logger.error('Install app endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
+    }
+  })
+);
 
 // Uninstall an app
-app.delete('/api/v1/marketplace/uninstall/:appId', validateAuth, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
+app.delete(
+  '/api/v1/marketplace/uninstall/:appId',
+  validateAuth,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
 
-    const { data: installation, error: checkError } = await supabase
-      .from('user_app_installs')
-      .select('id, plugin_marketplace_apps(name)')
-      .eq('user_id', keyInfo.userId)
-      .eq('app_id', appId)
-      .eq('is_active', true)
-      .single();
+      const { data: installation, error: checkError } = await supabase
+        .from('user_app_installs')
+        .select('id, plugin_marketplace_apps(name)')
+        .eq('user_id', keyInfo.userId)
+        .eq('app_id', appId)
+        .eq('is_active', true)
+        .single();
 
-    if (checkError || !installation) {
-      respondWithError(res, 404, 'APP_NOT_INSTALLED', 'App is not installed');
-      return;
-    }
-
-    const { error: uninstallError } = await supabase
-      .from('user_app_installs')
-      .update({ is_active: false, uninstalled_at: new Date().toISOString() })
-      .eq('id', installation.id)
-      .eq('user_id', keyInfo.userId);
-
-    if (uninstallError) {
-      logger.error('Failed to uninstall app', { uninstallError, appId, userId: keyInfo.userId });
-      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to uninstall app');
-      return;
-    }
-
-    await supabase.rpc('decrement_install_count', { app_id_in: appId });
-
-    type UninstallRow = typeof installation & {
-      plugin_marketplace_apps?: { name?: string } | null;
-    };
-
-    const installRecord = installation as UninstallRow;
-    const appName = installRecord.plugin_marketplace_apps?.name ?? 'app';
-
-    res.json({
-      ok: true,
-      success: true,
-      data: {
-        message: `Successfully uninstalled ${appName}`
+      if (checkError || !installation) {
+        respondWithError(res, 404, 'APP_NOT_INSTALLED', 'App is not installed');
+        return;
       }
-    });
-  } catch (error) {
-    logger.error('Uninstall app endpoint error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
-  }
-}));
+
+      const { error: uninstallError } = await supabase
+        .from('user_app_installs')
+        .update({ is_active: false, uninstalled_at: new Date().toISOString() })
+        .eq('id', installation.id)
+        .eq('user_id', keyInfo.userId);
+
+      if (uninstallError) {
+        logger.error('Failed to uninstall app', { uninstallError, appId, userId: keyInfo.userId });
+        respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to uninstall app');
+        return;
+      }
+
+      await supabase.rpc('decrement_install_count', { app_id_in: appId });
+
+      type UninstallRow = typeof installation & {
+        plugin_marketplace_apps?: { name?: string } | null;
+      };
+
+      const installRecord = installation as UninstallRow;
+      const appName = installRecord.plugin_marketplace_apps?.name ?? 'app';
+
+      res.json({
+        ok: true,
+        success: true,
+        data: {
+          message: `Successfully uninstalled ${appName}`,
+        },
+      });
+    } catch (error) {
+      logger.error('Uninstall app endpoint error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to fetch apps');
+    }
+  })
+);
 
 // =============================================================================
 // MARKETPLACE ITEMS ENDPOINTS (OrivaFlow Commerce)
@@ -2329,9 +2519,7 @@ app.get('/api/v1/marketplace/items', async (req, res) => {
       query = query.or(`title.ilike.%${escaped}%,content.ilike.%${escaped}%`);
     }
 
-    query = query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;
 
@@ -2345,14 +2533,14 @@ app.get('/api/v1/marketplace/items', async (req, res) => {
       page: limit === 0 ? 1 : Math.floor(offset / limit) + 1,
       limit,
       total: count || 0,
-      totalPages: limit === 0 ? 0 : Math.ceil((count || 0) / limit)
+      totalPages: limit === 0 ? 0 : Math.ceil((count || 0) / limit),
     };
 
     res.json({
       ok: true,
       success: true,
       data: data || [],
-      meta: { pagination }
+      meta: { pagination },
     });
   } catch (error) {
     logger.error('Marketplace items endpoint error', { error });
@@ -2361,76 +2549,81 @@ app.get('/api/v1/marketplace/items', async (req, res) => {
 });
 
 // Create marketplace item (auth required)
-app.post('/api/v1/marketplace/items', validateAuth, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { title, content, marketplace_metadata } = req.body as {
-      title: string;
-      content?: string;
-      marketplace_metadata: Record<string, unknown>;
-    };
+app.post(
+  '/api/v1/marketplace/items',
+  validateAuth,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { title, content, marketplace_metadata } = req.body as {
+        title: string;
+        content?: string;
+        marketplace_metadata: Record<string, unknown>;
+      };
 
-    // Validation
-    if (!title || title.trim() === '') {
-      respondWithError(res, 400, 'VALIDATION_ERROR', 'Title is required');
-      return;
-    }
-
-    if (!marketplace_metadata?.price && marketplace_metadata?.price !== 0) {
-      respondWithError(res, 400, 'VALIDATION_ERROR', 'Price is required');
-      return;
-    }
-
-    if (!marketplace_metadata?.currency) {
-      respondWithError(res, 400, 'VALIDATION_ERROR', 'Currency is required');
-      return;
-    }
-
-    if (typeof marketplace_metadata.price === 'number' && marketplace_metadata.price < 0) {
-      respondWithError(res, 400, 'VALIDATION_ERROR', 'Price must be greater than or equal to 0');
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const itemData = {
-      title,
-      content: content || '',
-      entry_type: 'marketplace_item',
-      user_id: keyInfo.userId,
-      marketplace_metadata: {
-        ...marketplace_metadata,
-        is_published: false // Default to unpublished
-      },
-      created_at: now,
-      updated_at: now
-    };
-
-    const { data, error } = await supabase
-      .from('entries')
-      .insert(itemData)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error('Failed to create marketplace item', { error, userId: keyInfo.userId });
-      if (error.code === '23505') {
-        respondWithError(res, 409, 'DUPLICATE_ERROR', 'Duplicate SKU or unique constraint violation');
+      // Validation
+      if (!title || title.trim() === '') {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Title is required');
         return;
       }
-      respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to create item');
-      return;
-    }
 
-    logger.info('Marketplace item created', { itemId: data.id, userId: keyInfo.userId });
-    res.status(201).json({
-      ok: true,
-      success: true,
-      data
-    });
-  } catch (error) {
-    logger.error('Create marketplace item error', { error, userId: keyInfo.userId });
-    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to create item');
-  }
-}));
+      if (!marketplace_metadata?.price && marketplace_metadata?.price !== 0) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Price is required');
+        return;
+      }
+
+      if (!marketplace_metadata?.currency) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Currency is required');
+        return;
+      }
+
+      if (typeof marketplace_metadata.price === 'number' && marketplace_metadata.price < 0) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Price must be greater than or equal to 0');
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const itemData = {
+        title,
+        content: content || '',
+        entry_type: 'marketplace_item',
+        user_id: keyInfo.userId,
+        marketplace_metadata: {
+          ...marketplace_metadata,
+          is_published: false, // Default to unpublished
+        },
+        created_at: now,
+        updated_at: now,
+      };
+
+      const { data, error } = await supabase.from('entries').insert(itemData).select().single();
+
+      if (error) {
+        logger.error('Failed to create marketplace item', { error, userId: keyInfo.userId });
+        if (error.code === '23505') {
+          respondWithError(
+            res,
+            409,
+            'DUPLICATE_ERROR',
+            'Duplicate SKU or unique constraint violation'
+          );
+          return;
+        }
+        respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to create item');
+        return;
+      }
+
+      logger.info('Marketplace item created', { itemId: data.id, userId: keyInfo.userId });
+      res.status(201).json({
+        ok: true,
+        success: true,
+        data,
+      });
+    } catch (error) {
+      logger.error('Create marketplace item error', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to create item');
+    }
+  })
+);
 
 // Get single marketplace item (public)
 app.get('/api/v1/marketplace/items/:id', async (req, res) => {
@@ -2459,7 +2652,7 @@ app.get('/api/v1/marketplace/items/:id', async (req, res) => {
     res.json({
       ok: true,
       success: true,
-      data
+      data,
     });
   } catch (error) {
     logger.error('Get marketplace item error', { error, itemId: req.params.id });
@@ -2468,88 +2661,120 @@ app.get('/api/v1/marketplace/items/:id', async (req, res) => {
 });
 
 // Update marketplace item (owner only)
-app.put('/api/v1/marketplace/items/:id', validateAuth, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { id } = req.params;
-    const { title, content, marketplace_metadata } = req.body as {
-      title?: string;
-      content?: string;
-      marketplace_metadata?: Record<string, unknown>;
-    };
+app.put(
+  '/api/v1/marketplace/items/:id',
+  validateAuth,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { id } = req.params;
+      const { title, content, marketplace_metadata } = req.body as {
+        title?: string;
+        content?: string;
+        marketplace_metadata?: Record<string, unknown>;
+      };
 
-    // Validate metadata if provided
-    if (marketplace_metadata?.price !== undefined && typeof marketplace_metadata.price === 'number') {
-      if (marketplace_metadata.price < 0) {
-        respondWithError(res, 400, 'VALIDATION_ERROR', 'Price must be greater than or equal to 0');
+      // Validate metadata if provided
+      if (
+        marketplace_metadata?.price !== undefined &&
+        typeof marketplace_metadata.price === 'number'
+      ) {
+        if (marketplace_metadata.price < 0) {
+          respondWithError(
+            res,
+            400,
+            'VALIDATION_ERROR',
+            'Price must be greater than or equal to 0'
+          );
+          return;
+        }
+      }
+
+      const updates = {
+        ...(title && { title }),
+        ...(content !== undefined && { content }),
+        ...(marketplace_metadata && { marketplace_metadata }),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Update item (RLS enforces ownership via user_id match)
+      const { data, error } = await supabase
+        .from('entries')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', keyInfo.userId)
+        .eq('entry_type', 'marketplace_item')
+        .select()
+        .single();
+
+      if (error || !data) {
+        logger.error('Failed to update marketplace item', {
+          error,
+          itemId: id,
+          userId: keyInfo.userId,
+        });
+        respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Item not found or permission denied');
         return;
       }
+
+      logger.info('Marketplace item updated', { itemId: id, userId: keyInfo.userId });
+      res.json({
+        ok: true,
+        success: true,
+        data,
+      });
+    } catch (error) {
+      logger.error('Update marketplace item error', {
+        error,
+        itemId: req.params.id,
+        userId: keyInfo.userId,
+      });
+      respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to update item');
     }
-
-    const updates = {
-      ...(title && { title }),
-      ...(content !== undefined && { content }),
-      ...(marketplace_metadata && { marketplace_metadata }),
-      updated_at: new Date().toISOString()
-    };
-
-    // Update item (RLS enforces ownership via user_id match)
-    const { data, error } = await supabase
-      .from('entries')
-      .update(updates)
-      .eq('id', id)
-      .eq('user_id', keyInfo.userId)
-      .eq('entry_type', 'marketplace_item')
-      .select()
-      .single();
-
-    if (error || !data) {
-      logger.error('Failed to update marketplace item', { error, itemId: id, userId: keyInfo.userId });
-      respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Item not found or permission denied');
-      return;
-    }
-
-    logger.info('Marketplace item updated', { itemId: id, userId: keyInfo.userId });
-    res.json({
-      ok: true,
-      success: true,
-      data
-    });
-  } catch (error) {
-    logger.error('Update marketplace item error', { error, itemId: req.params.id, userId: keyInfo.userId });
-    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to update item');
-  }
-}));
+  })
+);
 
 // Delete marketplace item (owner only)
-app.delete('/api/v1/marketplace/items/:id', validateAuth, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { id } = req.params;
+app.delete(
+  '/api/v1/marketplace/items/:id',
+  validateAuth,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { id } = req.params;
 
-    // Delete item (RLS enforces ownership)
-    const { error } = await supabase
-      .from('entries')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', keyInfo.userId)
-      .eq('entry_type', 'marketplace_item');
+      // Delete item (RLS enforces ownership)
+      const { error } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', keyInfo.userId)
+        .eq('entry_type', 'marketplace_item');
 
-    if (error) {
-      logger.error('Failed to delete marketplace item', { error, itemId: id, userId: keyInfo.userId });
-      respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Item not found or permission denied');
-      return;
+      if (error) {
+        logger.error('Failed to delete marketplace item', {
+          error,
+          itemId: id,
+          userId: keyInfo.userId,
+        });
+        respondWithError(res, 404, 'ITEM_NOT_FOUND', 'Item not found or permission denied');
+        return;
+      }
+
+      logger.info('Marketplace item deleted', { itemId: id, userId: keyInfo.userId });
+      res.json({
+        ok: true,
+        success: true,
+        message: 'Item deleted successfully',
+      });
+    } catch (error) {
+      logger.error('Delete marketplace item error', {
+        error,
+        itemId: req.params.id,
+        userId: keyInfo.userId,
+      });
+      respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to delete item');
     }
-
-    logger.info('Marketplace item deleted', { itemId: id, userId: keyInfo.userId });
-    res.json({
-      ok: true,
-      success: true,
-      message: 'Item deleted successfully'
-    });
-  } catch (error) {
-    logger.error('Delete marketplace item error', { error, itemId: req.params.id, userId: keyInfo.userId });
-    respondWithError(res, 500, 'MARKETPLACE_ITEMS_ERROR', 'Failed to delete item');
-  }
-}));
+  })
+);
 
 // =============================================================================
 // MARKETPLACE SEARCH ENDPOINT
@@ -2564,7 +2789,7 @@ app.post('/api/v1/marketplace/search', async (req, res) => {
       sort = 'created_at',
       order = 'desc',
       page = 1,
-      limit: requestLimit = 20
+      limit: requestLimit = 20,
     } = req.body as {
       query?: string;
       filters?: Record<string, unknown>;
@@ -2630,7 +2855,7 @@ app.post('/api/v1/marketplace/search', async (req, res) => {
       page,
       limit,
       total: count || 0,
-      totalPages: limit === 0 ? 0 : Math.ceil((count || 0) / limit)
+      totalPages: limit === 0 ? 0 : Math.ceil((count || 0) / limit),
     };
 
     res.json({
@@ -2641,8 +2866,8 @@ app.post('/api/v1/marketplace/search', async (req, res) => {
         pagination,
         query: searchQuery,
         filters,
-        sort: { field: sortField, order }
-      }
+        sort: { field: sortField, order },
+      },
     });
   } catch (error) {
     logger.error('Marketplace search error', { error });
@@ -2685,7 +2910,7 @@ app.get('/api/v1/marketplace/categories', async (req, res) => {
     res.json({
       ok: true,
       success: true,
-      data: data || []
+      data: data || [],
     });
   } catch (error) {
     logger.error('Categories endpoint error', { error });
@@ -2694,75 +2919,87 @@ app.get('/api/v1/marketplace/categories', async (req, res) => {
 });
 
 // Create category (admin only)
-app.post('/api/v1/marketplace/categories', validateAuth, requireAdminToken, withAuthContext(async (req, res) => {
-  try {
-    const { name, description, organization_rules } = req.body as {
-      name: string;
-      description?: string;
-      organization_rules: Record<string, unknown>;
-    };
+app.post(
+  '/api/v1/marketplace/categories',
+  validateAuth,
+  requireAdminToken,
+  withAuthContext(async (req, res) => {
+    try {
+      const { name, description, organization_rules } = req.body as {
+        name: string;
+        description?: string;
+        organization_rules: Record<string, unknown>;
+      };
 
-    // Validation
-    if (!name || name.trim() === '') {
-      respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name is required');
-      return;
-    }
-
-    if (name.length > 255) {
-      respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name too long (max 255 characters)');
-      return;
-    }
-
-    // Auto-generate SEO slug if not provided
-    const seoSlug = organization_rules?.seo_slug || name
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    const now = new Date().toISOString();
-    const categoryData = {
-      name,
-      description: description || null,
-      collection_type: 'marketplace_category',
-      organization_rules: {
-        ...organization_rules,
-        seo_slug: seoSlug
-      },
-      entry_count: 0,
-      created_at: now,
-      updated_at: now
-    };
-
-    const { data, error } = await supabase
-      .from('collections')
-      .insert(categoryData)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error('Failed to create category', { error });
-      if (error.code === '23505') {
-        respondWithError(res, 409, 'DUPLICATE_ERROR', 'Duplicate category name or SEO slug');
+      // Validation
+      if (!name || name.trim() === '') {
+        respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name is required');
         return;
       }
-      respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to create category');
-      return;
-    }
 
-    logger.info('Category created', { categoryId: data.id });
-    res.status(201).json({
-      ok: true,
-      success: true,
-      data
-    });
-  } catch (error) {
-    logger.error('Create category error', { error });
-    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to create category');
-  }
-}));
+      if (name.length > 255) {
+        respondWithError(
+          res,
+          400,
+          'VALIDATION_ERROR',
+          'Category name too long (max 255 characters)'
+        );
+        return;
+      }
+
+      // Auto-generate SEO slug if not provided
+      const seoSlug =
+        organization_rules?.seo_slug ||
+        name
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-+|-+$/g, '');
+
+      const now = new Date().toISOString();
+      const categoryData = {
+        name,
+        description: description || null,
+        collection_type: 'marketplace_category',
+        organization_rules: {
+          ...organization_rules,
+          seo_slug: seoSlug,
+        },
+        entry_count: 0,
+        created_at: now,
+        updated_at: now,
+      };
+
+      const { data, error } = await supabase
+        .from('collections')
+        .insert(categoryData)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('Failed to create category', { error });
+        if (error.code === '23505') {
+          respondWithError(res, 409, 'DUPLICATE_ERROR', 'Duplicate category name or SEO slug');
+          return;
+        }
+        respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to create category');
+        return;
+      }
+
+      logger.info('Category created', { categoryId: data.id });
+      res.status(201).json({
+        ok: true,
+        success: true,
+        data,
+      });
+    } catch (error) {
+      logger.error('Create category error', { error });
+      respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to create category');
+    }
+  })
+);
 
 // Get category tree hierarchy (public)
 app.get('/api/v1/marketplace/categories/tree', async (req, res) => {
@@ -2783,7 +3020,7 @@ app.get('/api/v1/marketplace/categories/tree', async (req, res) => {
     const categories = data || [];
 
     // Build tree structure
-    type CategoryNode = typeof categories[0] & { children: CategoryNode[] };
+    type CategoryNode = (typeof categories)[0] & { children: CategoryNode[] };
     const categoryMap = new Map<string, CategoryNode>();
     const rootNodes: CategoryNode[] = [];
 
@@ -2808,7 +3045,7 @@ app.get('/api/v1/marketplace/categories/tree', async (req, res) => {
     res.json({
       ok: true,
       success: true,
-      data: rootNodes
+      data: rootNodes,
     });
   } catch (error) {
     logger.error('Category tree error', { error });
@@ -2836,7 +3073,7 @@ app.get('/api/v1/marketplace/categories/:id', async (req, res) => {
     res.json({
       ok: true,
       success: true,
-      data
+      data,
     });
   } catch (error) {
     logger.error('Get category error', { error, categoryId: req.params.id });
@@ -2845,207 +3082,246 @@ app.get('/api/v1/marketplace/categories/:id', async (req, res) => {
 });
 
 // Update category (admin only)
-app.put('/api/v1/marketplace/categories/:id', validateAuth, requireAdminToken, withAuthContext(async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, description, organization_rules } = req.body as {
-      name?: string;
-      description?: string;
-      organization_rules?: Record<string, unknown>;
-    };
-
-    // Validation
-    if (name !== undefined) {
-      if (name.trim() === '') {
-        respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name cannot be empty');
-        return;
-      }
-      if (name.length > 255) {
-        respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name too long (max 255 characters)');
-        return;
-      }
-    }
-
-    // Auto-update SEO slug if name changes and slug not explicitly provided
-    let updatedOrgRules = organization_rules;
-    if (name && !organization_rules?.seo_slug) {
-      const seoSlug = name
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '');
-
-      updatedOrgRules = {
-        ...organization_rules,
-        seo_slug: seoSlug
+app.put(
+  '/api/v1/marketplace/categories/:id',
+  validateAuth,
+  requireAdminToken,
+  withAuthContext(async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description, organization_rules } = req.body as {
+        name?: string;
+        description?: string;
+        organization_rules?: Record<string, unknown>;
       };
+
+      // Validation
+      if (name !== undefined) {
+        if (name.trim() === '') {
+          respondWithError(res, 400, 'VALIDATION_ERROR', 'Category name cannot be empty');
+          return;
+        }
+        if (name.length > 255) {
+          respondWithError(
+            res,
+            400,
+            'VALIDATION_ERROR',
+            'Category name too long (max 255 characters)'
+          );
+          return;
+        }
+      }
+
+      // Auto-update SEO slug if name changes and slug not explicitly provided
+      let updatedOrgRules = organization_rules;
+      if (name && !organization_rules?.seo_slug) {
+        const seoSlug = name
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-+|-+$/g, '');
+
+        updatedOrgRules = {
+          ...organization_rules,
+          seo_slug: seoSlug,
+        };
+      }
+
+      const updates = {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(updatedOrgRules && { organization_rules: updatedOrgRules }),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('collections')
+        .update(updates)
+        .eq('id', id)
+        .eq('collection_type', 'marketplace_category')
+        .select()
+        .single();
+
+      if (error || !data) {
+        logger.error('Failed to update category', { error, categoryId: id });
+        respondWithError(res, 404, 'CATEGORY_NOT_FOUND', 'Category not found or permission denied');
+        return;
+      }
+
+      logger.info('Category updated', { categoryId: id });
+      res.json({
+        ok: true,
+        success: true,
+        data,
+      });
+    } catch (error) {
+      logger.error('Update category error', { error, categoryId: req.params.id });
+      respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to update category');
     }
-
-    const updates = {
-      ...(name && { name }),
-      ...(description !== undefined && { description }),
-      ...(updatedOrgRules && { organization_rules: updatedOrgRules }),
-      updated_at: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-      .from('collections')
-      .update(updates)
-      .eq('id', id)
-      .eq('collection_type', 'marketplace_category')
-      .select()
-      .single();
-
-    if (error || !data) {
-      logger.error('Failed to update category', { error, categoryId: id });
-      respondWithError(res, 404, 'CATEGORY_NOT_FOUND', 'Category not found or permission denied');
-      return;
-    }
-
-    logger.info('Category updated', { categoryId: id });
-    res.json({
-      ok: true,
-      success: true,
-      data
-    });
-  } catch (error) {
-    logger.error('Update category error', { error, categoryId: req.params.id });
-    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to update category');
-  }
-}));
+  })
+);
 
 // Delete category (admin only)
-app.delete('/api/v1/marketplace/categories/:id', validateAuth, requireAdminToken, withAuthContext(async (req, res) => {
-  try {
-    const { id } = req.params;
+app.delete(
+  '/api/v1/marketplace/categories/:id',
+  validateAuth,
+  requireAdminToken,
+  withAuthContext(async (req, res) => {
+    try {
+      const { id } = req.params;
 
-    // Check if category has items
-    const { data: categoryData, error: fetchError } = await supabase
-      .from('collections')
-      .select('entry_count')
-      .eq('id', id)
-      .eq('collection_type', 'marketplace_category')
-      .single();
+      // Check if category has items
+      const { data: categoryData, error: fetchError } = await supabase
+        .from('collections')
+        .select('entry_count')
+        .eq('id', id)
+        .eq('collection_type', 'marketplace_category')
+        .single();
 
-    if (fetchError) {
-      respondWithError(res, 404, 'CATEGORY_NOT_FOUND', 'Category not found');
-      return;
-    }
+      if (fetchError) {
+        respondWithError(res, 404, 'CATEGORY_NOT_FOUND', 'Category not found');
+        return;
+      }
 
-    if (categoryData.entry_count > 0) {
-      respondWithError(res, 409, 'CATEGORY_HAS_ITEMS', 'Cannot delete category with items');
-      return;
-    }
+      if (categoryData.entry_count > 0) {
+        respondWithError(res, 409, 'CATEGORY_HAS_ITEMS', 'Cannot delete category with items');
+        return;
+      }
 
-    // Check if category has sub-categories
-    const { data: subCategories } = await supabase
-      .from('collections')
-      .select('id')
-      .eq('collection_type', 'marketplace_category')
-      .eq('organization_rules->>parent_category_id', id);
+      // Check if category has sub-categories
+      const { data: subCategories } = await supabase
+        .from('collections')
+        .select('id')
+        .eq('collection_type', 'marketplace_category')
+        .eq('organization_rules->>parent_category_id', id);
 
-    if (subCategories && subCategories.length > 0) {
-      respondWithError(res, 409, 'CATEGORY_HAS_CHILDREN', 'Cannot delete category with sub-categories');
-      return;
-    }
+      if (subCategories && subCategories.length > 0) {
+        respondWithError(
+          res,
+          409,
+          'CATEGORY_HAS_CHILDREN',
+          'Cannot delete category with sub-categories'
+        );
+        return;
+      }
 
-    // Delete category
-    const { error } = await supabase
-      .from('collections')
-      .delete()
-      .eq('id', id)
-      .eq('collection_type', 'marketplace_category');
+      // Delete category
+      const { error } = await supabase
+        .from('collections')
+        .delete()
+        .eq('id', id)
+        .eq('collection_type', 'marketplace_category');
 
-    if (error) {
-      logger.error('Failed to delete category', { error, categoryId: id });
+      if (error) {
+        logger.error('Failed to delete category', { error, categoryId: id });
+        respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to delete category');
+        return;
+      }
+
+      logger.info('Category deleted', { categoryId: id });
+      res.json({
+        ok: true,
+        success: true,
+        message: 'Category deleted successfully',
+      });
+    } catch (error) {
+      logger.error('Delete category error', { error, categoryId: req.params.id });
       respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to delete category');
-      return;
     }
-
-    logger.info('Category deleted', { categoryId: id });
-    res.json({
-      ok: true,
-      success: true,
-      message: 'Category deleted successfully'
-    });
-  } catch (error) {
-    logger.error('Delete category error', { error, categoryId: req.params.id });
-    respondWithError(res, 500, 'CATEGORIES_ERROR', 'Failed to delete category');
-  }
-}));
+  })
+);
 
 // =============================================================================
 // ADMIN ENDPOINTS FOR APP APPROVAL
 // =============================================================================
 
 // Get pending apps for review (admin only)
-app.get('/api/v1/admin/apps/pending', validateApiKey, requireAdminToken, withAuthContext(async (_req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .select('*')
-      .eq('status', 'pending_review')
-      .order('created_at', { ascending: true });
+app.get(
+  '/api/v1/admin/apps/pending',
+  validateApiKey,
+  requireAdminToken,
+  withAuthContext(async (_req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .select('*')
+        .eq('status', 'pending_review')
+        .order('created_at', { ascending: true });
 
-    if (error) {
-      logger.error('Failed to fetch pending apps', { error });
+      if (error) {
+        logger.error('Failed to fetch pending apps', { error });
+        respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data: data ?? [],
+      });
+    } catch (error) {
+      logger.error('Pending apps endpoint error', { error });
       respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
-      return;
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data: data ?? []
-    });
-  } catch (error) {
-    logger.error('Pending apps endpoint error', { error });
-    respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
-  }
-}));
+  })
+);
 
 // Approve or reject an app (admin only)
-app.post('/api/v1/admin/apps/:appId/review', validateApiKey, requireAdminToken, withAuthContext(async (req, res, keyInfo) => {
-  try {
-    const { appId } = getAppParams(req);
-    const { status, reviewerNotes } = req.body as { status?: string; reviewerNotes?: string };
+app.post(
+  '/api/v1/admin/apps/:appId/review',
+  validateApiKey,
+  requireAdminToken,
+  withAuthContext(async (req, res, keyInfo) => {
+    try {
+      const { appId } = getAppParams(req);
+      const { status, reviewerNotes } = req.body as { status?: string; reviewerNotes?: string };
 
-    if (!status || !['approved', 'rejected'].includes(status)) {
-      respondWithError(res, 400, 'INVALID_STATUS', 'Invalid status. Must be "approved" or "rejected"');
-      return;
-    }
+      if (!status || !['approved', 'rejected'].includes(status)) {
+        respondWithError(
+          res,
+          400,
+          'INVALID_STATUS',
+          'Invalid status. Must be "approved" or "rejected"'
+        );
+        return;
+      }
 
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from('plugin_marketplace_apps')
-      .update({
-        status,
-        reviewer_notes: reviewerNotes ?? null,
-        reviewed_at: now,
-        reviewed_by: keyInfo.userId
-      })
-      .eq('id', appId)
-      .select()
-      .single();
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('plugin_marketplace_apps')
+        .update({
+          status,
+          reviewer_notes: reviewerNotes ?? null,
+          reviewed_at: now,
+          reviewed_by: keyInfo.userId,
+        })
+        .eq('id', appId)
+        .select()
+        .single();
 
-    if (error || !data) {
-      logger.error('Failed to update app status', { error, appId, status });
+      if (error || !data) {
+        logger.error('Failed to update app status', { error, appId, status });
+        respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
+        return;
+      }
+
+      res.json({
+        ok: true,
+        success: true,
+        data,
+      });
+    } catch (error) {
+      logger.error('App review endpoint error', {
+        error,
+        appId: getAppParams(req).appId,
+        reviewer: keyInfo.userId,
+      });
       respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
-      return;
     }
-
-    res.json({
-      ok: true,
-      success: true,
-      data
-    });
-  } catch (error) {
-    logger.error('App review endpoint error', { error, appId: getAppParams(req).appId, reviewer: keyInfo.userId });
-    respondWithError(res, 500, 'ADMIN_APPS_ERROR', 'Failed to fetch apps');
-  }
-}));
+  })
+);
 
 // =============================================================================
 // AUTH REGISTRATION & LOGIN ENDPOINTS
@@ -3080,7 +3356,12 @@ app.post('/api/v1/auth/register', async (req, res) => {
     }
 
     if (!isStrongPassword(password)) {
-      return respondWithError(res, 400, 'WEAK_PASSWORD', 'Password must be at least 8 characters with uppercase, lowercase, and numbers');
+      return respondWithError(
+        res,
+        400,
+        'WEAK_PASSWORD',
+        'Password must be at least 8 characters with uppercase, lowercase, and numbers'
+      );
     }
 
     // Create Supabase auth user using anon client (public signup)
@@ -3090,11 +3371,23 @@ app.post('/api/v1/auth/register', async (req, res) => {
     });
 
     if (authError) {
-      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+      if (
+        authError.message.includes('already registered') ||
+        authError.message.includes('already exists')
+      ) {
         return respondWithError(res, 409, 'USER_EXISTS', 'Email already registered');
       }
-      logger.error('Auth signup failed', { error: authError, message: authError.message, status: authError.status });
-      return respondWithError(res, 500, 'SIGNUP_ERROR', `Database error creating new user: ${authError.message}`);
+      logger.error('Auth signup failed', {
+        error: authError,
+        message: authError.message,
+        status: authError.status,
+      });
+      return respondWithError(
+        res,
+        500,
+        'SIGNUP_ERROR',
+        `Database error creating new user: ${authError.message}`
+      );
     }
 
     if (!authData.user) {
@@ -3127,7 +3420,12 @@ app.post('/api/v1/auth/register', async (req, res) => {
 
     if (sessionError || !sessionData.session) {
       logger.error('Session creation failed', { error: sessionError });
-      return respondWithError(res, 500, 'SESSION_ERROR', 'Session creation failed after registration');
+      return respondWithError(
+        res,
+        500,
+        'SESSION_ERROR',
+        'Session creation failed after registration'
+      );
     }
 
     // Return auth response with profile data
@@ -3179,7 +3477,10 @@ app.post('/api/v1/auth/login', async (req, res) => {
       .single();
 
     if (profileError || !profileData) {
-      logger.error('User profile not found', { error: profileError, authUserId: sessionData.user.id });
+      logger.error('User profile not found', {
+        error: profileError,
+        authUserId: sessionData.user.id,
+      });
       return respondWithError(res, 404, 'USER_NOT_FOUND', 'User profile not found');
     }
 
@@ -3231,7 +3532,12 @@ app.post('/api/v1/auth/token/refresh', async (req, res) => {
     const { data, error } = await supabase.auth.refreshSession({ refresh_token });
 
     if (error || !data.session) {
-      return respondWithError(res, 401, 'INVALID_REFRESH_TOKEN', 'Invalid or expired refresh token');
+      return respondWithError(
+        res,
+        401,
+        'INVALID_REFRESH_TOKEN',
+        'Invalid or expired refresh token'
+      );
     }
 
     res.status(200).json({
@@ -3307,15 +3613,29 @@ app.patch('/api/v1/auth/profile', validateAuth, async (req, res) => {
 app.put('/api/v1/auth/profile', validateAuth, async (req, res) => {
   try {
     const userId = (req as any).authContext.userId;
-    const { name, bio, avatar_url, location, website_url, preferences, data_retention_days } = req.body;
+    const { name, bio, avatar_url, location, website_url, preferences, data_retention_days } =
+      req.body;
 
-    if (!name && !bio && !avatar_url && !location && !website_url && !preferences && !data_retention_days) {
+    if (
+      !name &&
+      !bio &&
+      !avatar_url &&
+      !location &&
+      !website_url &&
+      !preferences &&
+      !data_retention_days
+    ) {
       return respondWithError(res, 400, 'VALIDATION_ERROR', 'At least one field must be provided');
     }
 
     // Validate data_retention_days if provided
     if (data_retention_days !== undefined && data_retention_days < 30) {
-      return respondWithError(res, 400, 'VALIDATION_ERROR', 'data_retention_days must be at least 30');
+      return respondWithError(
+        res,
+        400,
+        'VALIDATION_ERROR',
+        'data_retention_days must be at least 30'
+      );
     }
 
     const updates: any = {};
@@ -3351,10 +3671,7 @@ app.delete('/api/v1/auth/account', validateAuth, async (req, res) => {
   try {
     const userId = (req as any).authContext.userId;
 
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId);
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
 
     if (error) {
       logger.error('Delete account error', { error });
@@ -3372,6 +3689,269 @@ app.delete('/api/v1/auth/account', validateAuth, async (req, res) => {
 const hugoRouter = createHugoAIRouter(supabase);
 app.use('/api/hugo', hugoRouter);
 
+// ============================================================================
+// EVENTS API ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/oriva/events - Create a new event
+ * Creates a new event in the events table with validation
+ * Requires: title, description, startDate, endDate, location, isOnline, category, maxAttendees, price
+ */
+app.post(
+  '/api/oriva/events',
+  validateAuth,
+  withAuthContext(async (req: any, res: any, keyInfo: ApiKeyInfo) => {
+    try {
+      const userId = keyInfo?.userId || (req as any).authContext?.userId;
+      if (!userId) {
+        return respondWithError(res, 401, 'UNAUTHORIZED', 'User authentication required');
+      }
+
+      const {
+        title,
+        description,
+        startDate,
+        endDate,
+        location,
+        isOnline,
+        category,
+        maxAttendees,
+        price,
+        tags,
+        imageUrl,
+      } = req.body;
+
+      // Validation
+      if (!title || typeof title !== 'string' || title.trim().length === 0) {
+        return respondWithError(
+          res,
+          400,
+          'VALIDATION_ERROR',
+          'Title is required and must be a non-empty string'
+        );
+      }
+
+      if (!description || typeof description !== 'string' || description.trim().length === 0) {
+        return respondWithError(
+          res,
+          400,
+          'VALIDATION_ERROR',
+          'Description is required and must be a non-empty string'
+        );
+      }
+
+      if (!startDate || !endDate) {
+        return respondWithError(
+          res,
+          400,
+          'VALIDATION_ERROR',
+          'Start date and end date are required'
+        );
+      }
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return respondWithError(res, 400, 'VALIDATION_ERROR', 'Invalid date format');
+      }
+
+      if (end <= start) {
+        return respondWithError(res, 400, 'VALIDATION_ERROR', 'End date must be after start date');
+      }
+
+      if (typeof isOnline !== 'boolean') {
+        return respondWithError(res, 400, 'VALIDATION_ERROR', 'isOnline must be a boolean');
+      }
+
+      if (!category || typeof category !== 'string') {
+        return respondWithError(res, 400, 'VALIDATION_ERROR', 'Category is required');
+      }
+
+      // Get category ID by name
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('event_categories')
+        .select('id')
+        .eq('name', category)
+        .single();
+
+      if (categoryError || !categoryData) {
+        logger.error('Category not found', { category, error: categoryError });
+        return respondWithError(res, 400, 'INVALID_CATEGORY', `Category '${category}' not found`);
+      }
+
+      const categoryId = categoryData.id;
+
+      // Optional fields
+      const eventLocation = location && typeof location === 'string' ? location.trim() : null;
+      const eventMaxAttendees =
+        maxAttendees && Number.isFinite(maxAttendees) && maxAttendees > 0 ? maxAttendees : null;
+      const eventPrice = price !== undefined && Number.isFinite(price) && price >= 0 ? price : 0;
+      const eventTags = Array.isArray(tags)
+        ? tags.filter((t: any) => typeof t === 'string').slice(0, 20)
+        : [];
+
+      // Insert event into events table
+      const { data: newEvent, error: insertError } = await supabase
+        .from('events')
+        .insert({
+          title: title.trim(),
+          description: description.trim(),
+          category_id: categoryId,
+          organizer_id: userId,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          location: eventLocation,
+          is_online: isOnline,
+          max_participants: eventMaxAttendees,
+          price: eventPrice > 0 ? eventPrice : null,
+          tags: eventTags,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        logger.error('Error creating event', { error: insertError, userId, title });
+        return respondWithError(res, 500, 'CREATE_FAILED', 'Failed to create event');
+      }
+
+      logger.info('Event created successfully', {
+        eventId: newEvent.id,
+        userId,
+        title,
+        category,
+      });
+
+      // Transform response to match front-end expectations
+      const responseEvent = {
+        id: newEvent.id,
+        title: newEvent.title,
+        description: newEvent.description,
+        startDate: newEvent.start_time,
+        endDate: newEvent.end_time,
+        location: newEvent.location,
+        isOnline: newEvent.is_online,
+        category: category,
+        organizer: newEvent.organizer_id,
+        maxAttendees: newEvent.max_participants,
+        currentAttendees: newEvent.current_participants,
+        price: newEvent.price || 0,
+        tags: newEvent.tags || [],
+        imageUrl: imageUrl || null,
+        createdAt: newEvent.created_at,
+        updatedAt: newEvent.updated_at,
+        success: true,
+      };
+
+      res.status(201).json({
+        success: true,
+        ok: true,
+        data: responseEvent,
+        message: 'Event created successfully',
+      });
+    } catch (error) {
+      logger.error('Event creation error', { error });
+      respondWithError(res, 500, 'SERVER_ERROR', 'Internal server error');
+    }
+  })
+);
+
+/**
+ * GET /api/oriva/events - Get all events (with optional filtering)
+ * Query parameters: category, limit, offset, startDate, endDate
+ */
+app.get('/api/oriva/events', async (req, res) => {
+  try {
+    const { category, limit = 20, offset = 0, startDate, endDate } = req.query;
+
+    let query = supabase
+      .from('events')
+      .select('*, mixer_event_categories(name)', { count: 'exact' })
+      .eq('is_active', true)
+      .order('start_time', { ascending: true });
+
+    // Apply filters
+    if (category && typeof category === 'string') {
+      const { data: categoryData } = await supabase
+        .from('event_categories')
+        .select('id')
+        .eq('name', category)
+        .single();
+
+      if (categoryData) {
+        query = query.eq('category_id', categoryData.id);
+      }
+    }
+
+    if (startDate && typeof startDate === 'string') {
+      query = query.gte('start_time', new Date(startDate).toISOString());
+    }
+
+    if (endDate && typeof endDate === 'string') {
+      query = query.lte('end_time', new Date(endDate).toISOString());
+    }
+
+    const pageLimit = Math.min(Number(limit) || 20, 100);
+    const pageOffset = Number(offset) || 0;
+
+    const {
+      data: events,
+      error,
+      count,
+    } = await query.range(pageOffset, pageOffset + pageLimit - 1);
+
+    if (error) {
+      logger.error('Error fetching events', { error });
+      return respondWithError(res, 500, 'FETCH_FAILED', 'Failed to fetch events');
+    }
+
+    res.json({
+      success: true,
+      ok: true,
+      data: events || [],
+      total: count || 0,
+      limit: pageLimit,
+      offset: pageOffset,
+    });
+  } catch (error) {
+    logger.error('Events fetch error', { error });
+    respondWithError(res, 500, 'SERVER_ERROR', 'Internal server error');
+  }
+});
+
+/**
+ * GET /api/oriva/events/:eventId - Get a specific event
+ */
+app.get('/api/oriva/events/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const { data: event, error } = await supabase
+      .from('events')
+      .select('*, mixer_event_categories(name)')
+      .eq('id', eventId)
+      .single();
+
+    if (error || !event) {
+      logger.warn('Event not found', { eventId });
+      return respondWithError(res, 404, 'NOT_FOUND', 'Event not found');
+    }
+
+    res.json({
+      success: true,
+      ok: true,
+      data: event,
+    });
+  } catch (error) {
+    logger.error('Error fetching event', { error });
+    respondWithError(res, 500, 'SERVER_ERROR', 'Internal server error');
+  }
+});
+
 // 404 handler for unmatched routes
 app.use('*', (req, res) => {
   res.status(404).json({
@@ -3382,7 +3962,7 @@ app.use('*', (req, res) => {
     code: 'NOT_FOUND',
     details: [],
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
   });
 });
 
