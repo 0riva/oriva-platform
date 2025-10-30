@@ -713,26 +713,30 @@ app.get('/dev-profiles', async (req, res) => {
   }
 
   try {
-    // Get all profiles from the database (for dev purposes)
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('id, display_name, username, email, avatar_url')
-      .limit(10); // Limit to first 10 profiles for dev
-
-    if (error || !profiles) {
-      return res.status(500).json({
-        ok: false,
-        success: false,
-        error: 'Failed to fetch available profiles',
-        code: 'PROFILE_FETCH_FAILED',
-      });
-    }
+    // For dev purposes, return simple dev profiles without database query
+    // This allows testing dev login without requiring full Supabase setup
+    const devProfiles = [
+      {
+        id: 'dev-user-1',
+        display_name: 'Dev User',
+        username: 'devuser',
+        email: 'dev@oriva.io',
+        avatar_url: 'https://github.com/shadcn.png',
+      },
+      {
+        id: 'dev-user-2',
+        display_name: 'Test Developer',
+        username: 'testdev',
+        email: 'test@oriva.io',
+        avatar_url: null,
+      },
+    ];
 
     // Return profiles in the expected format
     return res.status(200).json({
       ok: true,
       success: true,
-      data: profiles.map((p) => ({
+      data: devProfiles.map((p) => ({
         id: p.id,
         email: p.email || 'dev@oriva.io',
         name: p.display_name || p.username || 'Dev User',
