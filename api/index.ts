@@ -35,6 +35,7 @@ import {
 // } from '../src/middleware/auth';
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
+import hugoLoveRouter from './v1/hugo-love';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 
@@ -696,6 +697,59 @@ app.get('/api/v1/test', (req, res) => {
     message: 'API routing is working!',
     timestamp: new Date().toISOString(),
   });
+});
+
+// GET /dev-profiles - Public endpoint for dev login (development mode only)
+// Returns available profiles for dev login without requiring authentication
+app.get('/dev-profiles', async (req, res) => {
+  // Only available in development mode
+  if (process.env.NODE_ENV !== 'development' && !process.env.VERCEL_ENV?.includes('preview')) {
+    return res.status(403).json({
+      ok: false,
+      success: false,
+      error: 'Dev profiles only available in development',
+      code: 'DEV_ONLY',
+    });
+  }
+
+  try {
+    // Get all profiles from the database (for dev purposes)
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, display_name, username, email, avatar_url')
+      .limit(10); // Limit to first 10 profiles for dev
+
+    if (error || !profiles) {
+      return res.status(500).json({
+        ok: false,
+        success: false,
+        error: 'Failed to fetch available profiles',
+        code: 'PROFILE_FETCH_FAILED',
+      });
+    }
+
+    // Return profiles in the expected format
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      data: profiles.map((p) => ({
+        id: p.id,
+        email: p.email || 'dev@oriva.io',
+        name: p.display_name || p.username || 'Dev User',
+        display_name: p.display_name || p.username,
+        username: p.username,
+        avatar_url: p.avatar_url,
+      })),
+    });
+  } catch (error) {
+    logger.error('Error fetching dev profiles:', { error });
+    return res.status(500).json({
+      ok: false,
+      success: false,
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR',
+    });
+  }
 });
 
 // Debug endpoint to check CORS cache state (admin only)
@@ -3688,6 +3742,9 @@ app.delete('/api/v1/auth/account', validateAuth, async (req, res) => {
 // Mount Hugo AI router
 const hugoRouter = createHugoAIRouter(supabase);
 app.use('/api/hugo', hugoRouter);
+
+// Mount Hugo Love router (wrap Vercel handler as Express middleware)
+app.use('/api/v1/hugo-love', (req, res, next) => hugoLoveRouter(req as any, res as any));
 
 // ============================================================================
 // EVENTS API ENDPOINTS
