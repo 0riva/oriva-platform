@@ -713,30 +713,44 @@ app.get('/dev-profiles', async (req, res) => {
   }
 
   try {
-    // For dev purposes, return simple dev profiles without database query
-    // This allows testing dev login without requiring full Supabase setup
-    const devProfiles = [
-      {
-        id: 'dev-user-1',
-        display_name: 'Dev User',
-        username: 'devuser',
-        email: 'dev@oriva.io',
-        avatar_url: 'https://github.com/shadcn.png',
-      },
-      {
-        id: 'dev-user-2',
-        display_name: 'Test Developer',
-        username: 'testdev',
-        email: 'test@oriva.io',
-        avatar_url: null,
-      },
-    ];
+    // Get all profiles from the database (for dev purposes)
+    logger.info('Fetching profiles from public schema for dev login');
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .limit(10); // Limit to first 10 profiles for dev
+
+    if (error) {
+      logger.error('Database error fetching profiles:', {
+        code: error.code,
+        message: error.message,
+        details: (error as any).details,
+      });
+      return res.status(500).json({
+        ok: false,
+        success: false,
+        error: 'Failed to fetch available profiles from database',
+        code: 'PROFILE_FETCH_FAILED',
+        details: error.message,
+      });
+    }
+
+    if (!profiles || profiles.length === 0) {
+      logger.warn('No profiles found in database');
+      return res.status(200).json({
+        ok: true,
+        success: true,
+        data: [], // Return empty list if no profiles exist yet
+      });
+    }
+
+    logger.info('Successfully fetched profiles from database', { count: profiles.length });
 
     // Return profiles in the expected format
     return res.status(200).json({
       ok: true,
       success: true,
-      data: devProfiles.map((p) => ({
+      data: profiles.map((p: any) => ({
         id: p.id,
         email: p.email || 'dev@oriva.io',
         name: p.display_name || p.username || 'Dev User',
@@ -752,6 +766,7 @@ app.get('/dev-profiles', async (req, res) => {
       success: false,
       error: 'Internal server error',
       code: 'INTERNAL_ERROR',
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });
