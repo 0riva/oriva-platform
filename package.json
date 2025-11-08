@@ -32,7 +32,7 @@
     "health:check:verbose": "ts-node api/monitoring/check-api-health.ts --verbose",
     "health:check:detailed": "ts-node api/monitoring/check-api-health.ts --detailed --verbose",
     "monitor": "ts-node api/monitoring/check-api-health.ts --detailed",
-    "prepare": "husky"
+    "prepare": "node -e \"try { require('husky') } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e }\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
