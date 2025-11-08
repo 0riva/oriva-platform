@@ -67,6 +67,10 @@
       "destination": "/api/workers"
     },
     {
+      "source": "/api/v1/apps/photos/:path*",
+      "destination": "/api/index"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index"
     }

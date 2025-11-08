@@ -289,12 +289,60 @@ async function handleTokenRefresh(req: VercelRequest, res: VercelResponse): Prom
   });
 }
 
+async function handleDevProfiles(req: VercelRequest, res: VercelResponse): Promise<void> {
+  // PUBLIC endpoint for dev mode - returns available profiles for dev login
+  // No authentication required
+  if (process.env.NODE_ENV !== 'development' && !process.env.VERCEL_ENV?.includes('preview')) {
+    res.status(403).json({
+      ok: false,
+      error: 'Dev profiles only available in development',
+      code: 'DEV_ONLY',
+    });
+    return;
+  }
+
+  const supabase = getSupabaseClient();
+
+  // Get all profiles from the database (for dev purposes)
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, display_name, username, email, avatar_url')
+    .limit(10); // Limit to first 10 profiles for dev
+
+  if (error || !profiles) {
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to fetch available profiles',
+      code: 'PROFILE_FETCH_FAILED',
+    });
+    return;
+  }
+
+  // Return profiles in the expected format
+  res.status(200).json({
+    ok: true,
+    success: true,
+    data: profiles.map((p) => ({
+      id: p.id,
+      email: p.email || 'dev@oriva.io',
+      name: p.display_name || p.username || 'Dev User',
+      display_name: p.display_name || p.username,
+      username: p.username,
+      avatar_url: p.avatar_url,
+    })),
+  });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   await asyncHandler(async () => {
     await rateLimit(req, res, async () => {
       const { url, method } = req;
 
       // Public endpoints (no auth required)
+      if (url?.includes('/dev-profiles') && method === 'GET') {
+        return handleDevProfiles(req, res);
+      }
+
       if (url?.includes('/register') && method === 'POST') {
         return handleRegister(req, res);
       }

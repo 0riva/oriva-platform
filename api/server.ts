@@ -21,6 +21,9 @@ import insightsRoutes from './routes/insights';
 import profilesRoutes from './routes/profiles';
 import iceBreakersRoutes from './routes/iceBreakers';
 import gdprRoutes from './routes/gdpr';
+import eventsRoutes from './routes/events';
+import photosRoutes from './routes/photos';
+import { realtimeDeliveryService } from './services/realtimeDeliveryService';
 
 /**
  * Create and configure Express application
@@ -68,6 +71,10 @@ export const createApp = (): Application => {
   // App-specific routes (X-App-ID required for schema routing)
   app.use(`${apiPrefix}/apps/profiles`, profilesRoutes);
   app.use(`${apiPrefix}/apps/ice-breakers`, iceBreakersRoutes);
+  app.use(`${apiPrefix}/apps/photos`, photosRoutes);
+
+  // Event bus and notifications routes (X-App-ID required for schema routing)
+  app.use(`${apiPrefix}/events`, eventsRoutes);
 
   // 404 handler
   app.use(notFoundHandler);
@@ -84,11 +91,15 @@ export const createApp = (): Application => {
 export const startServer = (port: number = 3001): void => {
   const app = createApp();
 
+  // Initialize real-time delivery service
+  realtimeDeliveryService.initialize();
+
   app.listen(port, () => {
     console.log(`🚀 API server running on port ${port}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔐 Multi-tenant mode: enabled`);
     console.log(`📍 API prefix: /api/v1`);
+    console.log(`📡 Real-time delivery service initialized`);
   });
 };
 

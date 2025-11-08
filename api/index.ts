@@ -36,6 +36,7 @@ import {
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
 import hugoLoveRouter from './v1/hugo-love';
+import photosRouter from './routes/photos';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 
@@ -585,6 +586,24 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
+    // Allow development mode bypass for specific endpoints
+    if (process.env.NODE_ENV === 'development' && !authHeader) {
+      // In development mode without auth header, create a dev context
+      const authReq = asAuthRequest(req);
+      authReq.keyInfo = {
+        id: 'dev_key',
+        userId: 'dev_user',
+        name: 'Development User',
+        permissions: ['read:profiles', 'write:sessions', 'read:sessions'],
+        usageCount: 0,
+        isActive: true,
+        authType: 'api_key' as const,
+        lastUsedAt: undefined,
+      };
+      next();
+      return;
+    }
+
     if (!authHeader) {
       respondWithError(res, 401, 'AUTH_REQUIRED', 'Authorization header required');
       return;
@@ -715,10 +734,7 @@ app.get('/dev-profiles', async (req, res) => {
   try {
     // Get all profiles from the database (for dev purposes)
     logger.info('Fetching profiles from public schema for dev login');
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .limit(10); // Limit to first 10 profiles for dev
+    const { data: profiles, error } = await supabase.from('profiles').select('*').limit(10); // Limit to first 10 profiles for dev
 
     if (error) {
       logger.error('Database error fetching profiles:', {
@@ -3765,6 +3781,9 @@ app.use('/api/hugo', hugoRouter);
 // Mount Hugo Love router (wrap Vercel handler as Express middleware)
 app.use('/api/v1/hugo-love', (req, res, next) => hugoLoveRouter(req as any, res as any));
 
+// Mount Photos router for pre-signed URL uploads
+app.use('/api/v1/apps/photos', photosRouter);
+
 // ============================================================================
 // EVENTS API ENDPOINTS
 // ============================================================================
@@ -3946,7 +3965,7 @@ app.get('/api/oriva/events', async (req, res) => {
 
     let query = supabase
       .from('events')
-      .select('*, mixer_event_categories(name)', { count: 'exact' })
+      .select('*, event_categories(name)', { count: 'exact' })
       .eq('is_active', true)
       .order('start_time', { ascending: true });
 
@@ -4008,7 +4027,7 @@ app.get('/api/oriva/events/:eventId', async (req, res) => {
 
     const { data: event, error } = await supabase
       .from('events')
-      .select('*, mixer_event_categories(name)')
+      .select('*, event_categories(name)')
       .eq('id', eventId)
       .single();
 

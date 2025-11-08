@@ -40,6 +40,7 @@
     "@supabase/supabase-js": "^2.57.4",
     "@types/micro": "^7.3.7",
     "@vercel/node": "^5.3.24",
+    "aws-sdk": "^2.1692.0",
     "chalk": "^4.1.2",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
