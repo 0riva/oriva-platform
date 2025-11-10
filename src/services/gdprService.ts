@@ -7,8 +7,8 @@
  */
 
 import { Request } from 'express';
-import { createQueryBuilder, executeQuery, DatabaseError } from '../utils/database';
-import { validateUuid } from '../utils/validation';
+import { createQueryBuilder, executeQuery, DatabaseError } from '../utils/database-express';
+import { validateUuid } from '../utils/validation-express';
 
 /**
  * Deletion result

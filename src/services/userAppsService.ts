@@ -12,7 +12,7 @@ import {
   executeQuery,
   executeQueryOptional,
   DatabaseError,
-} from '../utils/database';
+} from '../utils/database-express';
 import {
   validateRequired,
   validateUuid,
@@ -21,7 +21,7 @@ import {
   USER_APP_STATUSES,
   UserRole,
   UserAppStatus,
-} from '../utils/validation';
+} from '../utils/validation-express';
 import { AppResponse } from './platformAppsService';
 
 /**

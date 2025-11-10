@@ -12,7 +12,7 @@ import {
   executeQuery,
   executeQueryOptional,
   DatabaseError,
-} from '../utils/database';
+} from '../utils/database-express';
 import {
   validateRequired,
   validateUuid,
@@ -21,7 +21,7 @@ import {
   ICE_BREAKER_STYLES,
   IceBreakerCategory,
   IceBreakerStyle,
-} from '../utils/validation';
+} from '../utils/validation-express';
 
 /**
  * Create ice breaker request

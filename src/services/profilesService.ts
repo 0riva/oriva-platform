@@ -12,8 +12,8 @@ import {
   executeQuery,
   executeQueryOptional,
   DatabaseError,
-} from '../utils/database';
-import { validateRequired, validateUuid } from '../utils/validation';
+} from '../utils/database-express';
+import { validateRequired, validateUuid } from '../utils/validation-express';
 
 /**
  * Create profile request

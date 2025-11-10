@@ -12,7 +12,7 @@ import {
   executeQuery,
   executeQueryOptional,
   DatabaseError,
-} from '../utils/database';
+} from '../utils/database-express';
 import {
   validateRequired,
   validateSchemaName,
@@ -21,7 +21,7 @@ import {
   APP_STATUSES,
   AppStatus,
   ValidationError,
-} from '../utils/validation';
+} from '../utils/validation-express';
 
 /**
  * App registration request

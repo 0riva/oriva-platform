@@ -12,7 +12,7 @@ import {
   executeQuery,
   calculateDuration,
   DatabaseError,
-} from '../utils/database';
+} from '../utils/database-express';
 import {
   validateRequired,
   validateUuid,
@@ -21,7 +21,7 @@ import {
   validateInsightType,
   validateConfidence,
   SessionType,
-} from '../utils/validation';
+} from '../utils/validation-express';
 
 /**
  * Create session request

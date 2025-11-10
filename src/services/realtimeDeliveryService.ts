@@ -15,8 +15,8 @@ import {
   executeQuery,
   executeQueryOptional,
   DatabaseError,
-} from '../utils/database';
-import { validateRequired, ValidationError } from '../utils/validation';
+} from '../utils/database-express';
+import { validateRequired, ValidationError } from '../utils/validation-express';
 import { Notification, NotificationChannel } from '../patterns/notificationTypes';
 
 /**
