@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 BFF_URL="${BFF_URL:-http://localhost:3002}"
-INBUCKET_URL="${INBUCKET_URL:-http://localhost:54334}"
+INBUCKET_URL="${INBUCKET_URL:-http://localhost:54344}"  # Mailpit port (Supabase uses Mailpit, not Inbucket)
 TEST_EMAIL="testuser-$(date +%s)@example.com"
 TEST_PASSWORD="TestPassword123"
 NEW_PASSWORD="NewPassword456"
