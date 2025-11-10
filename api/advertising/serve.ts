@@ -32,7 +32,7 @@ class EdgeRedis {
     const response = await fetch(`${this.url}/get/${key}`, {
       headers: { Authorization: `Bearer ${this.token}` },
     });
-    const data = await response.json();
+    const data = await response.json() as { result: T | null };
     return data.result;
   }
 
