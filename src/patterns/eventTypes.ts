@@ -131,7 +131,7 @@ export interface EventSubscription {
   userId: string;
   appId: string;
   handler?: EventHandler;
-  filters?: EventFilter[];
+  filters?: EventFilter;
   createdAt: number;
   updatedAt: number;
   active: boolean;
@@ -142,7 +142,7 @@ export interface EventSubscription {
  */
 export interface SubscribeRequest {
   eventTypes: EventType[];
-  filters?: EventFilter[];
+  filters?: EventFilter;
 }
 
 /**

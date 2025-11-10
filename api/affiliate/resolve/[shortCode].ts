@@ -15,15 +15,45 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
 
 // Note: Removed edge runtime config - Vercel auto-detects nodejs runtime for @upstash/redis
 
-// Initialize Redis client (Upstash for Edge Runtime compatibility)
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL!,
-  token: process.env.UPSTASH_REDIS_TOKEN!,
-});
+// Upstash Redis REST API client (Edge Runtime compatible)
+class EdgeRedis {
+  private url: string;
+  private token: string;
+
+  constructor(url: string, token: string) {
+    this.url = url;
+    this.token = token;
+  }
+
+  async get<T = any>(key: string): Promise<T | null> {
+    const response = await fetch(`${this.url}/get/${key}`, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    const data = await response.json();
+    return data.result;
+  }
+
+  async set(key: string, value: any, options?: { ex?: number }): Promise<void> {
+    const commands = options?.ex
+      ? ['SET', key, value, 'EX', options.ex.toString()]
+      : ['SET', key, value];
+
+    await fetch(this.url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.token}` },
+      body: JSON.stringify(commands),
+    });
+  }
+}
+
+// Initialize Redis client (Upstash REST API for Edge Runtime compatibility)
+const redis = new EdgeRedis(
+  process.env.UPSTASH_REDIS_URL!,
+  process.env.UPSTASH_REDIS_TOKEN!
+);
 
 // Constants
 const CACHE_TTL = 86400; // 24 hours

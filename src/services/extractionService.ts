@@ -13,8 +13,8 @@ import {
   generateExpirationDate,
   isExpired,
   DatabaseError,
-} from '../utils/database';
-import { validateUuid } from '../utils/validation';
+} from '../utils/database-express';
+import { validateUuid } from '../utils/validation-express';
 
 /**
  * Extraction manifest status

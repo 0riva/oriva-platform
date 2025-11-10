@@ -14,8 +14,8 @@ import {
   executeQuery,
   executeQueryOptional,
   DatabaseError,
-} from '../utils/database';
-import { validateRequired, ValidationError } from '../utils/validation';
+} from '../utils/database-express';
+import { validateRequired, ValidationError } from '../utils/validation-express';
 import { Event, EventType } from '../patterns/eventTypes';
 import {
   Notification,
@@ -85,7 +85,7 @@ const DEFAULT_MAPPING_RULES: NotificationMappingRule[] = [
  */
 const DEFAULT_PREFERENCES: Omit<
   NotificationPreferences,
-  'userId' | 'id' | 'createdAt' | 'updatedAt'
+  'userId' | 'createdAt' | 'updatedAt'
 > = {
   channels: {
     in_app: { enabled: true },
@@ -401,7 +401,6 @@ class NotificationRouterService {
       return {
         userId,
         ...DEFAULT_PREFERENCES,
-        id: randomUUID(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };

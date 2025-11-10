@@ -20,7 +20,7 @@ import {
   deleteInsight,
   CreateInsightRequest,
   InsightResponse,
-} from '../services/insightsService';
+} from '../../services/insightsService';
 
 const router = Router();
 

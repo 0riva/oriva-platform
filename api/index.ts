@@ -36,7 +36,7 @@ import {
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
 import hugoLoveRouter from './v1/hugo-love';
-import photosRouter from './routes/photos';
+import photosRouter from '../src/express/routes/photos';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 

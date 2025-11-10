@@ -21,7 +21,7 @@ import {
   CreateSessionRequest,
   UpdateSessionRequest,
   SessionResponse,
-} from '../services/sessionsService';
+} from '../../services/sessionsService';
 
 const router = Router();
 

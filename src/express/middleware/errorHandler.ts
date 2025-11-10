@@ -7,8 +7,8 @@
  */
 
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { ValidationError } from '../utils/validation';
-import { DatabaseError } from '../utils/database';
+import { ValidationError } from '../../utils/validation-express';
+import { DatabaseError } from '../../utils/database-express';
 
 /**
  * Standard error response format

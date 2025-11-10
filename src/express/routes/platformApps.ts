@@ -18,7 +18,7 @@ import {
   CreateAppRequest,
   AppResponse,
   ListAppsResponse,
-} from '../services/platformAppsService';
+} from '../../services/platformAppsService';
 
 const router = Router();
 

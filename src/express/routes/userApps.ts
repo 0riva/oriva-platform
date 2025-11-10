@@ -18,7 +18,7 @@ import {
   getUserAppRole,
   updateLastActive,
   ListUserAppsResponse,
-} from '../services/userAppsService';
+} from '../../services/userAppsService';
 
 const router = Router();
 

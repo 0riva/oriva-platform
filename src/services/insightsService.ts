@@ -7,7 +7,7 @@
  */
 
 import { Request } from 'express';
-import { createQueryBuilder, executeQuery, DatabaseError } from '../utils/database';
+import { createQueryBuilder, executeQuery, DatabaseError } from '../utils/database-express';
 import {
   validateRequired,
   validateUuid,
@@ -15,7 +15,7 @@ import {
   validateConfidence,
   calculateCrossAppVisibility,
   InsightType,
-} from '../utils/validation';
+} from '../utils/validation-express';
 
 /**
  * Create insight request
