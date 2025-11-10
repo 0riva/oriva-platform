@@ -35,7 +35,6 @@ import {
 // } from '../src/middleware/auth';
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
-import hugoLoveRouter from './v1/hugo-love';
 import photosRouter from '../src/express/routes/photos';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
@@ -3777,9 +3776,6 @@ app.delete('/api/v1/auth/account', validateAuth, async (req, res) => {
 // Mount Hugo AI router
 const hugoRouter = createHugoAIRouter(supabase);
 app.use('/api/hugo', hugoRouter);
-
-// Mount Hugo Love router (wrap Vercel handler as Express middleware)
-app.use('/api/v1/hugo-love', (req, res, next) => hugoLoveRouter(req as any, res as any));
 
 // Mount Photos router for pre-signed URL uploads
 app.use('/api/v1/apps/photos', photosRouter);
