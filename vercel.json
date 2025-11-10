@@ -16,15 +16,31 @@
     },
     {
       "source": "/api/v1/conversations/:id",
-      "destination": "/api/v1/conversations?id=$id"
+      "destination": "/api/v1/hugo?id=$id"
     },
     {
       "source": "/api/v1/conversations",
-      "destination": "/api/v1/conversations"
+      "destination": "/api/v1/hugo"
     },
     {
       "source": "/api/v1/hugo/:path*",
       "destination": "/api/v1/hugo"
+    },
+    {
+      "source": "/api/affiliate/campaigns/:path*",
+      "destination": "/api/affiliate"
+    },
+    {
+      "source": "/api/affiliate/commissions/:path*",
+      "destination": "/api/affiliate"
+    },
+    {
+      "source": "/api/affiliate/fraud/:path*",
+      "destination": "/api/affiliate"
+    },
+    {
+      "source": "/api/semantic/:path*",
+      "destination": "/api/semantic"
     },
     {
       "source": "/api/payments/:path*",
@@ -36,31 +52,35 @@
     },
     {
       "source": "/api/v1/topics/:path*",
-      "destination": "/api/v1/topics"
+      "destination": "/api/semantic"
     },
     {
       "source": "/api/v1/apps/:appId/events",
-      "destination": "/api/v1/events?appId=$appId"
+      "destination": "/api/v1/integrations?appId=$appId"
+    },
+    {
+      "source": "/api/v1/events/:path*",
+      "destination": "/api/v1/integrations"
     },
     {
       "source": "/api/v1/apps/:appId/notifications",
-      "destination": "/api/v1/notifications?appId=$appId"
+      "destination": "/api/v1/integrations?appId=$appId"
     },
     {
       "source": "/api/v1/users/:userId/notifications",
-      "destination": "/api/v1/notifications?userId=$userId"
+      "destination": "/api/v1/integrations?userId=$userId"
     },
     {
       "source": "/api/v1/notifications/:id",
-      "destination": "/api/v1/notifications?id=$id"
+      "destination": "/api/v1/integrations?id=$id"
     },
     {
       "source": "/api/v1/apps/:appId/webhooks/:id",
-      "destination": "/api/v1/webhooks?appId=$appId&id=$id"
+      "destination": "/api/v1/integrations?appId=$appId&id=$id"
     },
     {
       "source": "/api/v1/apps/:appId/webhooks",
-      "destination": "/api/v1/webhooks?appId=$appId"
+      "destination": "/api/v1/integrations?appId=$appId"
     },
     {
       "source": "/api/workers/:path*",
