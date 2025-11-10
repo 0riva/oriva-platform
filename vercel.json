@@ -27,10 +27,6 @@
       "destination": "/api/v1/hugo"
     },
     {
-      "source": "/api/v1/hugo-love/:path*",
-      "destination": "/api/v1/hugo"
-    },
-    {
       "source": "/api/affiliate/campaigns/:path*",
       "destination": "/api/affiliate"
     },
