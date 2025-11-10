@@ -17,9 +17,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-// Edge Runtime configuration
+// Serverless Function configuration (changed from edge due to @upstash/redis compatibility)
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 // Initialize Redis client (Upstash for Edge Runtime compatibility)
@@ -79,8 +79,8 @@ async function fetchUrlFromDatabase(shortCode: string) {
     `${process.env.SUPABASE_URL}/rest/v1/affiliate_urls?short_code=eq.${shortCode}&select=*,affiliate_campaigns!inner(*)`,
     {
       headers: {
-        'apikey': process.env.SUPABASE_ANON_KEY!,
-        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY!}`,
+        apikey: process.env.SUPABASE_ANON_KEY!,
+        Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY!}`,
         'Content-Type': 'application/json',
       },
     }
@@ -90,18 +90,14 @@ async function fetchUrlFromDatabase(shortCode: string) {
     throw new Error(`Database fetch failed: ${response.status}`);
   }
 
-  const data = await response.json() as any[];
+  const data = (await response.json()) as any[];
   return data.length > 0 ? data[0] : null;
 }
 
 /**
  * Track click (async, non-blocking)
  */
-async function trackClick(
-  shortCode: string,
-  urlData: any,
-  req: NextRequest
-): Promise<void> {
+async function trackClick(shortCode: string, urlData: any, req: NextRequest): Promise<void> {
   try {
     // Extract context from request
     // Note: geo and ip are available in Edge Runtime but not in standard Next.js types
@@ -207,7 +203,7 @@ export default async function handler(req: NextRequest) {
 
     // 4. Track click (async, non-blocking)
     if (urlData) {
-      trackClick(shortCode, urlData, req).catch(error => {
+      trackClick(shortCode, urlData, req).catch((error) => {
         console.error('Async tracking error:', error);
       });
     }

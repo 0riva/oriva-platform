@@ -17,9 +17,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-// Edge Runtime configuration
+// Serverless Function configuration (changed from edge due to @upstash/redis compatibility)
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 // Initialize Redis client
@@ -71,7 +71,7 @@ function calculateRelevanceScore(
 
   // Segment match (40% weight)
   if (userSegments.length > 0 && campaign.ad_targeting?.interest_keywords) {
-    const segmentOverlap = userSegments.filter(s =>
+    const segmentOverlap = userSegments.filter((s) =>
       campaign.ad_targeting.interest_keywords.includes(s)
     ).length;
 
@@ -80,7 +80,7 @@ function calculateRelevanceScore(
 
   // Keyword match (40% weight)
   if (context.thread_keywords && campaign.ad_targeting?.interest_keywords) {
-    const keywordOverlap = context.thread_keywords.filter(k =>
+    const keywordOverlap = context.thread_keywords.filter((k) =>
       campaign.ad_targeting.interest_keywords.includes(k)
     ).length;
 
@@ -121,10 +121,7 @@ function isCampaignEligible(campaign: any): boolean {
 /**
  * Track impression (async, non-blocking)
  */
-async function trackImpression(
-  campaign: any,
-  context: AdContext
-): Promise<void> {
+async function trackImpression(campaign: any, context: AdContext): Promise<void> {
   try {
     await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/advertising/track`, {
       method: 'POST',
@@ -178,7 +175,7 @@ export default async function handler(req: NextRequest) {
     }
 
     // Parse context
-    const context = await req.json() as AdContext;
+    const context = (await req.json()) as AdContext;
 
     // Validate required fields
     if (!context.placement) {
@@ -198,8 +195,8 @@ export default async function handler(req: NextRequest) {
       `${process.env.SUPABASE_URL}/rest/v1/ad_campaigns?status=eq.active&select=*,ad_creatives!inner(*),ad_targeting!inner(*)`,
       {
         headers: {
-          'apikey': process.env.SUPABASE_ANON_KEY!,
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY!}`,
+          apikey: process.env.SUPABASE_ANON_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY!}`,
           'Content-Type': 'application/json',
         },
       }
@@ -209,7 +206,7 @@ export default async function handler(req: NextRequest) {
       throw new Error(`Database fetch failed: ${response.status}`);
     }
 
-    const campaigns = await response.json() as any[];
+    const campaigns = (await response.json()) as any[];
 
     // Filter eligible campaigns
     const eligible = campaigns.filter((c: any) => isCampaignEligible(c));
@@ -226,7 +223,7 @@ export default async function handler(req: NextRequest) {
 
     // Filter by threshold and sort by score
     const qualified = scored
-      .filter(s => s.score >= RELEVANCE_THRESHOLD)
+      .filter((s) => s.score >= RELEVANCE_THRESHOLD)
       .sort((a, b) => b.score - a.score);
 
     if (qualified.length === 0) {
@@ -237,12 +234,14 @@ export default async function handler(req: NextRequest) {
     const selected = qualified[0];
 
     // Track impression (async, non-blocking)
-    trackImpression(selected.campaign, context).catch(error => {
+    trackImpression(selected.campaign, context).catch((error) => {
       console.error('Async tracking error:', error);
     });
 
     const duration = Date.now() - startTime;
-    console.log(`Ad served: ${selected.campaign.id} (score: ${selected.score.toFixed(2)}, ${duration}ms)`);
+    console.log(
+      `Ad served: ${selected.campaign.id} (score: ${selected.score.toFixed(2)}, ${duration}ms)`
+    );
 
     // Return ad with creative
     const result = {
@@ -266,10 +265,13 @@ export default async function handler(req: NextRequest) {
     console.error('Ad serving error:', error);
 
     // Return empty response on error (graceful degradation)
-    return NextResponse.json({
-      ad: null,
-      reason: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        ad: null,
+        reason: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
