@@ -2,6 +2,8 @@
 // Handles: POST /api/v1/auth/register
 //          POST /api/v1/auth/login
 //          POST /api/v1/auth/logout
+//          POST /api/v1/auth/forgot-password
+//          POST /api/v1/auth/reset-password
 //          GET /api/v1/auth/profile
 //          PATCH /api/v1/auth/profile
 //          GET /api/v1/auth/account
@@ -30,6 +32,15 @@ interface LoginRequest {
 interface UpdateProfileRequest {
   name?: string;
   preferences?: Record<string, unknown>;
+}
+
+interface ForgotPasswordRequest {
+  email: string;
+}
+
+interface ResetPasswordRequest {
+  token: string;
+  password: string;
 }
 
 function isValidEmail(email: string): boolean {
@@ -289,7 +300,83 @@ async function handleTokenRefresh(req: VercelRequest, res: VercelResponse): Prom
   });
 }
 
-async function handleDevProfiles(req: VercelRequest, res: VercelResponse): Promise<void> {
+async function handleForgotPassword(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const { email }: ForgotPasswordRequest = req.body;
+
+  if (!email) {
+    throw validationError('Email is required');
+  }
+
+  if (!isValidEmail(email)) {
+    throw validationError('Invalid email format');
+  }
+
+  const supabase = getSupabaseClient();
+
+  // Send password reset email
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.SITE_URL || 'http://127.0.0.1:3000'}/reset-password`,
+  });
+
+  if (error) {
+    // Don't expose whether email exists or not for security
+    res.status(200).json({
+      message: 'If an account exists with that email, you will receive a password reset link',
+    });
+    return;
+  }
+
+  // Always return success to avoid user enumeration
+  res.status(200).json({
+    message: 'If an account exists with that email, you will receive a password reset link',
+  });
+}
+
+async function handleResetPassword(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const { token, password }: ResetPasswordRequest = req.body;
+
+  if (!token || !password) {
+    throw validationError('Token and password are required');
+  }
+
+  if (!isStrongPassword(password)) {
+    throw validationError(
+      'Password must be at least 8 characters with uppercase, lowercase, and numbers'
+    );
+  }
+
+  // Create a new Supabase client with the reset token as the access token
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseUrl = process.env.SUPABASE_URL || 'http://127.0.0.1:54331';
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+
+  const supabaseWithToken = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  });
+
+  // Update password using the reset token
+  const { error } = await supabaseWithToken.auth.updateUser({
+    password: password,
+  });
+
+  if (error) {
+    res.status(400).json({
+      error: 'Invalid or expired reset token',
+      code: 'INVALID_RESET_TOKEN',
+    });
+    return;
+  }
+
+  res.status(200).json({
+    message: 'Password reset successfully',
+  });
+}
+
+async function handleDevProfiles(_req: VercelRequest, res: VercelResponse): Promise<void> {
   // PUBLIC endpoint for dev mode - returns available profiles for dev login
   // No authentication required
   if (process.env.NODE_ENV !== 'development' && !process.env.VERCEL_ENV?.includes('preview')) {
@@ -306,7 +393,7 @@ async function handleDevProfiles(req: VercelRequest, res: VercelResponse): Promi
   // Get all profiles from the database (for dev purposes)
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, display_name, username, email, avatar_url')
+    .select('id, display_name, username, avatar_url')
     .limit(10); // Limit to first 10 profiles for dev
 
   if (error || !profiles) {
@@ -324,7 +411,7 @@ async function handleDevProfiles(req: VercelRequest, res: VercelResponse): Promi
     success: true,
     data: profiles.map((p) => ({
       id: p.id,
-      email: p.email || 'dev@oriva.io',
+      email: 'dev@oriva.io',
       name: p.display_name || p.username || 'Dev User',
       display_name: p.display_name || p.username,
       username: p.username,
@@ -353,6 +440,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       if (url?.includes('/token/refresh') && method === 'POST') {
         return handleTokenRefresh(req, res);
+      }
+
+      if (url?.includes('/forgot-password') && method === 'POST') {
+        return handleForgotPassword(req, res);
+      }
+
+      if (url?.includes('/reset-password') && method === 'POST') {
+        return handleResetPassword(req, res);
       }
 
       // Protected endpoints (auth required)
