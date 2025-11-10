@@ -17,10 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-// Serverless Function configuration (changed from edge due to @upstash/redis compatibility)
-export const config = {
-  runtime: 'nodejs',
-};
+// Note: Removed edge runtime config - Vercel auto-detects nodejs runtime for @upstash/redis
 
 // Initialize Redis client
 const redis = new Redis({
