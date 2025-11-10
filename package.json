@@ -94,38 +94,6 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.2"
   },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup.js"
-    ],
-    "collectCoverageFrom": [
-      "api/**/*.{js,ts}",
-      "!api/node_modules/**"
-    ],
-    "coverageDirectory": "coverage",
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "html"
-    ],
-    "moduleFileExtensions": [
-      "ts",
-      "js",
-      "json"
-    ],
-    "transform": {
-      "^.+\\.(ts|tsx)$": [
-        "ts-jest",
-        {
-          "tsconfig": "api/tsconfig.json"
-        }
-      ]
-    }
-  },
   "lint-staged": {
     "*.{js,ts}": [
       "eslint --fix",
