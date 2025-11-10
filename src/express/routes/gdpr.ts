@@ -15,7 +15,7 @@ import {
   generateDeletionReport,
   scheduleDeletion,
   DeletionResult,
-} from '../services/gdprService';
+} from '../../services/gdprService';
 
 const router = Router();
 

@@ -11,9 +11,9 @@ import { Router, Request, Response, WebSocket } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey, requireAuthentication } from '../middleware/auth';
 import { schemaRouter, getSupabase, getAppContext } from '../middleware/schemaRouter';
-import { eventBusService } from '../services/eventBusService';
-import { notificationRouterService } from '../services/notificationRouterService';
-import { realtimeDeliveryService } from '../services/realtimeDeliveryService';
+import { eventBusService } from '../../services/eventBusService';
+import { notificationRouterService } from '../../services/notificationRouterService';
+import { realtimeDeliveryService } from '../../services/realtimeDeliveryService';
 import type { PublishEventRequest, SubscribeRequest } from '../patterns/eventTypes';
 import type { SendNotificationRequest } from '../patterns/notificationTypes';
 

@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import { realtimeDeliveryService } from '../services/realtimeDeliveryService';
-import { validateRequired, ValidationError } from '../utils/validation';
+import { validateRequired, ValidationError } from '../../utils/validation-express';
 
 /**
  * Setup WebSocket server on HTTP server

@@ -16,7 +16,7 @@ import {
   listExtractions,
   cancelExtraction,
   ExtractionManifestResponse,
-} from '../services/extractionService';
+} from '../../services/extractionService';
 
 const router = Router();
 

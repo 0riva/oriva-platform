@@ -22,7 +22,7 @@ import {
   getIceBreakersForProfile,
   CreateIceBreakerRequest,
   IceBreakerResponse,
-} from '../services/iceBreakersService';
+} from '../../services/iceBreakersService';
 
 const router = Router();
 

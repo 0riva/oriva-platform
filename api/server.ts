@@ -10,20 +10,20 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { errorHandler, notFoundHandler, requestTimeout } from './middleware/errorHandler';
+import { errorHandler, notFoundHandler, requestTimeout } from '../src/express/middleware/errorHandler';
 
 // Route imports
-import platformAppsRoutes from './routes/platformApps';
-import userAppsRoutes from './routes/userApps';
-import extractionRoutes from './routes/extraction';
-import sessionsRoutes from './routes/sessions';
-import insightsRoutes from './routes/insights';
-import profilesRoutes from './routes/profiles';
-import iceBreakersRoutes from './routes/iceBreakers';
-import gdprRoutes from './routes/gdpr';
-import eventsRoutes from './routes/events';
-import photosRoutes from './routes/photos';
-import { realtimeDeliveryService } from './services/realtimeDeliveryService';
+import platformAppsRoutes from '../src/express/routes/platformApps';
+import userAppsRoutes from '../src/express/routes/userApps';
+import extractionRoutes from '../src/express/routes/extraction';
+import sessionsRoutes from '../src/express/routes/sessions';
+import insightsRoutes from '../src/express/routes/insights';
+import profilesRoutes from '../src/express/routes/profiles';
+import iceBreakersRoutes from '../src/express/routes/iceBreakers';
+import gdprRoutes from '../src/express/routes/gdpr';
+import eventsRoutes from '../src/express/routes/events';
+import photosRoutes from '../src/express/routes/photos';
+import { realtimeDeliveryService } from '../src/services/realtimeDeliveryService';
 
 /**
  * Create and configure Express application

@@ -23,7 +23,7 @@ import {
   CreateProfileRequest,
   UpdateProfileRequest,
   ProfileResponse,
-} from '../services/profilesService';
+} from '../../services/profilesService';
 
 const router = Router();
 
