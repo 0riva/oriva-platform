@@ -16,15 +16,31 @@
     },
     {
       "source": "/api/v1/conversations/:id",
-      "destination": "/api/v1/conversations?id=$id"
+      "destination": "/api/v1/hugo?id=$id"
     },
     {
       "source": "/api/v1/conversations",
-      "destination": "/api/v1/conversations"
+      "destination": "/api/v1/hugo"
     },
     {
       "source": "/api/v1/hugo/:path*",
       "destination": "/api/v1/hugo"
+    },
+    {
+      "source": "/api/affiliate/campaigns/:path*",
+      "destination": "/api/affiliate"
+    },
+    {
+      "source": "/api/affiliate/commissions/:path*",
+      "destination": "/api/affiliate"
+    },
+    {
+      "source": "/api/affiliate/fraud/:path*",
+      "destination": "/api/affiliate"
+    },
+    {
+      "source": "/api/semantic/:path*",
+      "destination": "/api/semantic"
     },
     {
       "source": "/api/payments/:path*",
