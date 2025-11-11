@@ -150,6 +150,8 @@ type GroupSummary = {
   isActive: boolean;
   role: string;
   description: string | null;
+  image_url: string | null; // OCR-82: Optional group image
+  external_link: string | null; // OCR-82: Optional external link
 };
 
 const normalizeAudienceType = (value: string): AudienceType =>
@@ -588,10 +590,37 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
     // Allow development mode bypass for specific endpoints
     if (process.env.NODE_ENV === 'development' && !authHeader) {
       // In development mode without auth header, create a dev context
+      // IMPORTANT: This only works in development mode and requires DEV_USER_ID env var
+      // In production, NODE_ENV will be 'production' so this code path is never executed
+      const devUserId = process.env.DEV_USER_ID;
+
+      if (!devUserId) {
+        logger.warn(
+          'Dev mode: No DEV_USER_ID environment variable set. ' +
+            'Set DEV_USER_ID in .env to use dev mode without API key. ' +
+            'Requests will proceed but may return empty results.'
+        );
+        // Use a placeholder that won't match any real user
+        // Queries will return empty results instead of crashing
+        const authReq = asAuthRequest(req);
+        authReq.keyInfo = {
+          id: 'dev_key',
+          userId: '__dev_user_placeholder__',
+          name: 'Development User (No DEV_USER_ID set)',
+          permissions: ['read:profiles', 'write:sessions', 'read:sessions'],
+          usageCount: 0,
+          isActive: true,
+          authType: 'api_key' as const,
+          lastUsedAt: undefined,
+        };
+        next();
+        return;
+      }
+
       const authReq = asAuthRequest(req);
       authReq.keyInfo = {
         id: 'dev_key',
-        userId: 'dev_user',
+        userId: devUserId, // From DEV_USER_ID environment variable
         name: 'Development User',
         permissions: ['read:profiles', 'write:sessions', 'read:sessions'],
         usageCount: 0,
@@ -1501,67 +1530,134 @@ app.get(
   validateApiKey,
   withAuthContext(async (_req, res, keyInfo) => {
     try {
-      const { data: groupMemberships, error: membershipError } = await supabase
-        .from('group_members')
-        .select(
-          `
-        group_id,
-        role,
-        groups!inner (
-          id,
-          name,
-          description,
-          is_active,
-          created_at
-        )
-      `
-        )
-        .eq('profile_id', keyInfo.userId)
+      // Step 1: Get user's profiles (profiles.account_id = keyInfo.userId)
+      const { data: userProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('account_id', keyInfo.userId)
         .eq('is_active', true);
 
-      if (membershipError) {
-        logger.error('Failed to fetch group memberships', {
-          membershipError,
+      if (profilesError) {
+        logger.error('Failed to fetch user profiles', {
+          profilesError,
           userId: keyInfo.userId,
         });
-        res.json({
-          ok: true,
-          success: true,
-          data: [],
-          message: 'No groups found or database error',
-        });
-        return;
       }
 
-      type GroupMembershipRow = {
-        group_id: string;
-        role: string;
-        groups: {
-          id: string;
-          name: string;
-          description: string | null;
-          is_active: boolean;
-          created_at: string;
-        };
-      };
+      const profileIds = (userProfiles ?? []).map((p) => p.id);
 
-      const memberships = (groupMemberships ?? []) as unknown as GroupMembershipRow[];
+      // Step 2: Get groups created by user (groups.created_by = keyInfo.userId)
+      const { data: createdGroups, error: createdGroupsError } = await supabase
+        .from('groups')
+        .select('id, name, description, is_private, image_url, external_link, created_at')
+        .eq('created_by', keyInfo.userId);
+
+      if (createdGroupsError) {
+        logger.error('Failed to fetch created groups', {
+          createdGroupsError,
+          userId: keyInfo.userId,
+        });
+      }
+
+      // Step 3: Get profile_memberships for user's profiles
+      let joinedGroupIds: string[] = [];
+      let profileMemberships: Array<{ group_id: string; role: string }> = [];
+
+      if (profileIds.length > 0) {
+        const { data: memberships, error: membershipsError } = await supabase
+          .from('profile_memberships')
+          .select('group_id, role')
+          .in('profile_id', profileIds)
+          .eq('is_active', true);
+
+        if (membershipsError) {
+          logger.error('Failed to fetch profile memberships', {
+            membershipsError,
+            userId: keyInfo.userId,
+            profileIds,
+          });
+        } else {
+          profileMemberships = (memberships ?? []) as Array<{ group_id: string; role: string }>;
+          joinedGroupIds = [...new Set(profileMemberships.map((m) => m.group_id))];
+        }
+      }
+
+      // Step 4: Get groups for joined group_ids (exclude already created groups)
+      const createdGroupIds = new Set((createdGroups ?? []).map((g) => g.id));
+      const joinedGroupIdsToFetch = joinedGroupIds.filter((id) => !createdGroupIds.has(id));
+
+      let joinedGroups: Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        is_private: boolean;
+        image_url: string | null;
+        external_link: string | null;
+        created_at: string;
+      }> = [];
+
+      if (joinedGroupIdsToFetch.length > 0) {
+        const { data: joinedGroupsData, error: joinedGroupsError } = await supabase
+          .from('groups')
+          .select('id, name, description, is_private, image_url, external_link, created_at')
+          .in('id', joinedGroupIdsToFetch);
+
+        if (joinedGroupsError) {
+          logger.error('Failed to fetch joined groups', {
+            joinedGroupsError,
+            userId: keyInfo.userId,
+            joinedGroupIdsToFetch,
+          });
+        } else {
+          joinedGroups = (joinedGroupsData ?? []) as Array<{
+            id: string;
+            name: string;
+            description: string | null;
+            is_private: boolean;
+            image_url: string | null;
+            external_link: string | null;
+            created_at: string;
+          }>;
+        }
+      }
+
+      // Step 5: Combine and deduplicate (created groups take precedence)
+      const allGroups = [
+        ...(createdGroups ?? []).map((g) => ({
+          ...g,
+          role: 'admin' as string, // Creator is admin
+          image_url: (g as any).image_url || null,
+          external_link: (g as any).external_link || null,
+        })),
+        ...joinedGroups.map((g) => {
+          const membership = profileMemberships.find((m) => m.group_id === g.id);
+          return {
+            ...g,
+            role: membership?.role || 'member',
+          };
+        }),
+      ];
+
+      // Step 6: Get member counts from profile_memberships
       const groups: GroupSummary[] = [];
 
-      for (const membership of memberships) {
+      for (const group of allGroups) {
+        // Count members from profile_memberships
         const { count: memberCount } = await supabase
-          .from('group_members')
+          .from('profile_memberships')
           .select('*', { count: 'exact', head: true })
-          .eq('group_id', membership.group_id)
+          .eq('group_id', group.id)
           .eq('is_active', true);
 
         groups.push({
-          groupId: membership.groups.id,
-          groupName: membership.groups.name,
+          groupId: group.id,
+          groupName: group.name,
           memberCount: memberCount || 0,
-          isActive: membership.groups.is_active,
-          role: membership.role,
-          description: membership.groups.description,
+          isActive: !group.is_private, // Map is_private to isActive (private=false means active/visible)
+          role: group.role,
+          description: group.description,
+          image_url: (group as any).image_url || null, // OCR-82: Optional group image
+          external_link: (group as any).external_link || null, // OCR-82: Optional external link
         });
       }
 
@@ -1589,21 +1685,70 @@ app.get(
     try {
       const { groupId } = getGroupParams(req);
 
-      const { data: userMembership, error: accessError } = await supabase
-        .from('group_members')
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('profile_id', keyInfo.userId)
-        .eq('is_active', true)
+      // Step 1: Check if user created the group
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .select('id, created_by')
+        .eq('id', groupId)
         .single();
 
-      if (accessError || !userMembership) {
+      if (groupError || !group) {
+        respondWithError(res, 404, 'NOT_FOUND', 'Group not found');
+        return;
+      }
+
+      const isCreator = group.created_by === keyInfo.userId;
+
+      // Step 2: Check if user's profiles are members
+      let hasProfileMembership = false;
+      if (!isCreator) {
+        // Get user's profiles
+        const { data: userProfiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('account_id', keyInfo.userId)
+          .eq('is_active', true);
+
+        if (profilesError) {
+          logger.error('Failed to fetch user profiles for access check', {
+            profilesError,
+            userId: keyInfo.userId,
+          });
+        }
+
+        const profileIds = (userProfiles ?? []).map((p) => p.id);
+
+        if (profileIds.length > 0) {
+          const { data: membership, error: membershipError } = await supabase
+            .from('profile_memberships')
+            .select('id')
+            .eq('group_id', groupId)
+            .in('profile_id', profileIds)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+
+          if (membershipError) {
+            logger.error('Failed to check profile membership', {
+              membershipError,
+              userId: keyInfo.userId,
+              groupId,
+            });
+          } else {
+            hasProfileMembership = !!membership;
+          }
+        }
+      }
+
+      // Step 3: Deny access if neither creator nor member
+      if (!isCreator && !hasProfileMembership) {
         respondWithError(res, 403, 'FORBIDDEN', 'Access denied to this group');
         return;
       }
 
+      // Step 4: Get members from profile_memberships joined with profiles
       const { data: members, error: membersError } = await supabase
-        .from('group_members')
+        .from('profile_memberships')
         .select(
           `
           id,

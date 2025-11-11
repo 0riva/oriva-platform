@@ -8,7 +8,7 @@
 
 import { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import { Request } from 'express';
-import { getSupabase, getAppContext } from '../middleware/schemaRouter';
+import { getSupabase, getAppContext } from '../express/middleware/schemaRouter';
 
 /**
  * Database error class
