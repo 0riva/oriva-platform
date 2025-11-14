@@ -1,6 +1,18 @@
 // Load environment variables FIRST before any imports
 require('dotenv').config();
 
+// DATADOG APM - Must be initialized before any other imports
+if (process.env.DD_API_KEY) {
+  require('dd-trace').init({
+    service: 'oriva-api-legacy',
+    env: process.env.DD_ENV || process.env.NODE_ENV || 'production',
+    version: process.env.DD_VERSION || process.env.API_VERSION || '1.0.0',
+    logInjection: true, // Automatically inject trace IDs into logs
+    analytics: true, // Enable analytics
+    runtimeMetrics: true, // Collect runtime metrics
+  });
+}
+
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';

@@ -6,6 +6,18 @@
  * Registers all API routes and middleware.
  */
 
+// DATADOG APM - Must be initialized before any other imports
+if (process.env.DD_API_KEY) {
+  require('dd-trace').init({
+    service: 'oriva-api-multitenant',
+    env: process.env.DD_ENV || process.env.NODE_ENV || 'production',
+    version: process.env.DD_VERSION || process.env.API_VERSION || '1.0.0',
+    logInjection: true, // Automatically inject trace IDs into logs
+    analytics: true, // Enable analytics
+    runtimeMetrics: true, // Collect runtime metrics
+  });
+}
+
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
