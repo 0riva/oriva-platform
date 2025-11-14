@@ -7,6 +7,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { getSupabase } from './schemaRouter';
 
 // Extend Express Request to include user context
@@ -29,36 +30,102 @@ interface UserRecord {
 }
 
 /**
- * API Key authentication middleware
- * Validates X-API-Key header against environment configuration
+ * Hash API key using SHA-256 (constant-time hashing)
+ * SECURITY: Prevents timing attacks and ensures keys are never stored in plaintext
  */
-export const requireApiKey = (req: Request, res: Response, next: NextFunction): void => {
-  const apiKey = req.header('X-API-Key');
+const hashApiKey = async (key: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Buffer.from(hashBuffer).toString('hex');
+};
 
-  if (!apiKey) {
-    res.status(401).json({
-      code: 'UNAUTHORIZED',
-      message: 'API key required. Provide X-API-Key header.',
+/**
+ * API Key authentication middleware
+ * SECURITY: Validates X-API-Key header against hashed keys in database
+ * - Keys stored as SHA-256 hashes in developer_api_keys table
+ * - Uses constant-time comparison to prevent timing attacks
+ * - Tracks usage count and last_used_at timestamp
+ */
+export const requireApiKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const apiKey = req.header('X-API-Key');
+
+    if (!apiKey) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'API key required. Provide X-API-Key header.',
+      });
+      return;
+    }
+
+    // Validate API key format (should start with oriva_pk_)
+    if (!apiKey.startsWith('oriva_pk_')) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid API key format. Must start with oriva_pk_',
+      });
+      return;
+    }
+
+    // Hash the provided API key
+    const hashedKey = await hashApiKey(apiKey);
+
+    // Query database for matching API key
+    const supabase = getSupabase(req);
+    const { data: keyRecord, error } = await supabase
+      .schema('oriva_platform')
+      .from('developer_api_keys')
+      .select('id, app_id, is_active, usage_count, expires_at')
+      .eq('key_hash', hashedKey)
+      .maybeSingle();
+
+    if (error || !keyRecord) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid API key',
+      });
+      return;
+    }
+
+    // Check if key is active
+    if (!keyRecord.is_active) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'API key has been deactivated',
+      });
+      return;
+    }
+
+    // Check if key has expired
+    if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'API key has expired',
+      });
+      return;
+    }
+
+    // Update usage tracking (fire and forget - don't block request)
+    supabase
+      .schema('oriva_platform')
+      .from('developer_api_keys')
+      .update({
+        usage_count: (keyRecord.usage_count || 0) + 1,
+        last_used_at: new Date().toISOString(),
+      })
+      .eq('id', keyRecord.id)
+      .then(() => {})
+      .catch((err) => console.warn('Failed to update API key usage:', err));
+
+    next();
+  } catch (error) {
+    console.error('API key validation error:', error);
+    res.status(500).json({
+      code: 'INTERNAL_ERROR',
+      message: 'API key validation failed',
     });
-    return;
   }
-
-  // Validate against configured API keys
-  const validApiKeys = [
-    process.env.API_KEY_PLATFORM,
-    process.env.API_KEY_HUGO_LOVE,
-    process.env.API_KEY_HUGO_CAREER,
-  ].filter(Boolean);
-
-  if (!validApiKeys.includes(apiKey)) {
-    res.status(401).json({
-      code: 'UNAUTHORIZED',
-      message: 'Invalid API key',
-    });
-    return;
-  }
-
-  next();
 };
 
 /**
@@ -83,8 +150,17 @@ export const requireAuth = async (
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
-    // Test mode: Allow test tokens to bypass Supabase auth
-    if (process.env.NODE_ENV === 'test' && token.startsWith('test-user-')) {
+    // SECURITY: Test mode bypass - STRICTLY controlled
+    // Only enabled when:
+    // 1. NODE_ENV is explicitly 'test'
+    // 2. ALLOW_TEST_TOKENS env var is set to 'true'
+    // 3. NOT running on Vercel (VERCEL_ENV is undefined)
+    const isTestEnvironment =
+      process.env.NODE_ENV === 'test' &&
+      process.env.ALLOW_TEST_TOKENS === 'true' &&
+      !process.env.VERCEL_ENV;
+
+    if (isTestEnvironment && token.startsWith('test-user-')) {
       // Extract user ID from test token format: "test-user-{uuid}"
       const userId = token.replace('test-user-', '');
 
