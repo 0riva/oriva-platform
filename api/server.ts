@@ -11,6 +11,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { errorHandler, notFoundHandler, requestTimeout } from '../src/express/middleware/errorHandler';
+import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 
 // Route imports
 import platformAppsRoutes from '../src/express/routes/platformApps';
@@ -45,6 +46,9 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(requestTimeout(30000)); // 30 second timeout
+
+  // SECURITY: Validate Content-Type headers
+  app.use(validateContentType);
 
   // Health check
   app.get('/health', (req, res) => {

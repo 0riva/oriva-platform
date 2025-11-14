@@ -9,6 +9,7 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { getSupabase } from './schemaRouter';
+import { logger, sanitizeError } from '../../utils/logger';
 
 // Extend Express Request to include user context
 declare global {
@@ -107,20 +108,28 @@ export const requireApiKey = async (req: Request, res: Response, next: NextFunct
     }
 
     // Update usage tracking (fire and forget - don't block request)
-    void supabase
-      .schema('oriva_platform')
-      .from('developer_api_keys')
-      .update({
-        usage_count: (keyRecord.usage_count || 0) + 1,
-        last_used_at: new Date().toISOString(),
-      })
-      .eq('id', keyRecord.id)
-      .then(() => {})
-      .catch((err: unknown) => console.warn('Failed to update API key usage:', err));
+    Promise.resolve(
+      supabase
+        .schema('oriva_platform')
+        .from('developer_api_keys')
+        .update({
+          usage_count: (keyRecord.usage_count || 0) + 1,
+          last_used_at: new Date().toISOString(),
+        })
+        .eq('id', keyRecord.id)
+    ).catch((err: unknown) => {
+      // SECURITY: Sanitize error details
+      logger.warn('API key usage tracking failed', {
+        error: sanitizeError(err),
+      });
+    });
 
     next();
   } catch (error) {
-    console.error('API key validation error:', error);
+    // SECURITY: Sanitize error details
+    logger.error('API key validation failed', {
+      error: sanitizeError(error),
+    });
     res.status(500).json({
       code: 'INTERNAL_ERROR',
       message: 'API key validation failed',
@@ -190,6 +199,44 @@ export const requireAuth = async (
       return;
     }
 
+    // SECURITY: Explicit JWT token expiration check
+    // Parse JWT to extract expiration time (don't trust Supabase exclusively)
+    try {
+      const tokenParts = token.split('.');
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+        const expiresAt = payload.exp * 1000; // Convert to milliseconds
+        const now = Date.now();
+
+        // Check if token is expired
+        if (now >= expiresAt) {
+          logger.warn('Expired JWT token rejected', {
+            expiresAt: new Date(expiresAt).toISOString(),
+          });
+          res.status(401).json({
+            code: 'TOKEN_EXPIRED',
+            message: 'Token has expired',
+          });
+          return;
+        }
+
+        // Warn if token expires soon (< 5 minutes)
+        const fiveMinutes = 5 * 60 * 1000;
+        if (expiresAt - now < fiveMinutes) {
+          logger.info('JWT token expiring soon', {
+            expiresIn: Math.floor((expiresAt - now) / 1000) + 's',
+          });
+          // Signal client to refresh token
+          res.setHeader('X-Token-Refresh-Required', 'true');
+        }
+      }
+    } catch (parseError) {
+      // If JWT parsing fails, continue with Supabase validation
+      logger.warn('Failed to parse JWT for expiration check', {
+        error: sanitizeError(parseError),
+      });
+    }
+
     // Verify JWT with Supabase
     const supabase = getSupabase(req);
     const {
@@ -201,7 +248,6 @@ export const requireAuth = async (
       res.status(401).json({
         code: 'UNAUTHORIZED',
         message: 'Invalid or expired token',
-        details: error,
       });
       return;
     }
@@ -230,11 +276,13 @@ export const requireAuth = async (
 
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    // SECURITY: Sanitize error details
+    logger.error('Authentication failed', {
+      error: sanitizeError(error),
+    });
     res.status(500).json({
       code: 'INTERNAL_ERROR',
       message: 'Authentication failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -301,11 +349,13 @@ export const requireAppAccess = async (
 
     next();
   } catch (error) {
-    console.error('App access check error:', error);
+    // SECURITY: Sanitize error details
+    logger.error('App access check failed', {
+      error: sanitizeError(error),
+    });
     res.status(500).json({
       code: 'INTERNAL_ERROR',
       message: 'Access check failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };

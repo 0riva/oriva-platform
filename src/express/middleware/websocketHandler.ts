@@ -10,8 +10,9 @@
 import { Request, Response } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
-import { realtimeDeliveryService } from '../services/realtimeDeliveryService';
+import { realtimeDeliveryService } from '../../services/realtimeDeliveryService';
 import { validateRequired, ValidationError } from '../../utils/validation-express';
+import { logger, sanitizeUserId, sanitizeConnectionId, sanitizeError } from '../../utils/logger';
 
 /**
  * Setup WebSocket server on HTTP server
@@ -39,7 +40,12 @@ export const setupWebSocket = (server: http.Server): WebSocketServer => {
       // Establish connection
       const connectionId = await realtimeDeliveryService.connect(userId, appIds, ws);
 
-      console.log(`[WebSocket] User ${userId} connected: ${connectionId}`);
+      // SECURITY: Sanitize PII in logs
+      logger.info('WebSocket connection established', {
+        userId: sanitizeUserId(userId),
+        connectionId: sanitizeConnectionId(connectionId),
+        appCount: appIds.length,
+      });
 
       // Handle incoming messages
       ws.on('message', (data: Buffer) => {
@@ -47,7 +53,11 @@ export const setupWebSocket = (server: http.Server): WebSocketServer => {
           const message = JSON.parse(data.toString());
           handleWebSocketMessage(message, userId, connectionId, ws);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          // SECURITY: Sanitize error details
+          logger.error('WebSocket message parse error', {
+            error: sanitizeError(error),
+            userId: sanitizeUserId(userId),
+          });
           ws.send(
             JSON.stringify({
               type: 'error',
@@ -59,13 +69,22 @@ export const setupWebSocket = (server: http.Server): WebSocketServer => {
 
       // Handle connection close
       ws.on('close', async () => {
-        console.log(`[WebSocket] User ${userId} disconnected: ${connectionId}`);
+        // SECURITY: Sanitize PII in logs
+        logger.info('WebSocket connection closed', {
+          userId: sanitizeUserId(userId),
+          connectionId: sanitizeConnectionId(connectionId),
+        });
         await realtimeDeliveryService.disconnect(connectionId);
       });
 
       // Handle errors
       ws.on('error', (error) => {
-        console.error(`[WebSocket] Error for user ${userId}:`, error);
+        // SECURITY: Sanitize error details and PII
+        logger.error('WebSocket connection error', {
+          userId: sanitizeUserId(userId),
+          connectionId: sanitizeConnectionId(connectionId),
+          error: sanitizeError(error),
+        });
       });
 
       // Send connection acknowledgement
@@ -77,14 +96,20 @@ export const setupWebSocket = (server: http.Server): WebSocketServer => {
         })
       );
     } catch (error) {
-      console.error('Error in WebSocket connection handler:', error);
+      // SECURITY: Sanitize error details
+      logger.error('WebSocket connection handler error', {
+        error: sanitizeError(error),
+      });
       ws.close(1011, 'Internal server error');
     }
   });
 
   // Handle server errors
   wss.on('error', (error) => {
-    console.error('[WebSocket Server] Error:', error);
+    // SECURITY: Sanitize error details
+    logger.error('WebSocket server error', {
+      error: sanitizeError(error),
+    });
   });
 
   return wss;
@@ -132,7 +157,11 @@ async function handleWebSocketMessage(
         break;
 
       default:
-        console.warn(`Unknown WebSocket message type: ${message.type}`);
+        // SECURITY: Log unknown message types for monitoring
+        logger.warn('Unknown WebSocket message type', {
+          messageType: message.type,
+          userId: sanitizeUserId(userId),
+        });
         ws.send(
           JSON.stringify({
             type: 'error',
@@ -141,7 +170,11 @@ async function handleWebSocketMessage(
         );
     }
   } catch (error) {
-    console.error('Error handling WebSocket message:', error);
+    // SECURITY: Sanitize error details
+    logger.error('WebSocket message handler error', {
+      error: sanitizeError(error),
+      userId: sanitizeUserId(userId),
+    });
     ws.send(
       JSON.stringify({
         type: 'error',
@@ -163,7 +196,7 @@ export const shutdownWebSocket = (wss: WebSocketServer): Promise<void> => {
     });
 
     wss.close(() => {
-      console.log('[WebSocket Server] Closed');
+      logger.info('WebSocket server closed gracefully');
       resolve();
     });
   });

@@ -13,6 +13,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { logger, sanitizeError, sanitizeObject } from '../../utils/logger';
 
 // Extend Express Request to include app context
 declare global {
@@ -109,11 +110,14 @@ export const schemaRouter = async (
       });
 
     if (pathError) {
-      console.error('Failed to set schema path:', pathError);
+      // SECURITY: Sanitize error details to prevent exposure
+      logger.error('Schema path setup failed', {
+        appId,
+        error: sanitizeError(pathError),
+      });
       res.status(500).json({
         code: 'SCHEMA_ROUTING_ERROR',
         message: 'Failed to route request to app schema',
-        details: pathError,
       });
       return;
     }
@@ -129,11 +133,14 @@ export const schemaRouter = async (
     // Continue to next middleware
     next();
   } catch (error) {
-    console.error('Schema routing error:', error);
+    // SECURITY: Sanitize error details to prevent sensitive data exposure
+    logger.error('Schema routing failed', {
+      appId: req.header('X-App-ID'),
+      error: sanitizeError(error),
+    });
     res.status(500).json({
       code: 'INTERNAL_ERROR',
       message: 'Schema routing failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };

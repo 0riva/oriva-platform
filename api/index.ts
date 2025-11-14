@@ -36,6 +36,7 @@ import {
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
 import photosRouter from '../src/express/routes/photos';
+import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 
@@ -485,6 +486,9 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+// SECURITY: Validate Content-Type headers
+app.use(validateContentType);
 
 // Rate limiting
 const limiter = rateLimit({
