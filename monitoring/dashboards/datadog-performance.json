@@ -1,0 +1,220 @@
+{
+  "title": "Oriva API - Performance & Reliability",
+  "description": "Request latency, error rates, throughput, and request tracing",
+  "widgets": [
+    {
+      "id": 1,
+      "definition": {
+        "title": "Requests Per Second",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:trace.express.request.hits{service:oriva-api}.as_rate()",
+            "display_type": "area",
+            "style": {
+              "palette": "dog_classic",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "definition": {
+        "title": "Request Duration (p50, p95, p99)",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "p50:trace.express.request.duration{service:oriva-api}",
+            "display_type": "line",
+            "style": {
+              "palette": "green",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          },
+          {
+            "q": "p95:trace.express.request.duration{service:oriva-api}",
+            "display_type": "line",
+            "style": {
+              "palette": "orange"
+            }
+          },
+          {
+            "q": "p99:trace.express.request.duration{service:oriva-api}",
+            "display_type": "line",
+            "style": {
+              "palette": "red"
+            }
+          }
+        ],
+        "yaxis": {
+          "scale": "linear",
+          "include_zero": true,
+          "label": "Duration (ms)"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "definition": {
+        "title": "Error Rate by Status Code",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:trace.express.request.hits{service:oriva-api,http.status_code:4*}.as_rate()",
+            "display_type": "bars",
+            "style": {
+              "palette": "warm"
+            }
+          },
+          {
+            "q": "sum:trace.express.request.hits{service:oriva-api,http.status_code:5*}.as_rate()",
+            "display_type": "bars",
+            "style": {
+              "palette": "red"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "definition": {
+        "title": "Current Error Rate",
+        "title_size": "16",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "(sum:trace.express.request.errors{service:oriva-api}.as_count() / sum:trace.express.request.hits{service:oriva-api}.as_count()) * 100",
+            "aggregator": "avg",
+            "conditional_formats": [
+              {
+                "comparator": ">",
+                "value": 5,
+                "palette": "white_on_red"
+              },
+              {
+                "comparator": ">",
+                "value": 1,
+                "palette": "white_on_yellow"
+              },
+              {
+                "comparator": "<=",
+                "value": 1,
+                "palette": "white_on_green"
+              }
+            ]
+          }
+        ],
+        "autoscale": true,
+        "custom_unit": "%",
+        "precision": 2
+      }
+    },
+    {
+      "id": 5,
+      "definition": {
+        "title": "Slowest Endpoints (p95)",
+        "title_size": "16",
+        "type": "toplist",
+        "requests": [
+          {
+            "q": "top(p95:trace.express.request.duration{service:oriva-api} by {resource_name}, 10, 'mean', 'desc')"
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Most Requested Endpoints",
+        "title_size": "16",
+        "type": "toplist",
+        "requests": [
+          {
+            "q": "top(sum:trace.express.request.hits{service:oriva-api} by {resource_name}, 10, 'sum', 'desc')"
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "definition": {
+        "title": "Apdex Score (Target: 500ms)",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "trace.express.request.apdex{service:oriva-api,apdex_target:500}",
+            "display_type": "area",
+            "style": {
+              "palette": "cool"
+            }
+          }
+        ],
+        "yaxis": {
+          "min": "0",
+          "max": "1"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "Request ID Coverage",
+        "title_size": "16",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "(sum:trace.express.request{service:oriva-api,requestid:*}.as_count() / sum:trace.express.request{service:oriva-api}.as_count()) * 100",
+            "aggregator": "avg"
+          }
+        ],
+        "autoscale": true,
+        "custom_unit": "%",
+        "precision": 1
+      }
+    },
+    {
+      "id": 9,
+      "definition": {
+        "title": "Database Query Time",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:postgres.query.duration{service:oriva-api}",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "definition": {
+        "title": "Recent Errors (Trace Explorer)",
+        "title_size": "16",
+        "type": "trace_service",
+        "service": "oriva-api",
+        "span_name": "express.request",
+        "show_errors": true,
+        "show_latency": false,
+        "size_format": "large"
+      }
+    }
+  ],
+  "template_variables": [
+    {
+      "name": "env",
+      "default": "production",
+      "prefix": "env"
+    }
+  ],
+  "layout_type": "ordered"
+}

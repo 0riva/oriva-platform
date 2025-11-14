@@ -1,0 +1,253 @@
+# Warning-Level Security & Performance Alerts
+# These alerts indicate potential issues but don't require paging
+
+alerts:
+  # WARNING: Elevated error rate
+  - name: api_error_rate_warning
+    type: metric alert
+    query: |
+      avg(last_30m):(
+        sum:trace.express.request.errors{service:oriva-api,env:production}.as_count() /
+        sum:trace.express.request.hits{service:oriva-api,env:production}.as_count()
+      ) * 100 > 1
+    severity: warning
+    message: |
+      **WARNING: Elevated API Error Rate**
+
+      Error rate is {{value}}% (above 1% threshold).
+
+      **Actions**:
+      - Monitor for escalation
+      - Review error patterns
+      - Check if specific endpoint or user segment affected
+
+      Request IDs available for tracing.
+    tags:
+      - service:oriva-api
+      - severity:warning
+    notification:
+      - slack: "#engineering"
+
+  # WARNING: High latency
+  - name: api_latency_warning
+    type: metric alert
+    query: |
+      avg(last_15m):p95:trace.express.request.duration{service:oriva-api,env:production} > 2000
+    severity: warning
+    message: |
+      **WARNING: API Latency Elevated**
+
+      p95 latency is {{value}}ms (above 2 second threshold).
+
+      **Actions**:
+      - Identify slow endpoints
+      - Check database query performance
+      - Review recent deployments
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+  # WARNING: Rate limit abuse pattern
+  - name: rate_limit_abuse_pattern
+    type: metric alert
+    query: |
+      sum(last_1h):sum:security.event{event:rate_limit_exceeded,env:production} by {ip} > 50
+    severity: warning
+    message: |
+      **WARNING: Rate Limit Abuse Detected**
+
+      IP {{ip.name}} exceeded rate limit {{value}} times in 1 hour.
+
+      **Suggested Actions**:
+      - Review IP reputation
+      - Consider IP-level blocking if malicious
+      - Check if legitimate high-volume user
+      - May need rate limit adjustment for valid use case
+
+      **Investigation**:
+      ```
+      # Check request patterns from this IP
+      grep "ip\":\"{{ip.name}}\"" logs/combined.log | \
+        jq -r '.path' | sort | uniq -c | sort -rn
+      ```
+    tags:
+      - service:oriva-api
+      - severity:warning
+      - team:security
+
+  # WARNING: Invalid API key attempts
+  - name: invalid_api_key_attempts
+    type: metric alert
+    query: |
+      sum(last_1h):sum:security.event{event:invalid_api_key,env:production}.as_count() > 25
+    severity: warning
+    message: |
+      **WARNING: Multiple Invalid API Key Attempts**
+
+      {{value}} invalid API key attempts in the last hour.
+
+      **Possible Causes**:
+      - Misconfigured client application
+      - API key rotation not completed
+      - Potential malicious scanning
+
+      **Actions**:
+      - Review key prefixes to identify pattern
+      - Contact affected developers if known
+      - Monitor for escalation
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+  # WARNING: CORS violations
+  - name: cors_violations_spike
+    type: metric alert
+    query: |
+      sum(last_30m):sum:security.event{event:cors_violation,env:production}.as_count() > 20
+    severity: warning
+    message: |
+      **WARNING: CORS Violations Spike**
+
+      {{value}} CORS violations in 30 minutes.
+
+      **Possible Causes**:
+      - New client deployment with incorrect origin
+      - Browser extension interference
+      - Malicious cross-origin attempt
+
+      **Actions**:
+      - Review origin patterns in logs
+      - Verify allowed origins configuration
+      - Contact frontend team if legitimate origin
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+  # WARNING: Content-Type rejections
+  - name: content_type_rejections
+    type: metric alert
+    query: |
+      sum(last_1h):sum:security.event{event:content_type_rejected,env:production}.as_count() > 15
+    severity: warning
+    message: |
+      **WARNING: Content-Type Validation Rejections**
+
+      {{value}} requests rejected due to invalid Content-Type.
+
+      **Possible Causes**:
+      - Client not setting Content-Type header
+      - Client using unsupported content type
+      - API documentation outdated
+
+      **Actions**:
+      - Review rejected content types
+      - Update API documentation if needed
+      - Contact developers using incorrect types
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+  # WARNING: Expired token volume
+  - name: expired_token_volume
+    type: metric alert
+    query: |
+      sum(last_30m):sum:security.event{event:token_expired,env:production}.as_count() > 500
+    severity: warning
+    message: |
+      **WARNING: High Volume of Expired Tokens**
+
+      {{value}} expired token rejections in 30 minutes.
+
+      **Possible Causes**:
+      - Token lifetime too short for use case
+      - Users not receiving refresh prompts
+      - Client not implementing token refresh
+
+      **Actions**:
+      - Check if users seeing X-Token-Refresh-Required header
+      - Review token lifetime settings
+      - Verify client refresh logic
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+  # WARNING: Request ID missing
+  - name: request_id_missing
+    type: metric alert
+    query: |
+      avg(last_1h):(
+        sum:trace.express.request{service:oriva-api,!requestid}.as_count() /
+        sum:trace.express.request{service:oriva-api}.as_count()
+      ) * 100 > 5
+    severity: warning
+    message: |
+      **WARNING: Request ID Coverage Low**
+
+      {{value}}% of requests missing request IDs.
+
+      **Impact**: Reduced traceability for debugging
+
+      **Actions**:
+      - Check if request ID middleware is enabled
+      - Verify middleware order in Express app
+      - Check for routes bypassing middleware
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+  # WARNING: Slow database queries
+  - name: slow_database_queries
+    type: metric alert
+    query: |
+      avg(last_15m):p95:postgres.query.duration{service:oriva-api,env:production} > 1000
+    severity: warning
+    message: |
+      **WARNING: Slow Database Queries Detected**
+
+      p95 query duration is {{value}}ms (above 1 second).
+
+      **Actions**:
+      - Identify slow queries in database logs
+      - Check for missing indexes
+      - Review query optimization opportunities
+      - Consider query caching
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+  # WARNING: High request volume
+  - name: high_request_volume
+    type: metric alert
+    query: |
+      sum(last_5m):sum:trace.express.request.hits{service:oriva-api,env:production}.as_rate() > 1000
+    severity: warning
+    message: |
+      **WARNING: Unusually High Request Volume**
+
+      Request rate is {{value}} req/sec (above normal 1000 req/sec).
+
+      **Possible Causes**:
+      - Legitimate traffic spike (product launch, marketing)
+      - DDoS attack
+      - Retry storm from client
+      - Bot activity
+
+      **Actions**:
+      - Verify with product team if expected
+      - Check request patterns and user agents
+      - Monitor rate limiting effectiveness
+      - Consider scaling if legitimate traffic
+    tags:
+      - service:oriva-api
+      - severity:warning
+
+# Notification settings
+notification_settings:
+  slack:
+    channel: "#engineering"
+    mention_on_recovery: false
+
+  email:
+    recipients:
+      - engineering@oriva.com
+    send_on_recovery: true

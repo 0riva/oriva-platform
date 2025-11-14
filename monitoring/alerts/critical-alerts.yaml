@@ -1,0 +1,202 @@
+# Critical Security & Performance Alerts
+# These alerts require immediate attention and should page on-call
+
+alerts:
+  # CRITICAL: High error rate
+  - name: api_error_rate_critical
+    type: metric alert
+    query: |
+      avg(last_15m):(
+        sum:trace.express.request.errors{service:oriva-api,env:production}.as_count() /
+        sum:trace.express.request.hits{service:oriva-api,env:production}.as_count()
+      ) * 100 > 5
+    severity: critical
+    message: |
+      **CRITICAL: API Error Rate Above 5%**
+
+      The API error rate is {{value}}% over the last 15 minutes.
+
+      **Impact**: Users experiencing widespread failures
+
+      **Immediate Actions**:
+      1. Check recent deployments - rollback if needed
+      2. Review error logs: `kubectl logs -l app=oriva-api --tail=100`
+      3. Check external dependencies (Supabase, Redis)
+      4. Review error distribution by endpoint
+
+      **Runbook**: https://docs.oriva.com/runbooks/high-error-rate
+
+      **Request IDs**: Use X-Request-ID to trace affected requests
+    tags:
+      - service:oriva-api
+      - severity:critical
+      - team:engineering
+    escalation:
+      - on-call-engineer
+      - engineering-lead
+    no_data_timeframe: 30
+    notify_no_data: true
+    renotify_interval: 15
+
+  # CRITICAL: API completely down
+  - name: api_down
+    type: service check
+    query: |
+      "http.can_connect".over("url:https://api.oriva.com/health").by("*").last(2).count_by_status()
+    severity: critical
+    message: |
+      **CRITICAL: API Health Check Failing**
+
+      The API is not responding to health checks.
+
+      **Impact**: Complete API outage
+
+      **Immediate Actions**:
+      1. Check server status on hosting platform
+      2. Check logs for startup errors
+      3. Verify database connectivity
+      4. Check if rate limiting blocked health check
+
+      **Runbook**: https://docs.oriva.com/runbooks/api-down
+    tags:
+      - service:oriva-api
+      - severity:critical
+    escalation:
+      - on-call-engineer
+      - cto
+    no_data_timeframe: 10
+    notify_no_data: true
+
+  # CRITICAL: Extreme latency
+  - name: api_latency_critical
+    type: metric alert
+    query: |
+      avg(last_10m):p95:trace.express.request.duration{service:oriva-api,env:production} > 5000
+    severity: critical
+    message: |
+      **CRITICAL: API Latency Extremely High**
+
+      p95 latency is {{value}}ms (over 5 seconds).
+
+      **Impact**: Severe user experience degradation
+
+      **Immediate Actions**:
+      1. Check for slow database queries
+      2. Review recent code changes
+      3. Check external API dependencies
+      4. Look for memory leaks or CPU spikes
+
+      **Request Tracing**: Filter logs by requestId to find slow requests
+
+      **Runbook**: https://docs.oriva.com/runbooks/high-latency
+    tags:
+      - service:oriva-api
+      - severity:critical
+    escalation:
+      - on-call-engineer
+    renotify_interval: 30
+
+  # CRITICAL: Security - Mass authentication failures
+  - name: auth_failure_spike
+    type: metric alert
+    query: |
+      sum(last_5m):sum:security.event{event:auth_failed,env:production}.as_count() > 100
+    severity: critical
+    message: |
+      **CRITICAL: Authentication Failure Spike**
+
+      {{value}} authentication failures in the last 5 minutes.
+
+      **Potential Threat**: Credential stuffing attack or brute force
+
+      **Immediate Actions**:
+      1. Review failure reasons: Check logs for `event:auth_failed`
+      2. Identify attack IPs: Group by IP address
+      3. Consider temporary rate limit reduction
+      4. Enable additional MFA if available
+      5. Alert security team
+
+      **Investigation**:
+      ```
+      # Find top attacking IPs
+      grep "event:auth_failed" logs/combined.log | \
+        jq -r '.ip' | sort | uniq -c | sort -rn | head -10
+      ```
+
+      **Runbook**: https://docs.oriva.com/runbooks/auth-attack
+    tags:
+      - service:oriva-api
+      - severity:critical
+      - team:security
+    escalation:
+      - security-team
+      - on-call-engineer
+
+  # CRITICAL: Database connection failures
+  - name: database_connection_failures
+    type: metric alert
+    query: |
+      sum(last_5m):sum:database.connection.error{service:oriva-api,env:production}.as_count() > 10
+    severity: critical
+    message: |
+      **CRITICAL: Database Connection Failures**
+
+      {{value}} database connection failures in 5 minutes.
+
+      **Impact**: API unable to serve requests
+
+      **Immediate Actions**:
+      1. Check Supabase status page
+      2. Verify connection pool settings
+      3. Check if IP is whitelisted
+      4. Review connection string validity
+
+      **Runbook**: https://docs.oriva.com/runbooks/database-issues
+    tags:
+      - service:oriva-api
+      - severity:critical
+    escalation:
+      - on-call-engineer
+      - database-admin
+
+  # CRITICAL: Memory leak detected
+  - name: memory_leak_critical
+    type: metric alert
+    query: |
+      avg(last_30m):avg:process.memory.rss{service:oriva-api,env:production} > 1073741824
+    severity: critical
+    message: |
+      **CRITICAL: High Memory Usage**
+
+      Memory usage is {{value}} bytes (over 1GB).
+
+      **Impact**: Potential OOM crash imminent
+
+      **Immediate Actions**:
+      1. Restart affected instances one by one
+      2. Check for memory leaks in recent code
+      3. Review object retention in heap dumps
+      4. Scale horizontally if needed
+
+      **Runbook**: https://docs.oriva.com/runbooks/memory-leak
+    tags:
+      - service:oriva-api
+      - severity:critical
+    escalation:
+      - on-call-engineer
+
+# Alert notification settings
+notification_settings:
+  slack:
+    channel: "#alerts-critical"
+    mention: "@oncall"
+
+  pagerduty:
+    service_key: "your-pagerduty-service-key"
+    severity_mapping:
+      critical: "critical"
+
+  email:
+    recipients:
+      - oncall@oriva.com
+      - engineering@oriva.com

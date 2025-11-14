@@ -1,0 +1,229 @@
+{
+  "title": "Oriva API - Security Monitoring",
+  "description": "Security events, authentication, rate limiting, and threat detection",
+  "widgets": [
+    {
+      "id": 1,
+      "definition": {
+        "title": "Security Events (Last Hour)",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "sum:security.event{*}.as_count()",
+            "aggregator": "sum",
+            "conditional_formats": [
+              {
+                "comparator": ">",
+                "value": 100,
+                "palette": "white_on_red"
+              },
+              {
+                "comparator": ">",
+                "value": 50,
+                "palette": "white_on_yellow"
+              },
+              {
+                "comparator": "<=",
+                "value": 50,
+                "palette": "white_on_green"
+              }
+            ]
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      }
+    },
+    {
+      "id": 2,
+      "definition": {
+        "title": "Authentication Failures by Reason",
+        "title_size": "16",
+        "type": "toplist",
+        "requests": [
+          {
+            "q": "top(sum:security.event{event:auth_failed} by {reason}, 10, 'sum', 'desc')",
+            "style": {
+              "palette": "dog_classic"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "definition": {
+        "title": "Rate Limit Violations by IP",
+        "title_size": "16",
+        "type": "toplist",
+        "requests": [
+          {
+            "q": "top(sum:security.event{event:rate_limit_exceeded} by {ip}, 10, 'sum', 'desc')",
+            "style": {
+              "palette": "warm"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "definition": {
+        "title": "Security Events Timeline",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:security.event{event:auth_failed}.as_count()",
+            "display_type": "bars",
+            "style": {
+              "palette": "dog_classic",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          },
+          {
+            "q": "sum:security.event{event:rate_limit_exceeded}.as_count()",
+            "display_type": "bars"
+          },
+          {
+            "q": "sum:security.event{event:cors_violation}.as_count()",
+            "display_type": "bars"
+          },
+          {
+            "q": "sum:security.event{event:content_type_rejected}.as_count()",
+            "display_type": "bars"
+          }
+        ],
+        "yaxis": {
+          "scale": "linear",
+          "include_zero": true
+        },
+        "markers": []
+      }
+    },
+    {
+      "id": 5,
+      "definition": {
+        "title": "Invalid API Keys (Last 24h)",
+        "title_size": "16",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "sum:security.event{event:invalid_api_key}.as_count()",
+            "aggregator": "sum",
+            "conditional_formats": [
+              {
+                "comparator": ">",
+                "value": 50,
+                "palette": "white_on_red"
+              }
+            ]
+          }
+        ],
+        "autoscale": true,
+        "precision": 0,
+        "time": {
+          "live_span": "1d"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Expired Tokens",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:security.event{event:token_expired}.as_count()",
+            "display_type": "bars",
+            "style": {
+              "palette": "purple",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "definition": {
+        "title": "CORS & Content-Type Violations",
+        "title_size": "16",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:security.event{event:cors_violation}.as_count()",
+            "display_type": "line"
+          },
+          {
+            "q": "sum:security.event{event:content_type_rejected}.as_count()",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "Privileged Operations",
+        "title_size": "16",
+        "type": "event_stream",
+        "query": "event:privileged_operation",
+        "event_size": "s",
+        "time": {
+          "live_span": "4h"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "definition": {
+        "title": "Top Attack Sources (IP Addresses)",
+        "title_size": "16",
+        "type": "geomap",
+        "requests": [
+          {
+            "q": "sum:security.event{event:auth_failed OR event:rate_limit_exceeded} by {ip}"
+          }
+        ],
+        "style": {
+          "palette": "hostmap_blues",
+          "palette_flip": false
+        }
+      }
+    },
+    {
+      "id": 10,
+      "definition": {
+        "title": "Security Event Distribution",
+        "title_size": "16",
+        "type": "sunburst",
+        "requests": [
+          {
+            "q": "sum:security.event{*} by {event}"
+          }
+        ]
+      }
+    }
+  ],
+  "template_variables": [
+    {
+      "name": "env",
+      "default": "production",
+      "prefix": "env"
+    },
+    {
+      "name": "service",
+      "default": "oriva-api",
+      "prefix": "service"
+    }
+  ],
+  "layout_type": "ordered",
+  "is_read_only": false,
+  "notify_list": []
+}
