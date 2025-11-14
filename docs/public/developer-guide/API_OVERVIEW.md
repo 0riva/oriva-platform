@@ -3,14 +3,16 @@
 **5-Minute Introduction for Developers**
 
 [![API Version](https://img.shields.io/badge/API-v1.0-blue)]()
+[![Endpoints](https://img.shields.io/badge/Endpoints-50+-green)]()
 [![Security](https://img.shields.io/badge/Security-Audited-green)]()
 [![Last Updated](https://img.shields.io/badge/Updated-January%202025-blue)]()
 
 ## 🎯 What is the Oriva Platform API?
 
-The Oriva Platform API is a comprehensive REST API that powers the Oriva social network and enables third-party developers to build apps, integrations, and extensions for the Oriva ecosystem.
+The Oriva Platform API is a REST API that enables third-party developers to build apps and integrations for the Oriva ecosystem. Access Oriva's authenticated users, profiles, and platform features using your API key.
 
 **Base URL:** `https://api.oriva.io/api/v1`
+**Public Endpoints:** ~50
 
 ## ⚡ Quick Start (5 Minutes)
 
@@ -96,102 +98,99 @@ All endpoints return consistent JSON responses:
 
 ---
 
+## 🔐 How Authentication Works
+
+**Important:** Third-party apps do **NOT** implement their own authentication.
+
+Instead:
+1. **Oriva Core** handles all user authentication
+2. **Users log into Oriva** (not your app)
+3. **Your app gets an API key** from the Oriva marketplace
+4. **You access authenticated user data** via the API using your key
+
+```
+User → Logs into Oriva Core → Installs Your App → Your App Uses API Key
+                                                     ↓
+                                      Oriva API returns user's data
+```
+
+---
+
 ## 📚 API Categories
 
-The Oriva Platform API is organized into 15 main categories:
+The Oriva Platform API is organized into 12 main categories:
 
-### 1. **Authentication & Account** (9 endpoints)
-User registration, login, logout, profile management, account deletion
-- `POST /auth/register` - Create new account
-- `POST /auth/login` - User authentication
-- `GET /auth/profile` - Get user profile
-- `DELETE /auth/account` - Delete account
+### 1. **Health & Diagnostics** (3 endpoints)
+Server health checks and API testing
+- `GET /health` - Basic health check
+- `GET /api/v1/health` - Detailed API status
+- `GET /api/v1/test` - Connectivity test
 
-### 2. **User & Profiles** (12 endpoints)
-User information, app-specific profiles, profile switching
+### 2. **User & Profile Data** (6 endpoints)
+Access to Oriva-authenticated user data and profiles
 - `GET /user/me` - Current user info
 - `GET /profiles/available` - List user profiles
 - `POST /profiles/:id/activate` - Switch profiles
 
-### 3. **Marketplace - Apps** (8 endpoints)
-Browse, search, and manage marketplace applications
-- `GET /marketplace/apps` - Browse apps
-- `GET /marketplace/trending` - Trending apps
-- `POST /marketplace/install/:id` - Install app
-
-### 4. **Marketplace - Items/Commerce** (7 endpoints)
-OrivaFlow commerce and marketplace items
-- `GET /marketplace/items` - List items
-- `POST /marketplace/items/create` - Create item
-- `POST /marketplace/search` - Advanced search
-
-### 5. **Developer Tools** (7 endpoints)
-Create and manage your marketplace apps
-- `POST /developer/apps` - Create app
-- `POST /developer/apps/:id/submit` - Submit for review
-- `GET /developer/apps` - List your apps
-
-### 6. **Hugo AI - Sessions** (8 endpoints)
-AI coaching sessions and analytics
-- `POST /hugo-ai/sessions` - Create session
-- `GET /hugo-ai/sessions` - List sessions
-- `POST /hugo-ai/sessions/:id/conclude` - End session
-
-### 7. **Hugo AI - Insights** (7 endpoints)
-AI-generated insights and analytics
-- `POST /hugo-ai/insights` - Create insight
-- `GET /hugo-ai/insights/latest` - Latest insight
-- `GET /hugo-ai/insights/stats` - Statistics
-
-### 8. **Hugo AI - Chat** (4 endpoints)
-Real-time AI chat with streaming responses
-- `POST /hugo/chat` - Chat with AI (streaming)
-- `POST /conversations` - Create conversation
-- `GET /conversations/:id` - Get conversation
-
-### 9. **Hugo-Love (Dating)** (30+ endpoints)
-Complete dating app functionality
-- Profile management, swiping, matching, messaging
-- `POST /apps/hugo-love/profiles` - Create dating profile
-- `POST /apps/hugo-love/swipe` - Swipe on profile
-- `GET /apps/hugo-love/matches` - View matches
-- `POST /apps/hugo-love/messages/:id` - Send message
-
-### 10. **Work Buddy (Career)** (15+ endpoints)
-Career goals, check-ins, and productivity tracking
-- `POST /apps/work-buddy/goals` - Create goal
-- `POST /apps/work-buddy/check-ins` - Log check-in
-- `GET /apps/work-buddy/analytics` - Get analytics
-
-### 11. **Ice Breakers** (8 endpoints)
-Social connection and ice breaker questions
-- `POST /apps/ice-breakers` - Create ice breaker
-- `POST /apps/ice-breakers/:id/respond` - Respond
-- `GET /apps/ice-breakers/stats` - Statistics
-
-### 12. **Groups & Team** (3 endpoints)
+### 3. **Groups & Team** (3 endpoints)
 Group memberships and team management
 - `GET /groups` - List user groups
 - `GET /groups/:id/members` - Group members
 - `GET /team/members` - Team members
 
-### 13. **Events & Webhooks** (12 endpoints)
+### 4. **Hugo AI - Sessions** (8 endpoints)
+AI coaching sessions and analytics (for apps integrating AI)
+- `POST /hugo-ai/sessions` - Create session
+- `GET /hugo-ai/sessions` - List sessions
+- `POST /hugo-ai/sessions/:id/conclude` - End session
+
+### 5. **Hugo AI - Insights** (7 endpoints)
+AI-generated insights and analytics (for apps integrating AI)
+- `POST /hugo-ai/insights` - Create insight
+- `GET /hugo-ai/insights/latest` - Latest insight
+- `GET /hugo-ai/insights/stats` - Statistics
+
+### 6. **Hugo AI - Chat** (4 endpoints)
+Real-time AI chat with streaming responses (for apps integrating AI)
+- `POST /hugo/chat` - Chat with AI (streaming)
+- `POST /conversations` - Create conversation
+- `GET /conversations/:id` - Get conversation
+
+### 7. **Marketplace** (8 endpoints)
+Browse, search, and manage marketplace applications
+- `GET /marketplace/apps` - Browse apps
+- `GET /marketplace/trending` - Trending apps
+- `POST /marketplace/install/:id` - Install app
+
+### 8. **Developer Tools** (7 endpoints)
+Create and manage your marketplace apps
+- `POST /developer/apps` - Create app
+- `POST /developer/apps/:id/submit` - Submit for review
+- `GET /developer/apps` - List your apps
+
+### 9. **Core Platform** (4 endpoints)
+Platform data and analytics
+- `GET /entries` - User entries
+- `GET /templates` - Available templates
+- `GET /storage` - Storage info
+- `GET /analytics/summary` - Analytics overview
+
+### 10. **Events & Webhooks** (5 endpoints)
 Event publishing, webhooks, and subscriptions
 - `POST /events` - Publish event
-- `POST /apps/:id/webhooks` - Create webhook
+- `POST /events/subscribe` - Subscribe to events
 - `GET /events/subscriptions` - List subscriptions
 
-### 14. **Notifications** (5 endpoints)
-User notifications and alerts
-- `POST /ui/notifications` - Create notification
-- `GET /users/:id/notifications` - Get notifications
-- `PATCH /notifications/:id` - Update status
-
-### 15. **Platform & Data** (10+ endpoints)
-Platform apps, data extraction (GDPR), photos, analytics
+### 11. **Data Extraction (GDPR)** (3 endpoints)
+User data export for compliance
 - `POST /platform/extraction/prepare` - Prepare data export
-- `POST /apps/photos/generate-signed-url` - Upload photo
-- `GET /analytics/summary` - Analytics overview
+- `GET /platform/extraction/:id` - Get export status
+- `GET /platform/extraction` - List exports
+
+### 12. **Photos & Media** (2 endpoints)
+Photo upload and processing
+- `POST /apps/photos/generate-signed-url` - Get upload URL
+- `POST /apps/photos/process-upload` - Process photo
 
 ---
 

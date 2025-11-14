@@ -4,9 +4,10 @@
 
 > **🆕 NEW: Comprehensive API Documentation**
 > - **[API Overview](./API_OVERVIEW.md)** - 5-minute introduction
-> - **[API User Guide](./API_USER_GUIDE.md)** - All 150+ endpoints documented
+> - **[API User Guide](./API_USER_GUIDE.md)** - All ~50 public endpoints documented
 > - **[API Patterns](./API_PATTERNS.md)** - Production-ready patterns
 >
+> *Clarifies authentication model: Oriva handles auth, your app uses API keys*
 > *Human-friendly and AI-agent optimized for easy integration*
 
 ## 🚀 Quick Start
@@ -27,8 +28,10 @@
 
 ### 🌟 **NEW: Comprehensive API Documentation**
 - **[API Overview](./API_OVERVIEW.md)** - 📘 **5-minute introduction to the Oriva Platform API**
-- **[API User Guide](./API_USER_GUIDE.md)** - 📖 **Complete guide with all 150+ endpoints documented**
+- **[API User Guide](./API_USER_GUIDE.md)** - 📖 **Complete guide with all ~50 public endpoints documented**
 - **[API Patterns](./API_PATTERNS.md)** - 🔧 **Production-ready integration patterns and best practices**
+
+**Key Update:** Clarifies that **Oriva handles authentication** - your app doesn't implement login/register, it uses API keys to access Oriva's authenticated users.
 
 ### 📖 Getting Started (Start Here!)
 - **[Quick Start Guide](./quick-start.md)** - 15-minute integration with working code
