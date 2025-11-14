@@ -2,6 +2,13 @@
 
 **Security-first integration guides for third-party developers**
 
+> **🆕 NEW: Comprehensive API Documentation**
+> - **[API Overview](./API_OVERVIEW.md)** - 5-minute introduction
+> - **[API User Guide](./API_USER_GUIDE.md)** - All 150+ endpoints documented
+> - **[API Patterns](./API_PATTERNS.md)** - Production-ready patterns
+>
+> *Human-friendly and AI-agent optimized for easy integration*
+
 ## 🚀 Quick Start
 
 **New to Oriva Platform?** Choose your learning path:
@@ -18,10 +25,15 @@
 
 ## 📚 Complete Documentation Index
 
+### 🌟 **NEW: Comprehensive API Documentation**
+- **[API Overview](./API_OVERVIEW.md)** - 📘 **5-minute introduction to the Oriva Platform API**
+- **[API User Guide](./API_USER_GUIDE.md)** - 📖 **Complete guide with all 150+ endpoints documented**
+- **[API Patterns](./API_PATTERNS.md)** - 🔧 **Production-ready integration patterns and best practices**
+
 ### 📖 Getting Started (Start Here!)
 - **[Quick Start Guide](./quick-start.md)** - 15-minute integration with working code
-- **[API Endpoints Index](./api-endpoints-index.md)** - 📌 **Quick reference for all 50+ endpoints**
-- **[Complete API Reference](./api-reference-complete.md)** - Full endpoint documentation with examples
+- **[API Endpoints Index](./api-endpoints-index.md)** - Quick reference for endpoints
+- **[Complete API Reference](./api-reference-complete.md)** - Legacy endpoint documentation
 
 ### 🛡️ Security & Authentication
 - **[Authentication Patterns](./authentication-patterns.md)** - Secure authentication flows and session management
@@ -56,20 +68,23 @@ All documentation in this directory follows security-first principles:
 ## 🎯 Integration Patterns by Use Case
 
 ### Web Application Integration
-1. Start with [Quick Start Guide](./quick-start.md)
-2. Implement [Authentication Patterns](./authentication-patterns.md)
-3. Set up [Secure Localhost Development](./SECURE-localhost-development.md)
-4. Reference [API Headers](./api-headers-reference.md) for implementation
+1. Start with [API Overview](./API_OVERVIEW.md) to understand the platform
+2. Follow [Quick Start Guide](./quick-start.md) for initial setup
+3. Implement patterns from [API Patterns Guide](./API_PATTERNS.md) for production
+4. Reference [API User Guide](./API_USER_GUIDE.md) for all endpoints
+5. Use [Authentication Patterns](./authentication-patterns.md) for secure auth
 
 ### Iframe/Embedded Application
 1. Review [Security Warning](./SECURITY-WARNING.md) for critical patterns to avoid
 2. Implement [Secure Iframe Integration](./iframe-integration-secure.md)
-3. Use [API Troubleshooting Guide](./api-troubleshooting-guide.md) for debugging
+3. Follow [API Patterns](./API_PATTERNS.md) for BFF proxy setup
+4. Use [API Troubleshooting Guide](./api-troubleshooting-guide.md) for debugging
 
 ### Existing Implementation Migration
 1. **URGENT**: Read [Security Warning](./SECURITY-WARNING.md) first
 2. Use [Migration Guide](./migration-guide-from-url-auth.md) for step-by-step upgrade
-3. Follow [Secure Localhost Development](./SECURE-localhost-development.md) for new patterns
+3. Adopt patterns from [API Patterns Guide](./API_PATTERNS.md) for best practices
+4. Follow [Secure Localhost Development](./SECURE-localhost-development.md) for new patterns
 
 ## 🔍 Quick Reference
 
