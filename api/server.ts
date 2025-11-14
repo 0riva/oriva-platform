@@ -12,6 +12,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { errorHandler, notFoundHandler, requestTimeout } from '../src/express/middleware/errorHandler';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
+import { requestIdMiddleware } from '../src/express/middleware/requestId';
 
 // Route imports
 import platformAppsRoutes from '../src/express/routes/platformApps';
@@ -46,6 +47,15 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(requestTimeout(30000)); // 30 second timeout
+
+  // OBSERVABILITY: Request ID tracking
+  app.use(requestIdMiddleware);
+
+  // OBSERVABILITY: API version header
+  app.use((req, res, next) => {
+    res.setHeader('X-API-Version', process.env.API_VERSION || '1.0.0');
+    next();
+  });
 
   // SECURITY: Validate Content-Type headers
   app.use(validateContentType);

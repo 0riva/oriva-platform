@@ -135,4 +135,12 @@ export function sanitizeObject(obj: any): any {
   return sanitized;
 }
 
+/**
+ * Create a child logger with request context
+ * OBSERVABILITY: Automatically includes requestId in all log entries
+ */
+export function createRequestLogger(requestId: string): winston.Logger {
+  return logger.child({ requestId });
+}
+
 export default logger;

@@ -37,6 +37,7 @@ import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
 import photosRouter from '../src/express/routes/photos';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
+import { requestIdMiddleware } from '../src/express/middleware/requestId';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 
@@ -487,6 +488,15 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// OBSERVABILITY: Request ID tracking
+app.use(requestIdMiddleware);
+
+// OBSERVABILITY: API version header
+app.use((req, res, next) => {
+  res.setHeader('X-API-Version', process.env.API_VERSION || '1.0.0');
+  next();
+});
+
 // SECURITY: Validate Content-Type headers
 app.use(validateContentType);
 
@@ -506,6 +516,7 @@ app.use((req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     logger.info('API Request', {
+      requestId: (req as any).requestId,
       method: req.method,
       url: req.url,
       status: res.statusCode,
