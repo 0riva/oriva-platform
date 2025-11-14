@@ -3,7 +3,7 @@
 **The comprehensive reference for all Oriva Platform public API endpoints**
 
 [![API Version](https://img.shields.io/badge/API-v1.0-blue)]()
-[![Endpoints](https://img.shields.io/badge/Endpoints-50+-green)]()
+[![Endpoints](https://img.shields.io/badge/Endpoints-37+-green)]()
 [![Last Updated](https://img.shields.io/badge/Updated-January%202025-blue)]()
 
 > **Quick Navigation:** [Overview](./API_OVERVIEW.md) | [Patterns](./API_PATTERNS.md) | [Troubleshooting](./api-troubleshooting-guide.md)
@@ -20,20 +20,18 @@
 - [Rate Limits](#rate-limits)
 
 ### API Categories
-1. [Health & Diagnostics](#1-health--diagnostics) - 3 endpoints
-2. [User & Profile Data](#2-user--profile-data) - 6 endpoints
-3. [Groups & Team](#3-groups--team) - 3 endpoints
-4. [Hugo AI - Sessions](#4-hugo-ai---sessions) - 8 endpoints
-5. [Hugo AI - Insights](#5-hugo-ai---insights) - 7 endpoints
-6. [Hugo AI - Chat](#6-hugo-ai---chat) - 4 endpoints
-7. [Marketplace](#7-marketplace) - 8 endpoints
-8. [Developer Tools](#8-developer-tools) - 7 endpoints
-9. [Core Platform](#9-core-platform) - 4 endpoints
-10. [Events & Webhooks](#10-events--webhooks) - 5 endpoints
-11. [Data Extraction (GDPR)](#11-data-extraction-gdpr) - 3 endpoints
-12. [Photos & Media](#12-photos--media) - 2 endpoints
+1. [Health & Test](#1-health--test) - 3 endpoints
+2. [User & Authentication](#2-user--authentication) - 3 endpoints
+3. [Profiles](#3-profiles) - 4 endpoints
+4. [Groups](#4-groups) - 2 endpoints
+5. [Sessions & Team](#5-sessions--team) - 4 endpoints
+6. [Entries & Content](#6-entries--content) - 4 endpoints
+7. [Developer Apps](#7-developer-apps) - 7 endpoints
+8. [Marketplace](#8-marketplace) - 8 endpoints
+9. [Admin](#9-admin) - 2 endpoints
+10. [Hugo AI](#10-hugo-ai) - unspecified
 
-**Total: ~50 public API endpoints**
+**Total: ~37 public API endpoints**
 
 ---
 
@@ -100,62 +98,51 @@ https://api.oriva.io/api/v1
 ```http
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
-```
-
-### Recommended Headers
-
-```http
-User-Agent: your-app-name/1.0.0
-X-Client-ID: your-app-name
+User-Agent: YourApp/1.0.0
 ```
 
 ### Example Request
 
-```javascript
-const response = await fetch('https://api.oriva.io/api/v1/user/me', {
-  headers: {
-    'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`,
-    'Content-Type': 'application/json',
-    'User-Agent': 'my-app/1.0.0',
-    'X-Client-ID': 'my-app'
-  }
-});
-
-const data = await response.json();
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Content-Type: application/json" \
+     -H "User-Agent: MyApp/1.0.0" \
+     https://api.oriva.io/api/v1/user/me
 ```
 
 ---
 
 ## Response Format
 
-All API endpoints return consistent JSON responses:
-
 ### Success Response
+
+All endpoints return consistent JSON structure:
 
 ```json
 {
-  "success": true,
   "ok": true,
+  "success": true,
   "data": {
-    // Response data (object or array)
+    // Response data here
   },
   "meta": {
-    // Optional metadata (pagination, counts, etc.)
+    // Optional metadata (pagination, etc.)
   }
 }
 ```
+
+**Note:** Both `ok` and `success` are provided for compatibility. New integrations should use `success`.
 
 ### Error Response
 
 ```json
 {
-  "success": false,
   "ok": false,
+  "success": false,
   "error": "Human-readable error message",
+  "message": "Human-readable error message",
   "code": "ERROR_CODE",
-  "details": {
-    // Optional error details
-  }
+  "details": {}
 }
 ```
 
@@ -164,7 +151,7 @@ All API endpoints return consistent JSON responses:
 ```json
 {
   "success": true,
-  "data": [...],
+  "data": [ /* items */ ],
   "meta": {
     "pagination": {
       "current_page": 1,
@@ -182,38 +169,27 @@ All API endpoints return consistent JSON responses:
 
 ## Error Handling
 
-### Common HTTP Status Codes
+### Common Error Codes
 
-| Code | Meaning | Action Required |
-|------|---------|-----------------|
-| 200 | Success | Request completed successfully |
-| 400 | Bad Request | Check request parameters |
-| 401 | Unauthorized | Verify API key |
-| 403 | Forbidden | Check permissions |
-| 404 | Not Found | Verify endpoint URL and resource ID |
-| 429 | Too Many Requests | Implement rate limiting/backoff |
-| 500 | Server Error | Retry with exponential backoff |
-
-### Error Codes
-
-| Code | Description | Resolution |
-|------|-------------|------------|
-| `UNAUTHORIZED` | Invalid or missing API key | Check authentication headers |
-| `FORBIDDEN` | Insufficient permissions | Review required scopes |
-| `NOT_FOUND` | Resource not found | Verify resource ID |
-| `VALIDATION_ERROR` | Invalid request data | Fix request format |
-| `RATE_LIMITED` | Too many requests | Implement backoff strategy |
-| `SERVER_ERROR` | Internal server error | Retry with backoff |
+| Code | HTTP Status | Description | Action Required |
+|------|-------------|-------------|-----------------|
+| `UNAUTHORIZED` | 401 | Invalid or missing API key | Check authentication |
+| `FORBIDDEN` | 403 | Insufficient permissions | Review required scopes |
+| `NOT_FOUND` | 404 | Resource not found | Verify resource ID |
+| `VALIDATION_ERROR` | 400 | Invalid request data | Fix request format |
+| `RATE_LIMITED` | 429 | Too many requests | Implement backoff strategy |
+| `SERVER_ERROR` | 500 | Internal server error | Retry with backoff |
 
 ---
 
 ## Rate Limits
 
-| Endpoint Type | Requests | Window | Burst Allowance |
-|---------------|----------|--------|-----------------|
-| **Core API** | 1,000 | 15 minutes | 50 requests |
-| **Marketplace** | 1,000 | 1 hour | 20 requests |
-| **Hugo AI** | 500 | 15 minutes | 25 requests |
+| Endpoint Type | Requests | Window |
+|---------------|----------|--------|
+| **Authentication** | 100 | 15 minutes |
+| **Core API** | 1,000 | 15 minutes |
+| **Marketplace** | 1,000 | 1 hour |
+| **Admin Endpoints** | 30 | 1 minute |
 
 ### Rate Limit Headers
 
@@ -226,7 +202,7 @@ X-RateLimit-Window: 900
 
 ---
 
-## 1. Health & Diagnostics
+## 1. Health & Test
 
 ### GET /health
 
@@ -288,7 +264,7 @@ curl https://api.oriva.io/api/v1/health
 
 ---
 
-## 2. User & Profile Data
+## 2. User & Authentication
 
 **Note:** Users are authenticated by Oriva Core. Your app receives their data via API key.
 
@@ -313,20 +289,28 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
     "name": "John Doe",
     "email": "user@example.com",
     "avatar": "https://example.com/avatar.jpg",
-    "created_at": "2024-01-15T10:00:00Z"
+    "created_at": "2024-01-15T10:00:00Z",
+    "last_login": "2025-01-26T14:22:00Z",
+    "preferences": {
+      "theme": "light",
+      "timezone": "UTC",
+      "language": "en"
+    }
   }
 }
 ```
 
 **Properties:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | string | External user ID (sanitized) |
-| `name` | string | User display name |
-| `email` | string | User email address |
-| `avatar` | string | Profile image URL |
-| `created_at` | string | Account creation timestamp |
+| Property | Type | Description | Privacy Level |
+|----------|------|-------------|---------------|
+| `id` | string | External user ID (sanitized) | Public |
+| `name` | string | User display name | Public |
+| `email` | string | User email address | Restricted |
+| `avatar` | string | Profile image URL | Public |
+| `created_at` | string | Account creation timestamp | Public |
+| `last_login` | string | Last login timestamp | Restricted |
+| `preferences` | object | User preferences | Private |
 
 ---
 
@@ -336,7 +320,31 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **Authentication:** API Key
 
+**Note:** Returns the same response as `/api/v1/user/me`
+
 ---
+
+### GET /api/v1/auth/profile
+
+**Description:** Get authenticated profile
+
+**Authentication:** Auth Token (user-specific)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "ext_profile_xyz",
+    "name": "My Profile",
+    "is_active": true
+  }
+}
+```
+
+---
+
+## 3. Profiles
 
 ### GET /api/v1/profiles/available
 
@@ -362,16 +370,34 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
       "avatar": "https://example.com/work-avatar.jpg",
       "is_active": true,
       "permissions": ["read", "write"],
-      "created_at": "2024-06-01T09:00:00Z"
+      "created_at": "2024-06-01T09:00:00Z",
+      "member_count": 25,
+      "settings": {
+        "visibility": "team",
+        "collaboration": true
+      }
     }
   ],
   "meta": {
-    "total_count": 3
+    "total_count": 3,
+    "user_permissions": ["profile:read", "profile:switch"]
   }
 }
 ```
 
-**Note:** Anonymous profiles are automatically filtered out for privacy protection.
+**Properties:**
+
+| Property | Type | Description | Privacy Level |
+|----------|------|-------------|---------------|
+| `id` | string | External profile ID (sanitized) | Public |
+| `name` | string | Profile display name | Public |
+| `description` | string | Profile description | Public |
+| `avatar` | string | Profile image URL | Public |
+| `is_active` | boolean | Whether profile is currently active | Public |
+| `permissions` | array | User permissions in this profile | Restricted |
+| `created_at` | string | Profile creation timestamp | Public |
+| `member_count` | number | Number of profile members | Public |
+| `settings` | object | Profile configuration | Restricted |
 
 ---
 
@@ -400,30 +426,17 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **Description:** Update profile information
 
-**Authentication:** API Key
+**Authentication:** API Key (must have write permissions)
 
 **Request:**
 ```json
 {
   "name": "Updated Profile Name",
-  "description": "New description",
-  "avatar": "https://example.com/new-avatar.jpg"
+  "description": "Updated description",
+  "settings": {
+    "visibility": "private"
+  }
 }
-```
-
----
-
-### POST /api/v1/profiles/:profileId/activate
-
-**Description:** Switch to a different profile
-
-**Authentication:** API Key
-
-**Request:**
-```bash
-curl -X POST \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.oriva.io/api/v1/profiles/ext_profile_xyz789/activate
 ```
 
 **Response:**
@@ -432,21 +445,51 @@ curl -X POST \
   "success": true,
   "data": {
     "id": "ext_profile_xyz789",
-    "name": "Work Profile",
-    "is_active": true
+    "name": "Updated Profile Name",
+    "description": "Updated description",
+    "updated_at": "2025-01-26T15:00:00Z"
   }
 }
 ```
 
 ---
 
-## 3. Groups & Team
+### POST /api/v1/profiles/:profileId/activate
+
+**Description:** Activate (switch to) a different profile
+
+**Authentication:** API Key
+
+**Request Body:** None required
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "ext_profile_xyz789",
+    "name": "Work Profile",
+    "is_active": true,
+    "activated_at": "2025-01-26T15:00:00Z"
+  }
+}
+```
+
+---
+
+## 4. Groups
 
 ### GET /api/v1/groups
 
-**Description:** Get user's groups
+**Description:** Get user's group memberships
 
 **Authentication:** API Key
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/groups
+```
 
 **Response:**
 ```json
@@ -458,12 +501,34 @@ curl -X POST \
       "name": "Development Team",
       "description": "Software development group",
       "role": "member",
+      "permissions": ["read", "comment"],
       "member_count": 12,
-      "created_at": "2024-03-15T11:45:00Z"
+      "created_at": "2024-03-15T11:45:00Z",
+      "settings": {
+        "privacy": "private",
+        "join_policy": "invite_only"
+      }
     }
-  ]
+  ],
+  "meta": {
+    "total_count": 5,
+    "user_roles": ["member", "admin"]
+  }
 }
 ```
+
+**Properties:**
+
+| Property | Type | Description | Privacy Level |
+|----------|------|-------------|---------------|
+| `id` | string | External group ID (sanitized) | Public |
+| `name` | string | Group display name | Public |
+| `description` | string | Group description | Public |
+| `role` | string | User's role in the group | Public |
+| `permissions` | array | User permissions in group | Restricted |
+| `member_count` | number | Total group members | Public |
+| `created_at` | string | Group creation timestamp | Public |
+| `settings` | object | Group configuration | Restricted |
 
 ---
 
@@ -472,6 +537,12 @@ curl -X POST \
 **Description:** Get group members and their details
 
 **Authentication:** API Key
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/groups/ext_group_def456/members
+```
 
 **Response:**
 ```json
@@ -482,7 +553,72 @@ curl -X POST \
       "memberId": "ext_member_xyz",
       "displayName": "Alice Johnson",
       "role": "admin",
-      "joinedAt": "2024-01-15T10:00:00Z"
+      "joinedAt": "2024-01-15T10:00:00Z",
+      "avatar": "https://example.com/avatar.jpg"
+    }
+  ]
+}
+```
+
+---
+
+## 5. Sessions & Team
+
+### GET /api/v1/sessions
+
+**Description:** List user's sessions
+
+**Authentication:** API Key
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/sessions
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_session_xyz",
+      "name": "Team Standup",
+      "start_time": "2025-01-27T09:00:00Z",
+      "duration": 30,
+      "participants": 5
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/v1/sessions/upcoming
+
+**Description:** List upcoming sessions
+
+**Authentication:** API Key
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/sessions/upcoming
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_session_abc",
+      "name": "Project Review",
+      "start_time": "2025-01-28T14:00:00Z",
+      "duration": 60,
+      "participants": 8
     }
   ]
 }
@@ -492,13 +628,20 @@ curl -X POST \
 
 ### GET /api/v1/team/members
 
-**Description:** Get user's team members
+**Description:** Get team members
 
 **Authentication:** API Key
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/team/members
+```
 
 **Response:**
 ```json
 {
+  "ok": true,
   "success": true,
   "data": [
     {
@@ -514,284 +657,361 @@ curl -X POST \
 
 ---
 
-## 4. Hugo AI - Sessions
+### GET /api/v1/analytics/summary
 
-**Note:** Hugo AI is available for apps that want to integrate AI coaching/chat features.
-
-### POST /api/v1/hugo-ai/sessions
-
-**Description:** Create new coaching session
+**Description:** Get analytics summary
 
 **Authentication:** API Key
 
 **Request:**
-```json
-{
-  "title": "Weekly Check-in",
-  "type": "coaching",
-  "metadata": {
-    "focus_area": "career_development"
-  }
-}
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/analytics/summary
 ```
 
 **Response:**
 ```json
 {
+  "ok": true,
   "success": true,
   "data": {
-    "id": "ext_session_abc123",
-    "title": "Weekly Check-in",
-    "type": "coaching",
-    "status": "active",
-    "created_at": "2025-01-26T12:00:00Z"
-  }
-}
-```
-
----
-
-### PATCH /api/v1/hugo-ai/sessions/:sessionId
-
-**Description:** Update coaching session
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "title": "Updated Session Title",
-  "metadata": {
-    "notes": "Session notes"
-  }
-}
-```
-
----
-
-### GET /api/v1/hugo-ai/sessions/:sessionId
-
-**Description:** Get session details
-
-**Authentication:** API Key
-
----
-
-### GET /api/v1/hugo-ai/sessions
-
-**Description:** List user's coaching sessions
-
-**Authentication:** API Key
-
-**Query Parameters:**
-- `limit` (optional): Max sessions to return (default: 50)
-- `offset` (optional): Pagination offset
-- `status` (optional): Filter by status (active, concluded, cancelled)
-
----
-
-### DELETE /api/v1/hugo-ai/sessions/:sessionId
-
-**Description:** Delete coaching session
-
-**Authentication:** API Key
-
----
-
-### POST /api/v1/hugo-ai/sessions/:sessionId/conclude
-
-**Description:** Mark session as concluded
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "summary": "Session summary",
-  "action_items": ["Follow up on goals", "Schedule next session"]
-}
-```
-
----
-
-### GET /api/v1/hugo-ai/sessions/stats
-
-**Description:** Get session statistics
-
-**Authentication:** API Key
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
+    "total_entries": 125,
     "total_sessions": 42,
-    "active_sessions": 3,
-    "concluded_sessions": 39,
-    "total_duration": 75600
+    "active_users": 15,
+    "period": "last_30_days"
   }
 }
 ```
 
 ---
 
-## 5. Hugo AI - Insights
+## 6. Entries & Content
 
-### POST /api/v1/hugo-ai/insights
+### GET /api/v1/entries
 
-**Description:** Create insight entry
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "title": "Career Insight",
-  "content": "Insight content here",
-  "category": "career",
-  "tags": ["goal-setting", "productivity"]
-}
-```
-
----
-
-### GET /api/v1/hugo-ai/insights
-
-**Description:** List insights for user
+**Description:** List entries with filtering
 
 **Authentication:** API Key
 
 **Query Parameters:**
-- `limit` (optional): Max insights to return
+- `limit` (optional): Items per page (default: 50, max: 100)
 - `offset` (optional): Pagination offset
-- `category` (optional): Filter by category
-
----
-
-### GET /api/v1/hugo-ai/insights/:insightId
-
-**Description:** Get specific insight
-
-**Authentication:** API Key
-
----
-
-### GET /api/v1/hugo-ai/insights/latest
-
-**Description:** Get latest insight
-
-**Authentication:** API Key
-
----
-
-### PATCH /api/v1/hugo-ai/insights/:insightId
-
-**Description:** Update insight
-
-**Authentication:** API Key
-
----
-
-### GET /api/v1/hugo-ai/insights/stats
-
-**Description:** Get insight statistics
-
-**Authentication:** API Key
-
----
-
-### DELETE /api/v1/hugo-ai/insights/:insightId
-
-**Description:** Delete insight
-
-**Authentication:** API Key
-
----
-
-## 6. Hugo AI - Chat
-
-### POST /api/v1/hugo/chat
-
-**Description:** Chat with Hugo AI (streaming via Server-Sent Events)
-
-**Authentication:** API Key
-
-**Headers Required:**
-- `X-App-ID`: Your app identifier
+- `profile_id` (optional): Filter by profile
+- `group_id` (optional): Filter by group
+- `audience` (optional): Filter by audience type (public, private, group_only)
 
 **Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  "https://api.oriva.io/api/v1/entries?limit=20&audience=public"
+```
+
+**Response:**
 ```json
 {
-  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
-  "message": "Help me plan my career goals",
-  "context": {
-    "current_goals": ["Get promoted", "Learn new skills"],
-    "metadata": {}
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_entry_xyz",
+      "content": "Entry content",
+      "audience": "public",
+      "created_at": "2025-01-26T10:00:00Z",
+      "author": {
+        "id": "ext_user_abc",
+        "name": "John Doe"
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 125
+    }
   }
 }
 ```
 
-**Response:** Server-Sent Events (SSE)
+---
+
+### GET /api/v1/templates
+
+**Description:** List available templates
+
+**Authentication:** API Key
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/templates
 ```
-event: start
-data: {"conversation_id":"...","message_id":"..."}
 
-event: content
-data: {"delta":"Hello"}
-
-event: content
-data: {"delta":" there!"}
-
-event: done
-data: {"message_id":"...","tokens":150}
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_template_xyz",
+      "name": "Weekly Check-in",
+      "description": "Weekly progress template",
+      "category": "productivity",
+      "fields": []
+    }
+  ]
+}
 ```
 
 ---
 
-### POST /api/v1/conversations
+### GET /api/v1/storage
 
-**Description:** Create conversation
+**Description:** Get storage information
+
+**Authentication:** API Key
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/storage
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "used_bytes": 1024000,
+    "total_bytes": 10737418240,
+    "used_percentage": 0.01
+  }
+}
+```
+
+---
+
+### POST /api/v1/ui/notifications
+
+**Description:** Send UI notification to user
 
 **Authentication:** API Key
 
 **Request:**
 ```json
 {
-  "title": "Career Planning Session"
+  "message": "Your report is ready",
+  "type": "info",
+  "duration": 5000
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "notification_id": "ext_notif_xyz",
+    "sent_at": "2025-01-26T15:00:00Z"
+  }
 }
 ```
 
 ---
 
-### GET /api/v1/conversations
+## 7. Developer Apps
 
-**Description:** List conversations
+### GET /api/v1/developer/apps
 
-**Authentication:** API Key
+**Description:** List all apps you've created as a developer
+
+**Authentication:** API Key (must be developer)
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.oriva.io/api/v1/developer/apps
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_app_xyz123",
+      "name": "My Awesome App",
+      "slug": "my-awesome-app",
+      "tagline": "Short description",
+      "description": "Full app description",
+      "category": "productivity",
+      "icon_url": "https://example.com/icon.png",
+      "screenshots": ["url1", "url2"],
+      "version": "1.0.0",
+      "status": "draft",
+      "is_active": false,
+      "install_count": 0,
+      "developer_id": "ext_user_abc",
+      "developer_name": "Your Name",
+      "created_at": "2025-01-26T10:00:00Z",
+      "updated_at": "2025-01-26T10:00:00Z"
+    }
+  ]
+}
+```
+
+**Status Values:**
+- `draft` - App being edited, not submitted
+- `pending_review` - Submitted, awaiting admin review
+- `approved` - Approved and visible in marketplace
+- `rejected` - Rejected by admin, can resubmit
 
 ---
 
-### GET /api/v1/conversations/:id
+### GET /api/v1/developer/apps/:appId
 
-**Description:** Get conversation details with messages
+**Description:** Get app details (must be owner)
 
-**Authentication:** API Key
+**Authentication:** API Key (must own the app)
 
----
-
-### DELETE /api/v1/conversations/:id
-
-**Description:** Delete conversation
-
-**Authentication:** API Key
+**Response:** Same structure as listing, but single app object
 
 ---
 
-## 7. Marketplace
+### POST /api/v1/developer/apps
+
+**Description:** Create a new marketplace application
+
+**Authentication:** API Key
+
+**Request:**
+```json
+{
+  "name": "My App",
+  "slug": "my-app",
+  "tagline": "Short description",
+  "description": "Full description",
+  "category": "productivity",
+  "icon_url": "https://example.com/icon.png",
+  "screenshots": ["https://example.com/screen1.png"],
+  "execution_url": "https://myapp.com",
+  "homepage_url": "https://myapp.com",
+  "privacy_policy_url": "https://myapp.com/privacy",
+  "terms_url": "https://myapp.com/terms",
+  "pricing_model": "free",
+  "version": "1.0.0"
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "id": "ext_app_new123",
+    "name": "My App",
+    "status": "draft",
+    "created_at": "2025-01-26T10:00:00Z"
+  }
+}
+```
+
+---
+
+### PUT /api/v1/developer/apps/:appId
+
+**Description:** Update an existing app (cannot change status)
+
+**Authentication:** API Key (must own the app)
+
+**Request Body:** Same as POST, all fields optional
+
+**Response:** Updated app object
+
+**Notes:**
+- Cannot update `status` field via this endpoint
+- Use submit/resubmit endpoints to change status
+
+---
+
+### DELETE /api/v1/developer/apps/:appId
+
+**Description:** Delete an app (only if in draft status)
+
+**Authentication:** API Key (must own the app)
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "message": "App deleted successfully"
+}
+```
+
+**Restrictions:**
+- Can only delete apps with status `draft`
+- Returns 403 error if app is submitted, approved, or rejected
+
+---
+
+### POST /api/v1/developer/apps/:appId/submit
+
+**Description:** Submit app for marketplace review
+
+**Authentication:** API Key (must own the app)
+
+**Request Body:** None required
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "id": "ext_app_xyz123",
+    "status": "pending_review",
+    "submitted_at": "2025-01-26T10:00:00Z"
+  }
+}
+```
+
+**Requirements:**
+- App must be in `draft` status
+- Returns 404 if app not found or already submitted
+
+---
+
+### POST /api/v1/developer/apps/:appId/resubmit
+
+**Description:** Resubmit app after rejection
+
+**Authentication:** API Key (must own the app)
+
+**Request:**
+```json
+{
+  "notes": "Fixed issues mentioned in review"
+}
+```
+
+**Response:** Updated app with status `pending_review`
+
+**Requirements:**
+- App must be in `rejected` status
+
+---
+
+## 8. Marketplace
 
 ### GET /api/v1/marketplace/apps
 
-**Description:** Browse marketplace apps
+**Description:** Get available marketplace applications
 
 **Authentication:** API Key
 
@@ -814,20 +1034,34 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
     {
       "id": "ext_app_ghi789",
       "name": "Task Manager Pro",
-      "description": "Advanced task management",
+      "description": "Advanced task management and collaboration",
       "category": "productivity",
-      "icon": "https://example.com/icon.png",
+      "icon": "https://example.com/app-icon.png",
       "developer": {
         "name": "ProductiveCorp",
         "verified": true
       },
-      "install_count": 5000,
+      "pricing": {
+        "model": "freemium",
+        "base_price": 0,
+        "premium_price": 9.99
+      },
       "ratings": {
         "average": 4.7,
         "count": 1250
-      }
+      },
+      "permissions": ["read:profiles", "write:tasks"],
+      "updated_at": "2025-01-20T16:30:00Z"
     }
-  ]
+  ],
+  "meta": {
+    "pagination": {
+      "current_page": 1,
+      "per_page": 10,
+      "total_count": 145
+    },
+    "categories": ["productivity", "communication", "analytics"]
+  }
 }
 ```
 
@@ -839,27 +1073,55 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **Authentication:** API Key
 
+**Response:** Single app object with same structure as listing
+
 ---
 
 ### GET /api/v1/marketplace/trending
 
-**Description:** Get trending apps
+**Description:** Get trending apps based on install count
 
 **Authentication:** API Key
 
 **Query Parameters:**
 - `limit` (optional): Max apps to return (default: 10, max: 50)
 
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": [
+    {
+      "id": "ext_app_xyz",
+      "name": "Trending App",
+      "slug": "trending-app",
+      "tagline": "Popular app",
+      "category": "productivity",
+      "icon_url": "https://example.com/icon.png",
+      "install_count": 5000,
+      "developer_name": "Dev Name"
+    }
+  ]
+}
+```
+
 ---
 
 ### GET /api/v1/marketplace/featured
 
-**Description:** Get featured apps
+**Description:** Get featured apps (curated by admin)
 
 **Authentication:** API Key
 
 **Query Parameters:**
 - `limit` (optional): Max apps to return (default: 6, max: 50)
+
+**Response:** Same format as trending endpoint
+
+**Notes:**
+- Only apps with `is_featured` flag set to true
+- Ordered by `featured_order` field
 
 ---
 
@@ -886,9 +1148,15 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 ### GET /api/v1/marketplace/installed
 
-**Description:** Get user's installed apps
+**Description:** Get user's installed applications
 
-**Authentication:** API Key
+**Authentication:** Auth Token (user-specific)
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer USER_AUTH_TOKEN" \
+  https://api.oriva.io/api/v1/marketplace/installed
+```
 
 **Response:**
 ```json
@@ -901,9 +1169,19 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
       "version": "2.1.0",
       "installed_at": "2024-12-15T10:20:00Z",
       "last_used": "2025-01-25T14:15:00Z",
-      "status": "active"
+      "status": "active",
+      "permissions_granted": ["read:profiles", "write:tasks"],
+      "usage_stats": {
+        "total_sessions": 47,
+        "total_duration": 18240,
+        "last_session": "2025-01-25T14:15:00Z"
+      }
     }
-  ]
+  ],
+  "meta": {
+    "total_count": 8,
+    "active_count": 6
+  }
 }
 ```
 
@@ -911,15 +1189,33 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 ### POST /api/v1/marketplace/install/:appId
 
-**Description:** Install an app
+**Description:** Install an app for the authenticated user
 
-**Authentication:** API Key
+**Authentication:** Auth Token (user-specific)
 
 **Request:**
 ```json
 {
   "profile_id": "ext_profile_xyz",
-  "settings": {}
+  "settings": {
+    "custom_setting": "value"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "success": true,
+  "data": {
+    "installation_id": "ext_install_abc",
+    "app_id": "ext_app_xyz",
+    "profile_id": "ext_profile_xyz",
+    "installed_at": "2025-01-26T10:00:00Z",
+    "is_active": true,
+    "settings": {}
+  }
 }
 ```
 
@@ -929,30 +1225,48 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **Description:** Uninstall an app
 
-**Authentication:** API Key
-
----
-
-## 8. Developer Tools
-
-### GET /api/v1/developer/apps
-
-**Description:** List your published apps
-
-**Authentication:** API Key
+**Authentication:** Auth Token (user-specific)
 
 **Response:**
 ```json
 {
+  "ok": true,
+  "success": true,
+  "message": "App uninstalled successfully"
+}
+```
+
+---
+
+## 9. Admin
+
+**Note:** Admin endpoints require admin-level authentication and are restricted to Oriva administrators.
+
+### GET /api/v1/admin/apps/pending
+
+**Description:** List apps pending review (admin only)
+
+**Authentication:** Admin Token
+
+**Request:**
+```bash
+curl -H "Authorization: Bearer ADMIN_TOKEN" \
+  https://api.oriva.io/api/v1/admin/apps/pending
+```
+
+**Response:**
+```json
+{
+  "ok": true,
   "success": true,
   "data": [
     {
-      "id": "ext_app_xyz123",
-      "name": "My Awesome App",
-      "slug": "my-awesome-app",
-      "status": "approved",
-      "install_count": 150,
-      "created_at": "2025-01-01T10:00:00Z"
+      "id": "ext_app_xyz",
+      "name": "Pending App",
+      "status": "pending_review",
+      "submitted_at": "2025-01-25T10:00:00Z",
+      "developer_name": "Developer Name",
+      "category": "productivity"
     }
   ]
 }
@@ -960,371 +1274,131 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 ---
 
-### GET /api/v1/developer/apps/:appId
+### POST /api/v1/admin/apps/:appId/review
 
-**Description:** Get app details (must be owner)
+**Description:** Approve or reject an app submission (admin only)
 
-**Authentication:** API Key
-
----
-
-### POST /api/v1/developer/apps
-
-**Description:** Create new app
-
-**Authentication:** API Key
+**Authentication:** Admin Token
 
 **Request:**
 ```json
 {
-  "name": "My App",
-  "slug": "my-app",
-  "tagline": "Short description",
-  "description": "Full description",
-  "category": "productivity",
-  "icon_url": "https://example.com/icon.png",
-  "execution_url": "https://myapp.com",
-  "pricing_model": "free"
+  "status": "approved",
+  "reviewerNotes": "Looks good, approved for marketplace"
 }
 ```
 
----
-
-### PUT /api/v1/developer/apps/:appId
-
-**Description:** Update app details
-
-**Authentication:** API Key (must be owner)
-
----
-
-### DELETE /api/v1/developer/apps/:appId
-
-**Description:** Delete app (draft only)
-
-**Authentication:** API Key (must be owner)
-
-**Note:** Can only delete apps with status `draft`
-
----
-
-### POST /api/v1/developer/apps/:appId/submit
-
-**Description:** Submit app for review
-
-**Authentication:** API Key (must be owner)
+**Status Options:**
+- `approved` - Approve and publish to marketplace
+- `rejected` - Reject and allow resubmission
 
 **Response:**
 ```json
 {
+  "ok": true,
   "success": true,
   "data": {
-    "id": "ext_app_xyz123",
-    "status": "pending_review",
-    "submitted_at": "2025-01-26T10:00:00Z"
+    "id": "ext_app_xyz",
+    "status": "approved",
+    "reviewed_at": "2025-01-26T10:00:00Z",
+    "reviewed_by": "ext_admin_abc",
+    "reviewer_notes": "Looks good, approved for marketplace"
   }
 }
 ```
 
 ---
 
-### POST /api/v1/developer/apps/:appId/resubmit
+## 10. Hugo AI
 
-**Description:** Resubmit rejected app
+**Description:** Hugo AI endpoints are available for apps that want to integrate Oriva's AI chat system.
 
-**Authentication:** API Key (must be owner)
+**Base Path:** `/api/hugo/*`
 
-**Request:**
-```json
-{
-  "notes": "Fixed issues mentioned in review"
-}
+**Authentication:** API Key
+
+**Note:** Hugo AI endpoints are available for third-party apps that want to provide AI coaching, chat, or insights features to their users. Contact Oriva for detailed Hugo AI integration documentation.
+
+**Example Endpoints:**
+- Chat and messaging
+- Session management
+- AI insights and analytics
+- Conversation history
+
+For detailed Hugo AI integration documentation, please contact Oriva support or refer to the Hugo AI integration guide (coming soon).
+
+---
+
+## 🔒 Security Best Practices
+
+### Server-Side Proxy Pattern (Recommended)
+
+```javascript
+// Your backend (Express.js example)
+app.get('/api/oriva-proxy/user/me', async (req, res) => {
+  try {
+    const response = await fetch('https://api.oriva.io/api/v1/user/me', {
+      headers: {
+        'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 ```
 
----
+### Rate Limiting Implementation
 
-## 9. Core Platform
+```javascript
+class RateLimitHandler {
+  async requestWithRetry(endpoint, options, maxRetries = 3) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await fetch(endpoint, options);
 
-### GET /api/v1/entries
+        if (response.status === 429) {
+          const retryAfter = parseInt(response.headers.get('Retry-After')) || (2 ** attempt);
+          console.log(`Rate limited. Retrying in ${retryAfter} seconds...`);
+          await this.sleep(retryAfter * 1000);
+          continue;
+        }
 
-**Description:** Get user's entries
+        return response;
+      } catch (error) {
+        if (attempt === maxRetries - 1) throw error;
+        await this.sleep(1000 * (2 ** attempt));
+      }
+    }
+  }
 
-**Authentication:** API Key
-
-**Query Parameters:**
-- `limit` (optional): Items per page (default: 50, max: 100)
-- `offset` (optional): Pagination offset
-
----
-
-### GET /api/v1/templates
-
-**Description:** Get available templates
-
-**Authentication:** API Key
-
----
-
-### GET /api/v1/storage
-
-**Description:** Get storage information
-
-**Authentication:** API Key
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "used_bytes": 1024000,
-    "total_bytes": 10737418240,
-    "used_percentage": 0.01
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 ```
 
 ---
 
-### GET /api/v1/analytics/summary
+## 📚 Additional Resources
 
-**Description:** Get user analytics overview
+### Related Documentation
+- **[API Overview](./API_OVERVIEW.md)** - 5-minute introduction
+- **[API Patterns](./API_PATTERNS.md)** - Production patterns and best practices
+- **[API Troubleshooting Guide](./api-troubleshooting-guide.md)** - Debug and resolve issues
+- **[Authentication Patterns](./authentication-patterns.md)** - Secure auth implementation
+- **[Quick Start Guide](./quick-start.md)** - 15-minute integration
 
-**Authentication:** API Key
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "total_entries": 125,
-    "total_sessions": 42,
-    "active_users": 15,
-    "period": "last_30_days"
-  }
-}
-```
+### Getting Help
+- **Documentation:** [Developer Guide](./README.md)
+- **Issues:** [GitHub Issues](https://github.com/0riva/oriva-platform/issues)
+- **Security:** security@oriva.io
 
 ---
 
-## 10. Events & Webhooks
+**Security Note:** Always implement proper authentication, never expose API keys in client-side code, and follow the security patterns outlined in this documentation.
 
-### POST /api/v1/events
-
-**Description:** Publish event to event bus
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "event_type": "user.action",
-  "data": {
-    "action": "button_click",
-    "metadata": {}
-  }
-}
-```
-
----
-
-### GET /api/v1/events
-
-**Description:** Get event history
-
-**Authentication:** API Key
-
----
-
-### POST /api/v1/events/subscribe
-
-**Description:** Subscribe to events
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "event_types": ["user.action", "app.installed"],
-  "webhook_url": "https://myapp.com/webhook"
-}
-```
-
----
-
-### GET /api/v1/events/subscriptions
-
-**Description:** List event subscriptions
-
-**Authentication:** API Key
-
----
-
-### DELETE /api/v1/events/subscriptions/:id
-
-**Description:** Delete subscription
-
-**Authentication:** API Key
-
----
-
-## 11. Data Extraction (GDPR)
-
-### POST /api/v1/platform/extraction/prepare
-
-**Description:** Prepare user data extraction
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "data_types": ["profile", "entries", "sessions"],
-  "format": "json"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "manifest_id": "ext_manifest_abc123",
-    "status": "preparing",
-    "estimated_completion": "2025-01-26T12:30:00Z"
-  }
-}
-```
-
----
-
-### GET /api/v1/platform/extraction/:manifestId
-
-**Description:** Get extraction manifest status
-
-**Authentication:** API Key
-
----
-
-### GET /api/v1/platform/extraction
-
-**Description:** List user's extraction manifests
-
-**Authentication:** API Key
-
----
-
-## 12. Photos & Media
-
-### POST /api/v1/apps/photos/generate-signed-url
-
-**Description:** Generate signed URL for photo upload
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "filename": "photo.jpg",
-  "content_type": "image/jpeg",
-  "size": 1024000
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "upload_url": "https://storage.example.com/upload/...",
-    "photo_id": "ext_photo_xyz123",
-    "expires_at": "2025-01-26T13:00:00Z"
-  }
-}
-```
-
----
-
-### POST /api/v1/apps/photos/process-upload
-
-**Description:** Process uploaded photo
-
-**Authentication:** API Key
-
-**Request:**
-```json
-{
-  "photo_id": "ext_photo_xyz123",
-  "metadata": {
-    "caption": "My photo",
-    "tags": ["travel", "adventure"]
-  }
-}
-```
-
----
-
-## Appendix
-
-### Common Query Parameters
-
-#### Pagination
-```
-?limit=20          # Items per page (max: 100)
-?offset=0          # Skip N items
-?page=1            # Page number (alternative to offset)
-```
-
-#### Filtering
-```
-?category=productivity    # Filter by category
-?search=keyword          # Search term
-?status=active           # Filter by status
-```
-
-#### Sorting
-```
-?sort=name              # Sort field
-?order=asc              # Sort order (asc/desc)
-```
-
-### Security Best Practices
-
-1. **API Key Management**
-   - Store in environment variables
-   - Rotate keys regularly
-   - Use different keys for dev/staging/production
-   - Never commit keys to version control
-
-2. **Request Security**
-   - Always use HTTPS
-   - Validate all inputs
-   - Sanitize outputs
-   - Use server-side proxy patterns
-
-3. **Error Handling**
-   - Don't expose sensitive information in errors
-   - Log errors server-side
-   - Return generic error messages to clients
-   - Implement proper retry logic
-
-4. **Rate Limiting**
-   - Implement exponential backoff
-   - Cache responses when appropriate
-   - Monitor rate limit headers
-   - Handle 429 responses gracefully
-
-### Need Help?
-
-- **[API Overview](./API_OVERVIEW.md)** - Quick introduction
-- **[API Patterns](./API_PATTERNS.md)** - Integration patterns
-- **[Troubleshooting](./api-troubleshooting-guide.md)** - Debug issues
-- **[GitHub Issues](https://github.com/0riva/oriva-platform/issues)** - Report bugs
-- **[GitHub Discussions](https://github.com/0riva/oriva-platform/discussions)** - Ask questions
-
----
-
-**Important:** Your app does NOT implement authentication. Oriva Core handles all user authentication, and you access authenticated user data via your API key.
-
-*Last Updated: January 2025 | Revised for accuracy*
-
-**Maintained by:** Oriva Platform Team
+*Last Updated: January 2025 | Security Audit: January 2025*
