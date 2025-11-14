@@ -107,7 +107,7 @@ export const requireApiKey = async (req: Request, res: Response, next: NextFunct
     }
 
     // Update usage tracking (fire and forget - don't block request)
-    supabase
+    void supabase
       .schema('oriva_platform')
       .from('developer_api_keys')
       .update({
@@ -116,7 +116,7 @@ export const requireApiKey = async (req: Request, res: Response, next: NextFunct
       })
       .eq('id', keyRecord.id)
       .then(() => {})
-      .catch((err) => console.warn('Failed to update API key usage:', err));
+      .catch((err: unknown) => console.warn('Failed to update API key usage:', err));
 
     next();
   } catch (error) {

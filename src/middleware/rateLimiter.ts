@@ -1,10 +1,24 @@
 // Rate limiting middleware for authentication and API endpoints
 // Prevents brute force attacks and API abuse
 
-import rateLimit from 'express-rate-limit';
+import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit';
 import type { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { trackRateLimitViolation } from '../lib/metrics';
+
+// Extend Express Request to include rate limit info
+declare global {
+  namespace Express {
+    interface Request {
+      rateLimit?: {
+        limit: number;
+        current: number;
+        remaining: number;
+        resetTime: Date;
+      };
+    }
+  }
+}
 
 // SECURITY: Rate limiting now enabled in production using Redis
 // Falls back to in-memory for development/testing
@@ -25,7 +39,6 @@ if (isProduction && process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_RE
     });
 
     store = new RedisStore({
-      // @ts-expect-error - rate-limit-redis expects different Redis client type
       client: redis,
       prefix: 'rl:',
     });
@@ -61,11 +74,11 @@ export const authRateLimiter = rateLimit({
       path: req.path,
       userAgent: req.get('user-agent'),
     });
-    trackRateLimitViolation('auth');
+    trackRateLimitViolation(req.ip || 'unknown', 'auth');
     res.status(429).json({
       code: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many authentication attempts. Please try again later.',
-      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 900000 - Date.now()) / 1000),
+      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 900000) / 1000),
     });
   },
   validate: {
@@ -93,11 +106,11 @@ export const apiRateLimiter = rateLimit({
       path: req.path,
       userAgent: req.get('user-agent'),
     });
-    trackRateLimitViolation('api');
+    trackRateLimitViolation(req.ip || 'unknown', 'api');
     res.status(429).json({
       code: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many requests. Please try again later.',
-      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 900000 - Date.now()) / 1000),
+      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 900000) / 1000),
     });
   },
   validate: {
@@ -125,11 +138,11 @@ export const sensitiveOperationRateLimiter = rateLimit({
       path: req.path,
       userAgent: req.get('user-agent'),
     });
-    trackRateLimitViolation('sensitive');
+    trackRateLimitViolation(req.ip || 'unknown', 'sensitive');
     res.status(429).json({
       code: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many sensitive operations. Please try again later.',
-      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 3600000 - Date.now()) / 1000),
+      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 3600000) / 1000),
     });
   },
   validate: {
@@ -157,11 +170,11 @@ export const userRateLimiter = rateLimit({
       path: req.path,
       userAgent: req.get('user-agent'),
     });
-    trackRateLimitViolation('user');
+    trackRateLimitViolation(req.ip || 'unknown', 'user');
     res.status(429).json({
       code: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many requests. Please try again later.',
-      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 3600000 - Date.now()) / 1000),
+      retryAfter: Math.ceil((req.rateLimit?.resetTime?.getTime() || Date.now() + 3600000) / 1000),
     });
   },
   validate: {
