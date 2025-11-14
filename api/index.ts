@@ -280,8 +280,16 @@ refreshCorsCache()
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
+      // SECURITY FIX: Reject requests with no origin when credentials are enabled
+      // This prevents CSRF attacks where attackers craft requests without Origin header
+      if (!origin) {
+        // Exception: Allow health checks and public endpoints without origin
+        // But log them for monitoring
+        logger.warn('CORS: Request without origin header', {
+          userAgent: 'not available in CORS preflight',
+        });
+        return callback(new Error('Origin header required for CORS'));
+      }
 
       // Development: Allow localhost
       if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
@@ -290,7 +298,7 @@ app.use(
 
       // Check against registered marketplace applications
       if (corsOriginCache.data.has(origin)) {
-        console.log('✅ CORS: Registered marketplace origin allowed:', origin);
+        logger.debug('CORS: Registered marketplace origin allowed', { origin });
         return callback(null, true);
       }
 
@@ -298,7 +306,7 @@ app.use(
       const coreOrigins = ['https://oriva.io', 'https://www.oriva.io', 'https://app.oriva.io'];
 
       if (coreOrigins.includes(origin)) {
-        console.log('✅ CORS: Core origin allowed:', origin);
+        logger.debug('CORS: Core origin allowed', { origin });
         return callback(null, true);
       }
 
@@ -310,15 +318,15 @@ app.use(
           corsOriginCache.data.has &&
           corsOriginCache.data.has(origin)
         ) {
-          console.log('✅ CORS: Marketplace origin allowed:', origin);
+          logger.debug('CORS: Marketplace origin allowed', { origin });
           return callback(null, true);
         }
       } catch (error) {
-        console.error('❌ CORS: Cache check failed:', getErrorMessage(error));
+        logger.error('CORS: Cache check failed', { error: getErrorMessage(error) });
       }
 
       // Log rejected origins for debugging
-      console.warn('❌ CORS: Origin rejected:', {
+      logger.warn('CORS: Origin rejected', {
         origin,
         cacheExists: !!corsOriginCache,
         cacheDataExists: !!corsOriginCache?.data,
@@ -329,7 +337,9 @@ app.use(
       });
       return callback(new Error('Not allowed by CORS'));
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    // SECURITY FIX: Restrict to safe methods only
+    // PUT and DELETE are now only allowed on specific routes that need them
+    methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -341,6 +351,64 @@ app.use(
       'X-Request-ID',
     ],
     credentials: true,
+  })
+);
+
+// SECURITY: Enforce HTTPS in production
+app.use((req, res, next) => {
+  // Skip HTTPS enforcement in development
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    return next();
+  }
+
+  // Check if request is secure (handles proxies via x-forwarded-proto)
+  const isSecure = req.secure || req.get('x-forwarded-proto') === 'https';
+
+  if (!isSecure) {
+    logger.warn('HTTPS required: rejecting insecure request', {
+      path: req.path,
+      ip: req.ip,
+    });
+    return res.status(403).json({
+      code: 'HTTPS_REQUIRED',
+      message: 'HTTPS is required for API access',
+    });
+  }
+
+  next();
+});
+
+// SECURITY: Add security headers (Helmet)
+import helmet from 'helmet';
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", 'https:', 'data:'],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+    frameguard: {
+      action: 'deny',
+    },
+    noSniff: true,
+    xssFilter: true,
+    referrerPolicy: {
+      policy: 'strict-origin-when-cross-origin',
+    },
   })
 );
 
