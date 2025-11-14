@@ -4,10 +4,16 @@
  *
  * Routes requests to appropriate PostgreSQL schemas based on X-App-ID header.
  * Implements multi-tenant architecture with schema-level isolation.
+ *
+ * SECURITY UPDATE:
+ * - Uses anon key for user-facing requests to enforce Row-Level Security (RLS)
+ * - Service role key reserved for admin-only operations (never exposed to users)
+ * - For admin operations, use getSupabaseServiceClient() from src/config/supabase.ts
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { logger, sanitizeError, sanitizeObject } from '../../utils/logger';
 
 // Extend Express Request to include app context
 declare global {
@@ -34,6 +40,8 @@ interface AppRecord {
 /**
  * Schema routing middleware
  * Extracts X-App-ID header and sets up schema-aware database context
+ *
+ * SECURITY: Uses anon key to enforce RLS policies on all user requests
  */
 export const schemaRouter = async (
   req: Request,
@@ -52,11 +60,12 @@ export const schemaRouter = async (
       return;
     }
 
-    // Initialize Supabase client
+    // SECURITY: Use anon key for user-facing requests to enforce RLS
+    // Service role key should NEVER be used for user-initiated requests
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       res.status(500).json({
         code: 'CONFIGURATION_ERROR',
         message: 'Database configuration missing',
@@ -64,7 +73,8 @@ export const schemaRouter = async (
       return;
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use anon key to enforce Row-Level Security policies
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Look up app in oriva_platform.apps
     const { data: app, error: appError } = await supabase
@@ -100,11 +110,14 @@ export const schemaRouter = async (
       });
 
     if (pathError) {
-      console.error('Failed to set schema path:', pathError);
+      // SECURITY: Sanitize error details to prevent exposure
+      logger.error('Schema path setup failed', {
+        appId,
+        error: sanitizeError(pathError),
+      });
       res.status(500).json({
         code: 'SCHEMA_ROUTING_ERROR',
         message: 'Failed to route request to app schema',
-        details: pathError,
       });
       return;
     }
@@ -120,11 +133,14 @@ export const schemaRouter = async (
     // Continue to next middleware
     next();
   } catch (error) {
-    console.error('Schema routing error:', error);
+    // SECURITY: Sanitize error details to prevent sensitive data exposure
+    logger.error('Schema routing failed', {
+      appId: req.header('X-App-ID'),
+      error: sanitizeError(error),
+    });
     res.status(500).json({
       code: 'INTERNAL_ERROR',
       message: 'Schema routing failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -132,6 +148,8 @@ export const schemaRouter = async (
 /**
  * Optional schema routing middleware (for endpoints that don't require X-App-ID)
  * Used for platform-level endpoints like /platform/apps
+ *
+ * SECURITY: Uses anon key to enforce RLS policies
  */
 export const optionalSchemaRouter = async (
   req: Request,
@@ -143,9 +161,9 @@ export const optionalSchemaRouter = async (
   // If no X-App-ID provided, just set up platform-level Supabase client
   if (!appId) {
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       res.status(500).json({
         code: 'CONFIGURATION_ERROR',
         message: 'Database configuration missing',
@@ -153,7 +171,8 @@ export const optionalSchemaRouter = async (
       return;
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // SECURITY: Use anon key for user requests to enforce RLS
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     req.appContext = {
       appId: 'platform',

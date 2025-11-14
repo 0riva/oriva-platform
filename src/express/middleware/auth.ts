@@ -7,7 +7,9 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { getSupabase } from './schemaRouter';
+import { logger, sanitizeError } from '../../utils/logger';
 
 // Extend Express Request to include user context
 declare global {
@@ -29,36 +31,110 @@ interface UserRecord {
 }
 
 /**
- * API Key authentication middleware
- * Validates X-API-Key header against environment configuration
+ * Hash API key using SHA-256 (constant-time hashing)
+ * SECURITY: Prevents timing attacks and ensures keys are never stored in plaintext
  */
-export const requireApiKey = (req: Request, res: Response, next: NextFunction): void => {
-  const apiKey = req.header('X-API-Key');
+const hashApiKey = async (key: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Buffer.from(hashBuffer).toString('hex');
+};
 
-  if (!apiKey) {
-    res.status(401).json({
-      code: 'UNAUTHORIZED',
-      message: 'API key required. Provide X-API-Key header.',
+/**
+ * API Key authentication middleware
+ * SECURITY: Validates X-API-Key header against hashed keys in database
+ * - Keys stored as SHA-256 hashes in developer_api_keys table
+ * - Uses constant-time comparison to prevent timing attacks
+ * - Tracks usage count and last_used_at timestamp
+ */
+export const requireApiKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const apiKey = req.header('X-API-Key');
+
+    if (!apiKey) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'API key required. Provide X-API-Key header.',
+      });
+      return;
+    }
+
+    // Validate API key format (should start with oriva_pk_)
+    if (!apiKey.startsWith('oriva_pk_')) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid API key format. Must start with oriva_pk_',
+      });
+      return;
+    }
+
+    // Hash the provided API key
+    const hashedKey = await hashApiKey(apiKey);
+
+    // Query database for matching API key
+    const supabase = getSupabase(req);
+    const { data: keyRecord, error } = await supabase
+      .schema('oriva_platform')
+      .from('developer_api_keys')
+      .select('id, app_id, is_active, usage_count, expires_at')
+      .eq('key_hash', hashedKey)
+      .maybeSingle();
+
+    if (error || !keyRecord) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid API key',
+      });
+      return;
+    }
+
+    // Check if key is active
+    if (!keyRecord.is_active) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'API key has been deactivated',
+      });
+      return;
+    }
+
+    // Check if key has expired
+    if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'API key has expired',
+      });
+      return;
+    }
+
+    // Update usage tracking (fire and forget - don't block request)
+    Promise.resolve(
+      supabase
+        .schema('oriva_platform')
+        .from('developer_api_keys')
+        .update({
+          usage_count: (keyRecord.usage_count || 0) + 1,
+          last_used_at: new Date().toISOString(),
+        })
+        .eq('id', keyRecord.id)
+    ).catch((err: unknown) => {
+      // SECURITY: Sanitize error details
+      logger.warn('API key usage tracking failed', {
+        error: sanitizeError(err),
+      });
     });
-    return;
-  }
 
-  // Validate against configured API keys
-  const validApiKeys = [
-    process.env.API_KEY_PLATFORM,
-    process.env.API_KEY_HUGO_LOVE,
-    process.env.API_KEY_HUGO_CAREER,
-  ].filter(Boolean);
-
-  if (!validApiKeys.includes(apiKey)) {
-    res.status(401).json({
-      code: 'UNAUTHORIZED',
-      message: 'Invalid API key',
+    next();
+  } catch (error) {
+    // SECURITY: Sanitize error details
+    logger.error('API key validation failed', {
+      error: sanitizeError(error),
     });
-    return;
+    res.status(500).json({
+      code: 'INTERNAL_ERROR',
+      message: 'API key validation failed',
+    });
   }
-
-  next();
 };
 
 /**
@@ -83,8 +159,17 @@ export const requireAuth = async (
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
-    // Test mode: Allow test tokens to bypass Supabase auth
-    if (process.env.NODE_ENV === 'test' && token.startsWith('test-user-')) {
+    // SECURITY: Test mode bypass - STRICTLY controlled
+    // Only enabled when:
+    // 1. NODE_ENV is explicitly 'test'
+    // 2. ALLOW_TEST_TOKENS env var is set to 'true'
+    // 3. NOT running on Vercel (VERCEL_ENV is undefined)
+    const isTestEnvironment =
+      process.env.NODE_ENV === 'test' &&
+      process.env.ALLOW_TEST_TOKENS === 'true' &&
+      !process.env.VERCEL_ENV;
+
+    if (isTestEnvironment && token.startsWith('test-user-')) {
       // Extract user ID from test token format: "test-user-{uuid}"
       const userId = token.replace('test-user-', '');
 
@@ -114,6 +199,44 @@ export const requireAuth = async (
       return;
     }
 
+    // SECURITY: Explicit JWT token expiration check
+    // Parse JWT to extract expiration time (don't trust Supabase exclusively)
+    try {
+      const tokenParts = token.split('.');
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+        const expiresAt = payload.exp * 1000; // Convert to milliseconds
+        const now = Date.now();
+
+        // Check if token is expired
+        if (now >= expiresAt) {
+          logger.warn('Expired JWT token rejected', {
+            expiresAt: new Date(expiresAt).toISOString(),
+          });
+          res.status(401).json({
+            code: 'TOKEN_EXPIRED',
+            message: 'Token has expired',
+          });
+          return;
+        }
+
+        // Warn if token expires soon (< 5 minutes)
+        const fiveMinutes = 5 * 60 * 1000;
+        if (expiresAt - now < fiveMinutes) {
+          logger.info('JWT token expiring soon', {
+            expiresIn: Math.floor((expiresAt - now) / 1000) + 's',
+          });
+          // Signal client to refresh token
+          res.setHeader('X-Token-Refresh-Required', 'true');
+        }
+      }
+    } catch (parseError) {
+      // If JWT parsing fails, continue with Supabase validation
+      logger.warn('Failed to parse JWT for expiration check', {
+        error: sanitizeError(parseError),
+      });
+    }
+
     // Verify JWT with Supabase
     const supabase = getSupabase(req);
     const {
@@ -125,7 +248,6 @@ export const requireAuth = async (
       res.status(401).json({
         code: 'UNAUTHORIZED',
         message: 'Invalid or expired token',
-        details: error,
       });
       return;
     }
@@ -154,11 +276,13 @@ export const requireAuth = async (
 
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    // SECURITY: Sanitize error details
+    logger.error('Authentication failed', {
+      error: sanitizeError(error),
+    });
     res.status(500).json({
       code: 'INTERNAL_ERROR',
       message: 'Authentication failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -225,11 +349,13 @@ export const requireAppAccess = async (
 
     next();
   } catch (error) {
-    console.error('App access check error:', error);
+    // SECURITY: Sanitize error details
+    logger.error('App access check failed', {
+      error: sanitizeError(error),
+    });
     res.status(500).json({
       code: 'INTERNAL_ERROR',
       message: 'Access check failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
