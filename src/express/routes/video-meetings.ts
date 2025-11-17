@@ -5,11 +5,14 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import type { AuthenticatedRequest } from '../../types/middleware/auth';
+
 const router = Router();
+
 // Create Supabase client
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-// Simple auth middleware that doesn't depend on schema router
+// Simple auth middleware that validates Bearer token exists
 const simpleAuth = (req: Request, res: Response, next: Function) => {
   const authHeader = req.header('Authorization');
 
