@@ -22,7 +22,11 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { errorHandler, notFoundHandler, requestTimeout } from '../src/express/middleware/errorHandler';
+import {
+  errorHandler,
+  notFoundHandler,
+  requestTimeout,
+} from '../src/express/middleware/errorHandler';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
 
@@ -114,7 +118,7 @@ export const createApp = (): Application => {
 /**
  * Start server
  */
-export const startServer = (port: number = 3001): void => {
+export const startServer = (port: number = 3002): void => {
   const app = createApp();
 
   // Initialize real-time delivery service
@@ -131,7 +135,7 @@ export const startServer = (port: number = 3001): void => {
 
 // Start server if run directly
 if (require.main === module) {
-  const port = parseInt(process.env.PORT || '3001');
+  const port = parseInt(process.env.PORT || '3002');
   startServer(port);
 }
 

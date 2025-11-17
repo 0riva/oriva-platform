@@ -48,6 +48,7 @@ import {
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
 import photosRouter from '../src/express/routes/photos';
+import videoMeetingsRouter from '../src/express/routes/video-meetings';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
 
@@ -4019,6 +4020,9 @@ app.use('/api/hugo', hugoRouter);
 
 // Mount Photos router for pre-signed URL uploads
 app.use('/api/v1/apps/photos', photosRouter);
+
+// Mount Video Meetings router
+app.use('/api/v1/video-meetings', videoMeetingsRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS
