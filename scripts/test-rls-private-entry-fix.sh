@@ -65,3 +65,5 @@ echo "  1. Apply migration: supabase db reset"
 echo "  2. Run tests: npm test -- rls-private-entry-visibility.test.ts"
 echo "  3. Verify in production after deployment"
 
+
+

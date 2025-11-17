@@ -40,7 +40,12 @@ VALUES
   -- Hugo Career
   ('00000000-0000-0000-0000-000000000012', 'hugo_career', 'Hugo Career', 'Professional career coaching and development', 'hugo_career', 'active',
    '{"quotas": {"max_users": 50000, "max_storage_gb": 250}, "features": ["coaching", "ai_analysis", "cross_app_insights"]}'::jsonb,
-   NOW() - INTERVAL '45 days', NOW())
+   NOW() - INTERVAL '45 days', NOW()),
+
+  -- Video Meetings
+  ('00000000-0000-0000-0000-000000000013', 'video-meetings', 'Video Meetings', 'Whereby-powered video conferencing and scheduling', 'video_meetings', 'active',
+   '{"quotas": {"max_users": 100000, "max_storage_gb": 200}, "features": ["video_conferencing", "scheduling", "whereby_integration"]}'::jsonb,
+   NOW() - INTERVAL '1 day', NOW())
 
   -- Note: hugo_test app removed - schema_name must be unique
 ON CONFLICT (app_id) DO NOTHING;
