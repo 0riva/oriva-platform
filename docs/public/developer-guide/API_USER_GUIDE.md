@@ -13,6 +13,7 @@
 ## 📖 Table of Contents
 
 ### Getting Started
+
 - [Authentication Model](#authentication-model)
 - [Base URL & Headers](#base-url--headers)
 - [Response Format](#response-format)
@@ -20,6 +21,7 @@
 - [Rate Limits](#rate-limits)
 
 ### API Categories
+
 1. [Health & Test](#1-health--test) - 3 endpoints
 2. [User & Authentication](#2-user--authentication) - 3 endpoints
 3. [Profiles](#3-profiles) - 4 endpoints
@@ -64,9 +66,9 @@ User → Logs into Oriva Core → Installs Your App → Your App Uses API Key
 // ✅ Use your API key to access Oriva's authenticated users
 const response = await fetch('https://api.oriva.io/api/v1/user/me', {
   headers: {
-    'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`,
-    'Content-Type': 'application/json'
-  }
+    Authorization: `Bearer ${process.env.ORIVA_API_KEY}`,
+    'Content-Type': 'application/json',
+  },
 });
 
 // Returns the current Oriva user's data
@@ -82,6 +84,160 @@ const user = await response.json();
 5. Store in environment variables: `ORIVA_API_KEY=oriva_pk_live_...`
 
 **🔐 Security:** Never expose API keys in client-side code. Always use server-side proxies.
+
+### iframe Authentication (for Marketplace Apps)
+
+When your app runs inside Oriva (via iframe), you receive user-specific tokens through postMessage instead of using your API key directly.
+
+#### How It Works
+
+```
+User launches your app → Oriva loads your execution_url in iframe
+                                    ↓
+                       Your app sends ORIVA_REQUEST_AUTH
+                                    ↓
+                       Oriva responds with ORIVA_AUTH_TOKEN
+                                    ↓
+                       Your app uses accessToken for API calls
+```
+
+#### Requesting Authentication
+
+```javascript
+class OrivaAuth {
+  constructor(appId) {
+    this.appId = appId;
+    this.tokens = null;
+  }
+
+  async requestAuthentication() {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Authentication timeout'));
+      }, 15000);
+
+      const handleMessage = (event) => {
+        // Validate origin for security
+        const allowedOrigins = ['https://app.oriva.io', 'https://oriva.io'];
+        if (!allowedOrigins.includes(event.origin)) {
+          return;
+        }
+
+        if (event.data?.type === 'ORIVA_AUTH_TOKEN') {
+          clearTimeout(timeout);
+          window.removeEventListener('message', handleMessage);
+          resolve(event.data.data);
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+
+      // Request auth from Oriva
+      window.parent.postMessage(
+        {
+          type: 'ORIVA_REQUEST_AUTH',
+          appId: this.appId,
+        },
+        '*'
+      );
+    });
+  }
+}
+
+// Usage
+const auth = new OrivaAuth('my-app-id');
+const tokens = await auth.requestAuthentication();
+console.log('User:', tokens.user);
+```
+
+#### Token Structure
+
+```javascript
+{
+  accessToken: 'eyJhbGciOiJIUzI1NiIs...',  // JWT for API calls
+  expiresIn: 3600,                          // Seconds until expiration
+  user: {
+    id: 'user-uuid',
+    email: 'user@example.com',
+    name: 'John Doe',
+    avatar: 'https://...'
+  }
+}
+```
+
+#### Token Refresh
+
+Tokens expire after ~1 hour. To refresh, simply request authentication again:
+
+```javascript
+class OrivaAuth {
+  constructor(appId) {
+    this.appId = appId;
+    this.tokens = null;
+  }
+
+  // Check if token needs refresh (5 minute buffer)
+  needsRefresh() {
+    if (!this.tokens) return true;
+    return this.tokens.expiresIn < 300;
+  }
+
+  // Get valid token, refreshing if needed
+  async getAccessToken() {
+    if (this.needsRefresh()) {
+      this.tokens = await this.requestAuthentication();
+    }
+    return this.tokens.accessToken;
+  }
+
+  async requestAuthentication() {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Timeout')), 15000);
+
+      const handler = (event) => {
+        const allowedOrigins = ['https://app.oriva.io', 'https://oriva.io'];
+        if (!allowedOrigins.includes(event.origin)) return;
+
+        if (event.data?.type === 'ORIVA_AUTH_TOKEN') {
+          clearTimeout(timeout);
+          window.removeEventListener('message', handler);
+          resolve(event.data.data);
+        }
+      };
+
+      window.addEventListener('message', handler);
+      window.parent.postMessage(
+        {
+          type: 'ORIVA_REQUEST_AUTH',
+          appId: this.appId,
+        },
+        '*'
+      );
+    });
+  }
+}
+
+// Usage with automatic refresh
+const auth = new OrivaAuth('my-app-id');
+const token = await auth.getAccessToken();
+
+// Make API call
+const response = await fetch('https://api.oriva.io/api/v1/user/me', {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  },
+});
+```
+
+#### When to Use Each Auth Method
+
+| Scenario                      | Auth Method       | Token Type                            |
+| ----------------------------- | ----------------- | ------------------------------------- |
+| **Your backend server**       | API Key           | `oriva_pk_live_...`                   |
+| **Your app in Oriva iframe**  | postMessage       | `accessToken` from `ORIVA_AUTH_TOKEN` |
+| **Managing your app listing** | API Key           | `oriva_pk_live_...`                   |
+| **Accessing user's data**     | postMessage token | `accessToken`                         |
 
 ---
 
@@ -151,7 +307,9 @@ All endpoints return consistent JSON structure:
 ```json
 {
   "success": true,
-  "data": [ /* items */ ],
+  "data": [
+    /* items */
+  ],
   "meta": {
     "pagination": {
       "current_page": 1,
@@ -171,25 +329,25 @@ All endpoints return consistent JSON structure:
 
 ### Common Error Codes
 
-| Code | HTTP Status | Description | Action Required |
-|------|-------------|-------------|-----------------|
-| `UNAUTHORIZED` | 401 | Invalid or missing API key | Check authentication |
-| `FORBIDDEN` | 403 | Insufficient permissions | Review required scopes |
-| `NOT_FOUND` | 404 | Resource not found | Verify resource ID |
-| `VALIDATION_ERROR` | 400 | Invalid request data | Fix request format |
-| `RATE_LIMITED` | 429 | Too many requests | Implement backoff strategy |
-| `SERVER_ERROR` | 500 | Internal server error | Retry with backoff |
+| Code               | HTTP Status | Description                | Action Required            |
+| ------------------ | ----------- | -------------------------- | -------------------------- |
+| `UNAUTHORIZED`     | 401         | Invalid or missing API key | Check authentication       |
+| `FORBIDDEN`        | 403         | Insufficient permissions   | Review required scopes     |
+| `NOT_FOUND`        | 404         | Resource not found         | Verify resource ID         |
+| `VALIDATION_ERROR` | 400         | Invalid request data       | Fix request format         |
+| `RATE_LIMITED`     | 429         | Too many requests          | Implement backoff strategy |
+| `SERVER_ERROR`     | 500         | Internal server error      | Retry with backoff         |
 
 ---
 
 ## Rate Limits
 
-| Endpoint Type | Requests | Window |
-|---------------|----------|--------|
-| **Authentication** | 100 | 15 minutes |
-| **Core API** | 1,000 | 15 minutes |
-| **Marketplace** | 1,000 | 1 hour |
-| **Admin Endpoints** | 30 | 1 minute |
+| Endpoint Type       | Requests | Window     |
+| ------------------- | -------- | ---------- |
+| **Authentication**  | 100      | 15 minutes |
+| **Core API**        | 1,000    | 15 minutes |
+| **Marketplace**     | 1,000    | 1 hour     |
+| **Admin Endpoints** | 30       | 1 minute   |
 
 ### Rate Limit Headers
 
@@ -211,11 +369,13 @@ X-RateLimit-Window: 900
 **Authentication:** None
 
 **Request:**
+
 ```bash
 curl https://api.oriva.io/health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -232,11 +392,13 @@ curl https://api.oriva.io/health
 **Authentication:** None
 
 **Request:**
+
 ```bash
 curl https://api.oriva.io/api/v1/health
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -255,6 +417,7 @@ curl https://api.oriva.io/api/v1/health
 **Authentication:** None
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -275,12 +438,14 @@ curl https://api.oriva.io/api/v1/health
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/user/me
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -302,15 +467,15 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **Properties:**
 
-| Property | Type | Description | Privacy Level |
-|----------|------|-------------|---------------|
-| `id` | string | External user ID (sanitized) | Public |
-| `name` | string | User display name | Public |
-| `email` | string | User email address | Restricted |
-| `avatar` | string | Profile image URL | Public |
-| `created_at` | string | Account creation timestamp | Public |
-| `last_login` | string | Last login timestamp | Restricted |
-| `preferences` | object | User preferences | Private |
+| Property      | Type   | Description                  | Privacy Level |
+| ------------- | ------ | ---------------------------- | ------------- |
+| `id`          | string | External user ID (sanitized) | Public        |
+| `name`        | string | User display name            | Public        |
+| `email`       | string | User email address           | Restricted    |
+| `avatar`      | string | Profile image URL            | Public        |
+| `created_at`  | string | Account creation timestamp   | Public        |
+| `last_login`  | string | Last login timestamp         | Restricted    |
+| `preferences` | object | User preferences             | Private       |
 
 ---
 
@@ -331,6 +496,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** Auth Token (user-specific)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -353,12 +519,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/profiles/available
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -387,17 +555,17 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **Properties:**
 
-| Property | Type | Description | Privacy Level |
-|----------|------|-------------|---------------|
-| `id` | string | External profile ID (sanitized) | Public |
-| `name` | string | Profile display name | Public |
-| `description` | string | Profile description | Public |
-| `avatar` | string | Profile image URL | Public |
-| `is_active` | boolean | Whether profile is currently active | Public |
-| `permissions` | array | User permissions in this profile | Restricted |
-| `created_at` | string | Profile creation timestamp | Public |
-| `member_count` | number | Number of profile members | Public |
-| `settings` | object | Profile configuration | Restricted |
+| Property       | Type    | Description                         | Privacy Level |
+| -------------- | ------- | ----------------------------------- | ------------- |
+| `id`           | string  | External profile ID (sanitized)     | Public        |
+| `name`         | string  | Profile display name                | Public        |
+| `description`  | string  | Profile description                 | Public        |
+| `avatar`       | string  | Profile image URL                   | Public        |
+| `is_active`    | boolean | Whether profile is currently active | Public        |
+| `permissions`  | array   | User permissions in this profile    | Restricted    |
+| `created_at`   | string  | Profile creation timestamp          | Public        |
+| `member_count` | number  | Number of profile members           | Public        |
+| `settings`     | object  | Profile configuration               | Restricted    |
 
 ---
 
@@ -408,6 +576,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -429,6 +598,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key (must have write permissions)
 
 **Request:**
+
 ```json
 {
   "name": "Updated Profile Name",
@@ -440,6 +610,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -463,6 +634,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Request Body:** None required
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -486,12 +658,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/groups
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -519,16 +693,16 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 **Properties:**
 
-| Property | Type | Description | Privacy Level |
-|----------|------|-------------|---------------|
-| `id` | string | External group ID (sanitized) | Public |
-| `name` | string | Group display name | Public |
-| `description` | string | Group description | Public |
-| `role` | string | User's role in the group | Public |
-| `permissions` | array | User permissions in group | Restricted |
-| `member_count` | number | Total group members | Public |
-| `created_at` | string | Group creation timestamp | Public |
-| `settings` | object | Group configuration | Restricted |
+| Property       | Type   | Description                   | Privacy Level |
+| -------------- | ------ | ----------------------------- | ------------- |
+| `id`           | string | External group ID (sanitized) | Public        |
+| `name`         | string | Group display name            | Public        |
+| `description`  | string | Group description             | Public        |
+| `role`         | string | User's role in the group      | Public        |
+| `permissions`  | array  | User permissions in group     | Restricted    |
+| `member_count` | number | Total group members           | Public        |
+| `created_at`   | string | Group creation timestamp      | Public        |
+| `settings`     | object | Group configuration           | Restricted    |
 
 ---
 
@@ -539,12 +713,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/groups/ext_group_def456/members
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -571,12 +747,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/sessions
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -602,12 +780,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/sessions/upcoming
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -633,12 +813,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/team/members
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -664,12 +846,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/analytics/summary
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -694,6 +878,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Query Parameters:**
+
 - `limit` (optional): Items per page (default: 50, max: 100)
 - `offset` (optional): Pagination offset
 - `profile_id` (optional): Filter by profile
@@ -701,12 +886,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 - `audience` (optional): Filter by audience type (public, private, group_only)
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   "https://api.oriva.io/api/v1/entries?limit=20&audience=public"
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -742,12 +929,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/templates
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -773,12 +962,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/storage
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -800,6 +991,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```json
 {
   "message": "Your report is ready",
@@ -809,6 +1001,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -831,12 +1024,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key (must be developer)
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.oriva.io/api/v1/developer/apps
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -865,6 +1060,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```
 
 **Status Values:**
+
 - `draft` - App being edited, not submitted
 - `pending_review` - Submitted, awaiting admin review
 - `approved` - Approved and visible in marketplace
@@ -889,6 +1085,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Request:**
+
 ```json
 {
   "name": "My App",
@@ -908,6 +1105,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -934,6 +1132,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Response:** Updated app object
 
 **Notes:**
+
 - Cannot update `status` field via this endpoint
 - Use submit/resubmit endpoints to change status
 
@@ -946,6 +1145,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key (must own the app)
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -955,6 +1155,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```
 
 **Restrictions:**
+
 - Can only delete apps with status `draft`
 - Returns 403 error if app is submitted, approved, or rejected
 
@@ -969,6 +1170,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Request Body:** None required
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -982,6 +1184,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```
 
 **Requirements:**
+
 - App must be in `draft` status
 - Returns 404 if app not found or already submitted
 
@@ -994,6 +1197,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key (must own the app)
 
 **Request:**
+
 ```json
 {
   "notes": "Fixed issues mentioned in review"
@@ -1003,6 +1207,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Response:** Updated app with status `pending_review`
 
 **Requirements:**
+
 - App must be in `rejected` status
 
 ---
@@ -1016,17 +1221,20 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Query Parameters:**
+
 - `limit` (optional): Max apps to return (default: 20, max: 50)
 - `offset` (optional): Pagination offset
 - `category` (optional): Filter by category
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   "https://api.oriva.io/api/v1/marketplace/apps?limit=10&category=productivity"
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -1084,9 +1292,11 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Query Parameters:**
+
 - `limit` (optional): Max apps to return (default: 10, max: 50)
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -1115,11 +1325,13 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key
 
 **Query Parameters:**
+
 - `limit` (optional): Max apps to return (default: 6, max: 50)
 
 **Response:** Same format as trending endpoint
 
 **Notes:**
+
 - Only apps with `is_featured` flag set to true
 - Ordered by `featured_order` field
 
@@ -1132,15 +1344,11 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** API Key or None
 
 **Response:**
+
 ```json
 {
   "success": true,
-  "data": [
-    "productivity",
-    "communication",
-    "analytics",
-    "utilities"
-  ]
+  "data": ["productivity", "communication", "analytics", "utilities"]
 }
 ```
 
@@ -1153,12 +1361,14 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 **Authentication:** Auth Token (user-specific)
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer USER_AUTH_TOKEN" \
   https://api.oriva.io/api/v1/marketplace/installed
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -1194,6 +1404,7 @@ curl -H "Authorization: Bearer USER_AUTH_TOKEN" \
 **Authentication:** Auth Token (user-specific)
 
 **Request:**
+
 ```json
 {
   "profile_id": "ext_profile_xyz",
@@ -1204,6 +1415,7 @@ curl -H "Authorization: Bearer USER_AUTH_TOKEN" \
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -1228,6 +1440,7 @@ curl -H "Authorization: Bearer USER_AUTH_TOKEN" \
 **Authentication:** Auth Token (user-specific)
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -1249,12 +1462,14 @@ curl -H "Authorization: Bearer USER_AUTH_TOKEN" \
 **Authentication:** Admin Token
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer ADMIN_TOKEN" \
   https://api.oriva.io/api/v1/admin/apps/pending
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -1281,6 +1496,7 @@ curl -H "Authorization: Bearer ADMIN_TOKEN" \
 **Authentication:** Admin Token
 
 **Request:**
+
 ```json
 {
   "status": "approved",
@@ -1289,10 +1505,12 @@ curl -H "Authorization: Bearer ADMIN_TOKEN" \
 ```
 
 **Status Options:**
+
 - `approved` - Approve and publish to marketplace
 - `rejected` - Reject and allow resubmission
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -1320,6 +1538,7 @@ curl -H "Authorization: Bearer ADMIN_TOKEN" \
 **Note:** Hugo AI endpoints are available for third-party apps that want to provide AI coaching, chat, or insights features to their users. Contact Oriva for detailed Hugo AI integration documentation.
 
 **Example Endpoints:**
+
 - Chat and messaging
 - Session management
 - AI insights and analytics
@@ -1339,9 +1558,9 @@ app.get('/api/oriva-proxy/user/me', async (req, res) => {
   try {
     const response = await fetch('https://api.oriva.io/api/v1/user/me', {
       headers: {
-        'Authorization': `Bearer ${process.env.ORIVA_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${process.env.ORIVA_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
     });
     const data = await response.json();
     res.json(data);
@@ -1361,7 +1580,8 @@ class RateLimitHandler {
         const response = await fetch(endpoint, options);
 
         if (response.status === 429) {
-          const retryAfter = parseInt(response.headers.get('Retry-After')) || (2 ** attempt);
+          const retryAfter =
+            parseInt(response.headers.get('Retry-After')) || 2 ** attempt;
           console.log(`Rate limited. Retrying in ${retryAfter} seconds...`);
           await this.sleep(retryAfter * 1000);
           continue;
@@ -1370,13 +1590,13 @@ class RateLimitHandler {
         return response;
       } catch (error) {
         if (attempt === maxRetries - 1) throw error;
-        await this.sleep(1000 * (2 ** attempt));
+        await this.sleep(1000 * 2 ** attempt);
       }
     }
   }
 
   sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 ```
@@ -1386,6 +1606,7 @@ class RateLimitHandler {
 ## 📚 Additional Resources
 
 ### Related Documentation
+
 - **[API Overview](./API_OVERVIEW.md)** - 5-minute introduction
 - **[API Patterns](./API_PATTERNS.md)** - Production patterns and best practices
 - **[API Troubleshooting Guide](./api-troubleshooting-guide.md)** - Debug and resolve issues
@@ -1393,6 +1614,7 @@ class RateLimitHandler {
 - **[Quick Start Guide](./quick-start.md)** - 15-minute integration
 
 ### Getting Help
+
 - **Documentation:** [Developer Guide](./README.md)
 - **Issues:** [GitHub Issues](https://github.com/0riva/oriva-platform/issues)
 - **Security:** security@oriva.io
@@ -1401,4 +1623,4 @@ class RateLimitHandler {
 
 **Security Note:** Always implement proper authentication, never expose API keys in client-side code, and follow the security patterns outlined in this documentation.
 
-*Last Updated: January 2025 | Security Audit: January 2025*
+_Last Updated: January 2025 | Security Audit: January 2025_
