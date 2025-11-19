@@ -67,3 +67,4 @@ supabase migration list --linked
 **Last Updated**: 2025-11-11  
 **Migration Authority**: o-core repository  
 **Contact**: Oriva Development Team
+

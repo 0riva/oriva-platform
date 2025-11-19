@@ -186,3 +186,4 @@ USING (
 - [Supabase RLS Documentation](https://supabase.com/docs/guides/auth/row-level-security)
 - [RLS Patterns](./src/services/patterns/rls-workflow-patterns.md)
 - Issue: https://oriva.io/entry/57df1518-b146-42c2-af57-2fc4d3418479
+

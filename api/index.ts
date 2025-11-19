@@ -298,9 +298,13 @@ app.use(
       // SECURITY FIX: Reject requests with no origin when credentials are enabled
       // This prevents CSRF attacks where attackers craft requests without Origin header
       if (!origin) {
-        // Exception: Allow health checks and public endpoints without origin
-        // But log them for monitoring
-        logger.warn('CORS: Request without origin header', {
+        // Development: Allow requests without origin header for local testing
+        if (process.env.NODE_ENV === 'development') {
+          logger.debug('CORS: No origin header in development - allowing request');
+          return callback(null, true);
+        }
+        // Production: Require origin header
+        logger.warn('CORS: Request without origin header in production', {
           userAgent: 'not available in CORS preflight',
         });
         return callback(new Error('Origin header required for CORS'));
