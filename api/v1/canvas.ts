@@ -23,9 +23,7 @@ import { getSupabaseClient } from '../../src/config/supabase';
 import { asyncHandler, validationError, notFoundError } from '../../src/middleware/error-handler';
 import { rateLimit } from '../../src/middleware/rate-limit';
 import { authenticate, AuthenticatedRequest } from '../../src/middleware/auth';
-import { createLogger } from '../../src/utils/logger';
-
-const logger = createLogger({ component: 'canvas-api' });
+import logger from '../../src/utils/logger';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -89,7 +87,7 @@ async function handleListCanvases(req: AuthenticatedRequest, res: VercelResponse
   logger.info('Listing canvases', { userId });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .select('*')
     .eq('account_id', userId)
     .eq('is_archived', false)
@@ -124,7 +122,7 @@ async function handleCreateCanvas(req: AuthenticatedRequest, res: VercelResponse
   logger.info('Creating canvas', { userId, title });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .insert({
       account_id: userId,
       title: title.trim(),
@@ -164,7 +162,7 @@ async function handleGetCanvas(
   logger.info('Getting canvas', { userId, canvasId });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .select('*')
     .eq('id', canvasId)
     .eq('account_id', userId)
@@ -176,7 +174,7 @@ async function handleGetCanvas(
 
   // Update last_accessed_at
   await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .update({ last_accessed_at: new Date().toISOString() })
     .eq('id', canvasId)
     .eq('account_id', userId);
@@ -210,7 +208,7 @@ async function handleUpdateCanvas(
   logger.info('Updating canvas', { userId, canvasId, updates });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .update(updates)
     .eq('id', canvasId)
     .eq('account_id', userId)
@@ -238,7 +236,7 @@ async function handleDeleteCanvas(
   logger.info('Deleting canvas', { userId, canvasId });
 
   const { error } = await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .delete()
     .eq('id', canvasId)
     .eq('account_id', userId);
@@ -276,7 +274,7 @@ async function handleArchiveCanvas(
   logger.info('Archiving canvas', { userId, canvasId, archived });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .update({ is_archived: archived })
     .eq('id', canvasId)
     .eq('account_id', userId)
@@ -308,7 +306,7 @@ async function handleUpdateViewport(
   const supabase = getSupabaseClient();
 
   const { error } = await supabase
-    .from('whiteboard_canvas.canvases')
+    .from('whiteboard_canvas.canvases' as any)
     .update({
       viewport_x: x,
       viewport_y: y,
@@ -349,7 +347,7 @@ async function handleListCanvasItems(
   logger.info('Listing canvas items', { userId, canvasId });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvas_items')
+    .from('whiteboard_canvas.canvas_items' as any)
     .select('*')
     .eq('canvas_id', canvasId)
     .eq('account_id', userId)
@@ -388,7 +386,7 @@ async function handleAddCanvasItem(
   logger.info('Adding canvas item', { userId, canvasId, entryId });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvas_items')
+    .from('whiteboard_canvas.canvas_items' as any)
     .insert({
       canvas_id: canvasId,
       account_id: userId,
@@ -436,7 +434,7 @@ async function handleUpdateCanvasItem(
   if (color !== undefined) updates.color = color;
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvas_items')
+    .from('whiteboard_canvas.canvas_items' as any)
     .update(updates)
     .eq('id', itemId)
     .eq('account_id', userId)
@@ -468,7 +466,7 @@ async function handleUpdateItemPosition(
   const supabase = getSupabaseClient();
 
   const { error } = await supabase
-    .from('whiteboard_canvas.canvas_items')
+    .from('whiteboard_canvas.canvas_items' as any)
     .update({
       position_x: x,
       position_y: y,
@@ -501,7 +499,7 @@ async function handleDeleteCanvasItem(
   const supabase = getSupabaseClient();
 
   const { error } = await supabase
-    .from('whiteboard_canvas.canvas_items')
+    .from('whiteboard_canvas.canvas_items' as any)
     .delete()
     .eq('id', itemId)
     .eq('account_id', userId);
@@ -540,7 +538,7 @@ async function handleBatchUpdatePositions(
   // Execute all updates in parallel
   const promises = updates.map((update) =>
     supabase
-      .from('whiteboard_canvas.canvas_items')
+      .from('whiteboard_canvas.canvas_items' as any)
       .update({
         position_x: update.x,
         position_y: update.y,
@@ -572,7 +570,7 @@ async function handleListConnections(
   logger.info('Listing connections', { userId, canvasId });
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvas_connections')
+    .from('whiteboard_canvas.canvas_connections' as any)
     .select('*')
     .eq('canvas_id', canvasId)
     .eq('account_id', userId);
@@ -614,7 +612,7 @@ async function handleCreateConnection(
 
   // 1. Create canvas connection
   const { data: connection, error: connectionError } = await supabase
-    .from('whiteboard_canvas.canvas_connections')
+    .from('whiteboard_canvas.canvas_connections' as any)
     .insert({
       canvas_id: canvasId,
       account_id: userId,
@@ -638,20 +636,21 @@ async function handleCreateConnection(
   }
 
   // 2. Get entry IDs from canvas items
-  const { data: sourceItem } = await supabase
-    .from('whiteboard_canvas.canvas_items')
+  const { data: sourceItem } = (await supabase
+    .from('whiteboard_canvas.canvas_items' as any)
     .select('entry_id')
     .eq('id', sourceItemId)
-    .single();
+    .single()) as { data: { entry_id: string } | null };
 
-  const { data: targetItem } = await supabase
-    .from('whiteboard_canvas.canvas_items')
+  const { data: targetItem } = (await supabase
+    .from('whiteboard_canvas.canvas_items' as any)
     .select('entry_id')
-    .single();
+    .eq('id', targetItemId)
+    .single()) as { data: { entry_id: string } | null };
 
   // 3. Create entry relation (sync to public.entry_relations)
   if (sourceItem && targetItem) {
-    await supabase.from('public.entry_relations').insert({
+    await supabase.from('public.entry_relations' as any).insert({
       source_entry_id: sourceItem.entry_id,
       target_entry_id: targetItem.entry_id,
       created_by_user_id: userId,
@@ -688,7 +687,7 @@ async function handleUpdateConnection(
   if (controlPoints !== undefined) updates.control_points = controlPoints;
 
   const { data, error } = await supabase
-    .from('whiteboard_canvas.canvas_connections')
+    .from('whiteboard_canvas.canvas_connections' as any)
     .update(updates)
     .eq('id', connectionId)
     .eq('account_id', userId)
@@ -714,31 +713,31 @@ async function handleDeleteConnection(
   const supabase = getSupabaseClient();
 
   // Get connection details before deleting
-  const { data: connection } = await supabase
-    .from('whiteboard_canvas.canvas_connections')
+  const { data: connection } = (await supabase
+    .from('whiteboard_canvas.canvas_connections' as any)
     .select('source_item_id, target_item_id')
     .eq('id', connectionId)
     .eq('account_id', userId)
-    .single();
+    .single()) as { data: { source_item_id: string; target_item_id: string } | null };
 
   if (connection) {
     // Get entry IDs
-    const { data: sourceItem } = await supabase
-      .from('whiteboard_canvas.canvas_items')
+    const { data: sourceItem } = (await supabase
+      .from('whiteboard_canvas.canvas_items' as any)
       .select('entry_id')
       .eq('id', connection.source_item_id)
-      .single();
+      .single()) as { data: { entry_id: string } | null };
 
-    const { data: targetItem } = await supabase
-      .from('whiteboard_canvas.canvas_items')
+    const { data: targetItem } = (await supabase
+      .from('whiteboard_canvas.canvas_items' as any)
       .select('entry_id')
       .eq('id', connection.target_item_id)
-      .single();
+      .single()) as { data: { entry_id: string } | null };
 
     // Soft delete entry relation
     if (sourceItem && targetItem) {
       await supabase
-        .from('public.entry_relations')
+        .from('public.entry_relations' as any)
         .update({ active: false })
         .eq('source_entry_id', sourceItem.entry_id)
         .eq('target_entry_id', targetItem.entry_id)
@@ -748,7 +747,7 @@ async function handleDeleteConnection(
 
   // Delete canvas connection
   const { error } = await supabase
-    .from('whiteboard_canvas.canvas_connections')
+    .from('whiteboard_canvas.canvas_connections' as any)
     .delete()
     .eq('id', connectionId)
     .eq('account_id', userId);

@@ -7,15 +7,15 @@
  * Routes: POST/GET /api/v1/events, subscriptions, notifications, preferences
  */
 
-import { Router, Request, Response, WebSocket } from 'express';
+import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey, requireAuthentication } from '../middleware/auth';
 import { schemaRouter, getSupabase, getAppContext } from '../middleware/schemaRouter';
 import { eventBusService } from '../../services/eventBusService';
 import { notificationRouterService } from '../../services/notificationRouterService';
 import { realtimeDeliveryService } from '../../services/realtimeDeliveryService';
-import type { PublishEventRequest, SubscribeRequest } from '../patterns/eventTypes';
-import type { SendNotificationRequest } from '../patterns/notificationTypes';
+import type { PublishEventRequest, SubscribeRequest } from '../../patterns/eventTypes';
+import type { SendNotificationRequest } from '../../patterns/notificationTypes';
 
 const router = Router();
 
@@ -72,7 +72,7 @@ router.post(
           });
 
           // Try real-time delivery
-          await realtimeDeliveryService.broadcastMessage(req, notification.userId, notification);
+          await realtimeDeliveryService.broadcastMessage(notification.userId, notification, req);
         }
       }
 

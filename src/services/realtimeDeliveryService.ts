@@ -78,7 +78,7 @@ class RealtimeDeliveryService {
     validateRequired(userId, 'userId');
     validateRequired(appIds, 'appIds');
     if (!appIds.length) {
-      throw new ValidationError('appIds must be non-empty', 'INVALID_APP_IDS');
+      throw new ValidationError('appIds must be non-empty', { code: 'INVALID_APP_IDS' });
     }
 
     const connectionId = randomUUID();
@@ -496,25 +496,20 @@ class RealtimeDeliveryService {
 
     await executeQuery<void>(
       () =>
-        db
-          .from('event_bus_connections')
-          .insert({
+        db.from('event_bus_connections').upsert(
+          {
             id: connectionId,
             user_id: userId,
             connection_id: connectionId,
             app_ids: appIds,
             connected_at: new Date().toISOString(),
             last_heartbeat: new Date().toISOString(),
-          })
-          .on('conflict', () => {
-            // On conflict, update heartbeat
-            return db
-              .from('event_bus_connections')
-              .update({
-                last_heartbeat: new Date().toISOString(),
-              })
-              .eq('connection_id', connectionId);
-          }),
+          },
+          {
+            onConflict: 'connection_id',
+            ignoreDuplicates: false,
+          }
+        ),
       'persist connection'
     );
   };

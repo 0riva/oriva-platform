@@ -35,6 +35,7 @@
     "../src/**/*.test.js",
     "**/__tests__",
     "**/*.test.ts",
-    "**/*.test.js"
+    "**/*.test.js",
+    "../src/express/routes/hugo-love/**"
   ]
 }

@@ -19,6 +19,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database.types';
 
+// Environment variable declarations for pattern demonstration
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
 /**
  * ✅ CORRECT: Dual-client pattern for security
  *
@@ -87,11 +92,12 @@ export async function authenticate(
     // Step 1: Extract JWT from Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
-      return res.status(401).json({
+      res.status(401).json({
         ok: false,
         error: 'Missing or invalid Authorization header',
         code: 'AUTH_MISSING',
       });
+      return;
     }
 
     const token = authHeader.substring(7); // Remove "Bearer " prefix
@@ -104,32 +110,34 @@ export async function authenticate(
     } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return res.status(401).json({
+      res.status(401).json({
         ok: false,
         error: 'Invalid or expired token',
         code: 'AUTH_INVALID',
       });
+      return;
     }
 
     // Step 3: Fetch user profile (establishes auth.uid() context)
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = (await supabase
       .from('profiles')
-      .select('id, email, subscription_tier, account_id')
+      .select('id, subscription_tier, account_id')
       .eq('account_id', user.id)
-      .single();
+      .single()) as { data: { id: string; subscription_tier: string; account_id: string } | null };
 
     if (!userProfile) {
-      return res.status(404).json({
+      res.status(404).json({
         ok: false,
         error: 'User profile not found',
         code: 'USER_NOT_FOUND',
       });
+      return;
     }
 
     // Step 4: Attach auth context to request
     (req as any).authContext = {
       userId: userProfile.id,
-      email: userProfile.email,
+      email: user.email, // Use email from auth user, not profile
       subscription_tier: userProfile.subscription_tier,
     };
 
@@ -274,7 +282,7 @@ export async function handleGetConversations(req: VercelRequest, res: VercelResp
     // Use anon client - RLS policies enforce access control
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
-      .from('conversations')
+      .from('conversations' as any)
       .select('*')
       .eq('user_id', authContext.userId); // RLS will also check this
 
@@ -322,7 +330,7 @@ export async function handleGetConversations(req: VercelRequest, res: VercelResp
 export async function BAD_handleGetConversations(req: VercelRequest, res: VercelResponse) {
   // DANGER: This bypasses RLS and exposes all conversations
   const adminClient = getSupabaseServiceClient();
-  const { data } = await adminClient.from('conversations').select('*');
+  const { data } = await adminClient.from('conversations' as any).select('*');
   // This returns conversations for ALL users, not just the authenticated user!
 }
 

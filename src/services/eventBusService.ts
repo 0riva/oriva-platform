@@ -192,7 +192,7 @@ class EventBusService {
     );
 
     if (!subscription) {
-      throw new ValidationError('Subscription not found', 'SUBSCRIPTION_NOT_FOUND');
+      throw new ValidationError('Subscription not found', { code: 'SUBSCRIPTION_NOT_FOUND' });
     }
 
     // Delete from database

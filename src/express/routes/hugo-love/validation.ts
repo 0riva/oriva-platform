@@ -8,7 +8,7 @@ import {
   validateRequired,
   validateUuid,
   validateEnum,
-} from '../../utils/validation';
+} from '../../utils/validation-express';
 
 // ==================== COMMON TYPES ====================
 

@@ -10,7 +10,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateCreateSubscriptionRequest } from './validation';
-import { ValidationError } from '../../utils/validation';
+import { ValidationError } from '../../utils/validation-express';
 
 const router = Router();
 router.use(requireAuth);

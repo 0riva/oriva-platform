@@ -83,10 +83,7 @@ const DEFAULT_MAPPING_RULES: NotificationMappingRule[] = [
 /**
  * Default user notification preferences
  */
-const DEFAULT_PREFERENCES: Omit<
-  NotificationPreferences,
-  'userId' | 'createdAt' | 'updatedAt'
-> = {
+const DEFAULT_PREFERENCES: Omit<NotificationPreferences, 'userId' | 'createdAt' | 'updatedAt'> = {
   channels: {
     in_app: { enabled: true },
     email: { enabled: false },
@@ -477,10 +474,9 @@ class NotificationRouterService {
       case NotificationChannel.WEBHOOK:
         return this.deliverWebhook(notification);
       default:
-        throw new ValidationError(
-          `Unsupported delivery channel: ${channel}`,
-          'UNSUPPORTED_CHANNEL'
-        );
+        throw new ValidationError(`Unsupported delivery channel: ${channel}`, {
+          code: 'UNSUPPORTED_CHANNEL',
+        });
     }
   };
 
