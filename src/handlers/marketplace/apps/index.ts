@@ -25,16 +25,24 @@ interface QueryParams {
 interface AppData {
   id: string;
   name: string;
-  slug: string;
+  slug: string | null;
   tagline: string | null;
   description: string | null;
   category: string;
   icon_url: string | null;
   version: string;
+  developer_id: string | null;
   developer_name: string;
   install_count: number;
   rating_average?: number;
   rating_count?: number;
+  status: string;
+  is_active: boolean;
+  pricing_model?: string | null;
+  pricing_config?: Record<string, unknown> | null;
+  screenshots?: string[] | null;
+  created_at: string;
+  updated_at: string;
 }
 
 function getLimit(limitParam: any, defaultLimit: number, maxLimit: number): number {
@@ -77,10 +85,18 @@ async function getAppsHandler(req: VercelRequest, res: VercelResponse): Promise<
         category,
         icon_url,
         version,
+        developer_id,
         developer_name,
         install_count,
         rating_average,
-        rating_count
+        rating_count,
+        status,
+        is_active,
+        pricing_model,
+        pricing_config,
+        screenshots,
+        created_at,
+        updated_at
       `
       )
       .eq('status', 'approved')
