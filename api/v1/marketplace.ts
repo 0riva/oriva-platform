@@ -20,6 +20,7 @@ import { handleSearch } from '../../src/handlers/marketplace/search/index';
 import { handleInstalledApps } from '../../src/handlers/marketplace/installed/index';
 import { handleInstallApp } from '../../src/handlers/marketplace/install/index';
 import { handleUninstallApp } from '../../src/handlers/marketplace/uninstall/index';
+import { handleApps } from '../../src/handlers/marketplace/apps/index';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
@@ -81,9 +82,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  // GET /api/v1/marketplace/apps (alias for /items for backward compatibility)
+  // GET /api/v1/marketplace/apps (plugin marketplace apps)
   if (pathname.match(/\/apps$/) && method === 'GET') {
-    await handleListItems(req, res);
+    await handleApps(req, res);
     return;
   }
 
