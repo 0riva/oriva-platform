@@ -6,6 +6,8 @@
 //          POST /api/v1/marketplace/items/create
 //          GET /api/v1/marketplace/search
 //          GET /api/v1/marketplace/installed
+//          POST /api/v1/marketplace/install/:appId
+//          DELETE /api/v1/marketplace/uninstall/:appId
 //          GET /api/v1/marketplace/apps (alias for /items)
 // Pattern: Catch-all routing to reduce function count
 
@@ -16,6 +18,8 @@ import { handleItemById } from '../../src/handlers/marketplace/items/[id]';
 import { handleListItems } from '../../src/handlers/marketplace/items/list';
 import { handleSearch } from '../../src/handlers/marketplace/search/index';
 import { handleInstalledApps } from '../../src/handlers/marketplace/installed/index';
+import { handleInstallApp } from '../../src/handlers/marketplace/install/index';
+import { handleUninstallApp } from '../../src/handlers/marketplace/uninstall/index';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
@@ -56,6 +60,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // GET /api/v1/marketplace/installed
   if (pathname.match(/\/installed$/) && method === 'GET') {
     await handleInstalledApps(req, res);
+    return;
+  }
+
+  // POST /api/v1/marketplace/install/:appId
+  if (pathname.match(/\/install\/[^/]+$/) && method === 'POST') {
+    await handleInstallApp(req, res);
+    return;
+  }
+
+  // DELETE /api/v1/marketplace/uninstall/:appId
+  if (pathname.match(/\/uninstall\/[^/]+$/) && method === 'DELETE') {
+    await handleUninstallApp(req, res);
     return;
   }
 
