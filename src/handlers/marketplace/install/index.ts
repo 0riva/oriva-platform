@@ -1,14 +1,12 @@
 // @ts-nocheck
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { logger } from '../../../utils/logger';
-import { validateAuth } from '../../../middleware/auth';
-import { respondWithError } from '../../../utils/response';
+import { authenticate } from '../../../middleware/auth';
+import { asyncHandler } from '../../../middleware/error-handler';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 function getAppParams(req: VercelRequest) {
   const url = req.url || '';
@@ -18,18 +16,28 @@ function getAppParams(req: VercelRequest) {
   };
 }
 
-export async function handleInstallApp(req: VercelRequest, res: VercelResponse): Promise<void> {
-  try {
-    // Validate authentication
-    const authResult = await validateAuth(req);
-    if (!authResult.valid || !authResult.userId) {
-      respondWithError(res, 401, 'AUTH_INVALID', 'Invalid or missing authentication');
-      return;
-    }
+async function installAppHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
+    return;
+  }
 
+  // Authenticate user
+  let authComplete = false;
+  await authenticate(req, res, async () => {
+    authComplete = true;
+  });
+
+  if (!authComplete || !(req as any).authContext) {
+    return;
+  }
+
+  const user = (req as any).authContext;
+
+  try {
     const { appId } = getAppParams(req);
     if (!appId) {
-      respondWithError(res, 400, 'INVALID_APP_ID', 'App ID is required');
+      res.status(400).json({ error: 'App ID is required', code: 'INVALID_APP_ID' });
       return;
     }
 
@@ -45,12 +53,10 @@ export async function handleInstallApp(req: VercelRequest, res: VercelResponse):
       .single();
 
     if (appError || !app) {
-      respondWithError(
-        res,
-        404,
-        'APP_NOT_FOUND',
-        'App not found or not available for installation'
-      );
+      res.status(404).json({
+        error: 'App not found or not available for installation',
+        code: 'APP_NOT_FOUND',
+      });
       return;
     }
 
@@ -58,13 +64,16 @@ export async function handleInstallApp(req: VercelRequest, res: VercelResponse):
     const { data: existingInstall } = await supabase
       .from('user_app_installs')
       .select('id')
-      .eq('user_id', authResult.userId)
+      .eq('user_id', user.userId)
       .eq('app_id', appId)
       .eq('is_active', true)
       .single();
 
     if (existingInstall) {
-      respondWithError(res, 409, 'APP_ALREADY_INSTALLED', 'App is already installed');
+      res.status(409).json({
+        error: 'App is already installed',
+        code: 'APP_ALREADY_INSTALLED',
+      });
       return;
     }
 
@@ -73,7 +82,7 @@ export async function handleInstallApp(req: VercelRequest, res: VercelResponse):
     const { data: installation, error: installError } = await supabase
       .from('user_app_installs')
       .insert({
-        user_id: authResult.userId,
+        user_id: user.userId,
         app_id: appId,
         installed_at: now,
         is_active: true,
@@ -83,17 +92,20 @@ export async function handleInstallApp(req: VercelRequest, res: VercelResponse):
       .single();
 
     if (installError || !installation) {
-      logger.error('Failed to install app', { installError, appId, userId: authResult.userId });
-      respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to install app');
+      console.error('Failed to install app', { installError, appId, userId: user.userId });
+      res.status(500).json({
+        error: 'Failed to install app',
+        code: 'MARKETPLACE_APPS_ERROR',
+      });
       return;
     }
 
     // Increment install count (non-blocking)
     await supabase.rpc('increment_install_count', { app_id_in: appId }).catch((err) => {
-      logger.warn('Failed to increment install count', { error: err, appId });
+      console.warn('Failed to increment install count', { error: err, appId });
     });
 
-    res.json({
+    res.status(200).json({
       ok: true,
       success: true,
       data: {
@@ -103,8 +115,14 @@ export async function handleInstallApp(req: VercelRequest, res: VercelResponse):
         message: `Successfully installed ${app.name}`,
       },
     });
-  } catch (error) {
-    logger.error('Install app endpoint error', { error });
-    respondWithError(res, 500, 'MARKETPLACE_APPS_ERROR', 'Failed to install app');
+  } catch (error: any) {
+    console.error('Install app endpoint error', { error, userId: user.userId });
+    res.status(500).json({
+      error: 'Failed to install app',
+      code: 'MARKETPLACE_APPS_ERROR',
+    });
   }
 }
+
+// Export with middleware chain
+export const handleInstallApp = asyncHandler(installAppHandler);
