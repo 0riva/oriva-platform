@@ -24,6 +24,12 @@ import { handleUninstallApp } from '../../src/handlers/marketplace/uninstall/ind
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
 
+  // Handle OPTIONS for CORS preflight
+  if (method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   // Extract pathname without query parameters
   const pathname = url?.split('?')[0] || '';
 
