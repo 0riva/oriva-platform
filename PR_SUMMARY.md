@@ -15,27 +15,32 @@ This PR addresses **3 critical security vulnerabilities** and **1 high-priority 
 ### 1. ✅ Rate Limiting Now Enabled in Production
 
 **Vulnerability:** Rate limiting was completely disabled in production and development, leaving the API vulnerable to:
+
 - Distributed Denial of Service (DoS) attacks
 - Brute force authentication attempts
 - API abuse and resource exhaustion
 - Automated credential stuffing
 
 **Fix:**
+
 - Implemented distributed rate limiting using Upstash Redis
 - Falls back to in-memory for development environments
 - Configurable per-endpoint limits with custom handlers
 - Proper retry-after headers and client guidance
 
 **Rate Limits:**
+
 - **Auth endpoints:** 5 requests/15 minutes (brute force protection)
 - **API endpoints:** 100 requests/15 minutes (general abuse protection)
 - **Sensitive operations:** 3 requests/hour (critical operations)
 - **Authenticated users:** 1000 requests/hour (generous limits)
 
 **Files Changed:**
+
 - `src/middleware/rateLimiter.ts` - Complete rewrite with Redis support
 
 **Configuration Required:**
+
 ```bash
 # Production environment:
 UPSTASH_REDIS_REST_URL=https://your-redis-instance.upstash.io
@@ -47,12 +52,14 @@ UPSTASH_REDIS_REST_TOKEN=your-token-here
 ### 2. ✅ API Keys Now Stored as SHA-256 Hashes
 
 **Vulnerability:** API keys were stored as plaintext in environment variables:
+
 - Vulnerable to environment variable dumps
 - No protection against timing attacks
 - No usage tracking or expiration
 - Keys hardcoded per-app instead of dynamic
 
 **Fix:**
+
 - API keys now stored as SHA-256 hashes in `developer_api_keys` table
 - Constant-time hash comparison prevents timing attacks
 - Automatic usage tracking (`usage_count`, `last_used_at`)
@@ -60,9 +67,11 @@ UPSTASH_REDIS_REST_TOKEN=your-token-here
 - Proper key format validation (`oriva_pk_` prefix)
 
 **Files Changed:**
+
 - `src/express/middleware/auth.ts` - Complete rewrite of `requireApiKey()`
 
 **Breaking Change:** YES
+
 - Old environment-based API keys (`API_KEY_PLATFORM`, etc.) **deprecated**
 - New keys must:
   - Use `oriva_pk_` prefix (e.g., `oriva_pk_live_abc123...`)
@@ -76,19 +85,23 @@ UPSTASH_REDIS_REST_TOKEN=your-token-here
 ### 3. ✅ Service Role Key Removed from User Requests
 
 **Vulnerability:** Service role key (which bypasses Row-Level Security policies) was used for user-initiated requests:
+
 - Created privilege escalation risk
 - Violated principle of least privilege
 - Potential for unauthorized data access
 
 **Fix:**
+
 - All user-facing requests now use anon key with RLS enforcement
 - Service role key reserved exclusively for admin operations
 - Clear documentation on proper client usage
 
 **Files Changed:**
+
 - `src/express/middleware/schemaRouter.ts` - Both `schemaRouter()` and `optionalSchemaRouter()`
 
 **Impact:**
+
 - User requests automatically enforce RLS policies
 - No privilege escalation possible
 - Better compliance with security best practices
@@ -100,6 +113,7 @@ UPSTASH_REDIS_REST_TOKEN=your-token-here
 **Vulnerability:** Test authentication bypass could potentially be left enabled in production.
 
 **Fix:**
+
 - Test bypass now requires **THREE** conditions:
   1. `NODE_ENV=test`
   2. `ALLOW_TEST_TOKENS=true`
@@ -107,6 +121,7 @@ UPSTASH_REDIS_REST_TOKEN=your-token-here
 - Impossible to accidentally enable in production
 
 **Files Changed:**
+
 - `src/express/middleware/auth.ts` - Strict test environment validation
 
 ---
@@ -115,11 +130,12 @@ UPSTASH_REDIS_REST_TOKEN=your-token-here
 
 ```json
 {
-  "rate-limit-redis": "^4.2.0"  // Distributed rate limiting
+  "rate-limit-redis": "^4.2.0" // Distributed rate limiting
 }
 ```
 
 Existing dependencies used:
+
 - `@upstash/redis` (dev dependency) - Redis client
 - All other security features use existing packages
 
@@ -128,6 +144,7 @@ Existing dependencies used:
 ## 📚 Documentation & Tooling
 
 ### Migration Script
+
 - **`scripts/migrate-api-keys.ts`** - Automated API key migration
   - Generates cryptographically secure keys
   - Hashes and stores in database
@@ -135,13 +152,16 @@ Existing dependencies used:
   - Comprehensive error handling
 
 ### Database Schema
-- **`database/migrations/create_developer_api_keys.sql`**
+
+- **`o-core/supabase/migrations/20251121220015_create_developer_api_keys.sql`**
   - Complete table schema with indexes
   - Row-level security policies
   - Automatic timestamps
   - Usage tracking columns
+  - Note: All migrations must be created in o-core repository
 
 ### Deployment Guide
+
 - **`DEPLOYMENT_CHECKLIST.md`** - Step-by-step deployment checklist
   - Pre-deployment requirements
   - Database migration steps
@@ -151,6 +171,7 @@ Existing dependencies used:
   - Monitoring setup
 
 ### Implementation Guide
+
 - **`SECURITY_FIXES.md`** - Detailed implementation notes
   - All 4 critical fixes explained
   - Configuration examples
@@ -158,6 +179,7 @@ Existing dependencies used:
   - Troubleshooting guide
 
 ### Developer Examples
+
 - **`examples/api-key-usage/README.md`** - Complete API key usage guide
   - Generation examples
   - Multi-language client code (JS, Python, Go, Ruby, cURL)
@@ -171,6 +193,7 @@ Existing dependencies used:
 ### 1. API Key Format Change
 
 **Before:**
+
 ```bash
 # Environment variables
 API_KEY_PLATFORM=secret123
@@ -178,6 +201,7 @@ API_KEY_HUGO_LOVE=secret456
 ```
 
 **After:**
+
 ```bash
 # Database-stored, hashed keys
 X-API-Key: oriva_pk_live_abc123def456...
@@ -186,11 +210,15 @@ X-API-Key: oriva_pk_live_abc123def456...
 ### 2. Migration Steps Required
 
 1. **Run database migration:**
+
    ```bash
-   psql $DATABASE_URL -f database/migrations/create_developer_api_keys.sql
+   # From o-core repository
+   cd o-core
+   supabase db reset  # Applies all migrations including new API keys table
    ```
 
 2. **Generate new API keys:**
+
    ```bash
    ts-node scripts/migrate-api-keys.ts
    ```
@@ -224,12 +252,14 @@ npm run test:ci
 ### Post-Deployment Testing
 
 **1. Health Check:**
+
 ```bash
 curl https://your-api.com/health
 # Expected: 200 OK
 ```
 
 **2. Rate Limiting:**
+
 ```bash
 # Should block after 5 attempts
 for i in {1..10}; do
@@ -240,6 +270,7 @@ done
 ```
 
 **3. API Key Authentication:**
+
 ```bash
 # Valid key
 curl https://your-api.com/api/v1/platform/apps \
@@ -253,6 +284,7 @@ curl https://your-api.com/api/v1/platform/apps \
 ```
 
 **4. RLS Enforcement:**
+
 ```bash
 # User request
 curl https://your-api.com/api/v1/apps/profiles \
@@ -267,23 +299,23 @@ curl https://your-api.com/api/v1/apps/profiles \
 
 ### Before (Vulnerabilities Present)
 
-| Issue | Severity | Impact |
-|-------|----------|--------|
-| No rate limiting | 🔴 Critical | DoS attacks possible |
-| Plaintext API keys | 🔴 Critical | Key leakage via env dumps |
-| Service key in user requests | 🔴 Critical | Privilege escalation |
-| Test bypass always on | 🟠 High | Accidental production bypass |
+| Issue                        | Severity    | Impact                       |
+| ---------------------------- | ----------- | ---------------------------- |
+| No rate limiting             | 🔴 Critical | DoS attacks possible         |
+| Plaintext API keys           | 🔴 Critical | Key leakage via env dumps    |
+| Service key in user requests | 🔴 Critical | Privilege escalation         |
+| Test bypass always on        | 🟠 High     | Accidental production bypass |
 
 **Overall Risk Level:** ⚠️ **HIGH RISK**
 
 ### After (This PR)
 
-| Issue | Status | Protection |
-|-------|--------|-----------|
-| Rate limiting | ✅ Fixed | DoS attacks blocked |
+| Issue           | Status   | Protection                            |
+| --------------- | -------- | ------------------------------------- |
+| Rate limiting   | ✅ Fixed | DoS attacks blocked                   |
 | API key hashing | ✅ Fixed | Keys secure, timing attacks prevented |
-| RLS enforcement | ✅ Fixed | No privilege escalation possible |
-| Test bypass | ✅ Fixed | Production-safe |
+| RLS enforcement | ✅ Fixed | No privilege escalation possible      |
+| Test bypass     | ✅ Fixed | Production-safe                       |
 
 **Overall Risk Level:** 🟢 **LOW RISK**
 
@@ -294,24 +326,28 @@ curl https://your-api.com/api/v1/apps/profiles \
 ## 🚀 Deployment Plan
 
 ### Phase 1: Pre-Deployment (1 hour)
+
 - [ ] Review and approve PR
 - [ ] Set up Upstash Redis instance
 - [ ] Configure production environment variables
 - [ ] Run database migration in staging
 
 ### Phase 2: Staging Deployment (2 hours)
+
 - [ ] Deploy to staging
 - [ ] Run API key migration script
 - [ ] Execute all post-deployment tests
 - [ ] Verify monitoring and logging
 
 ### Phase 3: Production Deployment (1 hour)
+
 - [ ] Deploy to production
 - [ ] Run API key migration
 - [ ] Monitor error rates for 1 hour
 - [ ] Verify rate limiting active
 
 ### Phase 4: Post-Deployment (24 hours)
+
 - [ ] Monitor metrics (error rate, 429s, latency)
 - [ ] Update client applications with new keys
 - [ ] Remove old environment variables
@@ -336,6 +372,7 @@ git push
 ```
 
 ### Rollback Considerations
+
 - Rate limiting can be disabled without reverting code
 - API key changes require re-migration if fully reverted
 - RLS enforcement should NOT be reverted (security feature)
@@ -401,6 +438,7 @@ This PR is considered successful when:
 ## 📞 Support & Questions
 
 ### Documentation
+
 - **Security Audit:** See original security review
 - **Implementation:** `SECURITY_FIXES.md`
 - **Deployment:** `DEPLOYMENT_CHECKLIST.md`
@@ -422,6 +460,7 @@ A: RLS policies may need updating - check user permissions
 ## 👥 Reviewers
 
 Please review:
+
 - [ ] **Security Team** - Validate security fixes
 - [ ] **Platform Team** - Verify implementation
 - [ ] **DevOps Team** - Approve deployment plan

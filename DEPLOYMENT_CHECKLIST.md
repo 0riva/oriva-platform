@@ -11,12 +11,14 @@
 ### 1. Database Migration
 
 - [ ] **Run database migration to create `developer_api_keys` table**
-  ```bash
-  # Execute the SQL migration
-  psql $DATABASE_URL -f database/migrations/create_developer_api_keys.sql
 
-  # Or apply via Supabase dashboard:
-  # SQL Editor > New Query > Paste contents of create_developer_api_keys.sql > Run
+  ```bash
+  # From o-core repository (migrations are managed there)
+  cd o-core
+  supabase db reset  # Applies all migrations including new API keys table
+
+  # Or apply specific migration via Supabase dashboard:
+  # SQL Editor > New Query > Paste contents from o-core/supabase/migrations/20251121220015_create_developer_api_keys.sql > Run
   ```
 
 - [ ] **Verify table was created successfully**
@@ -36,6 +38,7 @@
   - Note the REST URL and token
 
 - [ ] **Set environment variables in production**
+
   ```bash
   UPSTASH_REDIS_REST_URL=https://your-redis-instance.upstash.io
   UPSTASH_REDIS_REST_TOKEN=your-token-here
@@ -51,11 +54,13 @@
 ### 3. API Key Migration
 
 - [ ] **Install dependencies**
+
   ```bash
   npm install
   ```
 
 - [ ] **Run API key migration script**
+
   ```bash
   # Generate new API keys
   SUPABASE_URL=your-url SUPABASE_SERVICE_ROLE_KEY=your-key \
@@ -81,6 +86,7 @@
   - [ ] `API_KEY_HUGO_CAREER` - No longer used
 
 - [ ] **Ensure required variables are set**
+
   ```bash
   # Required in all environments:
   SUPABASE_URL=https://your-project.supabase.co
@@ -339,7 +345,8 @@ If you encounter issues:
 - **Security Audit Report:** See initial security review in conversation
 - **Implementation Guide:** `SECURITY_FIXES.md`
 - **Migration Script:** `scripts/migrate-api-keys.ts`
-- **Database Schema:** `database/migrations/create_developer_api_keys.sql`
+- **Database Schema:** `o-core/supabase/migrations/20251121220015_create_developer_api_keys.sql`
+- **Migration Authority:** All database migrations managed in o-core repository
 
 ---
 
@@ -358,11 +365,12 @@ Before marking deployment complete:
 - [ ] Documentation updated
 - [ ] Rollback plan reviewed and understood
 
-**Deployment Completed By:** _______________
-**Date:** _______________
-**Time:** _______________
+**Deployment Completed By:** ******\_\_\_******
+**Date:** ******\_\_\_******
+**Time:** ******\_\_\_******
 
 **Sign-off:**
+
 - [ ] DevOps Lead
 - [ ] Security Lead
 - [ ] Platform Lead

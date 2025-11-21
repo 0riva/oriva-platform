@@ -37,11 +37,13 @@
 ## Repository Architecture
 
 **oriva-platform**: Public API backend (Vercel Serverless)
+
 - All `api/` endpoints for third-party developer access
 - Marketplace, payments, affiliate, advertising APIs
 - Hugo AI integration endpoints
 
 **oriva-core**: Client app + Developer UI (React Native + Web)
+
 - React Native mobile app + Next.js web/PWA
 - UI components (atoms, molecules, organisms)
 - Client-side services (call oriva-platform API)
@@ -64,40 +66,40 @@
 
 ### Phase 1.2: Database Schema - Extended Tables ✅
 
-- [x] **T006** ⚠️ Write migration test for entries extension in `database/migrations/__tests__/010_entries_extension.test.ts`
+- [x] **T006** ⚠️ Write migration test for entries extension in `o-core/supabase/migrations/__tests__/010_entries_extension.test.ts`
 - [x] **T007** Create migration `010_extend_entries_marketplace.sql` to add `marketplace_metadata` JSONB column with indexes
-- [x] **T008** [P] ⚠️ Write migration test for collections extension in `database/migrations/__tests__/011_collections_extension.test.ts`
+- [x] **T008** [P] ⚠️ Write migration test for collections extension in `o-core/supabase/migrations/__tests__/011_collections_extension.test.ts`
 - [x] **T009** [P] Create migration `011_extend_collections_type.sql` to add `collection_type` column
-- [x] **T010** [P] ⚠️ Write migration test for agreements extension in `database/migrations/__tests__/012_agreements_extension.test.ts`
+- [x] **T010** [P] ⚠️ Write migration test for agreements extension in `o-core/supabase/migrations/__tests__/012_agreements_extension.test.ts`
 - [x] **T011** [P] Create migration `012_extend_agreements_marketplace.sql` to add transaction/escrow columns
 
 ### Phase 1.3: Database Schema - Marketplace Core Tables
 
-- [x] **T012** ⚠️ Write migration test for marketplace core in `database/migrations/__tests__/013_marketplace_core.test.ts`
+- [x] **T012** ⚠️ Write migration test for marketplace core in `o-core/supabase/migrations/__tests__/013_marketplace_core.test.ts`
 - [x] **T013** Create migration `013_marketplace_core.sql` with tables: `marketplace_items`, `marketplace_categories`, `marketplace_reviews`, `marketplace_cart`, `marketplace_wishlist`
 - [x] **T014** [P] Create RLS policies for marketplace tables ensuring public read for published, owner write
 
 ### Phase 1.4: Database Schema - Payments & Finance Tables
 
-- [x] **T015** ⚠️ Write migration test for payments schema in `database/migrations/__tests__/014_payments_schema.test.ts`
+- [x] **T015** ⚠️ Write migration test for payments schema in `o-core/supabase/migrations/__tests__/014_payments_schema.test.ts`
 - [x] **T016** Create migration `014_orivapay_transactions.sql` with all payment tables: transactions, accounts, payouts, refunds, disputes, escrow, payment_methods, webhooks, tax_records, revenue_shares
 - [x] **T017** [P] Create RLS policies for payment tables ensuring buyer/seller access only
 
 ### Phase 1.5: Database Schema - Earner Profiles Tables
 
-- [x] **T018** ⚠️ Write migration test for earner profiles in `database/migrations/__tests__/015_earner_profiles.test.ts`
+- [x] **T018** ⚠️ Write migration test for earner profiles in `o-core/supabase/migrations/__tests__/015_earner_profiles.test.ts`
 - [x] **T019** Create migration `015_earner_profiles.sql` with tables: earner_profiles, earner_revenue, earner_inventory, earner_analytics, earner_notifications
 - [x] **T020** [P] Create RLS policies for earner tables ensuring earner-only access
 
 ### Phase 1.6: Database Schema - Affiliate Network Tables
 
-- [x] **T021** ⚠️ Write migration test for affiliate network in `database/migrations/__tests__/016_affiliate_network.test.ts`
+- [x] **T021** ⚠️ Write migration test for affiliate network in `o-core/supabase/migrations/__tests__/016_affiliate_network.test.ts`
 - [x] **T022** Create migration `016_affiliate_network.sql` with tables: affiliate_campaigns, affiliate_urls, affiliate_clicks, affiliate_conversions, affiliate_commissions, affiliate_analytics, affiliate_payouts, affiliate_referrals
 - [x] **T023** [P] Create RLS policies for affiliate tables ensuring affiliate-only access, public URL resolution
 
 ### Phase 1.7: Database Schema - Advertising Network Tables
 
-- [x] **T024** ⚠️ Write migration test for advertising network in `database/migrations/__tests__/017_advertising_network.test.ts`
+- [x] **T024** ⚠️ Write migration test for advertising network in `o-core/supabase/migrations/__tests__/017_advertising_network.test.ts`
 - [x] **T025** Create migration `017_advertising_network.sql` with tables: ad_campaigns, ad_creatives, ad_targeting, ad_impressions, ad_clicks, ad_conversions, ad_budgets, ad_analytics, ad_semantic_segments, ad_user_segments, ad_billing, ad_fraud_detection
 - [x] **T026** [P] Create RLS policies for advertising tables ensuring advertiser-only access, system impression tracking
 
@@ -372,7 +374,7 @@
 - [x] **T158** Implement `src/services/advertising/AdCampaignService.ts` with campaign CRUD, budget tracking - COMPLETE
 - [x] **T159** [P] ⚠️ Write tests for AdTargetingService in `src/services/advertising/__tests__/AdTargetingService.test.ts` - COMPLETE (12/12 passing)
 - [x] **T160** [P] Implement `src/services/advertising/AdTargetingService.ts` with demographics, interests, keywords - COMPLETE
- with demographics, interests, keywords
+      with demographics, interests, keywords
 
 ### Phase 6.2: Ad Serving (Edge Function for <50ms)
 
@@ -531,16 +533,14 @@
 
 **Note**: Phase 10 complete! All search, discovery, and curation services implemented with comprehensive test coverage (commit 6f7f5cc).
 
-
 Note for Oriva API
 
- When you're ready to activate marketplace in production, simply add this back to vercel.json at line 33:
+When you're ready to activate marketplace in production, simply add this back to vercel.json at line 33:
 
-  {
-    "source": "/api/v1/marketplace/:path*",
-    "destination": "/api/v1/marketplace"
-  },
-
+{
+"source": "/api/v1/marketplace/:path\*",
+"destination": "/api/v1/marketplace"
+},
 
 ---
 
@@ -592,6 +592,7 @@ Note for Oriva API
 ## Parallel Execution Examples
 
 ### Phase 1.2: Database Extensions (Run T006-T011 concurrently)
+
 ```bash
 Task T006: Write migration test for entries extension
 Task T008: Write migration test for collections extension
@@ -599,6 +600,7 @@ Task T010: Write migration test for agreements extension
 ```
 
 ### Phase 2.4: Marketplace Atoms (Run T048-T055 concurrently)
+
 ```bash
 Task T048: Write tests for PriceTag
 Task T050: Write tests for EarnerBadge
@@ -607,6 +609,7 @@ Task T054: Write tests for InventoryIndicator
 ```
 
 ### Phase 4: Earner Type Systems (Run T105-T125 concurrently)
+
 ```bash
 Task T105: Write Creator setup tests
 Task T109: Write Vendor setup tests
@@ -636,6 +639,7 @@ Task T124: Write Influencer setup tests
 ## Constitutional Compliance Summary
 
 **✅ Extends Existing Systems (60% Reuse)**:
+
 - MarketplaceItemCard extends EntryCard (T056-T057)
 - Marketplace categories use Collections (T035-T036)
 - Escrow extends Agreement system (T073-T074, T126)
@@ -644,6 +648,7 @@ Task T124: Write Influencer setup tests
 - Feed integration enhances existing Feed component (T192)
 
 **New Domain-Specific Components (40%)**:
+
 - Payment processing (Stripe Connect, OrivaPay)
 - Affiliate network (URL shortening, commission tracking)
 - Advertising network (targeting, serving, analytics)
@@ -655,15 +660,16 @@ Task T124: Write Influencer setup tests
 
 **Total Tasks**: 242 tasks (234 original + 8 Phase 10 Search & Discovery tasks)
 **Completed Tasks**: 122 tasks ✅
-  - Phase 1: T001-T029 (29 tasks)
-  - Phase 2: T030-T059, T062-T065 (34 tasks) *Note: T060-T061 removed due to duplication*
-  - Phase 3: T066-T107 (42 tasks)
-  - Phase 4.1: T108-T112 (5 tasks)
-  - Phase 4.2: T113-T116 (4 tasks)
-  - Phase 10: T237-T244 (8 tasks)
-**Remaining Tasks**: 120 tasks
-**Estimated Timeline**: 25 weeks (10 implementation phases + 1 polish phase)
-**Estimated Engineer Capacity**: 3-4 engineers working in parallel on independent phases
+
+- Phase 1: T001-T029 (29 tasks)
+- Phase 2: T030-T059, T062-T065 (34 tasks) _Note: T060-T061 removed due to duplication_
+- Phase 3: T066-T107 (42 tasks)
+- Phase 4.1: T108-T112 (5 tasks)
+- Phase 4.2: T113-T116 (4 tasks)
+- Phase 10: T237-T244 (8 tasks)
+  **Remaining Tasks**: 120 tasks
+  **Estimated Timeline**: 25 weeks (10 implementation phases + 1 polish phase)
+  **Estimated Engineer Capacity**: 3-4 engineers working in parallel on independent phases
 
 **Ready for implementation with `/implement` command**
 
@@ -672,6 +678,7 @@ Task T124: Write Influencer setup tests
 ## Future Enhancements (Post-MVP)
 
 ### Smart Agreement Intelligence (v2)
+
 - **FUTURE-001**: Implement agreement template recommendation engine (FR-030)
 - **FUTURE-002**: Build clause suggestion system based on historical data (FR-031)
 - **FUTURE-003**: Create risk detection model from dispute patterns (FR-032)
