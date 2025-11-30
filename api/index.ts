@@ -275,7 +275,9 @@ const STATIC_CORS_ORIGINS = process.env.CORS_ORIGIN?.split(',') || [
   'https://oriva.io',
   'https://www.oriva.io',
   'https://app.oriva.io',
+  'https://o-originals.vercel.app', // o-orig marketplace apps deployment
   'http://localhost:8081', // Added for Oriva Core team development
+  'http://localhost:8084', // o-orig local development
 ];
 
 // CORS cache for marketplace apps (loaded at startup)
@@ -4038,7 +4040,8 @@ app.use('/api/v1/user/media', optionalSchemaRouter, userMediaRouter);
 app.use('/api/v1/video-meetings', videoMeetingsRouter);
 
 // Mount Travel Hub Concierge router
-app.use('/api/v1/travel-hub', travelHubRouter);
+// Requires optionalSchemaRouter to initialize Supabase client for auth validation
+app.use('/api/v1/travel-hub', optionalSchemaRouter, travelHubRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS
