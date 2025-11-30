@@ -287,16 +287,8 @@ const corsOriginCache = {
   CACHE_TTL: 5 * 60 * 1000, // 5 minutes
 };
 
-// Initialize CORS cache on startup
-refreshCorsCache()
-  .then(() => {
-    console.log('✅ CORS cache initialized with registered app domains');
-  })
-  .catch((error) => {
-    console.warn('⚠️ Failed to initialize CORS cache, using static origins only:', error.message);
-    // Ensure static origins are still in cache if refresh failed
-    STATIC_CORS_ORIGINS.forEach((origin) => corsOriginCache.data.add(origin));
-  });
+// NOTE: CORS cache initialization moved AFTER Supabase client is created (around line 590)
+// The refreshCorsCache() function requires the supabase client to be initialized first
 
 // Dynamic CORS for marketplace applications
 app.use(
@@ -587,6 +579,18 @@ console.log('✅ Supabase service client initialized');
 // Anon client for auth operations (regular user operations)
 const supabaseAuth: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 console.log('✅ Supabase auth client initialized');
+
+// Initialize CORS cache NOW that Supabase is ready
+// This must happen AFTER supabase client is created
+refreshCorsCache()
+  .then(() => {
+    console.log('✅ CORS cache initialized with registered app domains');
+  })
+  .catch((error) => {
+    console.warn('⚠️ Failed to initialize CORS cache, using static origins only:', error.message);
+    // Ensure static origins are still in cache if refresh failed
+    STATIC_CORS_ORIGINS.forEach((origin) => corsOriginCache.data.add(origin));
+  });
 
 // CORS cache defined above
 
