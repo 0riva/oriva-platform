@@ -41,6 +41,7 @@ import iceBreakersRoutes from '../src/express/routes/iceBreakers';
 import gdprRoutes from '../src/express/routes/gdpr';
 import eventsRoutes from '../src/express/routes/events';
 import photosRoutes from '../src/express/routes/photos';
+import travelHubRoutes from '../src/express/routes/travel-hub';
 import { realtimeDeliveryService } from '../src/services/realtimeDeliveryService';
 
 /**
@@ -105,6 +106,9 @@ export const createApp = (): Application => {
 
   // Event bus and notifications routes (X-App-ID required for schema routing)
   app.use(`${apiPrefix}/events`, eventsRoutes);
+
+  // Travel Hub routes (X-App-ID required for schema routing)
+  app.use(`${apiPrefix}/travel-hub`, travelHubRoutes);
 
   // 404 handler
   app.use(notFoundHandler);

@@ -1,5 +1,7 @@
 // Load environment variables FIRST before any imports
+// Load .env first, then .env.local to allow local overrides
 require('dotenv').config();
+require('dotenv').config({ path: '.env.local', override: true });
 
 // DATADOG APM - Must be initialized before any other imports
 if (process.env.DD_API_KEY) {
@@ -48,7 +50,9 @@ import {
 import { errorHandler } from '../src/middleware/error-handler';
 import { createHugoAIRouter } from '../src/routes/hugo-ai';
 import photosRouter from '../src/express/routes/photos';
+import userMediaRouter from '../src/express/routes/userMedia';
 import videoMeetingsRouter from '../src/express/routes/video-meetings';
+import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
 
@@ -4022,8 +4026,12 @@ app.delete('/api/v1/auth/account', validateAuth, async (req, res) => {
 const hugoRouter = createHugoAIRouter(supabase);
 app.use('/api/hugo', hugoRouter);
 
-// Mount Photos router for pre-signed URL uploads
+// Mount Photos router for pre-signed URL uploads (requires API key)
 app.use('/api/v1/apps/photos', photosRouter);
+
+// Mount User Media router for internal avatar uploads (user auth only)
+// Requires optionalSchemaRouter to initialize Supabase client for auth validation
+app.use('/api/v1/user/media', optionalSchemaRouter, userMediaRouter);
 
 // Mount Video Meetings router
 app.use('/api/v1/video-meetings', videoMeetingsRouter);

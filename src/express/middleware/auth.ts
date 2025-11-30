@@ -48,7 +48,11 @@ const hashApiKey = async (key: string): Promise<string> => {
  * - Uses constant-time comparison to prevent timing attacks
  * - Tracks usage count and last_used_at timestamp
  */
-export const requireApiKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const requireApiKey = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const apiKey = req.header('X-API-Key');
 
@@ -406,3 +410,59 @@ export const optionalAuth = async (
 
 // Alias for backward compatibility
 export const requireAuthentication = requireAuth;
+
+/**
+ * Simple JWT authentication middleware for internal routes
+ * Only validates JWT with Supabase auth, does NOT require oriva_platform.users record
+ * Use for internal APIs that work with any authenticated Supabase user
+ */
+export const requireJwtAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const authHeader = req.header('Authorization');
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'Authorization header required with Bearer token',
+      });
+      return;
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+    // Verify JWT with Supabase
+    const supabase = getSupabase(req);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      res.status(401).json({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or expired token',
+      });
+      return;
+    }
+
+    // Attach user to request (using Supabase auth user directly)
+    req.user = {
+      id: user.id,
+      email: user.email || '',
+    };
+
+    next();
+  } catch (error) {
+    logger.error('JWT authentication failed', {
+      error: sanitizeError(error),
+    });
+    res.status(500).json({
+      code: 'INTERNAL_ERROR',
+      message: 'Authentication failed',
+    });
+  }
+};

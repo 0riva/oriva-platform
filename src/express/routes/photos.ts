@@ -31,14 +31,14 @@ const rekognition = new AWS.Rekognition({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'oriva-user-photos';
+const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'oriva-media-storage';
 const UPLOAD_URL_EXPIRY = 300; // 5 minutes
 
 // Interfaces
 interface UploadUrlRequest {
   fileName: string;
   contentType: string;
-  photoType: 'profile' | 'gallery';
+  photoType: 'profile' | 'gallery' | 'avatar';
 }
 
 interface UploadUrlResponse {
@@ -49,7 +49,7 @@ interface UploadUrlResponse {
 
 interface ConfirmUploadRequest {
   key: string;
-  photoType: 'profile' | 'gallery';
+  photoType: 'profile' | 'gallery' | 'avatar';
 }
 
 interface ConfirmUploadResponse {
@@ -87,11 +87,19 @@ const getFileExtension = (fileName: string, contentType: string): string => {
   return typeMap[contentType.toLowerCase()] || 'jpg';
 };
 
-const generateS3Key = (userId: string, fileName: string, contentType: string): string => {
+const generateS3Key = (
+  userId: string,
+  fileName: string,
+  contentType: string,
+  photoType: string = 'media'
+): string => {
   const timestamp = Date.now();
   const uniqueId = uuidv4();
   const extension = getFileExtension(fileName, contentType);
-  return `${userId}/${timestamp}-${uniqueId}.${extension}`;
+  // Organize by type: avatars/, profiles/, gallery/, media/
+  const typePrefix =
+    photoType === 'avatar' ? 'avatars' : photoType === 'profile' ? 'profiles' : 'gallery';
+  return `${typePrefix}/${userId}/${timestamp}-${uniqueId}.${extension}`;
 };
 
 /**
@@ -121,10 +129,10 @@ router.post(
       return;
     }
 
-    if (!['profile', 'gallery'].includes(photoType)) {
+    if (!['profile', 'gallery', 'avatar'].includes(photoType)) {
       res.status(400).json({
         code: 'VALIDATION_ERROR',
-        message: 'photoType must be either "profile" or "gallery"',
+        message: 'photoType must be "profile", "gallery", or "avatar"',
       });
       return;
     }
@@ -138,7 +146,7 @@ router.post(
     }
 
     // Generate S3 key
-    const key = generateS3Key(userId, fileName, contentType);
+    const key = generateS3Key(userId, fileName, contentType, photoType);
 
     // Generate pre-signed URL
     try {
@@ -194,16 +202,19 @@ router.post(
       return;
     }
 
-    if (!['profile', 'gallery'].includes(photoType)) {
+    if (!['profile', 'gallery', 'avatar'].includes(photoType)) {
       res.status(400).json({
         code: 'VALIDATION_ERROR',
-        message: 'photoType must be either "profile" or "gallery"',
+        message: 'photoType must be "profile", "gallery", or "avatar"',
       });
       return;
     }
 
     // Verify the key belongs to this user (security check)
-    if (!key.startsWith(`${userId}/`)) {
+    // Keys are now formatted as: {type}/{userId}/{timestamp}-{uuid}.{ext}
+    const keyParts = key.split('/');
+    const keyUserId = keyParts.length >= 2 ? keyParts[1] : null;
+    if (keyUserId !== userId) {
       res.status(403).json({
         code: 'FORBIDDEN',
         message: 'Cannot confirm upload for another user',
