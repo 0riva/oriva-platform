@@ -13,17 +13,19 @@ export interface ApiKeyInfo {
   lastUsedAt?: string;
 }
 
-export interface AuthenticatedRequest<
+// Use type intersection instead of interface extension for better TypeScript compatibility
+// This works with both TS 4.9.5 (Vercel's built-in) and TS 5.x
+export type AuthenticatedRequest<
   TParams = any,
   TResBody = any,
   TReqBody = any,
   TReqQuery = any,
-  TLocals extends Record<string, any> = Record<string, any>
-> extends Request<TParams, TResBody, TReqBody, TReqQuery, TLocals> {
+  TLocals extends Record<string, any> = Record<string, any>,
+> = Request<TParams, TResBody, TReqBody, TReqQuery, TLocals> & {
   apiKey?: string;
   authToken?: string;
   keyInfo?: ApiKeyInfo;
-}
+};
 
 export type ApiMiddleware = (
   req: AuthenticatedRequest,

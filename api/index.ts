@@ -52,6 +52,7 @@ import { createHugoAIRouter } from '../src/routes/hugo-ai';
 import photosRouter from '../src/express/routes/photos';
 import userMediaRouter from '../src/express/routes/userMedia';
 import videoMeetingsRouter from '../src/express/routes/video-meetings';
+import travelHubRouter from '../src/express/routes/travel-hub';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
@@ -4035,6 +4036,9 @@ app.use('/api/v1/user/media', optionalSchemaRouter, userMediaRouter);
 
 // Mount Video Meetings router
 app.use('/api/v1/video-meetings', videoMeetingsRouter);
+
+// Mount Travel Hub Concierge router
+app.use('/api/v1/travel-hub', travelHubRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS
