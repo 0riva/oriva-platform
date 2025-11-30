@@ -294,19 +294,16 @@ const corsOriginCache = {
 app.use(
   cors({
     origin: (origin, callback) => {
-      // SECURITY FIX: Reject requests with no origin when credentials are enabled
-      // This prevents CSRF attacks where attackers craft requests without Origin header
+      // No origin header = server-to-server or direct request (curl, monitoring, webhooks)
+      // CORS is a browser-only mechanism - requests without Origin are NOT from browsers
+      // We allow these because:
+      // 1. Health checks from monitoring services don't have Origin
+      // 2. Server-to-server API calls don't have Origin
+      // 3. Curl/wget/Postman testing doesn't have Origin
+      // Security is enforced by API key validation, not CORS, for non-browser requests
       if (!origin) {
-        // Development: Allow requests without origin header for local testing
-        if (process.env.NODE_ENV === 'development') {
-          logger.debug('CORS: No origin header in development - allowing request');
-          return callback(null, true);
-        }
-        // Production: Require origin header
-        logger.warn('CORS: Request without origin header in production', {
-          userAgent: 'not available in CORS preflight',
-        });
-        return callback(new Error('Origin header required for CORS'));
+        logger.debug('CORS: No origin header - allowing non-browser request');
+        return callback(null, true);
       }
 
       // Development: Allow localhost

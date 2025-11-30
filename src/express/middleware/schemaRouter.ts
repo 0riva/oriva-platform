@@ -171,8 +171,17 @@ export const optionalSchemaRouter = async (
       return;
     }
 
+    // Extract JWT token from Authorization header for RLS auth.uid() support
+    const authHeader = req.headers.authorization;
+    const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+
     // SECURITY: Use anon key for user requests to enforce RLS
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Pass access token in global headers so auth.uid() works in RLS policies
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      },
+    });
 
     req.appContext = {
       appId: 'platform',
