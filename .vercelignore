@@ -9,6 +9,7 @@ CLAUDE.md
 api/sql/
 api/dist/
 api/monitoring/
+api/server.ts
 tests/
 debug-*.js
 **/node_modules/
