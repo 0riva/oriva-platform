@@ -5,6 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from './schemaRouter';
+import { getSupabaseServiceClient } from '../../config/supabase';
 import { logger, sanitizeError } from '../../utils/logger';
 
 const SCHEMA = 'travel_hub';
@@ -47,8 +48,13 @@ export const loadRbacContext = async (
 
     const supabase = getSupabase(req);
 
-    // Check if user is a system user (master admin)
-    const { data: systemUser, error: sysError } = await supabase
+    // IMPORTANT: Use service client to bypass RLS for system_users check
+    // The RLS policy on system_users requires is_master_admin, creating chicken-and-egg problem
+    // This mirrors the approach in /admin/me endpoint
+    const serviceClient = getSupabaseServiceClient();
+
+    // Check if user is a system user (master admin) using service client
+    const { data: systemUser, error: sysError } = await (serviceClient as any)
       .schema(SCHEMA)
       .from('system_users')
       .select('is_master_admin, is_active')
@@ -56,7 +62,7 @@ export const loadRbacContext = async (
       .maybeSingle();
 
     if (sysError) {
-      logger.warn('[RBAC] Error loading system user', { error: sysError });
+      logger.warn('[RBAC] Error loading system user', { error: sysError, userId });
     }
 
     // Get organization memberships
