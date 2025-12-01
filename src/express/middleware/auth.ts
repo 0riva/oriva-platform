@@ -254,12 +254,14 @@ export const requireAuth = async (
       });
     }
 
-    // Verify JWT with Supabase
-    const supabase = getSupabase(req);
+    // Verify JWT with Supabase using service client
+    // Note: getUser(token) requires service_role key to validate arbitrary JWTs
+    // The anon key client can only validate its own session token
+    const serviceClient = getSupabaseServiceClient();
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser(token);
+    } = await serviceClient.auth.getUser(token);
 
     if (error || !user) {
       res.status(401).json({
@@ -272,7 +274,6 @@ export const requireAuth = async (
     // Load full user record from public.users table
     // Note: users table is in public schema, not oriva_platform
     // Use service client to bypass RLS which may block reading user records
-    const serviceClient = getSupabaseServiceClient();
     const { data: userRecord, error: userError } = await serviceClient
       .schema('public')
       .from('users')
@@ -454,12 +455,13 @@ export const requireJwtAuth = async (
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
-    // Verify JWT with Supabase
-    const supabase = getSupabase(req);
+    // Verify JWT with Supabase using service client
+    // Note: getUser(token) requires service_role key to validate arbitrary JWTs
+    const serviceClient = getSupabaseServiceClient();
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser(token);
+    } = await serviceClient.auth.getUser(token);
 
     if (error || !user) {
       res.status(401).json({
