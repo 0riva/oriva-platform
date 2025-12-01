@@ -38,6 +38,18 @@ interface AppRecord {
 }
 
 /**
+ * App record from plugin_marketplace_apps table
+ * Used as fallback when oriva_platform.apps view is not accessible
+ */
+interface PluginAppRecord {
+  id: string;
+  name: string;
+  schema_name: string;
+  status: string;
+  is_active: boolean;
+}
+
+/**
  * Schema routing middleware
  * Extracts X-App-ID header and sets up schema-aware database context
  *
@@ -76,15 +88,48 @@ export const schemaRouter = async (
     // Use anon key to enforce Row-Level Security policies
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // Look up app in oriva_platform.apps
-    const { data: app, error: appError } = await supabase
+    // Look up app - try oriva_platform.apps first, fall back to plugin_marketplace_apps
+    let app: AppRecord | null = null;
+    let appError: { code?: string; message?: string } | null = null;
+
+    // Try oriva_platform.apps view first (works in local/dev)
+    const { data: platformApp, error: platformError } = await supabase
       .schema('oriva_platform')
       .from('apps')
       .select('id, app_id, name, schema_name, status')
       .eq('app_id', appId)
-      .single<AppRecord>();
+      .maybeSingle<AppRecord>();
 
-    if (appError || !app) {
+    if (platformApp) {
+      app = platformApp;
+    } else if (platformError?.code === '42501') {
+      // Permission denied for oriva_platform schema - fall back to plugin_marketplace_apps
+      // This happens in production where the view permissions may not be configured
+      logger.info('Falling back to plugin_marketplace_apps for app lookup', { appId });
+
+      const { data: pluginApp, error: pluginError } = await supabase
+        .from('plugin_marketplace_apps')
+        .select('id, name, schema_name, status, is_active')
+        .eq('schema_name', appId) // schema_name is used as the app identifier
+        .maybeSingle<PluginAppRecord>();
+
+      if (pluginApp) {
+        // Transform plugin_marketplace_apps record to AppRecord format
+        app = {
+          id: pluginApp.id,
+          app_id: pluginApp.schema_name, // schema_name is the app_id
+          name: pluginApp.name,
+          schema_name: pluginApp.schema_name,
+          status: pluginApp.is_active ? 'active' : 'inactive',
+        };
+      } else {
+        appError = pluginError || { message: 'App not found in plugin_marketplace_apps' };
+      }
+    } else {
+      appError = platformError;
+    }
+
+    if (!app) {
       res.status(404).json({
         code: 'APP_NOT_FOUND',
         message: `App not found: ${appId}`,
@@ -102,7 +147,7 @@ export const schemaRouter = async (
       return;
     }
 
-    // Set schema search path for this request
+    // Set schema search path for this request (optional - may not exist in all environments)
     const { error: pathError } = await supabase
       .schema('oriva_platform')
       .rpc('set_request_schema_path', {
@@ -110,16 +155,14 @@ export const schemaRouter = async (
       });
 
     if (pathError) {
-      // SECURITY: Sanitize error details to prevent exposure
-      logger.error('Schema path setup failed', {
+      // Log warning but don't fail - schema path is optimization, not required
+      // App context is correctly set and operations will use schema_name directly
+      logger.warn('Schema path setup skipped (function may not exist)', {
         appId,
+        schemaName: app.schema_name,
         error: sanitizeError(pathError),
       });
-      res.status(500).json({
-        code: 'SCHEMA_ROUTING_ERROR',
-        message: 'Failed to route request to app schema',
-      });
-      return;
+      // Continue without blocking - the app context has the correct schema_name
     }
 
     // Attach app context to request

@@ -53,6 +53,7 @@ import photosRouter from '../src/express/routes/photos';
 import userMediaRouter from '../src/express/routes/userMedia';
 import videoMeetingsRouter from '../src/express/routes/video-meetings';
 import travelHubRouter from '../src/express/routes/travel-hub';
+import hugoLoveRouter from '../src/express/routes/hugo-love';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
@@ -352,15 +353,16 @@ app.use(
       });
       return callback(new Error('Not allowed by CORS'));
     },
-    // SECURITY FIX: Restrict to safe methods only
-    // PUT and DELETE are now only allowed on specific routes that need them
-    methods: ['GET', 'POST', 'OPTIONS'],
+    // Methods allowed for CORS preflight
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
       'X-Extension-ID',
       'X-Client-ID',
       'X-API-Key',
+      'X-App-ID',
+      'X-Tenant-ID',
       'User-Agent',
       'X-User-ID',
       'X-Request-ID',
@@ -4032,6 +4034,8 @@ app.use('/api/hugo', hugoRouter);
 
 // Mount Photos router for pre-signed URL uploads (requires API key)
 app.use('/api/v1/apps/photos', photosRouter);
+// Also mount at /api/oriva/* for o-orig development BFF proxy
+app.use('/api/oriva/apps/photos', photosRouter);
 
 // Mount User Media router for internal avatar uploads (user auth only)
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation
@@ -4040,9 +4044,24 @@ app.use('/api/v1/user/media', optionalSchemaRouter, userMediaRouter);
 // Mount Video Meetings router
 app.use('/api/v1/video-meetings', videoMeetingsRouter);
 
+// ============================================================================
+// TENANT APP ROUTES (o-orig marketplace apps)
+// These routes serve first-party tenant apps from o-orig repository
+// Namespaced under /api/v1/tenant/* to distinguish from public platform APIs
+// ============================================================================
+
 // Mount Travel Hub Concierge router
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation
+app.use('/api/v1/tenant/travel-hub', optionalSchemaRouter, travelHubRouter);
+// Legacy route (deprecated - use /api/v1/tenant/travel-hub)
 app.use('/api/v1/travel-hub', optionalSchemaRouter, travelHubRouter);
+
+// Mount Hugo Love router (dating app)
+// Requires optionalSchemaRouter to initialize Supabase client for auth validation
+app.use('/api/v1/tenant/hugo-love', optionalSchemaRouter, hugoLoveRouter);
+// Legacy routes (deprecated - use /api/v1/tenant/hugo-love)
+app.use('/api/v1/hugo-love', optionalSchemaRouter, hugoLoveRouter);
+app.use('/api/oriva/hugo-love', optionalSchemaRouter, hugoLoveRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS

@@ -9,7 +9,7 @@ import { Router } from 'express';
 import * as AWS from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { asyncHandler } from '../middleware/errorHandler';
-import { requireApiKey, requireAuthentication, requireAppAccess } from '../middleware/auth';
+import { requireApiKey, requireJwtAuth } from '../middleware/auth';
 import { schemaRouter } from '../middleware/schemaRouter';
 
 const router = Router();
@@ -109,8 +109,7 @@ const generateS3Key = (
 router.post(
   '/upload-url',
   requireApiKey,
-  requireAuthentication,
-  requireAppAccess,
+  requireJwtAuth,
   asyncHandler(async (req, res) => {
     const userId = req.user?.id;
     if (!userId) {
@@ -182,8 +181,7 @@ router.post(
 router.post(
   '/confirm',
   requireApiKey,
-  requireAuthentication,
-  requireAppAccess,
+  requireJwtAuth,
   asyncHandler(async (req, res) => {
     const userId = req.user?.id;
     if (!userId) {

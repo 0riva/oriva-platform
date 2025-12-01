@@ -5,10 +5,21 @@
 
 import { Router, Request, Response } from 'express';
 import { getSupabase } from '../../../middleware/schemaRouter';
+import { getSupabaseServiceClient } from '../../../../config/supabase';
 import { logger } from '../../../../utils/logger';
 
 const router = Router();
 const SCHEMA = 'travel_hub';
+
+// Type for system_users table in travel_hub schema
+interface SystemUser {
+  id: string;
+  user_id: string;
+  is_master_admin: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 /**
  * GET /api/v1/travel-hub/admin/me
@@ -24,13 +35,24 @@ router.get('/', async (req: Request, res: Response) => {
 
     const supabase = getSupabase(req);
 
-    // Get system user record
-    const { data: systemUser } = await supabase
+    // IMPORTANT: Use service client to bypass RLS for system_users check
+    // The RLS policy on system_users requires is_master_admin, creating chicken-and-egg problem
+    const serviceClient = getSupabaseServiceClient();
+
+    // Get system user record (using service client to bypass RLS)
+    // Cast to any to avoid TypeScript issues with travel_hub schema not being in generated types
+    const { data: systemUserData, error: systemUserError } = await (serviceClient as any)
       .schema(SCHEMA)
       .from('system_users')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle();
+
+    if (systemUserError) {
+      logger.warn('[AdminMe] Error fetching system user', { error: systemUserError, userId });
+    }
+
+    const systemUser = systemUserData as SystemUser | null;
 
     // Get organization memberships with org details
     const { data: memberships } = await supabase

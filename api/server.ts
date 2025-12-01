@@ -42,6 +42,7 @@ import gdprRoutes from '../src/express/routes/gdpr';
 import eventsRoutes from '../src/express/routes/events';
 import photosRoutes from '../src/express/routes/photos';
 import travelHubRoutes from '../src/express/routes/travel-hub';
+import hugoLoveRoutes from '../src/express/routes/hugo-love';
 import { realtimeDeliveryService } from '../src/services/realtimeDeliveryService';
 
 /**
@@ -54,8 +55,22 @@ export const createApp = (): Application => {
   app.use(helmet());
   app.use(
     cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+      origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:8081',
+        'http://localhost:8084',
+      ],
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-App-ID',
+        'X-API-Key',
+        'X-Request-ID',
+        'X-Tenant-ID',
+      ],
     })
   );
 
@@ -109,6 +124,15 @@ export const createApp = (): Application => {
 
   // Travel Hub routes (X-App-ID required for schema routing)
   app.use(`${apiPrefix}/travel-hub`, travelHubRoutes);
+
+  // Hugo Love routes (dating app - requires authentication)
+  app.use(`${apiPrefix}/hugo-love`, hugoLoveRoutes);
+
+  // DEVELOPMENT PROXY: Map /api/oriva/* to /api/v1/* for o-orig dev mode
+  // This allows o-orig apps using buildApiUrl('/profiles/me') to reach /api/v1/hugo-love/profiles/me
+  app.use('/api/oriva/hugo-love', hugoLoveRoutes);
+  app.use('/api/oriva/apps/photos', photosRoutes);
+  app.use('/api/oriva/apps/profiles', profilesRoutes);
 
   // 404 handler
   app.use(notFoundHandler);
