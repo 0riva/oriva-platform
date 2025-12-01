@@ -839,9 +839,9 @@ app.get('/api/v1/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: '1.0.6',
+    version: '1.0.7',
     features: ['marketplace', 'profiles', 'groups', 'privacy-first', 'tenant-namespace'],
-    deployment: 'fix-jwt-validation',
+    deployment: 'remove-legacy-hugo-love-routes',
   });
 });
 
@@ -4058,9 +4058,6 @@ app.use('/api/v1/travel-hub', optionalSchemaRouter, travelHubRouter);
 // Mount Hugo Love router (dating app)
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation
 app.use('/api/v1/tenant/hugo-love', optionalSchemaRouter, hugoLoveRouter);
-// Legacy routes (deprecated - use /api/v1/tenant/hugo-love)
-app.use('/api/v1/hugo-love', optionalSchemaRouter, hugoLoveRouter);
-app.use('/api/oriva/hugo-love', optionalSchemaRouter, hugoLoveRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS
