@@ -104,7 +104,6 @@ router.post(
       const supabase = getSupabase(req);
       const { orgId } = req.params;
       const { user_id, role } = req.body;
-      const invitedBy = req.user?.id;
 
       // Check if user is already a member
       const { data: existing } = await supabase
@@ -129,7 +128,6 @@ router.post(
           .update({
             status: 'active',
             role,
-            invited_by: invitedBy,
             joined_at: new Date().toISOString(),
           })
           .eq('id', existing.id)
@@ -158,7 +156,6 @@ router.post(
           user_id,
           role,
           status: 'active',
-          invited_by: invitedBy,
           joined_at: new Date().toISOString(),
         })
         .select()

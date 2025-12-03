@@ -104,6 +104,16 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
       instagram_url: profile.instagram_url,
       linkedin_url: profile.linkedin_url,
       twitter_url: profile.twitter_url,
+      // Match preferences - user's attributes
+      gender: profile.gender,
+      height_cm: profile.height_cm,
+      ethnicity: profile.ethnicity,
+      // Match preferences - seeking preferences
+      seeking_genders: profile.seeking_genders || [],
+      seeking_height_min: profile.seeking_height_min,
+      seeking_height_max: profile.seeking_height_max,
+      seeking_ethnicities: profile.seeking_ethnicities || [],
+      seeking_interests: profile.seeking_interests || [],
       created_at: profile.created_at,
       updated_at: profile.updated_at,
     });
@@ -236,6 +246,42 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
       updatedFields.push('twitter_url');
     }
 
+    // Match preferences - user's attributes
+    if (body.gender !== undefined) {
+      updates.push(`gender = ${sqlQuote(body.gender)}`);
+      updatedFields.push('gender');
+    }
+    if (body.height_cm !== undefined) {
+      updates.push(`height_cm = ${sqlQuote(body.height_cm)}`);
+      updatedFields.push('height_cm');
+    }
+    if (body.ethnicity !== undefined) {
+      updates.push(`ethnicity = ${sqlQuote(body.ethnicity)}`);
+      updatedFields.push('ethnicity');
+    }
+
+    // Match preferences - seeking preferences
+    if (body.seeking_genders !== undefined) {
+      updates.push(`seeking_genders = ${sqlQuote(body.seeking_genders)}`);
+      updatedFields.push('seeking_genders');
+    }
+    if (body.seeking_height_min !== undefined) {
+      updates.push(`seeking_height_min = ${sqlQuote(body.seeking_height_min)}`);
+      updatedFields.push('seeking_height_min');
+    }
+    if (body.seeking_height_max !== undefined) {
+      updates.push(`seeking_height_max = ${sqlQuote(body.seeking_height_max)}`);
+      updatedFields.push('seeking_height_max');
+    }
+    if (body.seeking_ethnicities !== undefined) {
+      updates.push(`seeking_ethnicities = ${sqlQuote(body.seeking_ethnicities)}`);
+      updatedFields.push('seeking_ethnicities');
+    }
+    if (body.seeking_interests !== undefined) {
+      updates.push(`seeking_interests = ${sqlQuote(body.seeking_interests)}`);
+      updatedFields.push('seeking_interests');
+    }
+
     // Always update timestamp
     updates.push(`updated_at = NOW()`);
 
@@ -257,6 +303,9 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
           interests, looks, personality, lifestyle,
           profile_photos, profile_videos,
           whatsapp_number, instagram_url, linkedin_url, twitter_url,
+          gender, height_cm, ethnicity,
+          seeking_genders, seeking_height_min, seeking_height_max,
+          seeking_ethnicities, seeking_interests,
           updated_at
         ) VALUES (
           '${userId}',
@@ -279,6 +328,14 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
           ${sqlQuote(body.instagram_url || null)},
           ${sqlQuote(body.linkedin_url || null)},
           ${sqlQuote(body.twitter_url || null)},
+          ${sqlQuote(body.gender || null)},
+          ${sqlQuote(body.height_cm || null)},
+          ${sqlQuote(body.ethnicity || null)},
+          ${sqlQuote(body.seeking_genders || [])},
+          ${sqlQuote(body.seeking_height_min || 150)},
+          ${sqlQuote(body.seeking_height_max || 200)},
+          ${sqlQuote(body.seeking_ethnicities || [])},
+          ${sqlQuote(body.seeking_interests || [])},
           NOW()
         )
       `;

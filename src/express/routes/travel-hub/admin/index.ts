@@ -18,6 +18,7 @@ import orgMembersRouter from './org-members';
 import invitationsRouter from './invitations';
 import auditRouter from './audit';
 import meRouter from './me';
+import dashboardRouter from './dashboard';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use(loadRbacContext);
 router.use('/me', meRouter);
 
 // Master admin routes
+router.use('/dashboard', requireMasterAdmin, dashboardRouter);
 router.use('/organizations', requireMasterAdmin, organizationsRouter);
 router.use('/users', requireMasterAdmin, systemUsersRouter);
 router.use('/audit', requireMasterAdmin, auditRouter);

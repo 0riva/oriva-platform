@@ -43,6 +43,7 @@ import eventsRoutes from '../src/express/routes/events';
 import photosRoutes from '../src/express/routes/photos';
 import travelHubRoutes from '../src/express/routes/travel-hub';
 import hugoLoveRoutes from '../src/express/routes/hugo-love';
+import askMeAnythingRoutes from '../src/express/routes/ask-me-anything';
 import { realtimeDeliveryService } from '../src/services/realtimeDeliveryService';
 
 /**
@@ -128,9 +129,13 @@ export const createApp = (): Application => {
   // Hugo Love routes (dating app - requires authentication)
   app.use(`${apiPrefix}/hugo-love`, hugoLoveRoutes);
 
+  // Ask Me Anything routes (AMA sessions - requires authentication)
+  app.use(`${apiPrefix}/ask-me-anything`, askMeAnythingRoutes);
+
   // DEVELOPMENT PROXY: Map /api/oriva/* to /api/v1/* for o-orig dev mode
   // This allows o-orig apps using buildApiUrl('/profiles/me') to reach /api/v1/hugo-love/profiles/me
   app.use('/api/oriva/hugo-love', hugoLoveRoutes);
+  app.use('/api/oriva/ask-me-anything', askMeAnythingRoutes);
   app.use('/api/oriva/apps/photos', photosRoutes);
   app.use('/api/oriva/apps/profiles', profilesRoutes);
 

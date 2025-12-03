@@ -10,6 +10,7 @@
 
 import { Router, Request, Response } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
+import { randomUUID } from 'crypto';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { logger } from '../../../utils/logger';
 
@@ -25,6 +26,72 @@ const validate = (req: Request, res: Response, next: Function) => {
   }
   next();
 };
+
+/**
+ * GET /api/v1/travel-hub/clients/me
+ * Get clients for the currently logged-in concierge
+ */
+router.get(
+  '/me',
+  [
+    query('status').optional().isIn(['active', 'inactive', 'pending']),
+    query('search').optional().isString(),
+  ],
+  validate,
+  async (req: Request, res: Response) => {
+    try {
+      const supabase = getSupabase(req);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ ok: false, error: 'Unauthorized' });
+      }
+
+      // Get the concierge record for the current user (using profile_id which maps to auth.uid())
+      const { data: concierge, error: conciergeError } = await supabase
+        .schema(SCHEMA)
+        .from('concierges')
+        .select('id')
+        .eq('profile_id', userId)
+        .single();
+
+      if (conciergeError || !concierge) {
+        // User is not a concierge - return empty array
+        logger.debug('[ClientsRoute] User is not a concierge, returning empty clients', { userId });
+        return res.json({ ok: true, data: [] });
+      }
+
+      const { status, search } = req.query;
+
+      let query = supabase
+        .schema(SCHEMA)
+        .from('travel_clients')
+        .select('*')
+        .eq('concierge_id', concierge.id)
+        .order('created_at', { ascending: false });
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      if (search) {
+        query = query.ilike('notes', `%${search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        logger.error('[ClientsRoute] Error fetching my clients', { error, userId });
+        return res.status(500).json({ ok: false, error: error.message });
+      }
+
+      res.json({ ok: true, data: data || [] });
+    } catch (error: any) {
+      logger.error('[ClientsRoute] Unexpected error in getMyClients', { error });
+      res.status(500).json({ ok: false, error: 'Internal server error' });
+    }
+  }
+);
 
 /**
  * GET /api/v1/travel-hub/clients
@@ -47,7 +114,7 @@ router.get(
 
       let query = supabase
         .schema(SCHEMA)
-        .from('concierge_clients')
+        .from('travel_clients')
         .select('*', { count: 'exact' })
         .eq('concierge_id', concierge_id)
         .order('created_at', { ascending: false })
@@ -95,7 +162,7 @@ router.get('/:id', [param('id').isUUID()], validate, async (req: Request, res: R
 
     const { data, error } = await supabase
       .schema(SCHEMA)
-      .from('concierge_clients')
+      .from('travel_clients')
       .select('*')
       .eq('id', id)
       .single();
@@ -119,6 +186,7 @@ router.get('/:id', [param('id').isUUID()], validate, async (req: Request, res: R
  * POST /api/v1/travel-hub/clients/new
  * Create a new client with basic contact info
  * (Creates a placeholder profile and links to current concierge)
+ * Master admins can also create clients without being a concierge
  */
 router.post(
   '/new',
@@ -134,6 +202,7 @@ router.post(
     try {
       const supabase = getSupabase(req);
       const userId = req.user?.id;
+      const userEmail = req.user?.email;
 
       if (!userId) {
         return res.status(401).json({ ok: false, error: 'Unauthorized' });
@@ -141,26 +210,92 @@ router.post(
 
       const { name, email, phone, notes, preferences } = req.body;
 
-      // Get the concierge record for the current user
+      // Master admin emails that can create clients without being a concierge
+      const MASTER_ADMIN_EMAILS = ['tools@gavrielshaw.com', 'think@gavrielshaw.com'];
+      const isMasterAdmin = userEmail && MASTER_ADMIN_EMAILS.includes(userEmail);
+
+      // Get the concierge record for the current user (using profile_id which maps to auth.uid())
       const { data: concierge, error: conciergeError } = await supabase
         .schema(SCHEMA)
         .from('concierges')
         .select('id, account_id')
-        .eq('user_id', userId)
+        .eq('profile_id', userId)
         .single();
 
-      if (conciergeError || !concierge) {
+      // Allow master admins to create clients even without being a concierge
+      let conciergeId = concierge?.id;
+      let accountId = concierge?.account_id;
+
+      if ((conciergeError || !concierge) && !isMasterAdmin) {
         logger.warn('[ClientsRoute] User is not a concierge', { userId });
         return res
           .status(403)
           .json({ ok: false, error: 'You must be a concierge to create clients' });
       }
 
+      // For master admin without concierge record, use first available concierge or create placeholder
+      if (!concierge && isMasterAdmin) {
+        // Try to get any concierge from the system to associate with
+        const { data: anyConc } = await supabase
+          .schema(SCHEMA)
+          .from('concierges')
+          .select('id, account_id')
+          .limit(1)
+          .single();
+
+        if (anyConc) {
+          conciergeId = anyConc.id;
+          accountId = anyConc.account_id;
+          logger.info('[ClientsRoute] Master admin using existing concierge', { conciergeId });
+        } else {
+          // No concierge exists - create one for the master admin
+          const { data: newConc, error: createError } = await supabase
+            .schema(SCHEMA)
+            .from('concierges')
+            .insert([
+              {
+                account_id: userId, // Use user ID as placeholder account
+                profile_id: userId, // Use user ID as profile reference
+                display_name: 'Master Admin',
+                bio: 'System administrator account',
+                specialties: ['administration'],
+                languages: ['en'],
+                currency: 'USD',
+                availability_status: 'offline',
+                rating: 0,
+                review_count: 0,
+                total_bookings: 0,
+                verified: true,
+                featured: false,
+                metadata: { is_master_admin: true },
+              },
+            ])
+            .select()
+            .single();
+
+          if (createError || !newConc) {
+            logger.error('[ClientsRoute] Failed to create placeholder concierge', {
+              error: createError,
+            });
+            return res.status(500).json({ ok: false, error: 'Failed to set up concierge profile' });
+          }
+
+          conciergeId = newConc.id;
+          accountId = newConc.account_id;
+          logger.info('[ClientsRoute] Created placeholder concierge for master admin', {
+            conciergeId,
+          });
+        }
+      }
+
       // Create client record with embedded contact info in metadata
+      // Generate a unique placeholder profile_id for clients without a real user account
+      const placeholderProfileId = randomUUID();
+
       const clientData = {
-        account_id: concierge.account_id,
-        concierge_id: concierge.id,
-        profile_id: userId, // Use concierge's user ID as placeholder profile
+        account_id: accountId,
+        concierge_id: conciergeId,
+        profile_id: placeholderProfileId, // Unique placeholder for each client
         status: 'active',
         preferences: preferences || {},
         notes,
@@ -171,12 +306,13 @@ router.post(
           contact_email: email,
           contact_phone: phone || null,
           created_by_concierge: true,
+          is_placeholder_profile: true, // Flag indicating this is not a real user profile
         },
       };
 
       const { data, error } = await supabase
         .schema(SCHEMA)
-        .from('concierge_clients')
+        .from('travel_clients')
         .insert([clientData])
         .select()
         .single();
@@ -233,7 +369,7 @@ router.post(
 
       const { data, error } = await supabase
         .schema(SCHEMA)
-        .from('concierge_clients')
+        .from('travel_clients')
         .insert([clientData])
         .select()
         .single();
@@ -275,7 +411,7 @@ router.patch(
 
       const { data, error } = await supabase
         .schema(SCHEMA)
-        .from('concierge_clients')
+        .from('travel_clients')
         .update(updates)
         .eq('id', id)
         .select()
@@ -314,7 +450,7 @@ router.patch(
 
       const { data, error } = await supabase
         .schema(SCHEMA)
-        .from('concierge_clients')
+        .from('travel_clients')
         .update({ status })
         .eq('id', id)
         .select()

@@ -54,6 +54,7 @@ import userMediaRouter from '../src/express/routes/userMedia';
 import videoMeetingsRouter from '../src/express/routes/video-meetings';
 import travelHubRouter from '../src/express/routes/travel-hub';
 import hugoLoveRouter from '../src/express/routes/hugo-love';
+import askMeAnythingRouter from '../src/express/routes/ask-me-anything';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
@@ -757,6 +758,33 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
 
     // Validate API key format
     if (!apiKey.startsWith('oriva_pk_test_') && !apiKey.startsWith('oriva_pk_live_')) {
+      // In development mode, also accept JWT tokens (for orivaApi client using user auth)
+      if (process.env.NODE_ENV === 'development') {
+        // Check if this looks like a JWT token (has 3 dot-separated parts)
+        const parts = apiKey.split('.');
+        if (parts.length === 3) {
+          // This is a JWT token - verify it with Supabase auth
+          const {
+            data: { user },
+            error: authError,
+          } = await supabase.auth.getUser(apiKey);
+          if (!authError && user) {
+            const authReq = asAuthRequest(req);
+            authReq.keyInfo = {
+              id: 'jwt_auth',
+              userId: user.id,
+              name: user.email || 'JWT User',
+              permissions: ['read:profiles', 'write:sessions', 'read:sessions'],
+              usageCount: 0,
+              isActive: true,
+              authType: 'supabase_auth' as const,
+              lastUsedAt: undefined,
+            };
+            next();
+            return;
+          }
+        }
+      }
       respondWithError(res, 401, 'INVALID_API_KEY', 'Invalid API key format');
       return;
     }
@@ -4058,6 +4086,11 @@ app.use('/api/v1/travel-hub', optionalSchemaRouter, travelHubRouter);
 // Mount Hugo Love router (dating app)
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation
 app.use('/api/v1/tenant/hugo-love', optionalSchemaRouter, hugoLoveRouter);
+
+// Mount Ask Me Anything router (AMA sessions)
+// Requires optionalSchemaRouter to initialize Supabase client for auth validation
+app.use('/api/v1/ask-me-anything', optionalSchemaRouter, askMeAnythingRouter);
+app.use('/api/oriva/ask-me-anything', optionalSchemaRouter, askMeAnythingRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS

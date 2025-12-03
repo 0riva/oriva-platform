@@ -29,6 +29,87 @@ const validate = (req: Request, res: Response, next: Function) => {
 };
 
 /**
+ * GET /api/v1/travel-hub/itineraries/me
+ * Get itineraries for the currently logged-in concierge
+ */
+router.get(
+  '/me',
+  [
+    query('status').optional().isIn(['draft', 'planning', 'confirmed', 'in_progress', 'completed']),
+    query('destination').optional().isString(),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('offset').optional().isInt({ min: 0 }),
+  ],
+  validate,
+  async (req: Request, res: Response) => {
+    try {
+      const supabase = getSupabase(req);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ ok: false, error: 'Unauthorized' });
+      }
+
+      // Get the concierge record for the current user (using profile_id which maps to auth.uid())
+      const { data: concierge, error: conciergeError } = await supabase
+        .schema(SCHEMA)
+        .from('concierges')
+        .select('id')
+        .eq('profile_id', userId)
+        .single();
+
+      if (conciergeError || !concierge) {
+        // User is not a concierge - return empty array
+        logger.debug('[ItinerariesRoute] User is not a concierge, returning empty itineraries', {
+          userId,
+        });
+        return res.json({ ok: true, data: [] });
+      }
+
+      const { status, destination, limit = 50, offset = 0 } = req.query;
+
+      let query = supabase
+        .schema(SCHEMA)
+        .from('travel_itineraries')
+        .select('*', { count: 'exact' })
+        .eq('concierge_id', concierge.id)
+        .order('start_date', { ascending: false })
+        .range(Number(offset), Number(offset) + Number(limit) - 1);
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      if (destination) {
+        query = query.or(
+          `destination_country.ilike.%${destination}%,destination_city.ilike.%${destination}%`
+        );
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        logger.error('[ItinerariesRoute] Error fetching my itineraries', { error, userId });
+        return res.status(500).json({ ok: false, error: error.message });
+      }
+
+      res.json({
+        ok: true,
+        data: data || [],
+        pagination: {
+          total: count || 0,
+          limit: Number(limit),
+          offset: Number(offset),
+        },
+      });
+    } catch (error: any) {
+      logger.error('[ItinerariesRoute] Unexpected error in getMyItineraries', { error });
+      res.status(500).json({ ok: false, error: 'Internal server error' });
+    }
+  }
+);
+
+/**
  * GET /api/v1/travel-hub/itineraries
  * List itineraries with optional filters
  */
