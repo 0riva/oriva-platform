@@ -159,6 +159,76 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 /**
+ * GET /api/v1/tenant/hugo-love/swipes/stats/daily
+ * Get daily swipe statistics for the user
+ * Returns remaining likes/dislikes and today's activity
+ */
+router.get('/stats/daily', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const today = new Date().toISOString().split('T')[0];
+
+    const supabase = getSupabase(req);
+
+    // Get today's swipes for counts
+    const { data: todaySwipes, error: swipesError } = await supabase
+      .from('hugo_love_swipes')
+      .select('decision')
+      .eq('swiper_id', userId)
+      .gte('timestamp', `${today}T00:00:00`)
+      .lt('timestamp', `${today}T23:59:59`);
+
+    if (swipesError) {
+      console.error('Daily stats swipes error:', swipesError);
+      res.status(500).json({
+        error: 'Failed to fetch daily stats',
+        code: 'SERVER_ERROR',
+      });
+      return;
+    }
+
+    // Get today's matches
+    const { data: todayMatches, error: matchesError } = await supabase
+      .from('hugo_love_matches')
+      .select('id')
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .gte('created_at', `${today}T00:00:00`)
+      .lt('created_at', `${today}T23:59:59`);
+
+    if (matchesError) {
+      console.error('Daily stats matches error:', matchesError);
+      // Continue with swipe stats even if matches fail
+    }
+
+    // Calculate stats
+    const swipes = todaySwipes || [];
+    const likesToday = swipes.filter((s) => s.decision === 'like').length;
+    const dislikesToday = swipes.filter(
+      (s) => s.decision === 'dislike' || s.decision === 'pass'
+    ).length;
+
+    // Default limits (could be made configurable per subscription tier)
+    const DAILY_LIKE_LIMIT = 50;
+    const DAILY_DISLIKE_LIMIT = 100;
+
+    res.json({
+      data: {
+        likesRemaining: Math.max(0, DAILY_LIKE_LIMIT - likesToday),
+        dislikesRemaining: Math.max(0, DAILY_DISLIKE_LIMIT - dislikesToday),
+        totalSwipesToday: swipes.length,
+        matchesToday: todayMatches?.length || 0,
+      },
+    });
+  } catch (error: any) {
+    console.error('Daily stats endpoint error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
+/**
  * GET /api/v1/hugo-love/swipes/today
  * Get today's swipes
  */

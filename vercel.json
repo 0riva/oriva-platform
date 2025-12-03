@@ -125,7 +125,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Authorization, Content-Type, X-Request-ID, X-App-ID"
+          "value": "Authorization, Content-Type, X-Request-ID, X-App-ID, X-API-Key"
         },
         {
           "key": "X-Content-Type-Options",
