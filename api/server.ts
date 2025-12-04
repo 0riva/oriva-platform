@@ -146,6 +146,12 @@ export const createApp = (): Application => {
   // Ask Me Anything routes (AMA sessions - requires authentication)
   app.use(`${apiPrefix}/ask-me-anything`, askMeAnythingRoutes);
 
+  // TENANT ROUTES: Map /api/v1/tenant/{tenant-slug}/* to the appropriate routes
+  // This allows o-orig clients in production to call /api/v1/tenant/hugo-love/profiles/discover
+  app.use(`${apiPrefix}/tenant/hugo-love`, hugoLoveRoutes);
+  app.use(`${apiPrefix}/tenant/ask-me-anything`, askMeAnythingRoutes);
+  app.use(`${apiPrefix}/tenant/travel-hub`, travelHubRoutes);
+
   // DEVELOPMENT PROXY: Map /api/oriva/* to /api/v1/* for o-orig dev mode
   // This allows o-orig apps using buildApiUrl('/profiles/me') to reach /api/v1/hugo-love/profiles/me
   app.use('/api/oriva/hugo-love', hugoLoveRoutes);
