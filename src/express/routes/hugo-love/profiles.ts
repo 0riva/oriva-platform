@@ -73,49 +73,53 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
 
     const result = await queryHugoLoveSql(sql);
 
-    // Handle case where no profile exists
+    // Handle case where no profile exists - return success: true with null data
+    // This allows the client to distinguish between "no profile" and "error"
     if (!result || result.length === 0) {
-      res.json(null);
+      res.json({ success: true, data: null, message: 'No profile found' });
       return;
     }
 
     const profile = result[0];
 
-    // Return full dating profile
+    // Return full dating profile wrapped in standard response format
     res.json({
-      id: profile.id,
-      user_id: profile.user_id,
-      display_name: profile.display_name,
-      bio: profile.bio,
-      birth_month: profile.birth_month,
-      birth_year: profile.birth_year,
-      age: profile.age,
-      age_range_min: profile.age_range_min,
-      age_range_max: profile.age_range_max,
-      distance_max_km: profile.distance_max_km,
-      location: profile.location,
-      interests: profile.interests || [],
-      looks: profile.looks || [],
-      personality: profile.personality || [],
-      lifestyle: profile.lifestyle || [],
-      profile_photos: profile.profile_photos || [],
-      profile_videos: profile.profile_videos || [],
-      whatsapp_number: profile.whatsapp_number,
-      instagram_url: profile.instagram_url,
-      linkedin_url: profile.linkedin_url,
-      twitter_url: profile.twitter_url,
-      // Match preferences - user's attributes
-      gender: profile.gender,
-      height_cm: profile.height_cm,
-      ethnicity: profile.ethnicity,
-      // Match preferences - seeking preferences
-      seeking_genders: profile.seeking_genders || [],
-      seeking_height_min: profile.seeking_height_min,
-      seeking_height_max: profile.seeking_height_max,
-      seeking_ethnicities: profile.seeking_ethnicities || [],
-      seeking_interests: profile.seeking_interests || [],
-      created_at: profile.created_at,
-      updated_at: profile.updated_at,
+      success: true,
+      data: {
+        id: profile.id,
+        user_id: profile.user_id,
+        display_name: profile.display_name,
+        bio: profile.bio,
+        birth_month: profile.birth_month,
+        birth_year: profile.birth_year,
+        age: profile.age,
+        age_range_min: profile.age_range_min,
+        age_range_max: profile.age_range_max,
+        distance_max_km: profile.distance_max_km,
+        location: profile.location,
+        interests: profile.interests || [],
+        looks: profile.looks || [],
+        personality: profile.personality || [],
+        lifestyle: profile.lifestyle || [],
+        profile_photos: profile.profile_photos || [],
+        profile_videos: profile.profile_videos || [],
+        whatsapp_number: profile.whatsapp_number,
+        instagram_url: profile.instagram_url,
+        linkedin_url: profile.linkedin_url,
+        twitter_url: profile.twitter_url,
+        // Match preferences - user's attributes
+        gender: profile.gender,
+        height_cm: profile.height_cm,
+        ethnicity: profile.ethnicity,
+        // Match preferences - seeking preferences
+        seeking_genders: profile.seeking_genders || [],
+        seeking_height_min: profile.seeking_height_min,
+        seeking_height_max: profile.seeking_height_max,
+        seeking_ethnicities: profile.seeking_ethnicities || [],
+        seeking_interests: profile.seeking_interests || [],
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+      },
     });
   } catch (error: any) {
     console.error('Hugo Love profile endpoint error:', error);
@@ -366,6 +370,105 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
       console.error('Hugo Love profile update endpoint error:', error);
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
+  }
+});
+
+/**
+ * GET /api/v1/hugo-love/profiles/discover
+ * Get discoverable profiles for the Glance/FotoFlash swipe interface
+ * Returns only profiles from hugo_love.dating_profiles (registered Love Puzl members)
+ * Excludes: current user, blocked users, and already-swiped profiles
+ */
+router.get('/discover', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    // Get IDs of users to exclude (blocked users and already swiped)
+    const excludeSql = `
+      SELECT blocked_id as user_id FROM hugo_love.blocks WHERE blocker_id = '${userId}'
+      UNION
+      SELECT target_user_id as user_id FROM hugo_love.swipes WHERE user_id = '${userId}'
+    `;
+    const excludeResult = await queryHugoLoveSql(excludeSql);
+    const excludeIds = excludeResult.map((r: any) => r.user_id);
+
+    // Always exclude current user
+    excludeIds.push(userId);
+
+    // Build exclude clause
+    const excludeClause =
+      excludeIds.length > 0
+        ? `AND user_id NOT IN (${excludeIds.map((id: string) => `'${id}'`).join(', ')})`
+        : '';
+
+    // Query discoverable profiles from hugo_love.dating_profiles
+    const sql = `
+      SELECT
+        id,
+        user_id,
+        display_name,
+        bio,
+        age,
+        birth_month,
+        birth_year,
+        location,
+        profile_photos,
+        interests,
+        personality,
+        lifestyle,
+        looks,
+        gender
+      FROM hugo_love.dating_profiles
+      WHERE user_id IS NOT NULL
+      ${excludeClause}
+      ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `;
+
+    const profiles = await queryHugoLoveSql(sql);
+
+    // Map to discover profile format expected by client
+    const discoverProfiles = profiles.map((profile: any) => ({
+      profileId: profile.user_id,
+      id: profile.id,
+      profileName: profile.display_name || 'Anonymous',
+      display_name: profile.display_name,
+      bio: profile.bio || '',
+      age: profile.age,
+      age_range_min: profile.birth_year
+        ? new Date().getFullYear() - profile.birth_year
+        : profile.age,
+      age_range_max: profile.age,
+      location: profile.location,
+      avatar: profile.profile_photos?.[0] || '',
+      profile_image_url: profile.profile_photos?.[0] || '',
+      profile_photos: profile.profile_photos || [],
+      interests: profile.interests || [],
+      personality: profile.personality || [],
+      lifestyle: profile.lifestyle || [],
+      looks: profile.looks || [],
+      gender: profile.gender,
+    }));
+
+    res.json({
+      success: true,
+      data: discoverProfiles,
+      pagination: {
+        limit,
+        offset,
+        count: discoverProfiles.length,
+      },
+    });
+  } catch (error: any) {
+    console.error('Hugo Love discover profiles endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
   }
 });
 

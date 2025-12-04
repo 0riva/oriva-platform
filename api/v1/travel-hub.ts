@@ -1079,6 +1079,120 @@ async function createClient(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+async function createClientNew(req: VercelRequest, res: VercelResponse) {
+  const auth = await getAuthenticatedUser(req);
+  if (!auth) return errorResponse(res, 401, 'Authentication required');
+
+  const { name, email, phone, notes, preferences } = req.body;
+
+  if (!name || !email) {
+    return errorResponse(res, 400, 'name and email are required');
+  }
+
+  try {
+    // Master admin emails that can create clients without being a concierge
+    const MASTER_ADMIN_EMAILS = ['tools@gavrielshaw.com', 'think@gavrielshaw.com'];
+    const isMasterAdmin = auth.user.email && MASTER_ADMIN_EMAILS.includes(auth.user.email);
+
+    // Get the concierge record for the current user
+    const { data: concierge, error: conciergeError } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
+      .select('id, account_id')
+      .eq('account_id', auth.user.id)
+      .single();
+
+    let conciergeId = concierge?.id;
+    let accountId = concierge?.account_id;
+
+    if ((conciergeError || !concierge) && !isMasterAdmin) {
+      return errorResponse(res, 403, 'You must be a concierge to create clients');
+    }
+
+    // For master admin without concierge record, use first available concierge
+    if (!concierge && isMasterAdmin) {
+      const { data: anyConc } = await auth.serviceClient
+        .schema('travel_hub')
+        .from('concierges')
+        .select('id, account_id')
+        .limit(1)
+        .single();
+
+      if (anyConc) {
+        conciergeId = anyConc.id;
+        accountId = anyConc.account_id;
+      } else {
+        // Create placeholder concierge for master admin
+        const { data: newConc, error: createError } = await auth.serviceClient
+          .schema('travel_hub')
+          .from('concierges')
+          .insert({
+            account_id: auth.user.id,
+            profile_id: auth.user.id,
+            display_name: 'Master Admin',
+            bio: 'System administrator account',
+            specialties: ['administration'],
+            languages: ['en'],
+            currency: 'USD',
+            availability_status: 'offline',
+            rating: 0,
+            review_count: 0,
+            total_bookings: 0,
+            verified: true,
+            featured: false,
+            metadata: { is_master_admin: true },
+          })
+          .select()
+          .single();
+
+        if (createError || !newConc) {
+          console.error('Failed to create placeholder concierge:', createError);
+          return errorResponse(res, 500, 'Failed to set up concierge profile');
+        }
+
+        conciergeId = newConc.id;
+        accountId = newConc.account_id;
+      }
+    }
+
+    // Generate a unique placeholder profile_id for clients without a real user account
+    const placeholderProfileId = crypto.randomUUID();
+
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_clients')
+      .insert({
+        account_id: accountId,
+        concierge_id: conciergeId,
+        profile_id: placeholderProfileId,
+        status: 'active',
+        preferences: preferences || {},
+        notes,
+        total_bookings: 0,
+        total_spent_cents: 0,
+        metadata: {
+          contact_name: name,
+          contact_email: email,
+          contact_phone: phone || null,
+          created_by_concierge: true,
+          is_placeholder_profile: true,
+        },
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Create new client error:', error);
+      return errorResponse(res, 500, error.message);
+    }
+
+    return jsonResponse(res, 201, { ok: true, data });
+  } catch (error: any) {
+    console.error('Create new client error:', error);
+    return errorResponse(res, 500, 'Failed to create client');
+  }
+}
+
 async function updateClient(req: VercelRequest, res: VercelResponse, clientId: string) {
   const auth = await getAuthenticatedUser(req);
   if (!auth) return errorResponse(res, 401, 'Authentication required');
@@ -2010,6 +2124,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (pathname === '/api/v1/travel-hub/clients') {
     if (method === 'GET') return listClients(req, res);
     if (method === 'POST') return createClient(req, res);
+    return errorResponse(res, 405, 'Method not allowed');
+  }
+
+  // POST /clients/new - Create new client with contact info (must come before /clients/:id)
+  if (pathname === '/api/v1/travel-hub/clients/new') {
+    if (method === 'POST') return createClientNew(req, res);
     return errorResponse(res, 405, 'Method not allowed');
   }
 
