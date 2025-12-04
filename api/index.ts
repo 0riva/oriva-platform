@@ -699,7 +699,10 @@ const validateAuth = createAuthMiddleware(); // Returns [rateLimiter, authHandle
 // API Key validation middleware
 const validateApiKey: ApiMiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Check X-API-Key header first (preferred for API keys from o-orig apps)
+    // Fall back to Authorization header for backward compatibility
+    const xApiKey = req.headers['x-api-key'] as string | undefined;
+    const authHeader = xApiKey || req.headers.authorization;
 
     // Allow development mode bypass for specific endpoints
     if (process.env.NODE_ENV === 'development' && !authHeader) {
