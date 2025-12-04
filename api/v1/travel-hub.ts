@@ -474,10 +474,10 @@ async function listOrgMembers(req: VercelRequest, res: VercelResponse, orgId: st
       .eq('organization_id', orgId);
 
     if (role) query = query.eq('role', role);
-    if (status) query = query.eq('status', status);
+    if (status) query = query.eq('is_active', status === 'active');
 
     query = query
-      .order('joined_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .range(Number(offset), Number(offset) + Number(limit) - 1);
 
     const { data, error, count } = await query;
