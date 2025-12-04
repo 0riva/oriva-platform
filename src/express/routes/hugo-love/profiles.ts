@@ -377,7 +377,8 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/hugo-love/profiles/discover
  * Get discoverable profiles for the Glance/FotoFlash swipe interface
  * Returns only profiles from hugo_love.dating_profiles (registered Love Puzl members)
- * Excludes: current user, blocked users, and already-swiped profiles
+ * Excludes: current user and blocked users only
+ * NOTE: Swiped profiles remain visible until user interacts with them on Rate screen
  */
 router.get('/discover', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -385,11 +386,11 @@ router.get('/discover', async (req: Request, res: Response): Promise<void> => {
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     const offset = parseInt(req.query.offset as string) || 0;
 
-    // Get IDs of users to exclude (blocked users and already swiped)
+    // Get IDs of users to exclude (blocked users only)
+    // NOTE: Swiped profiles are NOT excluded - they remain on Glance until
+    // the user interacts with them on the Rate screen
     const excludeSql = `
       SELECT blocked_id as user_id FROM hugo_love.blocks WHERE blocker_id = '${userId}'
-      UNION
-      SELECT target_user_id as user_id FROM hugo_love.swipes WHERE user_id = '${userId}'
     `;
     const excludeResult = await queryHugoLoveSql(excludeSql);
     const excludeIds = excludeResult.map((r: any) => r.user_id);
