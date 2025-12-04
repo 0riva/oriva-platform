@@ -73,9 +73,11 @@ async function getAuthenticatedUser(req: VercelRequest) {
 
   if (error || !user) return null;
 
-  // Return the regular supabase client for operations (with RLS)
+  // Return both clients:
+  // - serviceClient for admin operations (bypasses RLS for travel_hub schema access)
+  // - supabase for user-scoped operations (with RLS)
   const supabase = getSupabaseClient();
-  return { user, supabase };
+  return { user, supabase, serviceClient };
 }
 
 function jsonResponse<T>(res: VercelResponse, status: number, data: ApiResponse<T>) {
@@ -117,19 +119,22 @@ async function getAdminContext(req: VercelRequest, res: VercelResponse) {
   const auth = await getAuthenticatedUser(req);
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
-  const { user, supabase } = auth;
+  const { user, serviceClient } = auth;
 
   try {
+    // Use service client with schema() for travel_hub queries (bypasses RLS)
     // Check if user is a system user
-    const { data: systemUser } = await supabase
-      .from('travel_hub.system_users')
+    const { data: systemUser } = await serviceClient
+      .schema('travel_hub')
+      .from('system_users')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
     // Get user's organization memberships
-    const { data: memberships } = await supabase
-      .from('travel_hub.organization_memberships')
+    const { data: memberships } = await serviceClient
+      .schema('travel_hub')
+      .from('organization_memberships')
       .select('*, organization:organizations(*)')
       .eq('user_id', user.id)
       .eq('status', 'active');
