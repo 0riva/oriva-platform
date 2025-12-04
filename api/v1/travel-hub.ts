@@ -207,7 +207,10 @@ async function listOrganizations(req: VercelRequest, res: VercelResponse) {
   const { status, search, limit = '20', offset = '0' } = req.query;
 
   try {
-    let query = supabase.from('travel_hub.organizations').select('*', { count: 'exact' });
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('organizations')
+      .select('*', { count: 'exact' });
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
@@ -236,8 +239,9 @@ async function getOrganization(req: VercelRequest, res: VercelResponse, orgId: s
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.organizations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('organizations')
       .select('*')
       .eq('id', orgId)
       .single();
@@ -264,8 +268,9 @@ async function createOrganization(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.organizations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('organizations')
       .insert({
         name,
         slug,
@@ -294,8 +299,9 @@ async function updateOrganization(req: VercelRequest, res: VercelResponse, orgId
   const updates = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.organizations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('organizations')
       .update(updates)
       .eq('id', orgId)
       .select()
@@ -316,8 +322,9 @@ async function deleteOrganization(req: VercelRequest, res: VercelResponse, orgId
 
   try {
     // Soft delete - set status to deactivated
-    const { data, error } = await auth.supabase
-      .from('travel_hub.organizations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('organizations')
       .update({ status: 'deactivated' })
       .eq('id', orgId)
       .select()
@@ -343,7 +350,10 @@ async function listSystemUsers(req: VercelRequest, res: VercelResponse) {
   const { is_active, is_master_admin, limit = '20', offset = '0' } = req.query;
 
   try {
-    let query = auth.supabase.from('travel_hub.system_users').select('*', { count: 'exact' });
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('system_users')
+      .select('*', { count: 'exact' });
 
     if (is_active !== undefined) {
       query = query.eq('is_active', is_active === 'true');
@@ -378,8 +388,9 @@ async function createSystemUser(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.system_users')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('system_users')
       .insert({
         user_id,
         is_master_admin: is_master_admin || false,
@@ -406,8 +417,9 @@ async function updateSystemUser(req: VercelRequest, res: VercelResponse, userId:
   const updates = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.system_users')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('system_users')
       .update(updates)
       .eq('user_id', userId)
       .select()
@@ -427,8 +439,9 @@ async function deleteSystemUser(req: VercelRequest, res: VercelResponse, userId:
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.system_users')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('system_users')
       .update({ is_active: false })
       .eq('user_id', userId)
       .select()
@@ -454,8 +467,9 @@ async function listOrgMembers(req: VercelRequest, res: VercelResponse, orgId: st
   const { role, status, limit = '20', offset = '0' } = req.query;
 
   try {
-    let query = auth.supabase
-      .from('travel_hub.organization_memberships')
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('organization_memberships')
       .select('*', { count: 'exact' })
       .eq('organization_id', orgId);
 
@@ -488,8 +502,9 @@ async function addOrgMember(req: VercelRequest, res: VercelResponse, orgId: stri
   }
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.organization_memberships')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('organization_memberships')
       .insert({
         organization_id: orgId,
         user_id,
@@ -522,8 +537,9 @@ async function updateOrgMember(
   const updates = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.organization_memberships')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('organization_memberships')
       .update(updates)
       .eq('organization_id', orgId)
       .eq('user_id', userId)
@@ -549,8 +565,9 @@ async function removeOrgMember(
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.organization_memberships')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('organization_memberships')
       .update({ status: 'suspended' })
       .eq('organization_id', orgId)
       .eq('user_id', userId)
@@ -577,8 +594,9 @@ async function listInvitations(req: VercelRequest, res: VercelResponse, orgId: s
   const { status, limit = '20', offset = '0' } = req.query;
 
   try {
-    let query = auth.supabase
-      .from('travel_hub.invitations')
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('invitations')
       .select('*', { count: 'exact' })
       .eq('organization_id', orgId);
 
@@ -614,8 +632,9 @@ async function createInvitation(req: VercelRequest, res: VercelResponse, orgId: 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expires_in_days);
 
-    const { data, error } = await auth.supabase
-      .from('travel_hub.invitations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('invitations')
       .insert({
         organization_id: orgId,
         email,
@@ -651,8 +670,9 @@ async function revokeInvitation(
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.invitations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('invitations')
       .update({ status: 'revoked' })
       .eq('organization_id', orgId)
       .eq('id', invitationId)
@@ -687,7 +707,10 @@ async function listAuditLog(req: VercelRequest, res: VercelResponse) {
   } = req.query;
 
   try {
-    let query = auth.supabase.from('travel_hub.audit_log').select('*', { count: 'exact' });
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('audit_log')
+      .select('*', { count: 'exact' });
 
     if (user_id) query = query.eq('user_id', user_id);
     if (action) query = query.eq('action', action);
@@ -730,8 +753,9 @@ async function listConcierges(req: VercelRequest, res: VercelResponse) {
   } = req.query;
 
   try {
-    let query = auth.supabase
-      .from('travel_hub.concierges')
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .select('*')
       .order('rating', { ascending: false });
 
@@ -777,8 +801,9 @@ async function getFeaturedConcierges(req: VercelRequest, res: VercelResponse) {
   const { limit = '10' } = req.query;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierges')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .select('*')
       .eq('featured', true)
       .eq('availability_status', 'available')
@@ -799,8 +824,9 @@ async function getConcierge(req: VercelRequest, res: VercelResponse, conciergeId
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierges')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .select('*')
       .eq('id', conciergeId)
       .single();
@@ -821,8 +847,9 @@ async function getMyConciergeProfile(req: VercelRequest, res: VercelResponse) {
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierges')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .select('*')
       .eq('account_id', auth.user.id)
       .single();
@@ -851,8 +878,9 @@ async function createConcierge(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierges')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .insert({
         account_id: auth.user.id,
         profile_id,
@@ -890,8 +918,9 @@ async function updateConcierge(req: VercelRequest, res: VercelResponse, concierg
   const updates = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierges')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .update(updates)
       .eq('id', conciergeId)
       .select()
@@ -917,7 +946,10 @@ async function listClients(req: VercelRequest, res: VercelResponse) {
   const { concierge_id, status, search, limit = '20', offset = '0' } = req.query;
 
   try {
-    let query = auth.supabase.from('travel_hub.concierge_clients').select('*', { count: 'exact' });
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_clients')
+      .select('*', { count: 'exact' });
 
     if (concierge_id) {
       query = query.eq('concierge_id', concierge_id);
@@ -949,8 +981,9 @@ async function getClient(req: VercelRequest, res: VercelResponse, clientId: stri
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierge_clients')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_clients')
       .select('*')
       .eq('id', clientId)
       .single();
@@ -974,8 +1007,9 @@ async function getMyClients(req: VercelRequest, res: VercelResponse) {
 
   try {
     // First get the concierge profile for this user
-    const { data: concierge } = await auth.supabase
-      .from('travel_hub.concierges')
+    const { data: concierge } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .select('id')
       .eq('account_id', auth.user.id)
       .single();
@@ -984,8 +1018,9 @@ async function getMyClients(req: VercelRequest, res: VercelResponse) {
       return successResponse(res, []);
     }
 
-    let query = auth.supabase
-      .from('travel_hub.concierge_clients')
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_clients')
       .select('*')
       .eq('concierge_id', concierge.id);
 
@@ -1020,8 +1055,9 @@ async function createClient(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierge_clients')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_clients')
       .insert({
         account_id: auth.user.id,
         concierge_id,
@@ -1052,8 +1088,9 @@ async function updateClient(req: VercelRequest, res: VercelResponse, clientId: s
   const updates = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierge_clients')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_clients')
       .update(updates)
       .eq('id', clientId)
       .select()
@@ -1079,7 +1116,7 @@ async function listConversations(req: VercelRequest, res: VercelResponse) {
   const { role, user_id } = req.query;
 
   try {
-    let query = auth.supabase.from('travel_hub.concierge_conversations').select('*');
+    let query = auth.serviceClient.schema('travel_hub').from('concierge_conversations').select('*');
 
     if (role === 'concierge' && user_id) {
       query = query.eq('concierge_id', user_id);
@@ -1105,8 +1142,9 @@ async function getConversation(req: VercelRequest, res: VercelResponse, conversa
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierge_conversations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_conversations')
       .select('*')
       .eq('id', conversationId)
       .single();
@@ -1133,8 +1171,9 @@ async function createConversation(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { data: conversation, error } = await auth.supabase
-      .from('travel_hub.concierge_conversations')
+    const { data: conversation, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_conversations')
       .insert({
         client_id,
         concierge_id,
@@ -1152,7 +1191,7 @@ async function createConversation(req: VercelRequest, res: VercelResponse) {
 
     // If initial message provided, create it
     if (initial_message && conversation) {
-      await auth.supabase.from('travel_hub.concierge_messages').insert({
+      await auth.serviceClient.schema('travel_hub').from('concierge_messages').insert({
         conversation_id: conversation.id,
         sender_type: 'client',
         sender_id: client_id,
@@ -1163,8 +1202,9 @@ async function createConversation(req: VercelRequest, res: VercelResponse) {
       });
 
       // Update last_message_at
-      await auth.supabase
-        .from('travel_hub.concierge_conversations')
+      await auth.serviceClient
+        .schema('travel_hub')
+        .from('concierge_conversations')
         .update({ last_message_at: new Date().toISOString() })
         .eq('id', conversation.id);
     }
@@ -1187,8 +1227,9 @@ async function updateConversationStatus(
   const { status } = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierge_conversations')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_conversations')
       .update({ status })
       .eq('id', conversationId)
       .select()
@@ -1214,8 +1255,9 @@ async function listMessages(req: VercelRequest, res: VercelResponse, conversatio
   const { limit = '50', before } = req.query;
 
   try {
-    let query = auth.supabase
-      .from('travel_hub.concierge_messages')
+    let query = auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_messages')
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
@@ -1256,8 +1298,9 @@ async function sendMessage(req: VercelRequest, res: VercelResponse, conversation
   }
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.concierge_messages')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_messages')
       .insert({
         conversation_id: conversationId,
         sender_type,
@@ -1276,13 +1319,14 @@ async function sendMessage(req: VercelRequest, res: VercelResponse, conversation
 
     // Update conversation
     const unreadField = sender_type === 'client' ? 'unread_count_concierge' : 'unread_count_client';
-    await auth.supabase.rpc('increment_unread_count', {
+    await auth.serviceClient.rpc('increment_unread_count', {
       conv_id: conversationId,
       field_name: unreadField,
     });
 
-    await auth.supabase
-      .from('travel_hub.concierge_conversations')
+    await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_conversations')
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversationId);
 
@@ -1302,8 +1346,9 @@ async function markMessagesRead(req: VercelRequest, res: VercelResponse, convers
   try {
     const unreadField = reader_type === 'client' ? 'unread_count_client' : 'unread_count_concierge';
 
-    await auth.supabase
-      .from('travel_hub.concierge_conversations')
+    await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierge_conversations')
       .update({ [unreadField]: 0 })
       .eq('id', conversationId);
 
@@ -1325,7 +1370,7 @@ async function listItineraries(req: VercelRequest, res: VercelResponse) {
   const { profile_id, concierge_id, status, destination } = req.query;
 
   try {
-    let query = auth.supabase.from('travel_hub.travel_itineraries').select('*');
+    let query = auth.serviceClient.schema('travel_hub').from('travel_itineraries').select('*');
 
     if (profile_id) {
       query = query.eq('profile_id', profile_id);
@@ -1361,8 +1406,9 @@ async function getMyItineraries(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Get concierge profile
-    const { data: concierge } = await auth.supabase
-      .from('travel_hub.concierges')
+    const { data: concierge } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('concierges')
       .select('id')
       .eq('account_id', auth.user.id)
       .single();
@@ -1371,8 +1417,9 @@ async function getMyItineraries(req: VercelRequest, res: VercelResponse) {
       return successResponse(res, []);
     }
 
-    const { data, error } = await auth.supabase
-      .from('travel_hub.travel_itineraries')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('travel_itineraries')
       .select('*')
       .eq('concierge_id', concierge.id)
       .order('created_at', { ascending: false });
@@ -1391,8 +1438,9 @@ async function getItinerary(req: VercelRequest, res: VercelResponse, itineraryId
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { data: itinerary, error } = await auth.supabase
-      .from('travel_hub.travel_itineraries')
+    const { data: itinerary, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('travel_itineraries')
       .select('*')
       .eq('id', itineraryId)
       .single();
@@ -1402,8 +1450,9 @@ async function getItinerary(req: VercelRequest, res: VercelResponse, itineraryId
     }
 
     // Get items
-    const { data: items } = await auth.supabase
-      .from('travel_hub.itinerary_items')
+    const { data: items } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('itinerary_items')
       .select('*')
       .eq('itinerary_id', itineraryId)
       .order('day_number', { ascending: true })
@@ -1460,8 +1509,9 @@ async function createItinerary(req: VercelRequest, res: VercelResponse) {
     const durationDays =
       Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    const { data, error } = await auth.supabase
-      .from('travel_hub.travel_itineraries')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('travel_itineraries')
       .insert({
         account_id: auth.user.id,
         profile_id,
@@ -1502,8 +1552,9 @@ async function updateItinerary(req: VercelRequest, res: VercelResponse, itinerar
   const updates = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.travel_itineraries')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('travel_itineraries')
       .update(updates)
       .eq('id', itineraryId)
       .select()
@@ -1550,8 +1601,9 @@ async function addItineraryItem(req: VercelRequest, res: VercelResponse, itinera
   }
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.itinerary_items')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('itinerary_items')
       .insert({
         itinerary_id: itineraryId,
         day_number,
@@ -1598,8 +1650,9 @@ async function updateItineraryItem(
   const updates = req.body;
 
   try {
-    const { data, error } = await auth.supabase
-      .from('travel_hub.itinerary_items')
+    const { data, error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('itinerary_items')
       .update(updates)
       .eq('id', itemId)
       .eq('itinerary_id', itineraryId)
@@ -1625,8 +1678,9 @@ async function deleteItineraryItem(
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    const { error } = await auth.supabase
-      .from('travel_hub.itinerary_items')
+    const { error } = await auth.serviceClient
+      .schema('travel_hub')
+      .from('itinerary_items')
       .delete()
       .eq('id', itemId)
       .eq('itinerary_id', itineraryId);
@@ -1673,8 +1727,9 @@ async function generateShareLink(req: VercelRequest, res: VercelResponse, itiner
     }
 
     // Store share info in itinerary metadata
-    await auth.supabase
-      .from('travel_hub.travel_itineraries')
+    await auth.serviceClient
+      .schema('travel_hub')
+      .from('travel_itineraries')
       .update({
         metadata: {
           share_token: shareToken,
