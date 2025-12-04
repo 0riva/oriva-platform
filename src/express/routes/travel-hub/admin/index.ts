@@ -10,7 +10,7 @@
  */
 
 import { Router } from 'express';
-import { requireAuth } from '../../../middleware/auth';
+import { requireJwtAuth } from '../../../middleware/auth';
 import { loadRbacContext, requireMasterAdmin, requireOrgAdmin } from '../../../middleware/rbac';
 import organizationsRouter from './organizations';
 import systemUsersRouter from './system-users';
@@ -22,8 +22,10 @@ import dashboardRouter from './dashboard';
 
 const router = Router();
 
-// All admin routes require authentication and RBAC context
-router.use(requireAuth);
+// All admin routes require JWT authentication and RBAC context
+// Using requireJwtAuth which validates JWT without requiring public.users table
+// Travel Hub uses travel_hub.system_users for admin user management
+router.use(requireJwtAuth);
 router.use(loadRbacContext);
 
 // Current user's admin context (accessible to any authenticated user)

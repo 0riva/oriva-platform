@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/auth';
+import { requireJwtAuth } from '../../middleware/auth';
 import conciergesRouter from './concierges';
 import clientsRouter from './clients';
 import itinerariesRouter from './itineraries';
@@ -13,8 +13,10 @@ import adminRouter from './admin';
 
 const router = Router();
 
-// All Travel Hub Concierge routes require authentication
-router.use(requireAuth);
+// All Travel Hub Concierge routes require JWT authentication
+// Using requireJwtAuth which validates JWT without requiring public.users table
+// Travel Hub uses travel_hub.system_users and travel_hub.concierges for user management
+router.use(requireJwtAuth);
 
 // Mount routers
 router.use('/concierges', conciergesRouter);
