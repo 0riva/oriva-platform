@@ -278,7 +278,7 @@ async function createOrganization(req: VercelRequest, res: VercelResponse) {
         contact_phone,
         logo_url,
         settings: settings || {},
-        status: 'active',
+        is_active: true,
       })
       .select()
       .single();
@@ -321,11 +321,11 @@ async function deleteOrganization(req: VercelRequest, res: VercelResponse, orgId
   if (!auth) return errorResponse(res, 401, 'Authentication required');
 
   try {
-    // Soft delete - set status to deactivated
+    // Soft delete - set is_active to false
     const { data, error } = await auth.serviceClient
       .schema('travel_hub')
       .from('organizations')
-      .update({ status: 'deactivated' })
+      .update({ is_active: false })
       .eq('id', orgId)
       .select()
       .single();
@@ -509,9 +509,7 @@ async function addOrgMember(req: VercelRequest, res: VercelResponse, orgId: stri
         organization_id: orgId,
         user_id,
         role,
-        status: 'active',
-        invited_by: auth.user.id,
-        joined_at: new Date().toISOString(),
+        is_active: true,
       })
       .select()
       .single();
@@ -568,7 +566,7 @@ async function removeOrgMember(
     const { data, error } = await auth.serviceClient
       .schema('travel_hub')
       .from('organization_memberships')
-      .update({ status: 'suspended' })
+      .update({ is_active: false })
       .eq('organization_id', orgId)
       .eq('user_id', userId)
       .select()

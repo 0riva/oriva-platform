@@ -48,7 +48,7 @@ import {
 //   createLegacyApiKeyMiddleware
 // } from '../src/middleware/auth';
 import { errorHandler } from '../src/middleware/error-handler';
-import { createHugoAIRouter } from '../src/routes/hugo-ai';
+import { createMerlinAIRouter } from '../src/routes/merlin-ai';
 import photosRouter from '../src/express/routes/photos';
 import userMediaRouter from '../src/express/routes/userMedia';
 import videoMeetingsRouter from '../src/express/routes/video-meetings';
@@ -308,8 +308,11 @@ app.use(
         return callback(null, true);
       }
 
-      // Development: Allow localhost
-      if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
+      // Development: Allow localhost and Docker host (for Playwright testing)
+      if (
+        process.env.NODE_ENV === 'development' &&
+        (origin.includes('localhost') || origin.includes('host.docker.internal'))
+      ) {
         return callback(null, true);
       }
 
@@ -4055,9 +4058,11 @@ app.delete('/api/v1/auth/account', validateAuth, async (req, res) => {
   }
 });
 
-// Mount Hugo AI router
-const hugoRouter = createHugoAIRouter(supabase);
-app.use('/api/hugo', hugoRouter);
+// Mount Merlin AI router (renamed from Hugo AI)
+const merlinRouter = createMerlinAIRouter(supabase);
+app.use('/api/merlin', merlinRouter);
+// Legacy route (deprecated - use /api/merlin)
+app.use('/api/hugo', merlinRouter);
 
 // Mount Photos router for pre-signed URL uploads (requires API key)
 app.use('/api/v1/apps/photos', photosRouter);

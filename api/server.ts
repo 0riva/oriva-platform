@@ -54,13 +54,27 @@ export const createApp = (): Application => {
 
   // Security middleware
   app.use(helmet());
+  // Production origins for CORS
+  const productionOrigins = [
+    'https://o-originals.vercel.app',
+    'https://oriva.io',
+    'https://www.oriva.io',
+    'https://app.oriva.io',
+    'https://o-core.vercel.app',
+  ];
+
+  const developmentOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:8081',
+    'http://localhost:8084',
+  ];
+
   app.use(
     cors({
       origin: process.env.ALLOWED_ORIGINS?.split(',') || [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:8081',
-        'http://localhost:8084',
+        ...productionOrigins,
+        ...developmentOrigins,
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
