@@ -63,14 +63,18 @@ async function getAuthenticatedUser(req: VercelRequest) {
   const authHeader = req.headers.authorization as string | undefined;
   if (!authHeader) return null;
 
-  // Use the shared Supabase client
-  const supabase = getSupabaseClient();
+  // Use service client to validate JWT tokens (required for cross-origin requests)
+  // The anon client can only validate its own session, not arbitrary JWTs
+  const serviceClient = getSupabaseServiceClient();
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+  } = await serviceClient.auth.getUser(authHeader.replace('Bearer ', ''));
 
   if (error || !user) return null;
+
+  // Return the regular supabase client for operations (with RLS)
+  const supabase = getSupabaseClient();
   return { user, supabase };
 }
 
