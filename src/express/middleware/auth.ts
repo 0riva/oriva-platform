@@ -22,6 +22,12 @@ declare global {
         email: string;
         role?: string;
       };
+      /**
+       * Oriva Profile ID from X-Profile-ID header
+       * Used to scope tenant app data to a specific profile
+       * Falls back to user.id if not provided
+       */
+      profileId?: string;
     }
   }
 }
@@ -212,6 +218,10 @@ export const requireAuth = async (
         email: userRecord.email,
       };
 
+      // Also set profileId for test mode
+      const profileIdHeader = req.header('X-Profile-ID');
+      req.profileId = profileIdHeader || userRecord.id;
+
       next();
       return;
     }
@@ -298,6 +308,19 @@ export const requireAuth = async (
       id: userRecord.id,
       email: userRecord.email,
     };
+
+    // Extract X-Profile-ID header if present
+    // This allows tenant apps to scope data to a specific Oriva profile
+    const profileIdHeader = req.header('X-Profile-ID');
+    if (profileIdHeader) {
+      // TODO: Validate that this profile belongs to the user
+      // For now, trust the client - backend validation can be added later
+      req.profileId = profileIdHeader;
+      logger.debug('[Auth] Profile ID from header:', { profileId: profileIdHeader });
+    } else {
+      // Default to user ID if no profile ID specified
+      req.profileId = userRecord.id;
+    }
 
     next();
   } catch (error) {

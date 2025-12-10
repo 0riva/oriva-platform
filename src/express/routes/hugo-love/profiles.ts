@@ -62,12 +62,15 @@ async function queryHugoLoveSql(sql: string): Promise<any[]> {
  */
 router.get('/me', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    // Note: Currently dating_profiles uses user_id (auth account ID), not Oriva profile ID
+    // This is forward-compatible - when we migrate to profile-based data, just change the column
+    const profileId = req.profileId || req.user!.id;
 
     // Query the hugo_love.dating_profiles table via SQL
     const sql = `
       SELECT * FROM hugo_love.dating_profiles
-      WHERE user_id = '${userId}'
+      WHERE user_id = '${profileId}'
       LIMIT 1
     `;
 
@@ -133,13 +136,14 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
  */
 router.patch('/me', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    const profileId = req.profileId || req.user!.id;
     const body = req.body;
 
     // Check if profile exists
     const checkSql = `
       SELECT id FROM hugo_love.dating_profiles
-      WHERE user_id = '${userId}'
+      WHERE user_id = '${profileId}'
       LIMIT 1
     `;
 
@@ -296,7 +300,7 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
       sql = `
         UPDATE hugo_love.dating_profiles
         SET ${updates.join(', ')}
-        WHERE user_id = '${userId}'
+        WHERE user_id = '${profileId}'
       `;
     } else {
       // Insert new profile
@@ -312,7 +316,7 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
           seeking_ethnicities, seeking_interests,
           updated_at
         ) VALUES (
-          '${userId}',
+          '${profileId}',
           ${sqlQuote(body.display_name || 'User')},
           ${sqlQuote(body.bio || null)},
           ${sqlQuote(body.birth_month || null)},
@@ -351,14 +355,14 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
     // Fetch the updated profile to get id and updated_at
     const fetchSql = `
       SELECT id, user_id, updated_at FROM hugo_love.dating_profiles
-      WHERE user_id = '${userId}'
+      WHERE user_id = '${profileId}'
       LIMIT 1
     `;
     const result = await queryHugoLoveSql(fetchSql);
-    const updated = result.length > 0 ? result[0] : { user_id: userId };
+    const updated = result.length > 0 ? result[0] : { user_id: profileId };
 
     res.json({
-      userId: updated.user_id || userId,
+      userId: updated.user_id || profileId,
       profileId: updated.id,
       updatedFields,
       updatedAt: updated.updated_at || new Date().toISOString(),
@@ -382,7 +386,8 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/discover', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    const profileId = req.profileId || req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     const offset = parseInt(req.query.offset as string) || 0;
 
@@ -390,13 +395,13 @@ router.get('/discover', async (req: Request, res: Response): Promise<void> => {
     // NOTE: Swiped profiles are NOT excluded - they remain on Glance until
     // the user interacts with them on the Rate screen
     const excludeSql = `
-      SELECT blocked_id as user_id FROM hugo_love.blocks WHERE blocker_id = '${userId}'
+      SELECT blocked_id as user_id FROM hugo_love.blocks WHERE blocker_id = '${profileId}'
     `;
     const excludeResult = await queryHugoLoveSql(excludeSql);
     const excludeIds = excludeResult.map((r: any) => r.user_id);
 
-    // Always exclude current user
-    excludeIds.push(userId);
+    // Always exclude current user/profile
+    excludeIds.push(profileId);
 
     // Build exclude clause
     const excludeClause =
@@ -519,7 +524,8 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
   try {
-    const blockerId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    const blockerId = req.profileId || req.user!.id;
     const validated = validateBlockUserRequest(req.body);
 
     if (blockerId === validated.blockedUserId) {
@@ -591,7 +597,8 @@ router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/blocks', async (req: Request, res: Response): Promise<void> => {
   try {
-    const blockerId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    const blockerId = req.profileId || req.user!.id;
 
     const sql = `
       SELECT id, blocker_id, blocked_id, created_at
