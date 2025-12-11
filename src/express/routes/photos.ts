@@ -340,8 +340,22 @@ router.post(
       };
 
       // If approved and it's a profile photo for Hugo Love, persist to database
+      console.log(
+        '📸 DEBUG confirm: photoType=',
+        photoType,
+        'isApproved=',
+        isApproved,
+        'x-app-id=',
+        req.headers['x-app-id']
+      );
       if (isApproved && photoType === 'profile') {
         const appId = req.headers['x-app-id'] as string | undefined;
+        console.log(
+          '📸 DEBUG: Checking appId for hugo_love:',
+          appId,
+          '=== "hugo_love"?',
+          appId === 'hugo_love'
+        );
         if (appId === 'hugo_love') {
           try {
             await appendPhotoToHugoLoveProfile(userId, publicUrl);
