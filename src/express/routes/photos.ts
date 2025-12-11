@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey, requireJwtAuth } from '../middleware/auth';
 import { schemaRouter } from '../middleware/schemaRouter';
+import { getSupabaseServiceClient } from '../../config/supabase';
 
 const router = Router();
 
@@ -32,6 +33,19 @@ const rekognition = new AWS.Rekognition({
 });
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'oriva-media-storage';
+const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN || 'dj9em15b7x04y.cloudfront.net';
+console.log(
+  '📸 Photos route - AWS_S3_BUCKET:',
+  process.env.AWS_S3_BUCKET,
+  'Using BUCKET_NAME:',
+  BUCKET_NAME
+);
+console.log(
+  '📸 Photos route - AWS_CLOUDFRONT_DOMAIN:',
+  process.env.AWS_CLOUDFRONT_DOMAIN,
+  'Using CLOUDFRONT_DOMAIN:',
+  CLOUDFRONT_DOMAIN
+);
 const UPLOAD_URL_EXPIRY = 300; // 5 minutes
 
 // Interfaces
@@ -100,6 +114,32 @@ const generateS3Key = (
   const typePrefix =
     photoType === 'avatar' ? 'avatars' : photoType === 'profile' ? 'profiles' : 'gallery';
   return `${typePrefix}/${userId}/${timestamp}-${uniqueId}.${extension}`;
+};
+
+/**
+ * Append photo URL to Hugo Love profile_photos array
+ * Uses exec_sql RPC to bypass PostgREST schema restrictions
+ */
+const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): Promise<void> => {
+  const supabase = getSupabaseServiceClient();
+
+  // Use array_append to add photo URL to profile_photos JSONB array
+  // This handles the case where profile_photos might be null
+  const sql = `
+    UPDATE hugo_love.dating_profiles
+    SET profile_photos = COALESCE(profile_photos, '[]'::jsonb) || to_jsonb(ARRAY['${photoUrl}']::text[]),
+        updated_at = NOW()
+    WHERE user_id = '${userId}'
+  `;
+
+  const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
+
+  if (error) {
+    console.error('📸 Failed to append photo to profile:', error);
+    throw error;
+  }
+
+  console.log('📸 Photo appended to Hugo Love profile:', { userId, photoUrl });
 };
 
 /**
@@ -264,10 +304,9 @@ router.post(
       const isApproved = inappropriateLabels.length === 0;
       const status: 'validating' | 'approved' | 'rejected' = isApproved ? 'approved' : 'rejected';
 
-      // Generate public URL (only if approved)
-      const publicUrl = isApproved
-        ? `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`
-        : '';
+      // Generate public URL via CloudFront (only if approved)
+      // Note: Direct S3 URLs are blocked by bucket policy - must use CloudFront
+      const publicUrl = isApproved ? `https://${CLOUDFRONT_DOMAIN}/${key}` : '';
 
       // Generate a simple photo ID (you might want to store this in database)
       const photoId = uuidv4();
@@ -278,6 +317,20 @@ router.post(
         publicUrl,
         moderationLabels: inappropriateLabels.length > 0 ? inappropriateLabels : undefined,
       };
+
+      // If approved and it's a profile photo for Hugo Love, persist to database
+      if (isApproved && photoType === 'profile') {
+        const appId = req.headers['x-app-id'] as string | undefined;
+        if (appId === 'hugo_love') {
+          try {
+            await appendPhotoToHugoLoveProfile(userId, publicUrl);
+            console.log('📸 Photo persisted to Hugo Love profile successfully');
+          } catch (dbError) {
+            // Log but don't fail the request - photo is already in S3
+            console.error('📸 Warning: Photo uploaded but failed to persist to profile:', dbError);
+          }
+        }
+      }
 
       // If rejected, optionally delete the file from S3
       if (!isApproved) {
