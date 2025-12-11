@@ -118,28 +118,49 @@ const generateS3Key = (
 
 /**
  * Append photo URL to Hugo Love profile_photos array
- * Uses exec_sql RPC to bypass PostgREST schema restrictions
+ * Uses service client with schema override to update hugo_love schema
  */
 const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): Promise<void> => {
   const supabase = getSupabaseServiceClient();
 
-  // Use array_append to add photo URL to profile_photos JSONB array
-  // This handles the case where profile_photos might be null
-  const sql = `
-    UPDATE hugo_love.dating_profiles
-    SET profile_photos = COALESCE(profile_photos, '[]'::jsonb) || to_jsonb(ARRAY['${photoUrl}']::text[]),
-        updated_at = NOW()
-    WHERE user_id = '${userId}'
-  `;
+  // First, get the current profile_photos array
+  // Cast to any to bypass TypeScript - hugo_love schema not in generated types
+  const { data: profile, error: fetchError } = await (supabase as any)
+    .schema('hugo_love')
+    .from('dating_profiles')
+    .select('profile_photos')
+    .eq('user_id', userId)
+    .single();
 
-  const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
-
-  if (error) {
-    console.error('📸 Failed to append photo to profile:', error);
-    throw error;
+  if (fetchError) {
+    console.error('📸 Failed to fetch profile for photo append:', fetchError);
+    throw fetchError;
   }
 
-  console.log('📸 Photo appended to Hugo Love profile:', { userId, photoUrl });
+  // Append the new photo URL to the existing array (or create new array if null)
+  const currentPhotos = (profile?.profile_photos as string[]) || [];
+  const updatedPhotos = [...currentPhotos, photoUrl];
+
+  // Update the profile with the new photos array
+  const { error: updateError } = await (supabase as any)
+    .schema('hugo_love')
+    .from('dating_profiles')
+    .update({
+      profile_photos: updatedPhotos,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId);
+
+  if (updateError) {
+    console.error('📸 Failed to append photo to profile:', updateError);
+    throw updateError;
+  }
+
+  console.log('📸 Photo appended to Hugo Love profile:', {
+    userId,
+    photoUrl,
+    totalPhotos: updatedPhotos.length,
+  });
 };
 
 /**
