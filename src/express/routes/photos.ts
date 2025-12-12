@@ -169,8 +169,15 @@ const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): P
   const result = await queryHugoLoveSql(fetchSql);
 
   if (result.length === 0) {
-    console.error('📸 No Hugo Love profile found for user:', userId);
-    throw new Error(`No Hugo Love profile found for user ${userId}`);
+    // No profile exists - create one with just the photo
+    console.log('📸 No Hugo Love profile found, creating new profile for user:', userId);
+    const insertSql = `
+      INSERT INTO hugo_love.dating_profiles (user_id, profile_photos, display_name, created_at, updated_at)
+      VALUES ('${userId}', '["${photoUrl}"]'::jsonb, 'New User', NOW(), NOW())
+    `;
+    await execHugoLoveSql(insertSql);
+    console.log('📸 Created new Hugo Love profile with photo for user:', userId);
+    return;
   }
 
   // Append the new photo URL to the existing array (or create new array if null)
@@ -414,7 +421,10 @@ router.post(
         );
         if (appId === 'hugo_love') {
           try {
-            console.log('📸 CALLING appendPhotoToHugoLoveProfile with:', { effectiveUserId, publicUrl });
+            console.log('📸 CALLING appendPhotoToHugoLoveProfile with:', {
+              effectiveUserId,
+              publicUrl,
+            });
             await appendPhotoToHugoLoveProfile(effectiveUserId, publicUrl);
             console.log('📸 Photo persisted to Hugo Love profile successfully');
           } catch (dbError) {
