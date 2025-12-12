@@ -33,7 +33,15 @@ async function execHugoLoveSql(sql: string): Promise<string> {
     throw error;
   }
 
-  return data as string;
+  // exec_sql returns errors as strings like "Error: <message>"
+  // Check for this and throw as a proper error
+  const result = data as string;
+  if (result && result.startsWith('Error:')) {
+    console.error('Hugo Love SQL execution error:', result);
+    throw new Error(result);
+  }
+
+  return result;
 }
 
 /**
@@ -62,9 +70,8 @@ async function queryHugoLoveSql(sql: string): Promise<any[]> {
  */
 router.get('/me', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    // Note: Currently dating_profiles uses user_id (auth account ID), not Oriva profile ID
-    // This is forward-compatible - when we migrate to profile-based data, just change the column
+    // Use Oriva profile ID from X-Profile-ID header for dating_profiles
+    // Each Oriva profile has its own dating profile (DID = profile identity)
     const profileId = req.profileId || req.user!.id;
 
     // Query the hugo_love.dating_profiles table via SQL
@@ -165,13 +172,15 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
  */
 router.patch('/me', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    // Use Oriva profile ID from X-Profile-ID header for dating_profiles
+    // Each Oriva profile has its own dating profile (DID = profile identity)
     const profileId = req.profileId || req.user!.id;
     const body = req.body;
 
     // DEBUG: Log incoming profile_photos
     console.log('[PATCH /me] DEBUG profile_photos:', {
       profileId,
+      reqUserId: req.user!.id, // For debugging - shows the Supabase auth user ID
       hasProfilePhotos: body.profile_photos !== undefined,
       profilePhotosType: typeof body.profile_photos,
       profilePhotosIsArray: Array.isArray(body.profile_photos),
