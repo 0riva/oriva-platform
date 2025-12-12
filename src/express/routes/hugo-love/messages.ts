@@ -20,7 +20,8 @@ router.use(requireAuth);
  */
 router.get('/:matchId/messages', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - each profile has its own conversations
+    const userId = req.profileId || req.user!.id;
     const { matchId } = req.params;
     const { limit, offset } = validatePagination(req.query);
 
@@ -71,7 +72,8 @@ router.get('/:matchId/messages', async (req: Request, res: Response): Promise<vo
  */
 router.post('/:matchId/messages', async (req: Request, res: Response): Promise<void> => {
   try {
-    const fromUserId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - messages are sent from the selected profile
+    const fromUserId = req.profileId || req.user!.id;
     const { matchId } = req.params;
     const validated = validateSendMessageRequest(req.body);
 
@@ -127,7 +129,8 @@ router.post('/:matchId/messages', async (req: Request, res: Response): Promise<v
  */
 router.patch('/:messageId/read', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - each profile reads its own messages
+    const userId = req.profileId || req.user!.id;
     const { messageId } = req.params;
 
     const supabase = getSupabase(req);
@@ -181,7 +184,8 @@ router.patch('/:messageId/read', async (req: Request, res: Response): Promise<vo
  */
 router.delete('/:messageId', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - users can delete their own profile's messages
+    const userId = req.profileId || req.user!.id;
     const { messageId } = req.params;
 
     const supabase = getSupabase(req);

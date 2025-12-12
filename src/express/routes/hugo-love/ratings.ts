@@ -19,7 +19,8 @@ router.use(requireAuth);
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const raterId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - ratings are tied to the selected profile
+    const raterId = req.profileId || req.user!.id;
     const validated = validateRatingRequest(req.body);
 
     if (raterId === validated.targetUserId) {
@@ -110,7 +111,8 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/given', async (req: Request, res: Response): Promise<void> => {
   try {
-    const raterId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - ratings are tied to the selected profile
+    const raterId = req.profileId || req.user!.id;
     const supabase = getSupabase(req);
 
     const { data: ratings, error } = await supabase

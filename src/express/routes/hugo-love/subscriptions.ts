@@ -20,7 +20,8 @@ router.use(requireAuth);
  */
 router.get('/me', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - subscriptions are per profile
+    const userId = req.profileId || req.user!.id;
     const supabase = getSupabase(req);
 
     const { data: subscription, error } = await supabase
@@ -75,7 +76,8 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - subscriptions are per profile
+    const userId = req.profileId || req.user!.id;
     const validated = validateCreateSubscriptionRequest(req.body);
 
     const supabase = getSupabase(req);
@@ -148,7 +150,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/cancel', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - subscriptions are per profile
+    const userId = req.profileId || req.user!.id;
     const supabase = getSupabase(req);
 
     const { data: subscription } = await supabase

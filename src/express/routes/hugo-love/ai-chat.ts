@@ -20,7 +20,8 @@ router.use(requireAuth);
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - AI chat is tied to the selected profile
+    const userId = req.profileId || req.user!.id;
     const validated = validateAIChatRequest(req.body);
 
     // Set up SSE headers
@@ -84,7 +85,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/history', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - AI chat history is per profile
+    const userId = req.profileId || req.user!.id;
     const supabase = getSupabase(req);
 
     const { data: sessions, error } = await supabase
@@ -111,7 +113,8 @@ router.get('/history', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/feedback', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - feedback is per profile
+    const userId = req.profileId || req.user!.id;
     const validated = validateChatFeedbackRequest(req.body);
 
     const supabase = getSupabase(req);

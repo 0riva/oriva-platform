@@ -50,12 +50,12 @@ router.get(
         return res.status(401).json({ ok: false, error: 'Unauthorized' });
       }
 
-      // Get the concierge record for the current user (using profile_id which maps to auth.uid())
+      // Get the concierge record for the current user (using account_id which is the auth user ID)
       const { data: concierge, error: conciergeError } = await supabase
         .schema(SCHEMA)
         .from('concierges')
         .select('id')
-        .eq('profile_id', userId)
+        .eq('account_id', userId)
         .single();
 
       if (conciergeError || !concierge) {

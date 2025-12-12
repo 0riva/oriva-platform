@@ -18,7 +18,8 @@ router.use(requireAuth);
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const reporterId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - reports are filed from the selected profile
+    const reporterId = req.profileId || req.user!.id;
     const validated = validateReportRequest(req.body);
 
     if (reporterId === validated.reportedUserId) {
@@ -66,7 +67,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/my-reports', async (req: Request, res: Response): Promise<void> => {
   try {
-    const reporterId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - view reports from selected profile
+    const reporterId = req.profileId || req.user!.id;
     const supabase = getSupabase(req);
 
     const { data: reports, error } = await supabase

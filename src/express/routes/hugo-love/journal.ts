@@ -20,7 +20,8 @@ router.use(requireAuth);
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - journal entries are per profile
+    const userId = req.profileId || req.user!.id;
     const validated = validateCreateJournalRequest(req.body);
 
     const supabase = getSupabase(req);
@@ -61,7 +62,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - journal entries are per profile
+    const userId = req.profileId || req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
@@ -110,7 +112,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.patch('/:entryId', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - journal entries are per profile
+    const userId = req.profileId || req.user!.id;
     const { entryId } = req.params;
     const updates = validateUpdateJournalRequest(req.body);
 
@@ -165,7 +168,8 @@ router.patch('/:entryId', async (req: Request, res: Response): Promise<void> => 
  */
 router.delete('/:entryId', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - journal entries are per profile
+    const userId = req.profileId || req.user!.id;
     const { entryId } = req.params;
 
     const supabase = getSupabase(req);

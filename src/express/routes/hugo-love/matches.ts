@@ -19,7 +19,8 @@ router.use(requireAuth);
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - each profile has its own matches
+    const userId = req.profileId || req.user!.id;
     const status = (req.query.status as string) || 'active';
     const { limit, offset } = validatePagination(req.query);
 
@@ -63,7 +64,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/:matchId', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - each profile has its own matches
+    const userId = req.profileId || req.user!.id;
     const { matchId } = req.params;
 
     const supabase = getSupabase(req);
@@ -113,7 +115,8 @@ router.get('/:matchId', async (req: Request, res: Response): Promise<void> => {
  */
 router.patch('/:matchId', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header - each profile has its own matches
+    const userId = req.profileId || req.user!.id;
     const { matchId } = req.params;
     const validated = validateUpdateMatchRequest(req.body);
 
