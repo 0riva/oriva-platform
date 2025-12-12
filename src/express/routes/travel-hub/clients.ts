@@ -30,55 +30,133 @@ const validate = (req: Request, res: Response, next: Function) => {
 /**
  * GET /api/v1/travel-hub/clients/me
  * Get clients for the currently logged-in concierge
+ * @param for_concierge_id - Optional: Fetch clients for a specific concierge (for master admins viewing another agent's clients)
  */
 router.get(
   '/me',
   [
     query('status').optional().isIn(['active', 'inactive', 'pending']),
     query('search').optional().isString(),
+    query('for_concierge_id').optional().isUUID(),
   ],
   validate,
   async (req: Request, res: Response) => {
     try {
       const supabase = getSupabase(req);
       const userId = req.user?.id;
+      const userEmail = req.user?.email;
 
       if (!userId) {
         return res.status(401).json({ ok: false, error: 'Unauthorized' });
       }
 
-      // Get the concierge record for the current user (using profile_id which maps to auth.uid())
-      const { data: concierge, error: conciergeError } = await supabase
-        .schema(SCHEMA)
-        .from('concierges')
-        .select('id')
-        .eq('profile_id', userId)
-        .single();
+      const { status, search, for_concierge_id } = req.query;
 
-      if (conciergeError || !concierge) {
-        // User is not a concierge - return empty array
-        logger.debug('[ClientsRoute] User is not a concierge, returning empty clients', { userId });
-        return res.json({ ok: true, data: [] });
+      // Master admin emails that can view any concierge's clients
+      const MASTER_ADMIN_EMAILS = ['tools@gavrielshaw.com', 'think@gavrielshaw.com'];
+      const isMasterAdmin = userEmail && MASTER_ADMIN_EMAILS.includes(userEmail);
+
+      let targetConciergeId: string | null = null;
+
+      // If for_concierge_id is provided and user is master admin, use that concierge
+      if (for_concierge_id && isMasterAdmin) {
+        // for_concierge_id is actually a profile_id (auth user ID), need to look up the concierge record
+        let targetConcierge = await supabase
+          .schema(SCHEMA)
+          .from('concierges')
+          .select('id')
+          .eq('profile_id', for_concierge_id)
+          .single();
+
+        // If concierge doesn't exist for this agent, create one
+        if (targetConcierge.error || !targetConcierge.data) {
+          logger.info('[ClientsRoute] Creating concierge record for agent', {
+            profileId: for_concierge_id,
+          });
+
+          // Get a valid account_id from existing org membership or use the profile_id
+          const { data: newConcierge, error: createError } = await supabase
+            .schema(SCHEMA)
+            .from('concierges')
+            .insert([
+              {
+                account_id: for_concierge_id, // Use profile_id as account placeholder
+                profile_id: for_concierge_id,
+                display_name: `Agent ${(for_concierge_id as string).slice(0, 8)}`,
+                bio: 'Travel concierge agent',
+                specialties: ['general'],
+                languages: ['en'],
+                currency: 'USD',
+                availability_status: 'available',
+                rating: 0,
+                review_count: 0,
+                total_bookings: 0,
+                verified: false,
+                featured: false,
+                metadata: { auto_created: true, created_by_master_admin: userId },
+              },
+            ])
+            .select('id')
+            .single();
+
+          if (createError || !newConcierge) {
+            logger.error('[ClientsRoute] Failed to create concierge for agent', {
+              error: createError,
+              profileId: for_concierge_id,
+            });
+            return res.json({ ok: true, data: [] });
+          }
+
+          targetConciergeId = newConcierge.id;
+          logger.info('[ClientsRoute] Created new concierge for agent', {
+            conciergeId: targetConciergeId,
+            profileId: for_concierge_id,
+          });
+        } else {
+          targetConciergeId = targetConcierge.data.id;
+        }
+
+        logger.debug('[ClientsRoute] Master admin fetching clients for concierge', {
+          userId,
+          profileId: for_concierge_id,
+          targetConciergeId,
+        });
+      } else {
+        // Get the concierge record for the current user (using profile_id which maps to auth.uid())
+        const { data: concierge, error: conciergeError } = await supabase
+          .schema(SCHEMA)
+          .from('concierges')
+          .select('id')
+          .eq('profile_id', userId)
+          .single();
+
+        if (conciergeError || !concierge) {
+          // User is not a concierge - return empty array
+          logger.debug('[ClientsRoute] User is not a concierge, returning empty clients', {
+            userId,
+          });
+          return res.json({ ok: true, data: [] });
+        }
+
+        targetConciergeId = concierge.id;
       }
 
-      const { status, search } = req.query;
-
-      let query = supabase
+      let clientQuery = supabase
         .schema(SCHEMA)
         .from('travel_clients')
         .select('*')
-        .eq('concierge_id', concierge.id)
+        .eq('concierge_id', targetConciergeId)
         .order('created_at', { ascending: false });
 
       if (status) {
-        query = query.eq('status', status);
+        clientQuery = clientQuery.eq('status', status);
       }
 
       if (search) {
-        query = query.ilike('notes', `%${search}%`);
+        clientQuery = clientQuery.ilike('notes', `%${search}%`);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await clientQuery;
 
       if (error) {
         logger.error('[ClientsRoute] Error fetching my clients', { error, userId });
@@ -187,6 +265,7 @@ router.get('/:id', [param('id').isUUID()], validate, async (req: Request, res: R
  * Create a new client with basic contact info
  * (Creates a placeholder profile and links to current concierge)
  * Master admins can also create clients without being a concierge
+ * @param for_concierge_id - Optional: Create client for a specific concierge (for master admins creating on behalf of another agent)
  */
 router.post(
   '/new',
@@ -196,6 +275,7 @@ router.post(
     body('phone').optional().isString().isLength({ max: 50 }),
     body('notes').optional().isString().isLength({ max: 2000 }),
     body('preferences').optional().isObject(),
+    body('for_concierge_id').optional().isUUID(),
   ],
   validate,
   async (req: Request, res: Response) => {
@@ -208,83 +288,153 @@ router.post(
         return res.status(401).json({ ok: false, error: 'Unauthorized' });
       }
 
-      const { name, email, phone, notes, preferences } = req.body;
+      const { name, email, phone, notes, preferences, for_concierge_id } = req.body;
 
       // Master admin emails that can create clients without being a concierge
       const MASTER_ADMIN_EMAILS = ['tools@gavrielshaw.com', 'think@gavrielshaw.com'];
       const isMasterAdmin = userEmail && MASTER_ADMIN_EMAILS.includes(userEmail);
 
-      // Get the concierge record for the current user (using profile_id which maps to auth.uid())
-      const { data: concierge, error: conciergeError } = await supabase
-        .schema(SCHEMA)
-        .from('concierges')
-        .select('id, account_id')
-        .eq('profile_id', userId)
-        .single();
+      let conciergeId: string | undefined;
+      let accountId: string | undefined;
 
-      // Allow master admins to create clients even without being a concierge
-      let conciergeId = concierge?.id;
-      let accountId = concierge?.account_id;
-
-      if ((conciergeError || !concierge) && !isMasterAdmin) {
-        logger.warn('[ClientsRoute] User is not a concierge', { userId });
-        return res
-          .status(403)
-          .json({ ok: false, error: 'You must be a concierge to create clients' });
-      }
-
-      // For master admin without concierge record, use first available concierge or create placeholder
-      if (!concierge && isMasterAdmin) {
-        // Try to get any concierge from the system to associate with
-        const { data: anyConc } = await supabase
+      // If for_concierge_id is provided and user is master admin, use that concierge
+      if (for_concierge_id && isMasterAdmin) {
+        // Get the target concierge's account_id
+        let targetConcierge = await supabase
           .schema(SCHEMA)
           .from('concierges')
           .select('id, account_id')
-          .limit(1)
+          .eq('profile_id', for_concierge_id)
           .single();
 
-        if (anyConc) {
-          conciergeId = anyConc.id;
-          accountId = anyConc.account_id;
-          logger.info('[ClientsRoute] Master admin using existing concierge', { conciergeId });
-        } else {
-          // No concierge exists - create one for the master admin
-          const { data: newConc, error: createError } = await supabase
+        // If concierge doesn't exist for this agent, create one
+        if (targetConcierge.error || !targetConcierge.data) {
+          logger.info('[ClientsRoute] Creating concierge record for agent', {
+            profileId: for_concierge_id,
+          });
+
+          const { data: newConcierge, error: createError } = await supabase
             .schema(SCHEMA)
             .from('concierges')
             .insert([
               {
-                account_id: userId, // Use user ID as placeholder account
-                profile_id: userId, // Use user ID as profile reference
-                display_name: 'Master Admin',
-                bio: 'System administrator account',
-                specialties: ['administration'],
+                account_id: for_concierge_id, // Use profile_id as account placeholder
+                profile_id: for_concierge_id,
+                display_name: `Agent ${(for_concierge_id as string).slice(0, 8)}`,
+                bio: 'Travel concierge agent',
+                specialties: ['general'],
                 languages: ['en'],
                 currency: 'USD',
-                availability_status: 'offline',
+                availability_status: 'available',
                 rating: 0,
                 review_count: 0,
                 total_bookings: 0,
-                verified: true,
+                verified: false,
                 featured: false,
-                metadata: { is_master_admin: true },
+                metadata: { auto_created: true, created_by_master_admin: userId },
               },
             ])
-            .select()
+            .select('id, account_id')
             .single();
 
-          if (createError || !newConc) {
-            logger.error('[ClientsRoute] Failed to create placeholder concierge', {
+          if (createError || !newConcierge) {
+            logger.error('[ClientsRoute] Failed to create concierge for agent', {
               error: createError,
+              profileId: for_concierge_id,
             });
-            return res.status(500).json({ ok: false, error: 'Failed to set up concierge profile' });
+            return res.status(500).json({ ok: false, error: 'Failed to create concierge profile' });
           }
 
-          conciergeId = newConc.id;
-          accountId = newConc.account_id;
-          logger.info('[ClientsRoute] Created placeholder concierge for master admin', {
+          conciergeId = newConcierge.id;
+          accountId = newConcierge.account_id;
+          logger.info('[ClientsRoute] Created new concierge for agent', {
             conciergeId,
+            profileId: for_concierge_id,
           });
+        } else {
+          conciergeId = targetConcierge.data.id;
+          accountId = targetConcierge.data.account_id;
+        }
+
+        logger.info('[ClientsRoute] Master admin creating client for specific concierge', {
+          userId,
+          targetConciergeId: conciergeId,
+        });
+      } else {
+        // Get the concierge record for the current user (using profile_id which maps to auth.uid())
+        const { data: concierge, error: conciergeError } = await supabase
+          .schema(SCHEMA)
+          .from('concierges')
+          .select('id, account_id')
+          .eq('profile_id', userId)
+          .single();
+
+        // Allow master admins to create clients even without being a concierge
+        conciergeId = concierge?.id;
+        accountId = concierge?.account_id;
+
+        if ((conciergeError || !concierge) && !isMasterAdmin) {
+          logger.warn('[ClientsRoute] User is not a concierge', { userId });
+          return res
+            .status(403)
+            .json({ ok: false, error: 'You must be a concierge to create clients' });
+        }
+
+        // For master admin without concierge record and no for_concierge_id, use first available concierge or create placeholder
+        if (!concierge && isMasterAdmin) {
+          // Try to get any concierge from the system to associate with
+          const { data: anyConc } = await supabase
+            .schema(SCHEMA)
+            .from('concierges')
+            .select('id, account_id')
+            .limit(1)
+            .single();
+
+          if (anyConc) {
+            conciergeId = anyConc.id;
+            accountId = anyConc.account_id;
+            logger.info('[ClientsRoute] Master admin using existing concierge', { conciergeId });
+          } else {
+            // No concierge exists - create one for the master admin
+            const { data: newConc, error: createError } = await supabase
+              .schema(SCHEMA)
+              .from('concierges')
+              .insert([
+                {
+                  account_id: userId, // Use user ID as placeholder account
+                  profile_id: userId, // Use user ID as profile reference
+                  display_name: 'Master Admin',
+                  bio: 'System administrator account',
+                  specialties: ['administration'],
+                  languages: ['en'],
+                  currency: 'USD',
+                  availability_status: 'offline',
+                  rating: 0,
+                  review_count: 0,
+                  total_bookings: 0,
+                  verified: true,
+                  featured: false,
+                  metadata: { is_master_admin: true },
+                },
+              ])
+              .select()
+              .single();
+
+            if (createError || !newConc) {
+              logger.error('[ClientsRoute] Failed to create placeholder concierge', {
+                error: createError,
+              });
+              return res
+                .status(500)
+                .json({ ok: false, error: 'Failed to set up concierge profile' });
+            }
+
+            conciergeId = newConc.id;
+            accountId = newConc.account_id;
+            logger.info('[ClientsRoute] Created placeholder concierge for master admin', {
+              conciergeId,
+            });
+          }
         }
       }
 
@@ -307,6 +457,7 @@ router.post(
           contact_phone: phone || null,
           created_by_concierge: true,
           is_placeholder_profile: true, // Flag indicating this is not a real user profile
+          created_by_master_admin: isMasterAdmin && for_concierge_id ? true : undefined,
         },
       };
 
@@ -322,7 +473,12 @@ router.post(
         return res.status(500).json({ ok: false, error: error.message });
       }
 
-      logger.info('[ClientsRoute] New client created', { clientId: data.id, name, email });
+      logger.info('[ClientsRoute] New client created', {
+        clientId: data.id,
+        name,
+        email,
+        forConciergeId: for_concierge_id || 'self',
+      });
       res.status(201).json({ ok: true, data });
     } catch (error: any) {
       logger.error('[ClientsRoute] Unexpected error in createNew', { error });

@@ -117,44 +117,78 @@ const generateS3Key = (
 };
 
 /**
+ * Execute SQL via RPC to access hugo_love schema
+ * PostgREST doesn't expose hugo_love schema, so we use exec_sql RPC
+ */
+async function execHugoLoveSql(sql: string): Promise<string> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
+
+  if (error) {
+    console.error('📸 Hugo Love SQL error:', error);
+    throw error;
+  }
+
+  return data as string;
+}
+
+/**
+ * Query hugo_love schema and return results
+ * Uses exec_sql_query RPC which returns JSONB array of results
+ */
+async function queryHugoLoveSql(sql: string): Promise<any[]> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await (supabase.rpc as any)('exec_sql_query', { sql_query: sql });
+
+  if (error) {
+    console.error('📸 Hugo Love query error:', error);
+    throw error;
+  }
+
+  return (data as any[]) || [];
+}
+
+/**
  * Append photo URL to Hugo Love profile_photos array
- * Uses service client with schema override to update hugo_love schema
+ * Uses exec_sql RPC to bypass PostgREST schema restrictions
+ *
+ * Schema: hugo_love.dating_profiles (NOT love_profiles!)
+ * Column: profile_photos (jsonb array)
+ * Key: user_id
  */
 const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): Promise<void> => {
-  const supabase = getSupabaseServiceClient();
+  console.log('📸 appendPhotoToHugoLoveProfile CALLED', { userId, photoUrl });
 
-  // First, get the current profile_photos array
-  // Cast to any to bypass TypeScript - hugo_love schema not in generated types
-  const { data: profile, error: fetchError } = await (supabase as any)
-    .schema('hugo_love')
-    .from('dating_profiles')
-    .select('profile_photos')
-    .eq('user_id', userId)
-    .single();
+  // First, get the current profile_photos array from dating_profiles
+  const fetchSql = `
+    SELECT profile_photos FROM hugo_love.dating_profiles
+    WHERE user_id = '${userId}'
+    LIMIT 1
+  `;
 
-  if (fetchError) {
-    console.error('📸 Failed to fetch profile for photo append:', fetchError);
-    throw fetchError;
+  const result = await queryHugoLoveSql(fetchSql);
+
+  if (result.length === 0) {
+    console.error('📸 No Hugo Love profile found for user:', userId);
+    throw new Error(`No Hugo Love profile found for user ${userId}`);
   }
 
   // Append the new photo URL to the existing array (or create new array if null)
-  const currentPhotos = (profile?.profile_photos as string[]) || [];
+  const currentPhotos = (result[0]?.profile_photos as string[]) || [];
   const updatedPhotos = [...currentPhotos, photoUrl];
 
-  // Update the profile with the new photos array
-  const { error: updateError } = await (supabase as any)
-    .schema('hugo_love')
-    .from('dating_profiles')
-    .update({
-      profile_photos: updatedPhotos,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId);
+  // Escape the JSON array for SQL (profile_photos is jsonb)
+  const photosJson = JSON.stringify(updatedPhotos).replace(/'/g, "''");
 
-  if (updateError) {
-    console.error('📸 Failed to append photo to profile:', updateError);
-    throw updateError;
-  }
+  // Update the profile with the new photos array
+  const updateSql = `
+    UPDATE hugo_love.dating_profiles
+    SET profile_photos = '${photosJson}'::jsonb,
+        updated_at = NOW()
+    WHERE user_id = '${userId}'
+  `;
+
+  await execHugoLoveSql(updateSql);
 
   console.log('📸 Photo appended to Hugo Love profile:', {
     userId,
@@ -244,6 +278,20 @@ router.post(
   requireApiKey,
   requireJwtAuth,
   asyncHandler(async (req, res) => {
+    // CRITICAL DEBUG - This MUST appear in logs to confirm endpoint is reached
+    console.log(
+      '🔥🔥🔥 CONFIRM ENDPOINT HIT 🔥🔥🔥',
+      new Date().toISOString(),
+      JSON.stringify({
+        headers: {
+          'x-app-id': req.headers['x-app-id'],
+          'content-type': req.headers['content-type'],
+        },
+        body: req.body,
+        user: req.user?.id,
+      })
+    );
+
     const userId = req.user?.id;
     if (!userId) {
       res.status(401).json({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
@@ -350,19 +398,36 @@ router.post(
       );
       if (isApproved && photoType === 'profile') {
         const appId = req.headers['x-app-id'] as string | undefined;
+        // Use X-Profile-ID header if provided, otherwise fall back to userId from JWT
+        // This matches the pattern in hugo-love/profiles.ts where profile is stored by profileId
+        const profileIdHeader = req.headers['x-profile-id'] as string | undefined;
+        const effectiveUserId = profileIdHeader || userId;
         console.log(
           '📸 DEBUG: Checking appId for hugo_love:',
           appId,
           '=== "hugo_love"?',
-          appId === 'hugo_love'
+          appId === 'hugo_love',
+          'profileIdHeader:',
+          profileIdHeader,
+          'effectiveUserId:',
+          effectiveUserId
         );
         if (appId === 'hugo_love') {
           try {
-            await appendPhotoToHugoLoveProfile(userId, publicUrl);
+            console.log('📸 CALLING appendPhotoToHugoLoveProfile with:', { effectiveUserId, publicUrl });
+            await appendPhotoToHugoLoveProfile(effectiveUserId, publicUrl);
             console.log('📸 Photo persisted to Hugo Love profile successfully');
           } catch (dbError) {
-            // Log but don't fail the request - photo is already in S3
-            console.error('📸 Warning: Photo uploaded but failed to persist to profile:', dbError);
+            // Log the FULL error details so we can actually see what's failing
+            console.error('📸 ERROR: Photo uploaded but failed to persist to profile:');
+            console.error('📸 ERROR Details:', {
+              error: dbError,
+              message: (dbError as Error)?.message,
+              stack: (dbError as Error)?.stack,
+              userId,
+              publicUrl,
+            });
+            // CRITICAL: Don't silently swallow - log to Sentry or similar in production
           }
         }
       }

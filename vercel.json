@@ -115,6 +115,10 @@
       "destination": "/api/workers"
     },
     {
+      "source": "/api/webhooks/:path*",
+      "destination": "/api/webhooks"
+    },
+    {
       "source": "/api/v1/apps/photos/:path*",
       "destination": "/api/index"
     },

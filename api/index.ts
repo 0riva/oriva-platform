@@ -55,6 +55,7 @@ import videoMeetingsRouter from '../src/express/routes/video-meetings';
 import travelHubRouter from '../src/express/routes/travel-hub';
 import hugoLoveRouter from '../src/express/routes/hugo-love';
 import askMeAnythingRouter from '../src/express/routes/ask-me-anything';
+import locationsRouter from '../src/express/routes/locations';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
@@ -316,6 +317,13 @@ app.use(
         return callback(null, true);
       }
 
+      // Vercel preview URLs for o-originals (o-orig) deployments
+      // Pattern: https://o-originals-{hash}-orivas-projects.vercel.app
+      if (origin.match(/^https:\/\/o-originals-[a-z0-9]+-orivas-projects\.vercel\.app$/)) {
+        logger.debug('CORS: Vercel preview origin allowed', { origin });
+        return callback(null, true);
+      }
+
       // Check against registered marketplace applications
       if (corsOriginCache.data.has(origin)) {
         logger.debug('CORS: Registered marketplace origin allowed', { origin });
@@ -367,6 +375,7 @@ app.use(
       'X-API-Key',
       'X-App-ID',
       'X-Tenant-ID',
+      'X-Profile-ID',
       'User-Agent',
       'X-User-ID',
       'X-Request-ID',
@@ -4099,6 +4108,11 @@ app.use('/api/v1/tenant/hugo-love', optionalSchemaRouter, hugoLoveRouter);
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation
 app.use('/api/v1/ask-me-anything', optionalSchemaRouter, askMeAnythingRouter);
 app.use('/api/oriva/ask-me-anything', optionalSchemaRouter, askMeAnythingRouter);
+
+// ============================================================================
+// LOCATIONS API ENDPOINTS (Google Places proxy - no auth required)
+// ============================================================================
+app.use('/api/locations', locationsRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS

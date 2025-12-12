@@ -10,6 +10,7 @@ import clientsRouter from './clients';
 import itinerariesRouter from './itineraries';
 import chatRouter from './chat';
 import adminRouter from './admin';
+import transcriptsRouter from './transcripts';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/clients', clientsRouter);
 router.use('/itineraries', itinerariesRouter);
 router.use('/chat', chatRouter);
 router.use('/admin', adminRouter);
+router.use('/transcripts', transcriptsRouter);
 
 export default router;

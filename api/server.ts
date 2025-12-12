@@ -44,6 +44,7 @@ import photosRoutes from '../src/express/routes/photos';
 import travelHubRoutes from '../src/express/routes/travel-hub';
 import hugoLoveRoutes from '../src/express/routes/hugo-love';
 import askMeAnythingRoutes from '../src/express/routes/ask-me-anything';
+import locationsRoutes from '../src/express/routes/locations';
 import { realtimeDeliveryService } from '../src/services/realtimeDeliveryService';
 
 /**
@@ -85,6 +86,9 @@ export const createApp = (): Application => {
         'X-API-Key',
         'X-Request-ID',
         'X-Tenant-ID',
+        'X-Profile-ID',
+        'X-Client-ID',
+        'X-User-ID',
       ],
     })
   );
@@ -145,6 +149,9 @@ export const createApp = (): Application => {
 
   // Ask Me Anything routes (AMA sessions - requires authentication)
   app.use(`${apiPrefix}/ask-me-anything`, askMeAnythingRoutes);
+
+  // Location routes (geocoding, place search - no auth required)
+  app.use('/api/locations', locationsRoutes);
 
   // TENANT ROUTES: Map /api/v1/tenant/{tenant-slug}/* to the appropriate routes
   // This allows o-orig clients in production to call /api/v1/tenant/hugo-love/profiles/discover

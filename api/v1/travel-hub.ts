@@ -946,7 +946,7 @@ async function listClients(req: VercelRequest, res: VercelResponse) {
   try {
     let query = auth.serviceClient
       .schema('travel_hub')
-      .from('concierge_clients')
+      .from('travel_clients')
       .select('*', { count: 'exact' });
 
     if (concierge_id) {
@@ -981,7 +981,7 @@ async function getClient(req: VercelRequest, res: VercelResponse, clientId: stri
   try {
     const { data, error } = await auth.serviceClient
       .schema('travel_hub')
-      .from('concierge_clients')
+      .from('travel_clients')
       .select('*')
       .eq('id', clientId)
       .single();
@@ -1018,7 +1018,7 @@ async function getMyClients(req: VercelRequest, res: VercelResponse) {
 
     let query = auth.serviceClient
       .schema('travel_hub')
-      .from('concierge_clients')
+      .from('travel_clients')
       .select('*')
       .eq('concierge_id', concierge.id);
 
@@ -1055,7 +1055,7 @@ async function createClient(req: VercelRequest, res: VercelResponse) {
   try {
     const { data, error } = await auth.serviceClient
       .schema('travel_hub')
-      .from('concierge_clients')
+      .from('travel_clients')
       .insert({
         account_id: auth.user.id,
         concierge_id,
@@ -1160,7 +1160,7 @@ async function createClientNew(req: VercelRequest, res: VercelResponse) {
 
     const { data, error } = await auth.serviceClient
       .schema('travel_hub')
-      .from('concierge_clients')
+      .from('travel_clients')
       .insert({
         account_id: accountId,
         concierge_id: conciergeId,
@@ -1202,7 +1202,7 @@ async function updateClient(req: VercelRequest, res: VercelResponse, clientId: s
   try {
     const { data, error } = await auth.serviceClient
       .schema('travel_hub')
-      .from('concierge_clients')
+      .from('travel_clients')
       .update(updates)
       .eq('id', clientId)
       .select()
