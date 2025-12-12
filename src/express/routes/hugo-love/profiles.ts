@@ -169,6 +169,16 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
     const profileId = req.profileId || req.user!.id;
     const body = req.body;
 
+    // DEBUG: Log incoming profile_photos
+    console.log('[PATCH /me] DEBUG profile_photos:', {
+      profileId,
+      hasProfilePhotos: body.profile_photos !== undefined,
+      profilePhotosType: typeof body.profile_photos,
+      profilePhotosIsArray: Array.isArray(body.profile_photos),
+      profilePhotosLength: Array.isArray(body.profile_photos) ? body.profile_photos.length : 'N/A',
+      profilePhotos: body.profile_photos,
+    });
+
     // Check if profile exists
     const checkSql = `
       SELECT id FROM hugo_love.dating_profiles
@@ -377,6 +387,15 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
         )
       `;
     }
+
+    // DEBUG: Log the SQL being executed
+    console.log('[PATCH /me] DEBUG sql execution:', {
+      profileId,
+      updatedFields,
+      sqlLength: sql.length,
+      includesProfilePhotos: sql.includes('profile_photos'),
+      sqlSnippet: sql.substring(0, 500),
+    });
 
     // Execute the UPDATE/INSERT (exec_sql doesn't return results)
     await execHugoLoveSql(sql);
