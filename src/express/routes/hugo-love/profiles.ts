@@ -76,9 +76,38 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
 
     const result = await queryHugoLoveSql(sql);
 
-    // Handle case where no profile exists - return success: true with null data
-    // This allows the client to distinguish between "no profile" and "error"
+    // Handle case where no profile exists - auto-create one
+    // This ensures every Oriva profile that opens Hugo Love gets a dating profile
     if (!result || result.length === 0) {
+      console.log('📝 No Hugo Love profile found, auto-creating for:', profileId);
+      const insertSql = `
+        INSERT INTO hugo_love.dating_profiles (user_id, display_name, created_at, updated_at)
+        VALUES ('${profileId}', 'New User', NOW(), NOW())
+        RETURNING *
+      `;
+      // Use exec_sql for insert, then query to get the created row
+      await execHugoLoveSql(insertSql.replace(' RETURNING *', ''));
+      const newResult = await queryHugoLoveSql(
+        `SELECT * FROM hugo_love.dating_profiles WHERE user_id = '${profileId}' LIMIT 1`
+      );
+      if (newResult && newResult.length > 0) {
+        const profile = newResult[0];
+        res.json({
+          success: true,
+          data: {
+            id: profile.id,
+            user_id: profile.user_id,
+            display_name: profile.display_name,
+            bio: profile.bio,
+            profile_photos: profile.profile_photos || [],
+            created_at: profile.created_at,
+            updated_at: profile.updated_at,
+          },
+          message: 'Profile auto-created',
+        });
+        return;
+      }
+      // Fallback if insert somehow failed silently
       res.json({ success: true, data: null, message: 'No profile found' });
       return;
     }
