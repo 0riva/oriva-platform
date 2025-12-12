@@ -10,13 +10,14 @@ import * as AWS from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey, requireJwtAuth } from '../middleware/auth';
-import { schemaRouter } from '../middleware/schemaRouter';
+import { optionalSchemaRouter } from '../middleware/schemaRouter';
 import { getSupabaseServiceClient } from '../../config/supabase';
 
 const router = Router();
 
-// Apply schema routing middleware to all routes
-router.use(schemaRouter);
+// Photos route doesn't need mandatory schema routing - S3 uploads are app-agnostic
+// User-based path isolation (profiles/{userId}/*) handles separation
+router.use(optionalSchemaRouter);
 
 // Configure AWS SDK
 const s3 = new AWS.S3({
