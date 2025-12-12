@@ -70,9 +70,9 @@ async function queryHugoLoveSql(sql: string): Promise<any[]> {
  */
 router.get('/me', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Supabase auth user ID (not Oriva profile ID) for dating_profiles
-    // FK constraint: hugo_love.dating_profiles.user_id -> auth.users(id)
-    const profileId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header for dating_profiles
+    // Each Oriva profile has its own dating profile (DID = profile identity)
+    const profileId = req.profileId || req.user!.id;
 
     // Query the hugo_love.dating_profiles table via SQL
     const sql = `
@@ -172,9 +172,9 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
  */
 router.patch('/me', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Supabase auth user ID (not Oriva profile ID) for dating_profiles
-    // FK constraint: hugo_love.dating_profiles.user_id -> auth.users(id)
-    const profileId = req.user!.id;
+    // Use Oriva profile ID from X-Profile-ID header for dating_profiles
+    // Each Oriva profile has its own dating profile (DID = profile identity)
+    const profileId = req.profileId || req.user!.id;
     const body = req.body;
 
     // DEBUG: Log incoming profile_photos
@@ -443,8 +443,8 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/discover', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Supabase auth user ID - FK constraint requires auth.users ID
-    const profileId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    const profileId = req.profileId || req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     const offset = parseInt(req.query.offset as string) || 0;
 
@@ -581,8 +581,8 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Supabase auth user ID - FK constraint requires auth.users ID
-    const blockerId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    const blockerId = req.profileId || req.user!.id;
     const validated = validateBlockUserRequest(req.body);
 
     if (blockerId === validated.blockedUserId) {
@@ -654,8 +654,8 @@ router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/blocks', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Supabase auth user ID - FK constraint requires auth.users ID
-    const blockerId = req.user!.id;
+    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
+    const blockerId = req.profileId || req.user!.id;
 
     const sql = `
       SELECT id, blocker_id, blocked_id, created_at
