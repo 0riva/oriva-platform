@@ -10,7 +10,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateSendMessageRequest, validatePagination } from './validation';
-import { ValidationError } from '../../utils/validation-express';
+import { ValidationError, isValidUuid } from '../../utils/validation-express';
 
 const router = Router();
 router.use(requireAuth);
@@ -20,9 +20,19 @@ router.use(requireAuth);
  */
 router.get('/:matchId/messages', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Oriva profile ID from X-Profile-ID header - each profile has its own conversations
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate all IDs to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
     const { matchId } = req.params;
+
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    if (!isValidUuid(matchId)) {
+      res.status(400).json({ error: 'Invalid match ID format', code: 'INVALID_MATCH_ID' });
+      return;
+    }
+    const userId = rawUserId;
     const { limit, offset } = validatePagination(req.query);
 
     const supabase = getSupabase(req);
@@ -72,9 +82,19 @@ router.get('/:matchId/messages', async (req: Request, res: Response): Promise<vo
  */
 router.post('/:matchId/messages', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Oriva profile ID from X-Profile-ID header - messages are sent from the selected profile
-    const fromUserId = req.profileId || req.user!.id;
+    // SECURITY: Validate all IDs to prevent filter injection
+    const rawFromUserId = req.profileId || req.user!.id;
     const { matchId } = req.params;
+
+    if (!isValidUuid(rawFromUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    if (!isValidUuid(matchId)) {
+      res.status(400).json({ error: 'Invalid match ID format', code: 'INVALID_MATCH_ID' });
+      return;
+    }
+    const fromUserId = rawFromUserId;
     const validated = validateSendMessageRequest(req.body);
 
     const supabase = getSupabase(req);
@@ -129,9 +149,19 @@ router.post('/:matchId/messages', async (req: Request, res: Response): Promise<v
  */
 router.patch('/:messageId/read', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Oriva profile ID from X-Profile-ID header - each profile reads its own messages
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate all IDs to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
     const { messageId } = req.params;
+
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    if (!isValidUuid(messageId)) {
+      res.status(400).json({ error: 'Invalid message ID format', code: 'INVALID_MESSAGE_ID' });
+      return;
+    }
+    const userId = rawUserId;
 
     const supabase = getSupabase(req);
 
@@ -184,9 +214,19 @@ router.patch('/:messageId/read', async (req: Request, res: Response): Promise<vo
  */
 router.delete('/:messageId', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Oriva profile ID from X-Profile-ID header - users can delete their own profile's messages
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate all IDs to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
     const { messageId } = req.params;
+
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    if (!isValidUuid(messageId)) {
+      res.status(400).json({ error: 'Invalid message ID format', code: 'INVALID_MESSAGE_ID' });
+      return;
+    }
+    const userId = rawUserId;
 
     const supabase = getSupabase(req);
 

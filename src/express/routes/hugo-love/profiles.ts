@@ -14,7 +14,13 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getSupabaseServiceClient } from '../../../config/supabase';
 import { validateBlockUserRequest } from './validation';
-import { ValidationError } from '../../utils/validation-express';
+import { ValidationError, isValidUuid } from '../../utils/validation-express';
+import {
+  validateAndEscapeUuid,
+  sqlQuote,
+  sqlQuoteJsonb,
+  sqlQuoteTextArray,
+} from './utils/sql-sanitize';
 
 const router = Router();
 router.use(requireAuth);
@@ -72,7 +78,9 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
   try {
     // Use Oriva profile ID from X-Profile-ID header for dating_profiles
     // Each Oriva profile has its own dating profile (DID = profile identity)
-    const profileId = req.profileId || req.user!.id;
+    const rawProfileId = req.profileId || req.user!.id;
+    // SECURITY: Validate UUID format before SQL interpolation (defense-in-depth)
+    const profileId = validateAndEscapeUuid(rawProfileId, 'profileId');
 
     // Query the hugo_love.dating_profiles table via SQL
     const sql = `
@@ -174,7 +182,9 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
   try {
     // Use Oriva profile ID from X-Profile-ID header for dating_profiles
     // Each Oriva profile has its own dating profile (DID = profile identity)
-    const profileId = req.profileId || req.user!.id;
+    const rawProfileId = req.profileId || req.user!.id;
+    // SECURITY: Validate UUID format before SQL interpolation (defense-in-depth)
+    const profileId = validateAndEscapeUuid(rawProfileId, 'profileId');
     const body = req.body;
 
     // DEBUG: Log incoming profile_photos
@@ -199,20 +209,9 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
     const existingProfile = existingResult.length > 0 ? existingResult[0] : null;
 
     // Build SET clause for updates
+    // SECURITY: Using imported sql-sanitize utilities for robust escaping
     const updates: string[] = [];
     const updatedFields: string[] = [];
-
-    // Helper to safely quote strings for SQL
-    const sqlQuote = (val: any): string => {
-      if (val === null || val === undefined) return 'NULL';
-      if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
-      if (typeof val === 'number') return String(val);
-      if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
-      if (Array.isArray(val))
-        return `ARRAY[${val.map((v) => `'${String(v).replace(/'/g, "''")}'`).join(',')}]::TEXT[]`;
-      if (typeof val === 'object') return `'${JSON.stringify(val).replace(/'/g, "''")}'::JSONB`;
-      return `'${String(val).replace(/'/g, "''")}'`;
-    };
 
     // Basic info
     if (body.display_name !== undefined) {
@@ -254,33 +253,33 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
 
     // Location (stored as JSONB)
     if (body.location !== undefined) {
-      updates.push(`location = ${sqlQuote(body.location)}`);
+      updates.push(`location = ${sqlQuoteJsonb(body.location)}`);
       updatedFields.push('location');
     }
 
     // Arrays
     if (body.interests !== undefined) {
-      updates.push(`interests = ${sqlQuote(body.interests)}`);
+      updates.push(`interests = ${sqlQuoteTextArray(body.interests)}`);
       updatedFields.push('interests');
     }
     if (body.looks !== undefined) {
-      updates.push(`looks = ${sqlQuote(body.looks)}`);
+      updates.push(`looks = ${sqlQuoteTextArray(body.looks)}`);
       updatedFields.push('looks');
     }
     if (body.personality !== undefined) {
-      updates.push(`personality = ${sqlQuote(body.personality)}`);
+      updates.push(`personality = ${sqlQuoteTextArray(body.personality)}`);
       updatedFields.push('personality');
     }
     if (body.lifestyle !== undefined) {
-      updates.push(`lifestyle = ${sqlQuote(body.lifestyle)}`);
+      updates.push(`lifestyle = ${sqlQuoteTextArray(body.lifestyle)}`);
       updatedFields.push('lifestyle');
     }
     if (body.profile_photos !== undefined) {
-      updates.push(`profile_photos = ${sqlQuote(body.profile_photos)}`);
+      updates.push(`profile_photos = ${sqlQuoteTextArray(body.profile_photos)}`);
       updatedFields.push('profile_photos');
     }
     if (body.profile_videos !== undefined) {
-      updates.push(`profile_videos = ${sqlQuote(body.profile_videos)}`);
+      updates.push(`profile_videos = ${sqlQuoteTextArray(body.profile_videos)}`);
       updatedFields.push('profile_videos');
     }
 
@@ -318,7 +317,7 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
 
     // Match preferences - seeking preferences
     if (body.seeking_genders !== undefined) {
-      updates.push(`seeking_genders = ${sqlQuote(body.seeking_genders)}`);
+      updates.push(`seeking_genders = ${sqlQuoteTextArray(body.seeking_genders)}`);
       updatedFields.push('seeking_genders');
     }
     if (body.seeking_height_min !== undefined) {
@@ -330,11 +329,11 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
       updatedFields.push('seeking_height_max');
     }
     if (body.seeking_ethnicities !== undefined) {
-      updates.push(`seeking_ethnicities = ${sqlQuote(body.seeking_ethnicities)}`);
+      updates.push(`seeking_ethnicities = ${sqlQuoteTextArray(body.seeking_ethnicities)}`);
       updatedFields.push('seeking_ethnicities');
     }
     if (body.seeking_interests !== undefined) {
-      updates.push(`seeking_interests = ${sqlQuote(body.seeking_interests)}`);
+      updates.push(`seeking_interests = ${sqlQuoteTextArray(body.seeking_interests)}`);
       updatedFields.push('seeking_interests');
     }
 
@@ -373,13 +372,13 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
           ${sqlQuote(body.age_range_min || 18)},
           ${sqlQuote(body.age_range_max || 99)},
           ${sqlQuote(body.distance_max_km || 50)},
-          ${sqlQuote(body.location || null)},
-          ${sqlQuote(body.interests || [])},
-          ${sqlQuote(body.looks || [])},
-          ${sqlQuote(body.personality || [])},
-          ${sqlQuote(body.lifestyle || [])},
-          ${sqlQuote(body.profile_photos || [])},
-          ${sqlQuote(body.profile_videos || [])},
+          ${sqlQuoteJsonb(body.location || null)},
+          ${sqlQuoteTextArray(body.interests || [])},
+          ${sqlQuoteTextArray(body.looks || [])},
+          ${sqlQuoteTextArray(body.personality || [])},
+          ${sqlQuoteTextArray(body.lifestyle || [])},
+          ${sqlQuoteTextArray(body.profile_photos || [])},
+          ${sqlQuoteTextArray(body.profile_videos || [])},
           ${sqlQuote(body.whatsapp_number || null)},
           ${sqlQuote(body.instagram_url || null)},
           ${sqlQuote(body.linkedin_url || null)},
@@ -387,11 +386,11 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
           ${sqlQuote(body.gender || null)},
           ${sqlQuote(body.height_cm || null)},
           ${sqlQuote(body.ethnicity || null)},
-          ${sqlQuote(body.seeking_genders || [])},
+          ${sqlQuoteTextArray(body.seeking_genders || [])},
           ${sqlQuote(body.seeking_height_min || 150)},
           ${sqlQuote(body.seeking_height_max || 200)},
-          ${sqlQuote(body.seeking_ethnicities || [])},
-          ${sqlQuote(body.seeking_interests || [])},
+          ${sqlQuoteTextArray(body.seeking_ethnicities || [])},
+          ${sqlQuoteTextArray(body.seeking_interests || [])},
           NOW()
         )
       `;
@@ -444,9 +443,12 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
 router.get('/discover', async (req: Request, res: Response): Promise<void> => {
   try {
     // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    const profileId = req.profileId || req.user!.id;
-    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
-    const offset = parseInt(req.query.offset as string) || 0;
+    const rawProfileId = req.profileId || req.user!.id;
+    // SECURITY: Validate UUID format before SQL interpolation (defense-in-depth)
+    const profileId = validateAndEscapeUuid(rawProfileId, 'profileId');
+    // SECURITY: Validate pagination params - prevent negative number bypass
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 10, 1), 50);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
 
     // Get IDs of users to exclude (blocked users only)
     // NOTE: Swiped profiles are NOT excluded - they remain on Glance until
@@ -455,12 +457,15 @@ router.get('/discover', async (req: Request, res: Response): Promise<void> => {
       SELECT blocked_id as user_id FROM hugo_love.blocks WHERE blocker_id = '${profileId}'
     `;
     const excludeResult = await queryHugoLoveSql(excludeSql);
-    const excludeIds = excludeResult.map((r: any) => r.user_id);
+    // SECURITY: Validate all excluded IDs are valid UUIDs before SQL interpolation
+    const excludeIds = excludeResult
+      .map((r: any) => r.user_id)
+      .filter((id: string) => isValidUuid(id));
 
     // Always exclude current user/profile
     excludeIds.push(profileId);
 
-    // Build exclude clause
+    // Build exclude clause - IDs are validated UUIDs
     const excludeClause =
       excludeIds.length > 0
         ? `AND user_id NOT IN (${excludeIds.map((id: string) => `'${id}'`).join(', ')})`
@@ -541,7 +546,17 @@ router.get('/discover', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { userId: rawUserId } = req.params;
+
+    // SECURITY: Validate UUID format and escape before SQL interpolation
+    // This is a URL parameter - MUST be validated to prevent SQL injection
+    let userId: string;
+    try {
+      userId = validateAndEscapeUuid(rawUserId, 'userId');
+    } catch {
+      res.status(400).json({ error: 'Invalid user ID format', code: 'INVALID_USER_ID' });
+      return;
+    }
 
     const sql = `
       SELECT user_id, display_name, age, bio, profile_photos, interests, location
@@ -582,17 +597,22 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
 router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
   try {
     // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    const blockerId = req.profileId || req.user!.id;
-    const validated = validateBlockUserRequest(req.body);
+    const rawBlockerId = req.profileId || req.user!.id;
+    // SECURITY: Validate UUID format before SQL interpolation (defense-in-depth)
+    const blockerId = validateAndEscapeUuid(rawBlockerId, 'blockerId');
 
-    if (blockerId === validated.blockedUserId) {
+    const validated = validateBlockUserRequest(req.body);
+    // SECURITY: Validate blockedUserId from request body
+    const blockedUserId = validateAndEscapeUuid(validated.blockedUserId, 'blockedUserId');
+
+    if (blockerId === blockedUserId) {
       throw new ValidationError('Cannot block yourself', { field: 'blockedUserId' });
     }
 
     // Check if already blocked
     const checkSql = `
       SELECT id, created_at FROM hugo_love.blocks
-      WHERE blocker_id = '${blockerId}' AND blocked_id = '${validated.blockedUserId}'
+      WHERE blocker_id = '${blockerId}' AND blocked_id = '${blockedUserId}'
       LIMIT 1
     `;
     const existingBlock = await queryHugoLoveSql(checkSql);
@@ -610,7 +630,7 @@ router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
     // Insert into hugo_love.blocks via SQL (no RETURNING - exec_sql doesn't return results)
     const insertSql = `
       INSERT INTO hugo_love.blocks (blocker_id, blocked_id, created_at)
-      VALUES ('${blockerId}', '${validated.blockedUserId}', NOW())
+      VALUES ('${blockerId}', '${blockedUserId}', NOW())
       ON CONFLICT (blocker_id, blocked_id) DO NOTHING
     `;
     await execHugoLoveSql(insertSql);
@@ -618,7 +638,7 @@ router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
     // Fetch the inserted block
     const fetchSql = `
       SELECT id, blocker_id, blocked_id, created_at FROM hugo_love.blocks
-      WHERE blocker_id = '${blockerId}' AND blocked_id = '${validated.blockedUserId}'
+      WHERE blocker_id = '${blockerId}' AND blocked_id = '${blockedUserId}'
       LIMIT 1
     `;
     const result = await queryHugoLoveSql(fetchSql);
@@ -654,8 +674,9 @@ router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/blocks', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    const blockerId = req.profileId || req.user!.id;
+    // SECURITY: Validate and escape profileId to prevent SQL injection
+    const rawBlockerId = req.profileId || req.user!.id;
+    const blockerId = validateAndEscapeUuid(rawBlockerId, 'blockerId');
 
     const sql = `
       SELECT id, blocker_id, blocked_id, created_at

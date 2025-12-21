@@ -9,7 +9,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateSwipeRequest, validatePagination } from './validation';
-import { ValidationError } from '../../utils/validation-express';
+import { ValidationError, isValidUuid } from '../../utils/validation-express';
 
 const router = Router();
 
@@ -22,9 +22,19 @@ router.use(requireAuth);
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate all IDs to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
     const validated = validateSwipeRequest(req.body);
+
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    if (!isValidUuid(validated.targetUserId)) {
+      res.status(400).json({ error: 'Invalid target user ID format', code: 'INVALID_TARGET_ID' });
+      return;
+    }
+    const userId = rawUserId;
 
     if (userId === validated.targetUserId) {
       throw new ValidationError('Cannot swipe on yourself', { field: 'targetUserId' });
@@ -112,8 +122,13 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate profileId to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    const userId = rawUserId;
     const { limit, offset } = validatePagination(req.query);
 
     const supabase = getSupabase(req);
@@ -167,8 +182,13 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/stats/daily', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate profileId to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    const userId = rawUserId;
     const today = new Date().toISOString().split('T')[0];
 
     const supabase = getSupabase(req);
@@ -237,8 +257,13 @@ router.get('/stats/daily', async (req: Request, res: Response): Promise<void> =>
  */
 router.get('/today', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use profileId from X-Profile-ID header if provided, else fall back to user ID
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate profileId to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    const userId = rawUserId;
     const today = new Date().toISOString().split('T')[0];
 
     const supabase = getSupabase(req);

@@ -9,7 +9,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateUpdateMatchRequest, validatePagination } from './validation';
-import { ValidationError } from '../../utils/validation-express';
+import { ValidationError, isValidUuid } from '../../utils/validation-express';
 
 const router = Router();
 router.use(requireAuth);
@@ -19,8 +19,13 @@ router.use(requireAuth);
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Oriva profile ID from X-Profile-ID header - each profile has its own matches
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate profileId to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    const userId = rawUserId;
     const status = (req.query.status as string) || 'active';
     const { limit, offset } = validatePagination(req.query);
 
@@ -64,9 +69,19 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/:matchId', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Oriva profile ID from X-Profile-ID header - each profile has its own matches
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate all IDs to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
     const { matchId } = req.params;
+
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    if (!isValidUuid(matchId)) {
+      res.status(400).json({ error: 'Invalid match ID format', code: 'INVALID_MATCH_ID' });
+      return;
+    }
+    const userId = rawUserId;
 
     const supabase = getSupabase(req);
 
@@ -115,9 +130,19 @@ router.get('/:matchId', async (req: Request, res: Response): Promise<void> => {
  */
 router.patch('/:matchId', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Use Oriva profile ID from X-Profile-ID header - each profile has its own matches
-    const userId = req.profileId || req.user!.id;
+    // SECURITY: Validate all IDs to prevent filter injection
+    const rawUserId = req.profileId || req.user!.id;
     const { matchId } = req.params;
+
+    if (!isValidUuid(rawUserId)) {
+      res.status(400).json({ error: 'Invalid profile ID format', code: 'INVALID_PROFILE_ID' });
+      return;
+    }
+    if (!isValidUuid(matchId)) {
+      res.status(400).json({ error: 'Invalid match ID format', code: 'INVALID_MATCH_ID' });
+      return;
+    }
+    const userId = rawUserId;
     const validated = validateUpdateMatchRequest(req.body);
 
     const supabase = getSupabase(req);

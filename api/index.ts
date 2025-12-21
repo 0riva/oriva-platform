@@ -293,7 +293,11 @@ const corsOriginCache = {
 // NOTE: CORS cache initialization moved AFTER Supabase client is created (around line 590)
 // The refreshCorsCache() function requires the supabase client to be initialized first
 
-// Dynamic CORS for marketplace applications
+// SECURITY: Dynamic CORS for marketplace applications
+// Note on CSRF: This API uses token-based authentication (X-API-Key + Bearer JWT), NOT cookies.
+// CSRF attacks exploit cookies that browsers automatically attach to requests.
+// Since our auth is header-based (must be explicitly added by client code), CSRF is not applicable.
+// Therefore, allowing no-origin requests is safe as security is enforced by token validation.
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -303,7 +307,8 @@ app.use(
       // 1. Health checks from monitoring services don't have Origin
       // 2. Server-to-server API calls don't have Origin
       // 3. Curl/wget/Postman testing doesn't have Origin
-      // Security is enforced by API key validation, not CORS, for non-browser requests
+      // 4. Mobile apps may not send Origin header
+      // SECURITY: Authentication is enforced by API key + JWT validation, not CORS
       if (!origin) {
         logger.debug('CORS: No origin header - allowing non-browser request');
         return callback(null, true);
@@ -409,36 +414,47 @@ app.use((req, res, next) => {
 });
 
 // SECURITY: Add security headers (Helmet)
+// Configured for API responses, not web pages
 import helmet from 'helmet';
 
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'"],
-        fontSrc: ["'self'", 'https:', 'data:'],
-        objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
-      },
-    },
+    // SECURITY: Disable CSP for API - it's meant for HTML pages, not JSON responses
+    // APIs don't serve executable content that CSP protects against
+    contentSecurityPolicy: false,
+
+    // SECURITY: HSTS - force HTTPS for 1 year, include subdomains
     hsts: {
       maxAge: 31536000, // 1 year
       includeSubDomains: true,
       preload: true,
     },
+
+    // SECURITY: Prevent clickjacking - API shouldn't be framed
     frameguard: {
       action: 'deny',
     },
+
+    // SECURITY: Prevent MIME type sniffing
     noSniff: true,
-    xssFilter: true,
+
+    // SECURITY: X-XSS-Protection is deprecated, let helmet use default (disabled)
+    // Modern browsers have better built-in protections
+
+    // SECURITY: Control referrer information
     referrerPolicy: {
       policy: 'strict-origin-when-cross-origin',
     },
+
+    // SECURITY: Cross-Origin policies for modern browsers
+    crossOriginEmbedderPolicy: false, // Disabled - APIs don't embed cross-origin content
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin API access
+
+    // SECURITY: Disable deprecated/unnecessary headers for APIs
+    dnsPrefetchControl: { allow: false },
+    ieNoOpen: true,
+    originAgentCluster: true,
   })
 );
 

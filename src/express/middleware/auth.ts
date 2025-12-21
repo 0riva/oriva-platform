@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import { getSupabase } from './schemaRouter';
 import { getSupabaseServiceClient } from '../../config/supabase';
 import { logger, sanitizeError } from '../../utils/logger';
+import { isValidUuid } from '../utils/validation-express';
 
 // Extend Express Request to include user context
 declare global {
@@ -218,8 +219,15 @@ export const requireAuth = async (
         email: userRecord.email,
       };
 
-      // Also set profileId for test mode
+      // Also set profileId for test mode (with UUID validation)
       const profileIdHeader = req.header('X-Profile-ID');
+      if (profileIdHeader && !isValidUuid(profileIdHeader)) {
+        res.status(400).json({
+          code: 'INVALID_PROFILE_ID',
+          message: 'X-Profile-ID must be a valid UUID',
+        });
+        return;
+      }
       req.profileId = profileIdHeader || userRecord.id;
 
       next();
@@ -313,10 +321,54 @@ export const requireAuth = async (
     // This allows tenant apps to scope data to a specific Oriva profile
     const profileIdHeader = req.header('X-Profile-ID');
     if (profileIdHeader) {
-      // TODO: Validate that this profile belongs to the user
-      // For now, trust the client - backend validation can be added later
+      // SECURITY: Validate UUID format to prevent SQL injection
+      if (!isValidUuid(profileIdHeader)) {
+        logger.warn('[Auth] Invalid X-Profile-ID format rejected:', {
+          profileId: profileIdHeader.substring(0, 50), // Truncate for logging
+          userId: userRecord.id,
+        });
+        res.status(400).json({
+          code: 'INVALID_PROFILE_ID',
+          message: 'X-Profile-ID must be a valid UUID',
+        });
+        return;
+      }
+      // SECURITY: Validate that this profile belongs to the authenticated user
+      const serviceClient = getSupabaseServiceClient();
+      const { data: profile, error: profileError } = await serviceClient
+        .from('profiles')
+        .select('id, user_id')
+        .eq('id', profileIdHeader)
+        .eq('user_id', userRecord.id)
+        .maybeSingle();
+
+      if (profileError) {
+        logger.error('[Auth] Profile ownership check failed:', {
+          error: sanitizeError(profileError),
+          profileId: profileIdHeader,
+          userId: userRecord.id,
+        });
+        res.status(500).json({
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to validate profile ownership',
+        });
+        return;
+      }
+
+      if (!profile) {
+        logger.warn('[Auth] Profile ownership validation failed:', {
+          profileId: profileIdHeader,
+          userId: userRecord.id,
+        });
+        res.status(403).json({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this profile',
+        });
+        return;
+      }
+
       req.profileId = profileIdHeader;
-      logger.debug('[Auth] Profile ID from header:', { profileId: profileIdHeader });
+      logger.debug('[Auth] Profile ID validated:', { profileId: profileIdHeader });
     } else {
       // Default to user ID if no profile ID specified
       req.profileId = userRecord.id;
