@@ -13,6 +13,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getSupabaseServiceClient } from '../../../config/supabase';
+import { logger } from '../../../utils/logger';
 import { validateBlockUserRequest } from './validation';
 import { ValidationError, isValidUuid } from '../../utils/validation-express';
 import {
@@ -94,7 +95,7 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
     // Handle case where no profile exists - auto-create one
     // This ensures every Oriva profile that opens Hugo Love gets a dating profile
     if (!result || result.length === 0) {
-      console.log('📝 No Hugo Love profile found, auto-creating for:', profileId);
+      logger.info('Auto-creating Hugo Love profile', { profileId });
       const insertSql = `
         INSERT INTO hugo_love.dating_profiles (user_id, display_name, created_at, updated_at)
         VALUES ('${profileId}', 'New User', NOW(), NOW())
@@ -186,17 +187,6 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
     // SECURITY: Validate UUID format before SQL interpolation (defense-in-depth)
     const profileId = validateAndEscapeUuid(rawProfileId, 'profileId');
     const body = req.body;
-
-    // DEBUG: Log incoming profile_photos
-    console.log('[PATCH /me] DEBUG profile_photos:', {
-      profileId,
-      reqUserId: req.user!.id, // For debugging - shows the Supabase auth user ID
-      hasProfilePhotos: body.profile_photos !== undefined,
-      profilePhotosType: typeof body.profile_photos,
-      profilePhotosIsArray: Array.isArray(body.profile_photos),
-      profilePhotosLength: Array.isArray(body.profile_photos) ? body.profile_photos.length : 'N/A',
-      profilePhotos: body.profile_photos,
-    });
 
     // Check if profile exists
     const checkSql = `
@@ -395,15 +385,6 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
         )
       `;
     }
-
-    // DEBUG: Log the SQL being executed
-    console.log('[PATCH /me] DEBUG sql execution:', {
-      profileId,
-      updatedFields,
-      sqlLength: sql.length,
-      includesProfilePhotos: sql.includes('profile_photos'),
-      sqlSnippet: sql.substring(0, 500),
-    });
 
     // Execute the UPDATE/INSERT (exec_sql doesn't return results)
     await execHugoLoveSql(sql);

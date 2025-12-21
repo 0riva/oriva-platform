@@ -12,6 +12,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey, requireJwtAuth } from '../middleware/auth';
 import { optionalSchemaRouter } from '../middleware/schemaRouter';
 import { getSupabaseServiceClient } from '../../config/supabase';
+import { logger } from '../../utils/logger';
 
 const router = Router();
 
@@ -35,18 +36,6 @@ const rekognition = new AWS.Rekognition({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'oriva-media-storage';
 const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN || 'dj9em15b7x04y.cloudfront.net';
-console.log(
-  '📸 Photos route - AWS_S3_BUCKET:',
-  process.env.AWS_S3_BUCKET,
-  'Using BUCKET_NAME:',
-  BUCKET_NAME
-);
-console.log(
-  '📸 Photos route - AWS_CLOUDFRONT_DOMAIN:',
-  process.env.AWS_CLOUDFRONT_DOMAIN,
-  'Using CLOUDFRONT_DOMAIN:',
-  CLOUDFRONT_DOMAIN
-);
 const UPLOAD_URL_EXPIRY = 300; // 5 minutes
 
 // Interfaces
@@ -126,7 +115,7 @@ async function execHugoLoveSql(sql: string): Promise<string> {
   const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
 
   if (error) {
-    console.error('📸 Hugo Love SQL error:', error);
+    logger.error('Hugo Love SQL error', { error });
     throw error;
   }
 
@@ -142,7 +131,7 @@ async function queryHugoLoveSql(sql: string): Promise<any[]> {
   const { data, error } = await (supabase.rpc as any)('exec_sql_query', { sql_query: sql });
 
   if (error) {
-    console.error('📸 Hugo Love query error:', error);
+    logger.error('Hugo Love query error', { error });
     throw error;
   }
 
@@ -158,8 +147,6 @@ async function queryHugoLoveSql(sql: string): Promise<any[]> {
  * Key: user_id
  */
 const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): Promise<void> => {
-  console.log('📸 appendPhotoToHugoLoveProfile CALLED', { userId, photoUrl });
-
   // First, get the current profile_photos array from dating_profiles
   const fetchSql = `
     SELECT profile_photos FROM hugo_love.dating_profiles
@@ -171,13 +158,12 @@ const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): P
 
   if (result.length === 0) {
     // No profile exists - create one with just the photo
-    console.log('📸 No Hugo Love profile found, creating new profile for user:', userId);
+    logger.info('Creating Hugo Love profile with photo', { userId });
     const insertSql = `
       INSERT INTO hugo_love.dating_profiles (user_id, profile_photos, display_name, created_at, updated_at)
       VALUES ('${userId}', '["${photoUrl}"]'::jsonb, 'New User', NOW(), NOW())
     `;
     await execHugoLoveSql(insertSql);
-    console.log('📸 Created new Hugo Love profile with photo for user:', userId);
     return;
   }
 
@@ -197,12 +183,6 @@ const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): P
   `;
 
   await execHugoLoveSql(updateSql);
-
-  console.log('📸 Photo appended to Hugo Love profile:', {
-    userId,
-    photoUrl,
-    totalPhotos: updatedPhotos.length,
-  });
 };
 
 /**
@@ -267,7 +247,7 @@ router.post(
 
       res.status(200).json(response);
     } catch (error) {
-      console.error('Error generating pre-signed URL:', error);
+      logger.error('Error generating pre-signed URL', { error });
       res.status(500).json({
         code: 'S3_ERROR',
         message: 'Failed to generate upload URL',
@@ -286,20 +266,6 @@ router.post(
   requireApiKey,
   requireJwtAuth,
   asyncHandler(async (req, res) => {
-    // CRITICAL DEBUG - This MUST appear in logs to confirm endpoint is reached
-    console.log(
-      '🔥🔥🔥 CONFIRM ENDPOINT HIT 🔥🔥🔥',
-      new Date().toISOString(),
-      JSON.stringify({
-        headers: {
-          'x-app-id': req.headers['x-app-id'],
-          'content-type': req.headers['content-type'],
-        },
-        body: req.body,
-        user: req.user?.id,
-      })
-    );
-
     const userId = req.user?.id;
     if (!userId) {
       res.status(401).json({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
@@ -396,49 +362,21 @@ router.post(
       };
 
       // If approved and it's a profile photo for Hugo Love, persist to database
-      console.log(
-        '📸 DEBUG confirm: photoType=',
-        photoType,
-        'isApproved=',
-        isApproved,
-        'x-app-id=',
-        req.headers['x-app-id']
-      );
       if (isApproved && photoType === 'profile') {
         const appId = req.headers['x-app-id'] as string | undefined;
         // Use X-Profile-ID header if provided, otherwise fall back to userId from JWT
-        // This matches the pattern in hugo-love/profiles.ts where profile is stored by profileId
         const profileIdHeader = req.headers['x-profile-id'] as string | undefined;
         const effectiveUserId = profileIdHeader || userId;
-        console.log(
-          '📸 DEBUG: Checking appId for hugo_love:',
-          appId,
-          '=== "hugo_love"?',
-          appId === 'hugo_love',
-          'profileIdHeader:',
-          profileIdHeader,
-          'effectiveUserId:',
-          effectiveUserId
-        );
+
         if (appId === 'hugo_love') {
           try {
-            console.log('📸 CALLING appendPhotoToHugoLoveProfile with:', {
-              effectiveUserId,
-              publicUrl,
-            });
             await appendPhotoToHugoLoveProfile(effectiveUserId, publicUrl);
-            console.log('📸 Photo persisted to Hugo Love profile successfully');
           } catch (dbError) {
-            // Log the FULL error details so we can actually see what's failing
-            console.error('📸 ERROR: Photo uploaded but failed to persist to profile:');
-            console.error('📸 ERROR Details:', {
-              error: dbError,
-              message: (dbError as Error)?.message,
-              stack: (dbError as Error)?.stack,
-              userId,
+            logger.error('Photo uploaded but failed to persist to profile', {
+              error: (dbError as Error)?.message,
+              userId: effectiveUserId,
               publicUrl,
             });
-            // CRITICAL: Don't silently swallow - log to Sentry or similar in production
           }
         }
       }
@@ -455,7 +393,7 @@ router.post(
 
       res.status(200).json(response);
     } catch (error: any) {
-      console.error('Error confirming upload:', error);
+      logger.error('Error confirming upload', { error });
 
       // Handle S3 object not found
       if (error.code === 'NotFound' || error.statusCode === 404) {
