@@ -11,6 +11,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateCreateSubscriptionRequest } from './validation';
 import { ValidationError } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -34,7 +35,7 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
 
     if (error && error.code !== 'PGRST116') {
       // PGRST116 = no rows returned
-      console.error('Subscription fetch error:', error);
+      logger.error('Subscription fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch subscription', code: 'SERVER_ERROR' });
       return;
     }
@@ -66,7 +67,7 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
       features: subscription.features,
     });
   } catch (error: any) {
-    console.error('Subscription status endpoint error:', error);
+    logger.error('Subscription status endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -123,7 +124,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       .single();
 
     if (error) {
-      console.error('Subscription creation error:', error);
+      logger.error('Subscription creation error', { error });
       res.status(500).json({ error: 'Failed to create subscription', code: 'SERVER_ERROR' });
       return;
     }
@@ -139,7 +140,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Subscription creation endpoint error:', error);
+      logger.error('Subscription creation endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -176,7 +177,7 @@ router.post('/cancel', async (req: Request, res: Response): Promise<void> => {
       .single();
 
     if (error) {
-      console.error('Subscription cancel error:', error);
+      logger.error('Subscription cancel error', { error });
       res.status(500).json({ error: 'Failed to cancel subscription', code: 'SERVER_ERROR' });
       return;
     }
@@ -187,7 +188,7 @@ router.post('/cancel', async (req: Request, res: Response): Promise<void> => {
       expiresAt: updated.expires_at,
     });
   } catch (error: any) {
-    console.error('Subscription cancel endpoint error:', error);
+    logger.error('Subscription cancel endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -235,7 +236,7 @@ router.get('/plans', async (_req: Request, res: Response): Promise<void> => {
 
     res.json({ plans });
   } catch (error: any) {
-    console.error('Plans endpoint error:', error);
+    logger.error('Plans endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });

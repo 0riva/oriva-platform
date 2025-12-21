@@ -10,6 +10,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateSwipeRequest, validatePagination } from './validation';
 import { ValidationError, isValidUuid } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 
@@ -55,7 +56,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       .single();
 
     if (swipeError) {
-      console.error('Swipe creation error:', swipeError);
+      logger.error('Swipe creation error', { error: swipeError });
       res.status(500).json({
         error: 'Failed to create swipe',
         code: 'SERVER_ERROR',
@@ -100,7 +101,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       matchId,
     });
   } catch (error: any) {
-    console.error('Swipe endpoint error:', error);
+    logger.error('Swipe endpoint error', { error });
     if (error instanceof ValidationError) {
       res.status(400).json({
         error: error.message,
@@ -145,7 +146,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Swipe history error:', error);
+      logger.error('Swipe history error', { error });
       res.status(500).json({
         error: 'Failed to fetch swipes',
         code: 'SERVER_ERROR',
@@ -159,7 +160,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       hasMore: offset + limit < (count || 0),
     });
   } catch (error: any) {
-    console.error('Swipe history endpoint error:', error);
+    logger.error('Swipe history endpoint error', { error });
     if (error instanceof ValidationError) {
       res.status(400).json({
         error: error.message,
@@ -202,7 +203,7 @@ router.get('/stats/daily', async (req: Request, res: Response): Promise<void> =>
       .lt('timestamp', `${today}T23:59:59`);
 
     if (swipesError) {
-      console.error('Daily stats swipes error:', swipesError);
+      logger.error('Daily stats swipes error', { error: swipesError });
       res.status(500).json({
         error: 'Failed to fetch daily stats',
         code: 'SERVER_ERROR',
@@ -219,7 +220,7 @@ router.get('/stats/daily', async (req: Request, res: Response): Promise<void> =>
       .lt('created_at', `${today}T23:59:59`);
 
     if (matchesError) {
-      console.error('Daily stats matches error:', matchesError);
+      logger.error('Daily stats matches error', { error: matchesError });
       // Continue with swipe stats even if matches fail
     }
 
@@ -243,7 +244,7 @@ router.get('/stats/daily', async (req: Request, res: Response): Promise<void> =>
       },
     });
   } catch (error: any) {
-    console.error('Daily stats endpoint error:', error);
+    logger.error('Daily stats endpoint error', { error });
     res.status(500).json({
       error: 'Internal server error',
       code: 'SERVER_ERROR',
@@ -276,7 +277,7 @@ router.get('/today', async (req: Request, res: Response): Promise<void> => {
       .lt('timestamp', `${today}T23:59:59`);
 
     if (error) {
-      console.error('Today swipes error:', error);
+      logger.error('Today swipes error', { error });
       res.status(500).json({
         error: "Failed to fetch today's swipes",
         code: 'SERVER_ERROR',
@@ -286,7 +287,7 @@ router.get('/today', async (req: Request, res: Response): Promise<void> => {
 
     res.json({ swipes: swipes || [] });
   } catch (error: any) {
-    console.error('Today swipes endpoint error:', error);
+    logger.error('Today swipes endpoint error', { error });
     res.status(500).json({
       error: 'Internal server error',
       code: 'SERVER_ERROR',

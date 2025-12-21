@@ -11,6 +11,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateCreateJournalRequest, validateUpdateJournalRequest } from './validation';
 import { ValidationError } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -38,7 +39,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       .single();
 
     if (error) {
-      console.error('Journal creation error:', error);
+      logger.error('Journal creation error', { error });
       res.status(500).json({ error: 'Failed to create journal entry', code: 'SERVER_ERROR' });
       return;
     }
@@ -51,7 +52,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Journal creation endpoint error:', error);
+      logger.error('Journal creation endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -92,7 +93,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const { data: entries, count, error } = await query;
 
     if (error) {
-      console.error('Journal fetch error:', error);
+      logger.error('Journal fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch journal entries', code: 'SERVER_ERROR' });
       return;
     }
@@ -102,7 +103,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       totalCount: count || 0,
     });
   } catch (error: any) {
-    console.error('Journal fetch endpoint error:', error);
+    logger.error('Journal fetch endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -144,7 +145,7 @@ router.patch('/:entryId', async (req: Request, res: Response): Promise<void> => 
       .single();
 
     if (error) {
-      console.error('Journal update error:', error);
+      logger.error('Journal update error', { error });
       res.status(500).json({ error: 'Failed to update journal entry', code: 'SERVER_ERROR' });
       return;
     }
@@ -157,7 +158,7 @@ router.patch('/:entryId', async (req: Request, res: Response): Promise<void> => 
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Journal update endpoint error:', error);
+      logger.error('Journal update endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -182,14 +183,14 @@ router.delete('/:entryId', async (req: Request, res: Response): Promise<void> =>
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Journal delete error:', error);
+      logger.error('Journal delete error', { error });
       res.status(500).json({ error: 'Failed to delete journal entry', code: 'SERVER_ERROR' });
       return;
     }
 
     res.status(204).send();
   } catch (error: any) {
-    console.error('Journal delete endpoint error:', error);
+    logger.error('Journal delete endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });

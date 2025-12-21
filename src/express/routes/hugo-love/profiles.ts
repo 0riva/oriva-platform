@@ -36,7 +36,7 @@ async function execHugoLoveSql(sql: string): Promise<string> {
   const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
 
   if (error) {
-    console.error('Hugo Love SQL error:', error);
+    logger.error('Hugo Love SQL error', { error });
     throw error;
   }
 
@@ -44,7 +44,7 @@ async function execHugoLoveSql(sql: string): Promise<string> {
   // Check for this and throw as a proper error
   const result = data as string;
   if (result && result.startsWith('Error:')) {
-    console.error('Hugo Love SQL execution error:', result);
+    logger.error('Hugo Love SQL execution error', { result });
     throw new Error(result);
   }
 
@@ -63,7 +63,7 @@ async function queryHugoLoveSql(sql: string): Promise<any[]> {
   const { data, error } = await (supabase.rpc as any)('exec_sql_query', { sql_query: sql });
 
   if (error) {
-    console.error('Hugo Love query error:', error);
+    logger.error('Hugo Love query error', { error });
     throw error;
   }
 
@@ -170,7 +170,7 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error: any) {
-    console.error('Hugo Love profile endpoint error:', error);
+    logger.error('Hugo Love profile endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -408,7 +408,7 @@ router.patch('/me', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Hugo Love profile update endpoint error:', error);
+      logger.error('Hugo Love profile update endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -512,7 +512,7 @@ router.get('/discover', async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error: any) {
-    console.error('Hugo Love discover profiles endpoint error:', error);
+    logger.error('Hugo Love discover profiles endpoint error', { error });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -566,7 +566,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
       location: profile.location,
     });
   } catch (error: any) {
-    console.error('Hugo Love public profile endpoint error:', error);
+    logger.error('Hugo Love public profile endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -643,7 +643,7 @@ router.post('/blocks', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Block endpoint error:', error);
+      logger.error('Block endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -671,7 +671,7 @@ router.get('/blocks', async (req: Request, res: Response): Promise<void> => {
     // Handle case where no blocks
     res.json({ blocks: result || [] });
   } catch (error: any) {
-    console.error('Blocks endpoint error:', error);
+    logger.error('Blocks endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });

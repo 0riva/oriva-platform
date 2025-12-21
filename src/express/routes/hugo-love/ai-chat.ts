@@ -10,6 +10,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateAIChatRequest, validateChatFeedbackRequest } from './validation';
 import { ValidationError } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -71,7 +72,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         `event: error\ndata: ${JSON.stringify({ error: error.message, code: 'INVALID_INPUT' })}\n\n`
       );
     } else {
-      console.error('AI chat endpoint error:', error);
+      logger.error('AI chat endpoint error', { error });
       res.write(
         `event: error\ndata: ${JSON.stringify({ error: 'Internal server error', code: 'SERVER_ERROR' })}\n\n`
       );
@@ -96,14 +97,14 @@ router.get('/history', async (req: Request, res: Response): Promise<void> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('AI history fetch error:', error);
+      logger.error('AI history fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch history', code: 'SERVER_ERROR' });
       return;
     }
 
     res.json({ sessions: sessions || [] });
   } catch (error: any) {
-    console.error('AI history endpoint error:', error);
+    logger.error('AI history endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -141,7 +142,7 @@ router.post('/feedback', async (req: Request, res: Response): Promise<void> => {
       .single();
 
     if (error) {
-      console.error('Feedback update error:', error);
+      logger.error('Feedback update error', { error });
       res.status(500).json({ error: 'Failed to submit feedback', code: 'SERVER_ERROR' });
       return;
     }
@@ -154,7 +155,7 @@ router.post('/feedback', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Feedback endpoint error:', error);
+      logger.error('Feedback endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }

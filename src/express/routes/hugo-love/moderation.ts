@@ -9,6 +9,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateReportRequest } from './validation';
 import { ValidationError } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -42,7 +43,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       .single();
 
     if (error) {
-      console.error('Report creation error:', error);
+      logger.error('Report creation error', { error });
       res.status(500).json({ error: 'Failed to submit report', code: 'SERVER_ERROR' });
       return;
     }
@@ -56,7 +57,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Report endpoint error:', error);
+      logger.error('Report endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -78,14 +79,14 @@ router.get('/my-reports', async (req: Request, res: Response): Promise<void> => 
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Reports fetch error:', error);
+      logger.error('Reports fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch reports', code: 'SERVER_ERROR' });
       return;
     }
 
     res.json({ reports: reports || [] });
   } catch (error: any) {
-    console.error('My reports endpoint error:', error);
+    logger.error('My reports endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });

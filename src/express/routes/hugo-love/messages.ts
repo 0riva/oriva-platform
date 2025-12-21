@@ -11,6 +11,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateSendMessageRequest, validatePagination } from './validation';
 import { ValidationError, isValidUuid } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -58,7 +59,7 @@ router.get('/:matchId/messages', async (req: Request, res: Response): Promise<vo
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Messages fetch error:', error);
+      logger.error('Messages fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch messages', code: 'SERVER_ERROR' });
       return;
     }
@@ -71,7 +72,7 @@ router.get('/:matchId/messages', async (req: Request, res: Response): Promise<vo
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Messages endpoint error:', error);
+      logger.error('Messages endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -124,7 +125,7 @@ router.post('/:matchId/messages', async (req: Request, res: Response): Promise<v
       .single();
 
     if (error) {
-      console.error('Message creation error:', error);
+      logger.error('Message creation error', { error });
       res.status(500).json({ error: 'Failed to send message', code: 'SERVER_ERROR' });
       return;
     }
@@ -138,7 +139,7 @@ router.post('/:matchId/messages', async (req: Request, res: Response): Promise<v
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Send message endpoint error:', error);
+      logger.error('Send message endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -189,7 +190,7 @@ router.patch('/:messageId/read', async (req: Request, res: Response): Promise<vo
       .single();
 
     if (error) {
-      console.error('Mark read error:', error);
+      logger.error('Mark read error', { error });
       res.status(500).json({ error: 'Failed to mark message as read', code: 'SERVER_ERROR' });
       return;
     }
@@ -203,7 +204,7 @@ router.patch('/:messageId/read', async (req: Request, res: Response): Promise<vo
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Mark read endpoint error:', error);
+      logger.error('Mark read endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -250,14 +251,14 @@ router.delete('/:messageId', async (req: Request, res: Response): Promise<void> 
       .eq('id', messageId);
 
     if (error) {
-      console.error('Delete message error:', error);
+      logger.error('Delete message error', { error });
       res.status(500).json({ error: 'Failed to delete message', code: 'SERVER_ERROR' });
       return;
     }
 
     res.status(204).send();
   } catch (error: any) {
-    console.error('Delete message endpoint error:', error);
+    logger.error('Delete message endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });

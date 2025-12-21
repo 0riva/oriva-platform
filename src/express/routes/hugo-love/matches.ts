@@ -10,6 +10,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateUpdateMatchRequest, validatePagination } from './validation';
 import { ValidationError, isValidUuid } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -44,7 +45,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Matches fetch error:', error);
+      logger.error('Matches fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch matches', code: 'SERVER_ERROR' });
       return;
     }
@@ -58,7 +59,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Matches endpoint error:', error);
+      logger.error('Matches endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -120,7 +121,7 @@ router.get('/:matchId', async (req: Request, res: Response): Promise<void> => {
       lastMessage: lastMessage || undefined,
     });
   } catch (error: any) {
-    console.error('Match details endpoint error:', error);
+    logger.error('Match details endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -169,7 +170,7 @@ router.patch('/:matchId', async (req: Request, res: Response): Promise<void> => 
       .single();
 
     if (error) {
-      console.error('Match update error:', error);
+      logger.error('Match update error', { error });
       res.status(500).json({ error: 'Failed to update match', code: 'SERVER_ERROR' });
       return;
     }
@@ -179,7 +180,7 @@ router.patch('/:matchId', async (req: Request, res: Response): Promise<void> => 
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Match update endpoint error:', error);
+      logger.error('Match update endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }

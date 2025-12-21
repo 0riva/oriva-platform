@@ -10,6 +10,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getSupabase } from '../../middleware/schemaRouter';
 import { validateRatingRequest } from './validation';
 import { ValidationError } from '../../utils/validation-express';
+import { logger } from '../../../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -41,7 +42,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       .single();
 
     if (error) {
-      console.error('Rating creation error:', error);
+      logger.error('Rating creation error', { error });
       res.status(500).json({ error: 'Failed to create rating', code: 'SERVER_ERROR' });
       return;
     }
@@ -65,7 +66,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message, code: 'INVALID_INPUT', details: error.details });
     } else {
-      console.error('Rating endpoint error:', error);
+      logger.error('Rating endpoint error', { error });
       res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
     }
   }
@@ -86,7 +87,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Ratings fetch error:', error);
+      logger.error('Ratings fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch ratings', code: 'SERVER_ERROR' });
       return;
     }
@@ -101,7 +102,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
       totalRatings: ratings?.length || 0,
     });
   } catch (error: any) {
-    console.error('Ratings fetch endpoint error:', error);
+    logger.error('Ratings fetch endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
@@ -122,14 +123,14 @@ router.get('/given', async (req: Request, res: Response): Promise<void> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Given ratings fetch error:', error);
+      logger.error('Given ratings fetch error', { error });
       res.status(500).json({ error: 'Failed to fetch given ratings', code: 'SERVER_ERROR' });
       return;
     }
 
     res.json({ ratings: ratings || [] });
   } catch (error: any) {
-    console.error('Given ratings endpoint error:', error);
+    logger.error('Given ratings endpoint error', { error });
     res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
   }
 });
