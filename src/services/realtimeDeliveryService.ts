@@ -55,7 +55,7 @@ class RealtimeDeliveryService {
   private heartbeatInterval = 30000; // 30 seconds
   private heartbeatTimeout = 60000; // 60 seconds
   private maxBufferSize = 1000; // Max messages per connection
-  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Initialize real-time delivery service

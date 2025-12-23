@@ -116,11 +116,13 @@ export function registerConnection(
     });
 
     // Send connection acknowledgment
-    ws.send(JSON.stringify({
-      type: 'connected',
-      connection_id: connectionId,
-      subscriptions,
-    }));
+    ws.send(
+      JSON.stringify({
+        type: 'connected',
+        connection_id: connectionId,
+        subscriptions,
+      })
+    );
 
     return connectionId;
   } catch (error) {
@@ -145,7 +147,8 @@ export function removeConnection(userId: string, connectionId: string): void {
     const connInfo = userConnections.get(connectionId);
     if (connInfo) {
       // Close WebSocket if still open
-      if (connInfo.ws.readyState === 1) { // OPEN
+      if (connInfo.ws.readyState === 1) {
+        // OPEN
         connInfo.ws.close();
       }
 
@@ -197,10 +200,12 @@ export function updateSubscriptions(
     });
 
     // Send acknowledgment
-    connInfo.ws.send(JSON.stringify({
-      type: 'subscribed',
-      subscriptions,
-    }));
+    connInfo.ws.send(
+      JSON.stringify({
+        type: 'subscribed',
+        subscriptions,
+      })
+    );
 
     return true;
   } catch (error) {
@@ -308,7 +313,8 @@ export async function broadcastEvent(event: PlatformEvent, userId?: string): Pro
 
     for (const conn of matchingConnections) {
       try {
-        if (conn.ws.readyState === 1) { // OPEN
+        if (conn.ws.readyState === 1) {
+          // OPEN
           conn.ws.send(message);
           successCount++;
         } else {
@@ -368,7 +374,8 @@ export function sendHeartbeats(): void {
 
         // Send ping
         try {
-          if (connInfo.ws.readyState === 1) { // OPEN
+          if (connInfo.ws.readyState === 1) {
+            // OPEN
             connInfo.ws.ping();
           } else {
             removeConnection(userId, connectionId);
@@ -398,7 +405,7 @@ export function sendHeartbeats(): void {
  * Initialize heartbeat interval
  * Should be called once when server starts
  */
-export function initializeHeartbeat(): NodeJS.Timeout {
+export function initializeHeartbeat(): ReturnType<typeof setInterval> {
   logger.info('WebSocket heartbeat initialized', {
     interval_ms: HEARTBEAT_INTERVAL_MS,
   });

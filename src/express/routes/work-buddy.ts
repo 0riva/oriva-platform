@@ -4,14 +4,48 @@
  *
  * API endpoints for Work Buddy app.
  * Routes: GET/POST /api/v1/work-buddy/sessions, availability, calendar, notifications
+ *
+ * @deprecated These routes are DEPRECATED as of 2025-12-21.
+ * First-party tenant apps (o-orig) should migrate to Next.js API routes:
+ *   - o-orig: /api/tenant/work-buddy/*
+ *   - Services: Use apiFetch from packages/shared/config/apiConfig.ts
+ *
+ * These routes will be removed in a future release.
+ * Third-party developers should use the public API at /api/v1/*
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey, requireAuthentication, requireAppAccess } from '../middleware/auth';
 import { schemaRouter, getSupabase, getAppContext } from '../middleware/schemaRouter';
+import { logger } from '../../utils/logger';
 
 const router = Router();
+
+/**
+ * Deprecation warning middleware
+ * Logs a warning for every request to these deprecated routes
+ */
+const deprecationWarning = (req: Request, res: Response, next: NextFunction) => {
+  logger.warn({
+    message: '[DEPRECATED] Work Buddy tenant routes are deprecated',
+    deprecatedPath: req.originalUrl,
+    migrateTo: 'o-orig Next.js API /api/tenant/work-buddy/*',
+    deprecationDate: '2025-12-21',
+    userAgent: req.get('user-agent'),
+    ip: req.ip,
+  });
+
+  // Add deprecation header to response
+  res.set('X-Deprecated-API', 'true');
+  res.set('X-Deprecated-Date', '2025-12-21');
+  res.set('X-Migrate-To', 'o-orig/api/tenant/work-buddy/*');
+
+  next();
+};
+
+// Apply deprecation warning to all routes
+router.use(deprecationWarning);
 
 // Apply schema routing middleware to all routes
 router.use(schemaRouter);
