@@ -840,16 +840,49 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
       return;
     }
 
+    // Determine the actual user ID
+    // When both X-API-Key and Authorization JWT are provided:
+    // - Use API key for tenant permissions/validation
+    // - Use JWT for the actual logged-in user's identity
+    // This pattern is used by o-core's app-launcher iframe proxy
+    let effectiveUserId = apiKeyRecord.user_id;
+    let effectiveAuthType: 'api_key' | 'supabase_auth' = 'api_key';
+
+    // Check if there's also an Authorization header with a JWT
+    const authHeaderForJwt = req.headers.authorization;
+    if (authHeaderForJwt && authHeaderForJwt.startsWith('Bearer ')) {
+      const jwtToken = authHeaderForJwt.substring(7);
+      // Check if this looks like a JWT (3 dot-separated parts)
+      const jwtParts = jwtToken.split('.');
+      if (jwtParts.length === 3) {
+        // Validate the JWT with Supabase to get the actual user
+        const {
+          data: { user: jwtUser },
+          error: jwtError,
+        } = await supabase.auth.getUser(jwtToken);
+        if (!jwtError && jwtUser) {
+          // Use the JWT user's ID instead of the API key owner
+          effectiveUserId = jwtUser.id;
+          effectiveAuthType = 'supabase_auth';
+          logger.debug('Using JWT user for request instead of API key owner', {
+            apiKeyOwner: apiKeyRecord.user_id,
+            jwtUser: jwtUser.id,
+            email: jwtUser.email,
+          });
+        }
+      }
+    }
+
     // Set keyInfo on the request
     const authReq = asAuthRequest(req);
     authReq.keyInfo = {
       id: apiKeyRecord.id,
-      userId: apiKeyRecord.user_id,
+      userId: effectiveUserId,
       name: apiKeyRecord.name,
       permissions: apiKeyRecord.permissions || [],
       usageCount: apiKeyRecord.usage_count || 0,
       isActive: apiKeyRecord.is_active,
-      authType: 'api_key',
+      authType: effectiveAuthType,
       lastUsedAt: apiKeyRecord.last_used_at || undefined,
     };
 
