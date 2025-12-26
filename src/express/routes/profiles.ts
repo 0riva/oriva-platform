@@ -82,6 +82,85 @@ router.post(
 );
 
 /**
+ * GET /api/v1/apps/profiles/available
+ * Get all active Oriva profiles for the authenticated user
+ * Returns profiles from public.profiles table (platform-level identities)
+ */
+router.get(
+  '/available',
+  requireApiKey,
+  requireAuthentication,
+  asyncHandler(async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
+      return;
+    }
+
+    // Import supabase client
+    const { getSupabaseClient } = await import('../../config/supabase');
+    const supabase = getSupabaseClient();
+
+    // Call the database function to get active profiles for this user
+    const { data: profiles, error } = await supabase.rpc('get_user_active_profiles', {
+      user_id: userId,
+    });
+
+    if (error) {
+      console.error('Error fetching user profiles:', error);
+      res.status(500).json({
+        code: 'DATABASE_ERROR',
+        message: 'Failed to fetch profiles',
+        details: error.message,
+      });
+      return;
+    }
+
+    // Map database columns to API format expected by useOrivaProfiles
+    const normalizedProfiles = (profiles || []).map(
+      (profile: {
+        profile_id: string;
+        display_name: string;
+        avatar_url: string | null;
+        is_default: boolean;
+      }) => ({
+        id: profile.profile_id,
+        profileId: profile.profile_id,
+        name: profile.display_name,
+        profileName: profile.display_name,
+        avatar: profile.avatar_url,
+        avatarUrl: profile.avatar_url,
+        isDefault: profile.is_default,
+        isActive: true, // All returned profiles are active (filter is in the DB function)
+      })
+    );
+
+    res.status(200).json(normalizedProfiles);
+  })
+);
+
+/**
+ * GET /api/v1/apps/profiles/me
+ * Get current authenticated user's profile
+ */
+router.get(
+  '/me',
+  requireApiKey,
+  requireAuthentication,
+  requireAppAccess,
+  asyncHandler(async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
+      return;
+    }
+
+    const profile: ProfileResponse = await getProfile(req, userId);
+    res.status(200).json(profile);
+  })
+);
+
+/**
  * GET /api/v1/apps/profiles/:userId
  * Get profile by user ID
  */
