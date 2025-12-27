@@ -1646,6 +1646,47 @@ app.get(
   })
 );
 
+// Get current user's profile (alias for frontend compatibility)
+// Frontend calls orivaApi.get('/profiles/me') which resolves to /api/v1/profiles/me
+app.get(
+  '/api/v1/profiles/me',
+  validateApiKey,
+  withAuthContext(async (_req, res, keyInfo) => {
+    try {
+      // Get the user's default or first active profile
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(
+          'id, username, display_name, bio, location, website_url, avatar_url, created_at, updated_at, account_id, is_active, is_default'
+        )
+        .eq('account_id', keyInfo.userId)
+        .eq('is_active', true)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (error || !profile) {
+        logger.warn('No profile found for user', { userId: keyInfo.userId, error });
+        respondWithError(res, 404, 'PROFILE_NOT_FOUND', 'No profile found for this user');
+        return;
+      }
+
+      // Return profile in the format expected by frontend
+      const response: ApiResponse<typeof profile> = {
+        ok: true,
+        success: true,
+        data: profile,
+      };
+
+      res.json(response);
+    } catch (error) {
+      logger.error('Failed to fetch user profile', { error, userId: keyInfo.userId });
+      respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to fetch profile');
+    }
+  })
+);
+
 // Update profile information
 app.put(
   '/api/v1/profiles/:profileId',
@@ -4152,6 +4193,8 @@ app.use('/api/v1/travel-hub', optionalSchemaRouter, travelHubRouter);
 // Mount Hugo Love router (dating app)
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation
 app.use('/api/v1/tenant/hugo-love', optionalSchemaRouter, hugoLoveRouter);
+// Alias for love-puzl slug (used by o-core app-launcher proxy)
+app.use('/api/v1/tenant/love-puzl', optionalSchemaRouter, hugoLoveRouter);
 
 // Mount Ask Me Anything router (AMA sessions)
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation

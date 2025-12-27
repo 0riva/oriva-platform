@@ -117,15 +117,16 @@ router.get(
     }
 
     // Map database columns to API format expected by useOrivaProfiles
+    // Note: get_user_active_profiles returns: id, display_name, avatar_url, is_default
     const normalizedProfiles = (profiles || []).map(
       (profile: {
-        profile_id: string;
+        id: string;
         display_name: string;
         avatar_url: string | null;
         is_default: boolean;
       }) => ({
-        id: profile.profile_id,
-        profileId: profile.profile_id,
+        id: profile.id,
+        profileId: profile.id,
         name: profile.display_name,
         profileName: profile.display_name,
         avatar: profile.avatar_url,

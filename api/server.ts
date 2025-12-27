@@ -138,6 +138,10 @@ export const createApp = (): Application => {
   app.use(`${apiPrefix}/apps/ice-breakers`, iceBreakersRoutes);
   app.use(`${apiPrefix}/apps/photos`, photosRoutes);
 
+  // ALIAS: /api/v1/profiles -> /api/v1/apps/profiles (for backward compatibility)
+  // Frontend clients call orivaApi.get('/profiles/me') which resolves to /api/v1/profiles/me
+  app.use(`${apiPrefix}/profiles`, profilesRoutes);
+
   // Event bus and notifications routes (X-App-ID required for schema routing)
   app.use(`${apiPrefix}/events`, eventsRoutes);
 
