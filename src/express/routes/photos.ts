@@ -186,6 +186,56 @@ const appendPhotoToHugoLoveProfile = async (userId: string, photoUrl: string): P
 };
 
 /**
+ * Append photo URL to Love Puzl profile_photos array
+ * Uses exec_sql RPC to bypass PostgREST schema restrictions
+ *
+ * Schema: love_puzl.dating_profiles
+ * Column: profile_photos (jsonb array)
+ * Key: oriva_profile_id (NOT user_id - Love Puzl uses profile-based identity)
+ */
+const appendPhotoToLovePuzlProfile = async (
+  orivaProfileId: string,
+  photoUrl: string
+): Promise<void> => {
+  // First, get the current profile_photos array from dating_profiles
+  // Use oriva_profile_id since Love Puzl uses profile-based identity (DID)
+  const fetchSql = `
+    SELECT profile_photos FROM love_puzl.dating_profiles
+    WHERE oriva_profile_id = '${orivaProfileId}'
+    LIMIT 1
+  `;
+
+  const result = await queryHugoLoveSql(fetchSql);
+
+  if (result.length === 0) {
+    // No profile exists - log warning since Love Puzl profiles should be created via tenant API
+    logger.warn('No Love Puzl profile found for photo upload', { orivaProfileId });
+    return;
+  }
+
+  // Append the new photo URL to the existing array (or create new array if null)
+  const currentPhotos = (result[0]?.profile_photos as string[]) || [];
+  const updatedPhotos = [...currentPhotos, photoUrl];
+
+  // Escape the JSON array for SQL (profile_photos is jsonb)
+  const photosJson = JSON.stringify(updatedPhotos).replace(/'/g, "''");
+
+  // Update the profile with the new photos array
+  const updateSql = `
+    UPDATE love_puzl.dating_profiles
+    SET profile_photos = '${photosJson}'::jsonb,
+        updated_at = NOW()
+    WHERE oriva_profile_id = '${orivaProfileId}'
+  `;
+
+  await execHugoLoveSql(updateSql);
+  logger.info('Photo appended to Love Puzl profile', {
+    orivaProfileId,
+    photoCount: updatedPhotos.length,
+  });
+};
+
+/**
  * POST /api/v1/apps/photos/upload-url
  * Generate pre-signed URL for photo upload
  */
@@ -377,6 +427,22 @@ router.post(
               userId: effectiveUserId,
               publicUrl,
             });
+          }
+        } else if (appId === 'love_puzl') {
+          // Love Puzl uses oriva_profile_id (from X-Profile-ID header) not user_id
+          const orivaProfileId = profileIdHeader;
+          if (orivaProfileId) {
+            try {
+              await appendPhotoToLovePuzlProfile(orivaProfileId, publicUrl);
+            } catch (dbError) {
+              logger.error('Photo uploaded but failed to persist to Love Puzl profile', {
+                error: (dbError as Error)?.message,
+                orivaProfileId,
+                publicUrl,
+              });
+            }
+          } else {
+            logger.warn('Love Puzl photo upload missing X-Profile-ID header', { userId });
           }
         }
       }
