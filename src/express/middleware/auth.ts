@@ -230,6 +230,17 @@ export const requireAuth = async (
       }
       req.profileId = profileIdHeader || userRecord.id;
 
+      // Set keyInfo for routes that expect it (same as production auth)
+      (req as any).keyInfo = {
+        id: `test-${userRecord.id}`,
+        userId: req.profileId,
+        name: userRecord.email || 'Test User',
+        permissions: ['read', 'write'],
+        usageCount: 0,
+        isActive: true,
+        authType: 'supabase_auth' as const,
+      };
+
       next();
       return;
     }
@@ -292,16 +303,19 @@ export const requireAuth = async (
     // Load full user record from public.users table
     // Note: users table is in public schema, not oriva_platform
     // Use service client to bypass RLS which may block reading user records
+    // IMPORTANT: Look up by email, not id, because auth.users.id may not match public.users.id
+    // (these tables can be populated independently, email is the reliable link)
     const { data: userRecord, error: userError } = await serviceClient
       .schema('public')
       .from('users')
       .select('id, email, full_name')
-      .eq('id', user.id)
+      .eq('email', user.email)
       .single<UserRecord>();
 
     if (userError || !userRecord) {
       logger.warn('[Auth] User not found in public.users', {
-        userId: user.id,
+        authUserId: user.id,
+        email: user.email,
         error: userError ? sanitizeError(userError) : 'No record found',
       });
       res.status(401).json({
@@ -373,6 +387,19 @@ export const requireAuth = async (
       // Default to user ID if no profile ID specified
       req.profileId = userRecord.id;
     }
+
+    // Also set keyInfo for routes that expect it (e.g., Hugo AI, Merlin AI)
+    // This provides a unified interface for both API key and JWT authentication
+    // For profile-scoped data, userId should be the profile ID (from X-Profile-ID header)
+    (req as any).keyInfo = {
+      id: `jwt-${userRecord.id}`,
+      userId: req.profileId, // Use profile ID for data scoping
+      name: userRecord.email || 'JWT Auth',
+      permissions: ['read', 'write'],
+      usageCount: 0,
+      isActive: true,
+      authType: 'supabase_auth' as const,
+    };
 
     next();
   } catch (error) {
