@@ -21,7 +21,7 @@ export interface AuthContext {
 export async function authenticate(
   req: VercelRequest,
   res: VercelResponse,
-  next: () => void | Promise<void>,
+  next: () => void | Promise<void>
 ): Promise<void> {
   const startTime = Date.now();
 
@@ -41,7 +41,10 @@ export async function authenticate(
 
     // Verify JWT with Supabase
     const supabase = getSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
     if (error || !user) {
       trackAuthEvent('login', false);
@@ -52,26 +55,108 @@ export async function authenticate(
       return;
     }
 
-    // Fetch user profile from profiles table
-    const { data: userProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, email, subscription_tier, account_id')
-      .eq('account_id', user.id)
-      .single();
+    // Check for X-Profile-ID header (Love Puzl and other apps send this for profile scoping)
+    const profileIdHeader = req.headers['x-profile-id'] as string | undefined;
+    let userProfile: { id: string; account_id: string } | null = null;
 
-    if (profileError || !userProfile) {
-      res.status(404).json({
+    if (profileIdHeader) {
+      // Client explicitly provided profile ID - verify it exists and belongs to this user
+      const { data: providedProfile, error: profileLookupError } = await supabase
+        .from('profiles')
+        .select('id, account_id')
+        .eq('id', profileIdHeader)
+        .single();
+
+      if (providedProfile) {
+        // Verify this profile belongs to the authenticated user (same account_id)
+        if (providedProfile.account_id === user.id) {
+          userProfile = providedProfile;
+          console.log('[Auth] Using X-Profile-ID header:', {
+            profileId: profileIdHeader,
+            userId: user.id,
+          });
+        } else {
+          console.warn('[Auth] X-Profile-ID does not belong to authenticated user:', {
+            profileId: profileIdHeader,
+            profileAccountId: providedProfile.account_id,
+            authUserId: user.id,
+          });
+          // Fall through to normal lookup
+        }
+      } else {
+        console.warn('[Auth] X-Profile-ID not found:', {
+          profileId: profileIdHeader,
+          error: profileLookupError,
+        });
+        // Fall through to normal lookup
+      }
+    }
+
+    // If no profile from header, fetch user profile from profiles table
+    if (!userProfile) {
+      // Note: Only select columns that exist in production schema
+      const { data: foundProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, account_id')
+        .eq('account_id', user.id)
+        .single();
+
+      if (foundProfile) {
+        userProfile = foundProfile;
+      } else if (profileError?.code === 'PGRST116') {
+        // PGRST116 = "No rows returned" - auto-create profile for new users via magic link
+        const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+        const anonSuffix = Math.floor(Math.random() * 100000000)
+          .toString()
+          .padStart(8, '0');
+
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            account_id: user.id,
+            display_name: displayName,
+            username: `anon_${anonSuffix}`,
+            profileurl: `anon_${anonSuffix}`,
+            is_default: true,
+            is_active: true,
+            is_anonymous: true,
+          })
+          .select('id, account_id')
+          .single();
+
+        if (createError || !newProfile) {
+          console.error('[Auth] Failed to auto-create profile:', createError);
+          res.status(500).json({
+            error: 'Failed to create user profile',
+            code: 'PROFILE_CREATE_FAILED',
+          });
+          return;
+        }
+
+        userProfile = newProfile;
+        console.log('[Auth] Auto-created profile for new user:', {
+          userId: user.id,
+          profileId: newProfile.id,
+        });
+      }
+    }
+
+    // Final check - must have a profile
+    if (!userProfile) {
+      console.error('[Auth] No profile found and could not create one:', { userId: user.id });
+      res.status(500).json({
         error: 'User profile not found',
-        code: 'USER_NOT_FOUND',
+        code: 'PROFILE_NOT_FOUND',
       });
       return;
     }
 
     // Attach auth context to request
+    // Note: email comes from Supabase auth user, subscription_tier defaults to 'free'
     (req as AuthenticatedRequest).authContext = {
       userId: userProfile.id,
-      email: userProfile.email,
-      subscription_tier: userProfile.subscription_tier,
+      email: user.email || '',
+      subscription_tier: 'free',
     };
 
     // Update last_active_at timestamp (fire and forget)
@@ -106,7 +191,7 @@ export async function authenticate(
 export async function optionalAuthenticate(
   req: VercelRequest,
   res: VercelResponse,
-  next: () => void | Promise<void>,
+  next: () => void | Promise<void>
 ): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
@@ -118,7 +203,10 @@ export async function optionalAuthenticate(
 
     const token = authHeader.substring(7);
     const supabase = getSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
     if (!error && user) {
       const { data: userProfile } = await supabase
@@ -187,7 +275,7 @@ export function createAuthMiddleware() {
       const vercelRes = res as unknown as VercelResponse;
 
       await authenticate(vercelReq, vercelRes, next);
-    }
+    },
   ];
 }
 
