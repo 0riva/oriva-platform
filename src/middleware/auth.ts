@@ -151,12 +151,24 @@ export async function authenticate(
       return;
     }
 
-    // Attach auth context to request
+    // Attach auth context to request (for Vercel Edge Functions)
     // Note: email comes from Supabase auth user, subscription_tier defaults to 'free'
     (req as AuthenticatedRequest).authContext = {
       userId: userProfile.id,
       email: user.email || '',
       subscription_tier: 'free',
+    };
+
+    // Also set keyInfo for Express routes (Merlin AI, etc.)
+    // This ensures compatibility with routes that use createAuthMiddleware
+    (req as any).keyInfo = {
+      id: `jwt-${user.id}`,
+      userId: userProfile.id,
+      name: user.email || 'JWT Auth',
+      permissions: ['read', 'write'],
+      usageCount: 0,
+      isActive: true,
+      authType: 'supabase_auth' as const,
     };
 
     // Update last_active_at timestamp (fire and forget)
