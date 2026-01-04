@@ -55,30 +55,39 @@ router.get('/', async (req: Request, res: Response) => {
     const systemUser = systemUserData as SystemUser | null;
 
     // Get organization memberships with org details
-    const { data: memberships } = await supabase
-      .schema(SCHEMA)
-      .from('organization_memberships')
-      .select(
-        `
-        id,
-        role,
-        status,
-        joined_at,
-        organization:organizations (
+    // IMPORTANT: organization_memberships uses system_user_id (NOT user_id!)
+    // Must use systemUser.id from the system_users table lookup above
+    let memberships: any[] = [];
+    if (systemUser?.id) {
+      const { data: membershipData } = await supabase
+        .schema(SCHEMA)
+        .from('organization_memberships')
+        .select(
+          `
           id,
-          name,
-          slug,
+          role,
           status,
-          logo_url
+          joined_at,
+          organization:organizations (
+            id,
+            name,
+            slug,
+            status,
+            logo_url
+          )
+        `
         )
-      `
-      )
-      .eq('user_id', userId)
-      .eq('status', 'active');
+        .eq('system_user_id', systemUser.id)
+        .eq('status', 'active');
+      memberships = membershipData || [];
+    }
 
     // Determine permissions
     const isMasterAdmin = systemUser?.is_master_admin && systemUser?.is_active;
-    const adminOrgs = (memberships || []).filter((m) => m.role === 'admin');
+    // Check for both 'admin' and 'org_admin' role values (schema allows both)
+    const adminOrgs = (memberships || []).filter(
+      (m) => m.role === 'admin' || m.role === 'org_admin'
+    );
     const conciergeOrgs = (memberships || []).filter((m) => m.role === 'concierge_agent');
 
     const permissions = {
