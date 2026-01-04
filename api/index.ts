@@ -52,7 +52,7 @@ import { createMerlinAIRouter } from '../src/routes/merlin-ai';
 import photosRouter from '../src/express/routes/photos';
 import userMediaRouter from '../src/express/routes/userMedia';
 import videoMeetingsRouter from '../src/express/routes/video-meetings';
-import travelHubRouter from '../src/express/routes/travel-hub';
+// NOTE: Travel Hub routes removed - use o-orig /api/tenant/travel-hub/* instead
 import hugoLoveRouter from '../src/express/routes/hugo-love';
 import askMeAnythingRouter from '../src/express/routes/ask-me-anything';
 import locationsRouter from '../src/express/routes/locations';
@@ -4143,11 +4143,10 @@ app.use('/api/v1/video-meetings', videoMeetingsRouter);
 // Namespaced under /api/v1/tenant/* to distinguish from public platform APIs
 // ============================================================================
 
-// Mount Travel Hub Concierge router
-// Requires optionalSchemaRouter to initialize Supabase client for auth validation
-app.use('/api/v1/tenant/travel-hub', optionalSchemaRouter, travelHubRouter);
-// Legacy route (deprecated - use /api/v1/tenant/travel-hub)
-app.use('/api/v1/travel-hub', optionalSchemaRouter, travelHubRouter);
+// NOTE: Travel Hub routes have been removed from o-platform
+// Travel Hub now uses o-orig's Next.js API routes at /api/tenant/travel-hub/*
+// o-platform (api.oriva.io) is the PUBLIC API for third-party developers
+// o-orig tenant routes are for internal frontend-to-backend communication
 
 // Mount Hugo Love router (dating app)
 // Requires optionalSchemaRouter to initialize Supabase client for auth validation

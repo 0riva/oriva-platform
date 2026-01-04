@@ -41,7 +41,7 @@ import iceBreakersRoutes from '../src/express/routes/iceBreakers';
 import gdprRoutes from '../src/express/routes/gdpr';
 import eventsRoutes from '../src/express/routes/events';
 import photosRoutes from '../src/express/routes/photos';
-import travelHubRoutes from '../src/express/routes/travel-hub';
+// NOTE: Travel Hub routes removed - use o-orig /api/tenant/travel-hub/* instead
 import hugoLoveRoutes from '../src/express/routes/hugo-love';
 import askMeAnythingRoutes from '../src/express/routes/ask-me-anything';
 import locationsRoutes from '../src/express/routes/locations';
@@ -141,9 +141,6 @@ export const createApp = (): Application => {
   // Event bus and notifications routes (X-App-ID required for schema routing)
   app.use(`${apiPrefix}/events`, eventsRoutes);
 
-  // Travel Hub routes (X-App-ID required for schema routing)
-  app.use(`${apiPrefix}/travel-hub`, travelHubRoutes);
-
   // Hugo Love routes (dating app - requires authentication)
   app.use(`${apiPrefix}/hugo-love`, hugoLoveRoutes);
 
@@ -155,9 +152,9 @@ export const createApp = (): Application => {
 
   // TENANT ROUTES: Map /api/v1/tenant/{tenant-slug}/* to the appropriate routes
   // This allows o-orig clients in production to call /api/v1/tenant/hugo-love/profiles/discover
+  // NOTE: Travel Hub uses o-orig /api/tenant/travel-hub/* (Next.js routes) - NOT this BFF
   app.use(`${apiPrefix}/tenant/hugo-love`, hugoLoveRoutes);
   app.use(`${apiPrefix}/tenant/ask-me-anything`, askMeAnythingRoutes);
-  app.use(`${apiPrefix}/tenant/travel-hub`, travelHubRoutes);
 
   // DEVELOPMENT PROXY: Map /api/oriva/* to /api/v1/* for o-orig dev mode
   // This allows o-orig apps using buildApiUrl('/profiles/me') to reach /api/v1/hugo-love/profiles/me
