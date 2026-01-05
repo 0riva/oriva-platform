@@ -52,7 +52,7 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "micro": "^10.0.1",
-    "next": "^15.5.4",
+    "next": "^15.5.9",
     "openai": "^5.23.1",
     "rate-limit-redis": "^4.2.3",
     "stripe": "^19.0.0",
