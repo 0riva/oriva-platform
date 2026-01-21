@@ -56,7 +56,8 @@ import videoMeetingsRouter from '../src/express/routes/video-meetings';
 import hugoLoveRouter from '../src/express/routes/hugo-love';
 import askMeAnythingRouter from '../src/express/routes/ask-me-anything';
 import locationsRouter from '../src/express/routes/locations';
-import limohawkRouter from '../src/express/routes/limohawk';
+// TEMPORARILY DISABLED - limohawk feature incomplete, missing service files
+// import limohawkRouter from '../src/express/routes/limohawk';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
@@ -4172,7 +4173,8 @@ app.use('/api/locations', locationsRouter);
 // ============================================================================
 // LIMOHAWK LOYALTY SYSTEM ENDPOINTS (External system - API key auth)
 // ============================================================================
-app.use('/api/v1/limohawk', limohawkRouter);
+// TEMPORARILY DISABLED - limohawk feature incomplete, missing service files
+// app.use('/api/v1/limohawk', limohawkRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS
