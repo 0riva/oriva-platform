@@ -56,6 +56,7 @@ import videoMeetingsRouter from '../src/express/routes/video-meetings';
 import hugoLoveRouter from '../src/express/routes/hugo-love';
 import askMeAnythingRouter from '../src/express/routes/ask-me-anything';
 import locationsRouter from '../src/express/routes/locations';
+import limohawkRouter from '../src/express/routes/limohawk';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
@@ -336,7 +337,13 @@ app.use(
       }
 
       // Other core origins - ALWAYS allowed (static, no dependencies)
-      const coreOrigins = ['https://oriva.io', 'https://www.oriva.io', 'https://app.oriva.io'];
+      // NOTE: o-originals.vercel.app hosts iframe apps launched from oriva.io app launcher
+      const coreOrigins = [
+        'https://oriva.io',
+        'https://www.oriva.io',
+        'https://app.oriva.io',
+        'https://o-originals.vercel.app',
+      ];
 
       if (coreOrigins.includes(origin)) {
         logger.debug('CORS: Core origin allowed', { origin });
@@ -4161,6 +4168,11 @@ app.use('/api/oriva/ask-me-anything', optionalSchemaRouter, askMeAnythingRouter)
 // LOCATIONS API ENDPOINTS (Google Places proxy - no auth required)
 // ============================================================================
 app.use('/api/locations', locationsRouter);
+
+// ============================================================================
+// LIMOHAWK LOYALTY SYSTEM ENDPOINTS (External system - API key auth)
+// ============================================================================
+app.use('/api/v1/limohawk', limohawkRouter);
 
 // ============================================================================
 // EVENTS API ENDPOINTS
