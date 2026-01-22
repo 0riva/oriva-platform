@@ -3,7 +3,7 @@
 // Description: CRUD operations for individual marketplace items
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from '../../../config/supabase';
+import { getSupabaseClient, getSupabaseServiceClient } from '../../../config/supabase';
 import { asyncHandler, validationError } from '../../../middleware/error-handler';
 import { rateLimit } from '../../../middleware/rate-limit';
 import { authenticate } from '../../../middleware/auth';
@@ -63,6 +63,57 @@ async function getMarketplaceItemHandler(req: VercelRequest, res: VercelResponse
 
   const metadata = entry.marketplace_metadata || {};
 
+  // Fetch the creator profile using entries.profile_id (the authoritative source)
+  let sellerName: string | null = null;
+  let sellerAvatar: string | null = null;
+  let profileId: string | null = entry.profile_id || null;
+
+  if (entry.profile_id) {
+    try {
+      const serviceClient = getSupabaseServiceClient();
+      const { data: profile } = await serviceClient
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .eq('id', entry.profile_id)
+        .single();
+
+      if (profile) {
+        sellerName = profile.display_name;
+        sellerAvatar = profile.avatar_url;
+      }
+    } catch (err) {
+      console.warn('Could not fetch creator profile:', err);
+    }
+  }
+
+  // Fallback: try metadata, then default profile
+  if (!sellerName) {
+    sellerName = metadata.seller_name || null;
+    sellerAvatar = sellerAvatar || metadata.seller_avatar || null;
+    profileId = profileId || metadata.profile_id || null;
+  }
+
+  // Final fallback: fetch default profile for user
+  if (!sellerName && entry.user_id) {
+    try {
+      const serviceClient = getSupabaseServiceClient();
+      const { data: defaultProfile } = await serviceClient
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .eq('account_id', entry.user_id)
+        .eq('is_default', true)
+        .single();
+
+      if (defaultProfile) {
+        sellerName = defaultProfile.display_name;
+        sellerAvatar = sellerAvatar || defaultProfile.avatar_url;
+        profileId = profileId || defaultProfile.id;
+      }
+    } catch (err) {
+      console.warn('Could not fetch default profile:', err);
+    }
+  }
+
   // Transform to marketplace item format
   const item = {
     id: entry.id,
@@ -75,9 +126,9 @@ async function getMarketplaceItemHandler(req: VercelRequest, res: VercelResponse
     category_ids: metadata.category_ids || [],
     topic_ids: metadata.topic_ids || [],
     seller_id: entry.user_id,
-    seller_name: metadata.seller_name || null,
-    seller_avatar: metadata.seller_avatar || null,
-    profile_id: metadata.profile_id || null,
+    seller_name: sellerName,
+    seller_avatar: sellerAvatar,
+    profile_id: profileId,
     status: metadata.status || 'draft',
     inventory_count: metadata.inventory_count || null,
     metadata: metadata.custom_metadata || {},

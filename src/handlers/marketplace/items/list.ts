@@ -129,42 +129,70 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
     return;
   }
 
-  // Batch-fetch profiles for all sellers (use service client to bypass RLS)
-  // This is safe because we only expose public profile info (display_name, avatar)
-  // Note: profiles.account_id links to auth.users.id, not profiles.id
-  const userIds = [...new Set((items || []).map((e: any) => e.user_id).filter(Boolean))];
-  let profilesMap: Record<string, { name: string; avatar_url: string | null }> = {};
+  // Batch-fetch profiles using entries.profile_id (the authoritative source)
+  // This is the profile that actually created each entry
+  const profileIds = [...new Set((items || []).map((e: any) => e.profile_id).filter(Boolean))];
+  let profilesById: Record<string, { name: string; avatar_url: string | null }> = {};
 
-  if (userIds.length > 0) {
+  if (profileIds.length > 0) {
     try {
       const serviceClient = getSupabaseServiceClient();
       const { data: profiles } = await serviceClient
         .from('profiles')
-        .select('account_id, display_name, avatar_url')
-        .in('account_id', userIds)
-        .eq('is_default', true); // Get the default profile for each account
+        .select('id, display_name, avatar_url')
+        .in('id', profileIds);
 
       if (profiles) {
-        profilesMap = profiles.reduce((acc: any, p: any) => {
+        profilesById = profiles.reduce((acc: any, p: any) => {
+          acc[p.id] = { name: p.display_name, avatar_url: p.avatar_url };
+          return acc;
+        }, {});
+      }
+    } catch (err) {
+      console.warn('Could not fetch seller profiles by ID:', err);
+    }
+  }
+
+  // Fallback: fetch default profiles for entries without profile_id
+  const entriesWithoutProfile = (items || []).filter((e: any) => !e.profile_id);
+  const userIdsNeedingFallback = [
+    ...new Set(entriesWithoutProfile.map((e: any) => e.user_id).filter(Boolean)),
+  ];
+  let defaultProfilesByUserId: Record<string, { name: string; avatar_url: string | null }> = {};
+
+  if (userIdsNeedingFallback.length > 0) {
+    try {
+      const serviceClient = getSupabaseServiceClient();
+      const { data: defaultProfiles } = await serviceClient
+        .from('profiles')
+        .select('account_id, display_name, avatar_url')
+        .in('account_id', userIdsNeedingFallback)
+        .eq('is_default', true);
+
+      if (defaultProfiles) {
+        defaultProfilesByUserId = defaultProfiles.reduce((acc: any, p: any) => {
           acc[p.account_id] = { name: p.display_name, avatar_url: p.avatar_url };
           return acc;
         }, {});
       }
     } catch (err) {
-      // Service client may not be available - continue without profile data
-      console.warn('Could not fetch seller profiles:', err);
+      console.warn('Could not fetch fallback profiles:', err);
     }
   }
 
   // Transform data to marketplace item format
   const transformedItems = (items || []).map((entry: any) => {
     const metadata = entry.marketplace_metadata || {};
-    const profile = profilesMap[entry.user_id]; // From batch-fetched profiles (fallback)
 
-    // Prefer stored seller info from metadata (captured at creation time)
-    // Fall back to profile lookup for backwards compatibility with existing items
-    const sellerName = metadata.seller_name || profile?.name || null;
-    const sellerAvatar = metadata.seller_avatar || profile?.avatar_url || null;
+    // Priority: entries.profile_id -> metadata.seller_name -> default profile fallback
+    const creatorProfile = entry.profile_id ? profilesById[entry.profile_id] : null;
+    const fallbackProfile = defaultProfilesByUserId[entry.user_id];
+
+    const sellerName =
+      creatorProfile?.name || metadata.seller_name || fallbackProfile?.name || null;
+    const sellerAvatar =
+      creatorProfile?.avatar_url || metadata.seller_avatar || fallbackProfile?.avatar_url || null;
+    const profileId = entry.profile_id || metadata.profile_id || null;
 
     return {
       id: entry.id,
@@ -179,7 +207,7 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
       seller_id: entry.user_id,
       seller_name: sellerName,
       seller_avatar: sellerAvatar,
-      profile_id: metadata.profile_id || null,
+      profile_id: profileId,
       status: metadata.status || 'draft',
       inventory_count: metadata.inventory_count || null,
       metadata: metadata.custom_metadata || {},
