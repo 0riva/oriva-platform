@@ -61,20 +61,11 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
 
   // Build query using marketplace_items table
   // Note: marketplace_items are stored as entries with marketplace_metadata
-  // Join with profiles to get seller name (profiles.id = entries.user_id)
+  // We fetch entries first, then batch-lookup profiles separately
+  // (FK join doesn't work because entries.user_id -> auth.users, not profiles directly)
   let query = supabase
     .from('entries')
-    .select(
-      `
-      *,
-      profiles!user_id (
-        id,
-        name,
-        avatar_url
-      )
-    `,
-      { count: 'exact' }
-    )
+    .select('*', { count: 'exact' })
     .not('marketplace_metadata', 'is', null);
 
   // Apply filters
@@ -138,10 +129,28 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
     return;
   }
 
+  // Batch-fetch profiles for all sellers (separate query to avoid FK issues)
+  const userIds = [...new Set((items || []).map((e: any) => e.user_id).filter(Boolean))];
+  let profilesMap: Record<string, { name: string; avatar_url: string | null }> = {};
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
+
+    if (profiles) {
+      profilesMap = profiles.reduce((acc: any, p: any) => {
+        acc[p.id] = { name: p.name, avatar_url: p.avatar_url };
+        return acc;
+      }, {});
+    }
+  }
+
   // Transform data to marketplace item format
   const transformedItems = (items || []).map((entry: any) => {
     const metadata = entry.marketplace_metadata || {};
-    const profile = entry.profiles; // Joined profile data
+    const profile = profilesMap[entry.user_id]; // From batch-fetched profiles
     return {
       id: entry.id,
       title: entry.title,
@@ -153,7 +162,7 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
       category_ids: metadata.category_ids || [],
       topic_ids: metadata.topic_ids || [], // Hierarchical topic IDs
       seller_id: entry.user_id,
-      seller_name: profile?.name || null, // From joined profiles table
+      seller_name: profile?.name || null, // From batch-fetched profiles
       seller_avatar: profile?.avatar_url || null,
       status: metadata.status || 'draft',
       inventory_count: metadata.inventory_count || null,
