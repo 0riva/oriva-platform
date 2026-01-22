@@ -1,10 +1,12 @@
 /**
  * Webhooks API Handler
- * Handles external service webhooks for call transcription workflow
+ * Handles external service webhooks
  *
  * Routes:
  *   POST /api/webhooks/twilio   - Twilio recording status callbacks
  *   POST /api/webhooks/deepgram - Deepgram transcription completion callbacks
+ *   POST /api/webhooks/limohawk        - Limohawk booking events (loyalty points)
+ *   POST /api/webhooks/stripe-limohawk - Stripe subscription events (VIP membership)
  *
  * Pattern: Catch-all routing similar to payments.ts
  */
@@ -12,6 +14,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { handleTwilioWebhook } from '../src/handlers/webhooks/twilio';
 import { handleDeepgramWebhook } from '../src/handlers/webhooks/deepgram';
+import { handleLimohawkWebhook } from '../src/handlers/webhooks/limohawk';
+import { handleStripeLimohawkWebhook } from '../src/handlers/webhooks/stripeLimohawk';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { url, method } = req;
@@ -31,6 +35,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (url?.match(/\/webhooks\/deepgram$/)) {
     await handleDeepgramWebhook(req as any, res as any);
+    return;
+  }
+
+  if (url?.match(/\/webhooks\/limohawk$/)) {
+    await handleLimohawkWebhook(req as any, res as any);
+    return;
+  }
+
+  if (url?.match(/\/webhooks\/stripe-limohawk$/)) {
+    await handleStripeLimohawkWebhook(req, res);
     return;
   }
 

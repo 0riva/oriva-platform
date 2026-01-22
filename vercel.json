@@ -1,6 +1,16 @@
 {
   "installCommand": "npm install",
   "buildCommand": "npm run build",
+  "crons": [
+    {
+      "path": "/api/cron/limohawk?job=expire-points",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/limohawk?job=expiry-warnings",
+      "schedule": "0 9 * * *"
+    }
+  ],
   "env": {
     "NODE_ENV": "production"
   },
@@ -120,6 +130,10 @@
     },
     {
       "source": "/api/v1/apps/photos/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/v1/limohawk/:path*",
       "destination": "/api/index"
     },
     {

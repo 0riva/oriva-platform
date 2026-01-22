@@ -61,13 +61,13 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
 
   // Build query using marketplace_items table
   // Note: marketplace_items are stored as entries with marketplace_metadata
-  // Join with profiles to get seller name (profiles table has user_id FK)
+  // Join with profiles to get seller name (profiles.id = entries.user_id)
   let query = supabase
     .from('entries')
     .select(
       `
       *,
-      profiles:user_id (
+      profiles!user_id (
         id,
         name,
         avatar_url

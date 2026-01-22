@@ -45,6 +45,8 @@ import photosRoutes from '../src/express/routes/photos';
 import hugoLoveRoutes from '../src/express/routes/hugo-love';
 import askMeAnythingRoutes from '../src/express/routes/ask-me-anything';
 import locationsRoutes from '../src/express/routes/locations';
+import limohawkRoutes from '../src/express/routes/limohawk';
+import limohawkCustomerRoutes from '../src/express/routes/limohawk-customer';
 import { realtimeDeliveryService } from '../src/services/realtimeDeliveryService';
 
 /**
@@ -62,6 +64,8 @@ export const createApp = (): Application => {
     'https://www.oriva.io',
     'https://app.oriva.io',
     'https://o-core.vercel.app',
+    'https://limohawk.vip',
+    'https://www.limohawk.vip',
   ];
 
   const developmentOrigins = [
@@ -149,6 +153,12 @@ export const createApp = (): Application => {
 
   // Location routes (geocoding, place search - no auth required)
   app.use('/api/locations', locationsRoutes);
+
+  // Limohawk loyalty system routes (external system - API key auth)
+  app.use(`${apiPrefix}/limohawk`, limohawkRoutes);
+
+  // Limohawk customer self-service routes (JWT auth for rewards portal)
+  app.use(`${apiPrefix}/limohawk/customer`, limohawkCustomerRoutes);
 
   // TENANT ROUTES: Map /api/v1/tenant/{tenant-slug}/* to the appropriate routes
   // This allows o-orig clients in production to call /api/v1/tenant/hugo-love/profiles/discover
