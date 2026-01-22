@@ -159,7 +159,13 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
   // Transform data to marketplace item format
   const transformedItems = (items || []).map((entry: any) => {
     const metadata = entry.marketplace_metadata || {};
-    const profile = profilesMap[entry.user_id]; // From batch-fetched profiles
+    const profile = profilesMap[entry.user_id]; // From batch-fetched profiles (fallback)
+
+    // Prefer stored seller info from metadata (captured at creation time)
+    // Fall back to profile lookup for backwards compatibility with existing items
+    const sellerName = metadata.seller_name || profile?.name || null;
+    const sellerAvatar = metadata.seller_avatar || profile?.avatar_url || null;
+
     return {
       id: entry.id,
       title: entry.title,
@@ -171,8 +177,9 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
       category_ids: metadata.category_ids || [],
       topic_ids: metadata.topic_ids || [], // Hierarchical topic IDs
       seller_id: entry.user_id,
-      seller_name: profile?.name || null, // From batch-fetched profiles
-      seller_avatar: profile?.avatar_url || null,
+      seller_name: sellerName,
+      seller_avatar: sellerAvatar,
+      profile_id: metadata.profile_id || null,
       status: metadata.status || 'draft',
       inventory_count: metadata.inventory_count || null,
       metadata: metadata.custom_metadata || {},

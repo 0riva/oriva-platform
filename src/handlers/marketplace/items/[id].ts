@@ -20,17 +20,20 @@ interface UpdateItemRequest {
   metadata?: Record<string, any>;
 }
 
-const VALID_ITEM_TYPES = ['digital_product', 'physical_product', 'service', 'extension', 'subscription'];
+const VALID_ITEM_TYPES = [
+  'digital_product',
+  'physical_product',
+  'service',
+  'extension',
+  'subscription',
+];
 const VALID_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD'];
 const VALID_STATUSES = ['draft', 'published', 'archived'];
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function getMarketplaceItemHandler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
+async function getMarketplaceItemHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const { id } = req.query;
 
   if (!id || typeof id !== 'string') {
@@ -69,7 +72,12 @@ async function getMarketplaceItemHandler(
     currency: metadata.currency || 'USD',
     item_type: metadata.item_type || 'digital_product',
     category_id: metadata.category_id || null,
+    category_ids: metadata.category_ids || [],
+    topic_ids: metadata.topic_ids || [],
     seller_id: entry.user_id,
+    seller_name: metadata.seller_name || null,
+    seller_avatar: metadata.seller_avatar || null,
+    profile_id: metadata.profile_id || null,
     status: metadata.status || 'draft',
     inventory_count: metadata.inventory_count || null,
     metadata: metadata.custom_metadata || {},
@@ -117,8 +125,17 @@ async function updateMarketplaceItemHandler(
   }: UpdateItemRequest = req.body;
 
   // Validate at least one field is being updated
-  if (!title && !description && price === undefined && !currency && !item_type && 
-      !category_id && inventory_count === undefined && !status && !metadata) {
+  if (
+    !title &&
+    !description &&
+    price === undefined &&
+    !currency &&
+    !item_type &&
+    !category_id &&
+    inventory_count === undefined &&
+    !status &&
+    !metadata
+  ) {
     throw validationError('At least one field must be provided for update');
   }
 
@@ -174,7 +191,10 @@ async function updateMarketplaceItemHandler(
     throw validationError(`Status must be one of: ${VALID_STATUSES.join(', ')}`);
   }
 
-  if (inventory_count !== undefined && (typeof inventory_count !== 'number' || inventory_count < 0)) {
+  if (
+    inventory_count !== undefined &&
+    (typeof inventory_count !== 'number' || inventory_count < 0)
+  ) {
     throw validationError('Inventory count must be a non-negative number');
   }
 
@@ -288,10 +308,7 @@ async function deleteMarketplaceItemHandler(
   }
 
   // Delete item
-  const { error: deleteError } = await supabase
-    .from('entries')
-    .delete()
-    .eq('id', id);
+  const { error: deleteError } = await supabase.from('entries').delete().eq('id', id);
 
   if (deleteError) {
     console.error('Error deleting marketplace item:', deleteError);
@@ -305,10 +322,7 @@ async function deleteMarketplaceItemHandler(
   res.status(204).send('');
 }
 
-async function marketplaceItemByIdHandler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
+async function marketplaceItemByIdHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const method = req.method;
 
   switch (method) {
