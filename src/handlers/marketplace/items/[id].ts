@@ -34,7 +34,10 @@ const VALID_STATUSES = ['draft', 'published', 'archived'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function getMarketplaceItemHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const { id } = req.query;
+  // Extract ID from URL path (catch-all handler doesn't populate req.query.id)
+  const pathname = req.url?.split('?')[0] || '';
+  const pathMatch = pathname.match(/\/items\/([^/]+)$/);
+  const id = pathMatch?.[1] || (req.query.id as string);
 
   if (!id || typeof id !== 'string') {
     throw validationError('Item ID is required');
@@ -143,7 +146,10 @@ async function updateMarketplaceItemHandler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
-  const { id } = req.query;
+  // Extract ID from URL path (catch-all handler doesn't populate req.query.id)
+  const pathname = req.url?.split('?')[0] || '';
+  const pathMatch = pathname.match(/\/items\/([^/]+)$/);
+  const id = pathMatch?.[1] || (req.query.id as string);
 
   if (!id || typeof id !== 'string') {
     throw validationError('Item ID is required');
@@ -311,7 +317,10 @@ async function deleteMarketplaceItemHandler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
-  const { id } = req.query;
+  // Extract ID from URL path (catch-all handler doesn't populate req.query.id)
+  const pathname = req.url?.split('?')[0] || '';
+  const pathMatch = pathname.match(/\/items\/([^/]+)$/);
+  const id = pathMatch?.[1] || (req.query.id as string);
 
   if (!id || typeof id !== 'string') {
     throw validationError('Item ID is required');
