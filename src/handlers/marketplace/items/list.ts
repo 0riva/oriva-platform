@@ -12,6 +12,7 @@ interface QueryParams {
   limit?: string;
   item_type?: string;
   category_id?: string;
+  topic_id?: string; // Hierarchical topic ID (e.g., 'topic-social-relationships')
   min_price?: string;
   max_price?: string;
   status?: string;
@@ -19,10 +20,7 @@ interface QueryParams {
   search?: string;
 }
 
-async function getMarketplaceItemsHandler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
+async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
     return;
@@ -33,6 +31,7 @@ async function getMarketplaceItemsHandler(
     limit = '20',
     item_type,
     category_id,
+    topic_id,
     min_price,
     max_price,
     status,
@@ -45,7 +44,9 @@ async function getMarketplaceItemsHandler(
   const limitNum = parseInt(limit, 10);
 
   if (pageNum < 1 || limitNum < 1 || limitNum > 100) {
-    throw validationError('Invalid pagination parameters. Page must be >= 1, limit must be between 1 and 100');
+    throw validationError(
+      'Invalid pagination parameters. Page must be >= 1, limit must be between 1 and 100'
+    );
   }
 
   // Validate price range
@@ -71,7 +72,14 @@ async function getMarketplaceItemsHandler(
   }
 
   if (category_id) {
-    query = query.eq('marketplace_metadata->>category_id', category_id);
+    // category_ids is an array, use contains operator
+    query = query.contains('marketplace_metadata->category_ids', [category_id]);
+  }
+
+  if (topic_id) {
+    // topic_ids is an array of hierarchical topic IDs (e.g., 'topic-social-relationships')
+    // Use contains operator to check if the topic_id is in the array
+    query = query.contains('marketplace_metadata->topic_ids', [topic_id]);
   }
 
   if (min_price) {
@@ -83,10 +91,15 @@ async function getMarketplaceItemsHandler(
   }
 
   if (status) {
-    query = query.eq('marketplace_metadata->>status', status);
+    // Handle both 'published' status and 'is_published' boolean
+    if (status === 'published') {
+      query = query.eq('marketplace_metadata->>is_published', 'true');
+    } else {
+      query = query.eq('marketplace_metadata->>is_published', 'false');
+    }
   } else {
     // Default: only show published items to public
-    query = query.eq('marketplace_metadata->>status', 'published');
+    query = query.eq('marketplace_metadata->>is_published', 'true');
   }
 
   if (seller_id) {
@@ -100,9 +113,7 @@ async function getMarketplaceItemsHandler(
 
   // Apply pagination
   const offset = (pageNum - 1) * limitNum;
-  query = query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limitNum - 1);
+  query = query.order('created_at', { ascending: false }).range(offset, offset + limitNum - 1);
 
   const { data: items, error, count } = await query;
 
@@ -125,7 +136,9 @@ async function getMarketplaceItemsHandler(
       price: metadata.price || 0,
       currency: metadata.currency || 'USD',
       item_type: metadata.item_type || 'digital_product',
-      category_id: metadata.category_id || null,
+      category_id: metadata.category_ids?.[0] || null,
+      category_ids: metadata.category_ids || [],
+      topic_ids: metadata.topic_ids || [], // Hierarchical topic IDs
       seller_id: entry.user_id,
       status: metadata.status || 'draft',
       inventory_count: metadata.inventory_count || null,
