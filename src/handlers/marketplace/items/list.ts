@@ -72,14 +72,15 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
   }
 
   if (category_id) {
-    // category_ids is an array, use contains operator
-    query = query.contains('marketplace_metadata->category_ids', [category_id]);
+    // category_ids is a JSONB array inside marketplace_metadata
+    // Use filter with @> (contains) operator for JSONB array containment
+    query = query.filter('marketplace_metadata->category_ids', 'cs', JSON.stringify([category_id]));
   }
 
   if (topic_id) {
-    // topic_ids is an array of hierarchical topic IDs (e.g., 'topic-social-relationships')
-    // Use contains operator to check if the topic_id is in the array
-    query = query.contains('marketplace_metadata->topic_ids', [topic_id]);
+    // topic_ids is a JSONB array of hierarchical topic IDs (e.g., 'topic-social-relationships')
+    // Use filter with @> (contains) operator for JSONB array containment
+    query = query.filter('marketplace_metadata->topic_ids', 'cs', JSON.stringify([topic_id]));
   }
 
   if (min_price) {
