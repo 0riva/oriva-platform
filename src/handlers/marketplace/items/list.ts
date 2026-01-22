@@ -3,7 +3,7 @@
 // Description: List and search marketplace items with filtering and pagination
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from '../../../config/supabase';
+import { getSupabaseClient, getSupabaseServiceClient } from '../../../config/supabase';
 import { asyncHandler, validationError } from '../../../middleware/error-handler';
 import { rateLimit } from '../../../middleware/rate-limit';
 
@@ -129,21 +129,28 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
     return;
   }
 
-  // Batch-fetch profiles for all sellers (separate query to avoid FK issues)
+  // Batch-fetch profiles for all sellers (use service client to bypass RLS)
+  // This is safe because we only expose public profile info (name, avatar)
   const userIds = [...new Set((items || []).map((e: any) => e.user_id).filter(Boolean))];
   let profilesMap: Record<string, { name: string; avatar_url: string | null }> = {};
 
   if (userIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, name, avatar_url')
-      .in('id', userIds);
+    try {
+      const serviceClient = getSupabaseServiceClient();
+      const { data: profiles } = await serviceClient
+        .from('profiles')
+        .select('id, name, avatar_url')
+        .in('id', userIds);
 
-    if (profiles) {
-      profilesMap = profiles.reduce((acc: any, p: any) => {
-        acc[p.id] = { name: p.name, avatar_url: p.avatar_url };
-        return acc;
-      }, {});
+      if (profiles) {
+        profilesMap = profiles.reduce((acc: any, p: any) => {
+          acc[p.id] = { name: p.name, avatar_url: p.avatar_url };
+          return acc;
+        }, {});
+      }
+    } catch (err) {
+      // Service client may not be available - continue without profile data
+      console.warn('Could not fetch seller profiles:', err);
     }
   }
 
