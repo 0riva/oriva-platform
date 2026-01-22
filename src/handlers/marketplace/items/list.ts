@@ -61,9 +61,20 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
 
   // Build query using marketplace_items table
   // Note: marketplace_items are stored as entries with marketplace_metadata
+  // Join with profiles to get seller name (profiles table has user_id FK)
   let query = supabase
     .from('entries')
-    .select('*', { count: 'exact' })
+    .select(
+      `
+      *,
+      profiles:user_id (
+        id,
+        name,
+        avatar_url
+      )
+    `,
+      { count: 'exact' }
+    )
     .not('marketplace_metadata', 'is', null);
 
   // Apply filters
@@ -128,8 +139,9 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
   }
 
   // Transform data to marketplace item format
-  const transformedItems = (items || []).map((entry) => {
+  const transformedItems = (items || []).map((entry: any) => {
     const metadata = entry.marketplace_metadata || {};
+    const profile = entry.profiles; // Joined profile data
     return {
       id: entry.id,
       title: entry.title,
@@ -141,6 +153,8 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
       category_ids: metadata.category_ids || [],
       topic_ids: metadata.topic_ids || [], // Hierarchical topic IDs
       seller_id: entry.user_id,
+      seller_name: profile?.name || null, // From joined profiles table
+      seller_avatar: profile?.avatar_url || null,
       status: metadata.status || 'draft',
       inventory_count: metadata.inventory_count || null,
       metadata: metadata.custom_metadata || {},
