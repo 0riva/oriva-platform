@@ -130,7 +130,8 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
   }
 
   // Batch-fetch profiles for all sellers (use service client to bypass RLS)
-  // This is safe because we only expose public profile info (name, avatar)
+  // This is safe because we only expose public profile info (display_name, avatar)
+  // Note: profiles.account_id links to auth.users.id, not profiles.id
   const userIds = [...new Set((items || []).map((e: any) => e.user_id).filter(Boolean))];
   let profilesMap: Record<string, { name: string; avatar_url: string | null }> = {};
 
@@ -139,12 +140,13 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
       const serviceClient = getSupabaseServiceClient();
       const { data: profiles } = await serviceClient
         .from('profiles')
-        .select('id, name, avatar_url')
-        .in('id', userIds);
+        .select('account_id, display_name, avatar_url')
+        .in('account_id', userIds)
+        .eq('is_default', true); // Get the default profile for each account
 
       if (profiles) {
         profilesMap = profiles.reduce((acc: any, p: any) => {
-          acc[p.id] = { name: p.name, avatar_url: p.avatar_url };
+          acc[p.account_id] = { name: p.display_name, avatar_url: p.avatar_url };
           return acc;
         }, {});
       }
