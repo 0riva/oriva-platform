@@ -6,7 +6,7 @@
  * GET /api/marketplace/analytics/dashboard - Get seller dashboard analytics
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -14,10 +14,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
@@ -30,7 +27,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -70,7 +70,7 @@ export default async function handler(
 
     // Get top selling items
     const itemSales = new Map<string, { count: number; revenue: number }>();
-    transactions.forEach(tx => {
+    transactions.forEach((tx) => {
       const existing = itemSales.get(tx.item_id) || { count: 0, revenue: 0 };
       itemSales.set(tx.item_id, {
         count: existing.count + 1,
@@ -89,17 +89,18 @@ export default async function handler(
       .select('id, title, marketplace_metadata')
       .in('id', topItemIds);
 
-    const topSellingItems = topItems?.map(item => ({
-      id: item.id,
-      title: item.title,
-      sales: itemSales.get(item.id)?.count || 0,
-      revenue: itemSales.get(item.id)?.revenue || 0,
-      price: item.marketplace_metadata?.price || 0,
-    })) || [];
+    const topSellingItems =
+      topItems?.map((item) => ({
+        id: item.id,
+        title: item.title,
+        sales: itemSales.get(item.id)?.count || 0,
+        revenue: itemSales.get(item.id)?.revenue || 0,
+        price: item.marketplace_metadata?.price || 0,
+      })) || [];
 
     // Calculate time series data (daily aggregation)
     const timeSeriesMap = new Map<string, number>();
-    transactions.forEach(tx => {
+    transactions.forEach((tx) => {
       const date = new Date(tx.created_at).toISOString().split('T')[0];
       timeSeriesMap.set(date, (timeSeriesMap.get(date) || 0) + tx.seller_net_cents);
     });
@@ -119,9 +120,7 @@ export default async function handler(
       .lte('created_at', prevDateRange.endDate.toISOString());
 
     const prevRevenue = prevTransactions?.reduce((sum, tx) => sum + tx.seller_net_cents, 0) || 0;
-    const revenueGrowth = prevRevenue > 0
-      ? ((netRevenue - prevRevenue) / prevRevenue) * 100
-      : 0;
+    const revenueGrowth = prevRevenue > 0 ? ((netRevenue - prevRevenue) / prevRevenue) * 100 : 0;
 
     return res.status(200).json({
       period,
@@ -138,7 +137,6 @@ export default async function handler(
       top_selling_items: topSellingItems,
       time_series: timeSeries,
     });
-
   } catch (error) {
     console.error('[Dashboard Analytics Error]:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -172,7 +170,10 @@ function getDateRange(period: string): { startDate: Date; endDate: Date } {
   return { startDate, endDate };
 }
 
-function getPreviousPeriod(dateRange: { startDate: Date; endDate: Date }): { startDate: Date; endDate: Date } {
+function getPreviousPeriod(dateRange: { startDate: Date; endDate: Date }): {
+  startDate: Date;
+  endDate: Date;
+} {
   const duration = dateRange.endDate.getTime() - dateRange.startDate.getTime();
   const startDate = new Date(dateRange.startDate.getTime() - duration);
   const endDate = new Date(dateRange.endDate.getTime() - duration);

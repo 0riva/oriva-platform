@@ -6,7 +6,7 @@
  * GET /api/marketplace/analytics/revenue - Get revenue breakdown and projections
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -14,10 +14,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
@@ -30,18 +27,17 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
   try {
-    const {
-      start_date,
-      end_date,
-      include_projections = 'false',
-    } = req.query;
+    const { start_date, end_date, include_projections = 'false' } = req.query;
 
     // Get transactions
     let query = supabase
@@ -73,19 +69,23 @@ export default async function handler(
 
     // Group by earner type (from transaction metadata)
     const revenueByEarnerType: Record<string, number> = {};
-    transactions?.forEach(tx => {
+    transactions?.forEach((tx) => {
       const earnerType = tx.metadata?.earner_type || 'unknown';
-      revenueByEarnerType[earnerType] = (revenueByEarnerType[earnerType] || 0) + tx.seller_net_cents;
+      revenueByEarnerType[earnerType] =
+        (revenueByEarnerType[earnerType] || 0) + tx.seller_net_cents;
     });
 
     // Calculate monthly recurring revenue (MRR) for subscriptions
-    const subscriptionRevenue = transactions?.filter(
-      tx => tx.transaction_type === 'subscription' || tx.metadata?.is_recurring
-    ) || [];
+    const subscriptionRevenue =
+      transactions?.filter(
+        (tx) => tx.transaction_type === 'subscription' || tx.metadata?.is_recurring
+      ) || [];
 
-    const mrr = subscriptionRevenue.length > 0
-      ? subscriptionRevenue.reduce((sum, tx) => sum + tx.seller_net_cents, 0) / subscriptionRevenue.length
-      : 0;
+    const mrr =
+      subscriptionRevenue.length > 0
+        ? subscriptionRevenue.reduce((sum, tx) => sum + tx.seller_net_cents, 0) /
+          subscriptionRevenue.length
+        : 0;
 
     const response: any = {
       breakdown: {
@@ -113,7 +113,6 @@ export default async function handler(
     }
 
     return res.status(200).json(response);
-
   } catch (error) {
     console.error('[Revenue Analytics Error]:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -124,7 +123,7 @@ function calculateProjections(transactions: any[]) {
   // Simple linear regression for next 3 months
   const dailyRevenue: Record<string, number> = {};
 
-  transactions.forEach(tx => {
+  transactions.forEach((tx) => {
     const date = new Date(tx.created_at).toISOString().split('T')[0];
     dailyRevenue[date] = (dailyRevenue[date] || 0) + tx.seller_net_cents;
   });
@@ -136,17 +135,17 @@ function calculateProjections(transactions: any[]) {
 
   // Calculate average daily revenue from last 30 days
   const last30Days = dates.slice(-30);
-  const avgDailyRevenue = last30Days.reduce((sum, date) => sum + dailyRevenue[date], 0) / last30Days.length;
+  const avgDailyRevenue =
+    last30Days.reduce((sum, date) => sum + dailyRevenue[date], 0) / last30Days.length;
 
   // Calculate growth rate (compare last 30 days to previous 30 days)
   const prev30Days = dates.slice(-60, -30);
-  const prevAvgDaily = prev30Days.length > 0
-    ? prev30Days.reduce((sum, date) => sum + (dailyRevenue[date] || 0), 0) / prev30Days.length
-    : avgDailyRevenue;
+  const prevAvgDaily =
+    prev30Days.length > 0
+      ? prev30Days.reduce((sum, date) => sum + (dailyRevenue[date] || 0), 0) / prev30Days.length
+      : avgDailyRevenue;
 
-  const growthRate = prevAvgDaily > 0
-    ? (avgDailyRevenue - prevAvgDaily) / prevAvgDaily
-    : 0;
+  const growthRate = prevAvgDaily > 0 ? (avgDailyRevenue - prevAvgDaily) / prevAvgDaily : 0;
 
   // Project next 3 months
   const projections = [];
@@ -160,7 +159,7 @@ function calculateProjections(transactions: any[]) {
     projections.push({
       month: date.toISOString().split('T')[0].slice(0, 7),
       projected_revenue_cents: Math.round(projectedRevenue),
-      confidence: Math.max(0.5, 1 - (i * 0.15)), // Confidence decreases with time
+      confidence: Math.max(0.5, 1 - i * 0.15), // Confidence decreases with time
     });
   }
 

@@ -6,7 +6,7 @@
  * POST /api/marketplace/reviews/[id]/respond - Seller response to review
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -14,10 +14,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
@@ -37,7 +34,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -52,8 +52,8 @@ export default async function handler(
 }
 
 async function handleRespond(
-  req: NextApiRequest,
-  res: NextApiResponse,
+  req: VercelRequest,
+  res: VercelResponse,
   userId: string,
   reviewId: string
 ) {
@@ -68,12 +68,14 @@ async function handleRespond(
   // Get review with item details
   const { data: review, error: reviewError } = await supabase
     .from('marketplace_reviews')
-    .select(`
+    .select(
+      `
       id,
       item_id,
       seller_response,
       item:entries!item_id(id, user_id)
-    `)
+    `
+    )
     .eq('id', reviewId)
     .single();
 
@@ -99,11 +101,13 @@ async function handleRespond(
       seller_responded_at: new Date().toISOString(),
     })
     .eq('id', reviewId)
-    .select(`
+    .select(
+      `
       *,
       reviewer:auth.users!reviewer_id(id, email),
       item:entries!item_id(id, title)
-    `)
+    `
+    )
     .single();
 
   if (updateError) {

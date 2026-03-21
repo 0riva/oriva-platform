@@ -7,7 +7,7 @@
  * POST /api/marketplace/transactions - Create new transaction (internal use)
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -15,10 +15,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { method } = req;
 
   // Get user from authorization header
@@ -28,7 +25,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -53,11 +53,7 @@ export default async function handler(
 /**
  * GET - List transactions for the authenticated user
  */
-async function handleGet(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
+async function handleGet(req: VercelRequest, res: VercelResponse, userId: string) {
   const {
     role = 'buyer', // 'buyer' or 'seller'
     status,
@@ -70,12 +66,14 @@ async function handleGet(
 
   let query = supabase
     .from('orivapay_transactions')
-    .select(`
+    .select(
+      `
       *,
       buyer:auth.users!buyer_id(id, email),
       seller:auth.users!seller_id(id, email),
       item:entries!item_id(id, title, content, marketplace_metadata)
-    `)
+    `
+    )
     .order('created_at', { ascending: false })
     .range(offsetNum, offsetNum + limitNum - 1);
 
@@ -111,11 +109,7 @@ async function handleGet(
 /**
  * POST - Create a new transaction (called by checkout service)
  */
-async function handlePost(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
+async function handlePost(req: VercelRequest, res: VercelResponse, userId: string) {
   const {
     buyer_id,
     seller_id,

@@ -8,7 +8,7 @@
  * DELETE /api/marketplace/reviews/[id] - Delete review
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -16,10 +16,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { method, query } = req;
   const { id } = query;
 
@@ -34,7 +31,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -62,19 +62,21 @@ export default async function handler(
  * GET - Get review details
  */
 async function handleGet(
-  req: NextApiRequest,
-  res: NextApiResponse,
+  req: VercelRequest,
+  res: VercelResponse,
   userId: string,
   reviewId: string
 ) {
   const { data: review, error } = await supabase
     .from('marketplace_reviews')
-    .select(`
+    .select(
+      `
       *,
       reviewer:auth.users!reviewer_id(id, email),
       profiles!reviewer_id(username, display_name, avatar_url),
       item:entries!item_id(id, title, marketplace_metadata)
-    `)
+    `
+    )
     .eq('id', reviewId)
     .single();
 
@@ -98,8 +100,8 @@ async function handleGet(
  * PATCH - Update review
  */
 async function handlePatch(
-  req: NextApiRequest,
-  res: NextApiResponse,
+  req: VercelRequest,
+  res: VercelResponse,
   userId: string,
   reviewId: string
 ) {
@@ -157,11 +159,13 @@ async function handlePatch(
     .from('marketplace_reviews')
     .update(updates)
     .eq('id', reviewId)
-    .select(`
+    .select(
+      `
       *,
       reviewer:auth.users!reviewer_id(id, email),
       profiles!reviewer_id(username, display_name, avatar_url)
-    `)
+    `
+    )
     .single();
 
   if (error) {
@@ -176,8 +180,8 @@ async function handlePatch(
  * DELETE - Delete review
  */
 async function handleDelete(
-  req: NextApiRequest,
-  res: NextApiResponse,
+  req: VercelRequest,
+  res: VercelResponse,
   userId: string,
   reviewId: string
 ) {
@@ -198,10 +202,7 @@ async function handleDelete(
   }
 
   // Delete review
-  const { error } = await supabase
-    .from('marketplace_reviews')
-    .delete()
-    .eq('id', reviewId);
+  const { error } = await supabase.from('marketplace_reviews').delete().eq('id', reviewId);
 
   if (error) {
     console.error('[Delete Review Error]:', error);

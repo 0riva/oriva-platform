@@ -194,6 +194,20 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
       creatorProfile?.avatar_url || metadata.seller_avatar || fallbackProfile?.avatar_url || null;
     const profileId = entry.profile_id || metadata.profile_id || null;
 
+    // Extract images from media array OR marketplace_metadata.image_urls
+    const mediaArray = entry.media || [];
+    const mediaImages = mediaArray
+      .filter((m: any) => m.type === 'image' || m.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+      .map((m: any) => m.url)
+      .filter(Boolean);
+
+    // Also check marketplace_metadata.image_urls (where CreateOfferScreen stores images)
+    const metadataImages = metadata.image_urls || [];
+
+    // Combine: prefer media array, fall back to metadata
+    const images = mediaImages.length > 0 ? mediaImages : metadataImages;
+    const imageUrl = images[0] || null;
+
     return {
       id: entry.id,
       title: entry.title,
@@ -211,6 +225,8 @@ async function getMarketplaceItemsHandler(req: VercelRequest, res: VercelRespons
       status: metadata.status || 'draft',
       inventory_count: metadata.inventory_count || null,
       metadata: metadata.custom_metadata || {},
+      images,
+      image_url: imageUrl,
       created_at: entry.created_at,
       updated_at: entry.updated_at,
     };

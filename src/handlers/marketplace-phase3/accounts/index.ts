@@ -8,7 +8,7 @@
  * PATCH /api/marketplace/accounts - Update account details
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -16,10 +16,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { method } = req;
 
   // Get user from authorization header
@@ -29,7 +26,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -56,11 +56,7 @@ export default async function handler(
 /**
  * GET - Get user's payment account
  */
-async function handleGet(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
+async function handleGet(req: VercelRequest, res: VercelResponse, userId: string) {
   const { data: account, error } = await supabase
     .from('orivapay_accounts')
     .select('*')
@@ -81,11 +77,7 @@ async function handleGet(
 /**
  * POST - Create Stripe Connect account
  */
-async function handlePost(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
+async function handlePost(req: VercelRequest, res: VercelResponse, userId: string) {
   const {
     account_type = 'express',
     business_type = 'individual',
@@ -166,11 +158,7 @@ async function handlePost(
 /**
  * PATCH - Update account details
  */
-async function handlePatch(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
+async function handlePatch(req: VercelRequest, res: VercelResponse, userId: string) {
   const {
     business_type,
     charges_enabled,

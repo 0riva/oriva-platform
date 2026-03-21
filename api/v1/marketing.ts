@@ -14,7 +14,7 @@
  * - POST   /api/v1/marketing/ads/track               - Track impression
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 // ============================================================================
@@ -89,7 +89,7 @@ function getSupabaseClient(authHeader?: string) {
 // Affiliate: Campaign Management
 // ============================================================================
 
-async function listCampaigns(req: NextApiRequest, res: NextApiResponse) {
+async function listCampaigns(req: VercelRequest, res: VercelResponse) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -240,7 +240,7 @@ function validateCampaignRequest(data: any): ValidationError[] {
   return errors;
 }
 
-async function createCampaign(req: NextApiRequest, res: NextApiResponse) {
+async function createCampaign(req: VercelRequest, res: VercelResponse) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -326,7 +326,7 @@ function calculateCommissionAmount(campaign: any, transactionAmount: number): nu
   throw new Error('Invalid commission type');
 }
 
-async function calculateCommission(req: NextApiRequest, res: NextApiResponse) {
+async function calculateCommission(req: VercelRequest, res: VercelResponse) {
   try {
     const apiKey = req.headers['x-api-key'];
     if (!apiKey || apiKey !== process.env.WEBHOOK_API_KEY) {
@@ -497,7 +497,7 @@ function detectBots(clicks: any[]): FraudEvidence | null {
   return null;
 }
 
-async function detectFraud(req: NextApiRequest, res: NextApiResponse) {
+async function detectFraud(req: VercelRequest, res: VercelResponse) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -627,7 +627,7 @@ function isCampaignEligible(campaign: any): boolean {
   return true;
 }
 
-async function serveAd(req: NextApiRequest, res: NextApiResponse) {
+async function serveAd(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
 
   try {
@@ -700,7 +700,7 @@ async function serveAd(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-async function trackImpression(req: NextApiRequest, res: NextApiResponse) {
+async function trackImpression(req: VercelRequest, res: VercelResponse) {
   try {
     const { campaign_id, creative_id, user_id, placement, thread_id, is_viewable } = req.body;
 
@@ -731,7 +731,7 @@ async function trackImpression(req: NextApiRequest, res: NextApiResponse) {
 // Main Handler
 // ============================================================================
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { pathname } = new URL(req.url || '', `http://${req.headers.host}`);
 
   // Affiliate routes

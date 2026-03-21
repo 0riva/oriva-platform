@@ -15,7 +15,7 @@
  * Authorization: Required
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
@@ -74,17 +74,51 @@ interface Suggestion {
  */
 function extractKeywords(content: string): string[] {
   const stopWords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'be', 'been',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should',
-    'could', 'may', 'might', 'can', 'this', 'that', 'these', 'those',
+    'the',
+    'a',
+    'an',
+    'and',
+    'or',
+    'but',
+    'in',
+    'on',
+    'at',
+    'to',
+    'for',
+    'of',
+    'with',
+    'by',
+    'from',
+    'as',
+    'is',
+    'was',
+    'are',
+    'be',
+    'been',
+    'have',
+    'has',
+    'had',
+    'do',
+    'does',
+    'did',
+    'will',
+    'would',
+    'should',
+    'could',
+    'may',
+    'might',
+    'can',
+    'this',
+    'that',
+    'these',
+    'those',
   ]);
 
   return content
     .toLowerCase()
     .replace(/[^\w\s]/g, ' ')
     .split(/\s+/)
-    .filter(word => word.length > 3 && !stopWords.has(word))
+    .filter((word) => word.length > 3 && !stopWords.has(word))
     .filter((word, index, arr) => arr.indexOf(word) === index)
     .slice(0, 20);
 }
@@ -96,34 +130,48 @@ function detectIntent(content: string): { intent: string; confidence: number } {
   const lowerContent = content.toLowerCase();
 
   const buyingSignals = [
-    'looking for', 'need a', 'want to buy', 'searching for',
-    'recommendations for', 'where can i buy', 'purchase',
+    'looking for',
+    'need a',
+    'want to buy',
+    'searching for',
+    'recommendations for',
+    'where can i buy',
+    'purchase',
   ];
 
   const researchSignals = [
-    'what are', 'how does', 'best way to', 'comparison', 'review',
-    'difference between', 'pros and cons',
+    'what are',
+    'how does',
+    'best way to',
+    'comparison',
+    'review',
+    'difference between',
+    'pros and cons',
   ];
 
   const serviceSignals = [
-    'need help with', 'looking for expert', 'hire someone',
-    'consultant for', 'freelancer for', 'developer for',
+    'need help with',
+    'looking for expert',
+    'hire someone',
+    'consultant for',
+    'freelancer for',
+    'developer for',
   ];
 
-  const buyingScore = buyingSignals.filter(s => lowerContent.includes(s)).length;
-  const researchScore = researchSignals.filter(s => lowerContent.includes(s)).length;
-  const serviceScore = serviceSignals.filter(s => lowerContent.includes(s)).length;
+  const buyingScore = buyingSignals.filter((s) => lowerContent.includes(s)).length;
+  const researchScore = researchSignals.filter((s) => lowerContent.includes(s)).length;
+  const serviceScore = serviceSignals.filter((s) => lowerContent.includes(s)).length;
 
   if (buyingScore >= researchScore && buyingScore >= serviceScore && buyingScore > 0) {
-    return { intent: 'purchase', confidence: Math.min(0.6 + (buyingScore * 0.1), 0.95) };
+    return { intent: 'purchase', confidence: Math.min(0.6 + buyingScore * 0.1, 0.95) };
   }
 
   if (serviceScore > buyingScore && serviceScore > researchScore) {
-    return { intent: 'service_request', confidence: Math.min(0.6 + (serviceScore * 0.1), 0.9) };
+    return { intent: 'service_request', confidence: Math.min(0.6 + serviceScore * 0.1, 0.9) };
   }
 
   if (researchScore > 0) {
-    return { intent: 'research', confidence: Math.min(0.5 + (researchScore * 0.1), 0.8) };
+    return { intent: 'research', confidence: Math.min(0.5 + researchScore * 0.1, 0.8) };
   }
 
   return { intent: 'general', confidence: 0.3 };
@@ -134,18 +182,18 @@ function detectIntent(content: string): { intent: string; confidence: number } {
  */
 function extractTopicsFromKeywords(keywords: string[]): string[] {
   const categoryMap: Record<string, string[]> = {
-    'software': ['tool', 'app', 'software', 'platform', 'saas', 'system'],
-    'development': ['developer', 'code', 'programming', 'api', 'framework'],
-    'design': ['design', 'ui', 'ux', 'interface', 'visual'],
-    'marketing': ['marketing', 'seo', 'analytics', 'campaign', 'advertising'],
-    'productivity': ['project', 'management', 'collaboration', 'workflow', 'task'],
-    'services': ['consultant', 'expert', 'freelancer', 'service', 'help'],
+    software: ['tool', 'app', 'software', 'platform', 'saas', 'system'],
+    development: ['developer', 'code', 'programming', 'api', 'framework'],
+    design: ['design', 'ui', 'ux', 'interface', 'visual'],
+    marketing: ['marketing', 'seo', 'analytics', 'campaign', 'advertising'],
+    productivity: ['project', 'management', 'collaboration', 'workflow', 'task'],
+    services: ['consultant', 'expert', 'freelancer', 'service', 'help'],
   };
 
   const topics: string[] = [];
 
   Object.entries(categoryMap).forEach(([topic, words]) => {
-    if (keywords.some(keyword => words.includes(keyword))) {
+    if (keywords.some((keyword) => words.includes(keyword))) {
       topics.push(topic);
     }
   });
@@ -168,11 +216,7 @@ function calculateOpportunityScore(
   const keywordScore = Math.min(keywordCount / 10, 1.0);
   const topicScore = Math.min(topicCount / 3, 1.0);
 
-  return (
-    intentConfidence * intentWeight +
-    keywordScore * keywordWeight +
-    topicScore * topicWeight
-  );
+  return intentConfidence * intentWeight + keywordScore * keywordWeight + topicScore * topicWeight;
 }
 
 /**
@@ -197,9 +241,7 @@ async function generateMarketplaceSuggestions(
     .map((item: any) => {
       const itemText = `${item.content} ${JSON.stringify(item.marketplace_metadata)}`.toLowerCase();
 
-      const matchedKeywords = keywords.filter(keyword =>
-        itemText.includes(keyword)
-      );
+      const matchedKeywords = keywords.filter((keyword) => itemText.includes(keyword));
 
       const relevanceScore = matchedKeywords.length / keywords.length;
 
@@ -211,7 +253,7 @@ async function generateMarketplaceSuggestions(
         matched_keywords: matchedKeywords,
       };
     })
-    .filter(item => item.relevance_score >= 0.3)
+    .filter((item) => item.relevance_score >= 0.3)
     .sort((a, b) => b.relevance_score - a.relevance_score)
     .slice(0, 5);
 
@@ -222,24 +264,20 @@ async function generateMarketplaceSuggestions(
  * Analyze thread for commerce opportunities
  * POST /api/semantic/analyze-thread
  */
-async function analyzeThread(req: NextApiRequest, res: NextApiResponse) {
+async function analyzeThread(req: VercelRequest, res: VercelResponse) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
+    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+      global: {
+        headers: {
+          Authorization: authHeader,
         },
-      }
-    );
+      },
+    });
 
     const { thread_id, include_context = true } = req.body as AnalyzeThreadRequest;
 
@@ -268,11 +306,7 @@ async function analyzeThread(req: NextApiRequest, res: NextApiResponse) {
     const topics = extractTopicsFromKeywords(keywords);
 
     // Calculate opportunity score
-    const opportunityScore = calculateOpportunityScore(
-      confidence,
-      keywords.length,
-      topics.length
-    );
+    const opportunityScore = calculateOpportunityScore(confidence, keywords.length, topics.length);
 
     // Generate marketplace suggestions
     const suggestions = await generateMarketplaceSuggestions(supabase, keywords, topics);
@@ -424,7 +458,7 @@ async function cacheTopics(
  * Extract topics from content
  * POST /api/semantic/topics
  */
-async function extractTopics(req: NextApiRequest, res: NextApiResponse) {
+async function extractTopics(req: VercelRequest, res: VercelResponse) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -521,10 +555,10 @@ async function analyzeUserInterests(
   if (!userEntries || userEntries.length === 0) return {};
 
   const categoryMap: Record<string, string[]> = {
-    'software': ['tool', 'app', 'software', 'platform', 'saas'],
-    'development': ['developer', 'code', 'programming', 'api'],
-    'design': ['design', 'ui', 'ux', 'interface'],
-    'productivity': ['project', 'management', 'workflow', 'task'],
+    software: ['tool', 'app', 'software', 'platform', 'saas'],
+    development: ['developer', 'code', 'programming', 'api'],
+    design: ['design', 'ui', 'ux', 'interface'],
+    productivity: ['project', 'management', 'workflow', 'task'],
   };
 
   const interests: Record<string, number> = {};
@@ -533,7 +567,7 @@ async function analyzeUserInterests(
     const content = entry.content.toLowerCase();
 
     Object.entries(categoryMap).forEach(([category, keywords]) => {
-      if (keywords.some(kw => content.includes(kw))) {
+      if (keywords.some((kw) => content.includes(kw))) {
         interests[category] = (interests[category] || 0) + 1;
       }
     });
@@ -565,10 +599,11 @@ async function getThreadContext(
     .filter((w: string) => w.length > 3)
     .slice(0, 10);
 
-  const intent = thread.content.toLowerCase().includes('looking for') ||
-                 thread.content.toLowerCase().includes('need a')
-    ? 'purchase'
-    : 'general';
+  const intent =
+    thread.content.toLowerCase().includes('looking for') ||
+    thread.content.toLowerCase().includes('need a')
+      ? 'purchase'
+      : 'general';
 
   return { keywords, intent };
 }
@@ -591,15 +626,13 @@ function calculateRelevanceScore(
 
   if (threadContext) {
     const itemText = `${item.content} ${JSON.stringify(item.marketplace_metadata)}`.toLowerCase();
-    const matchedKeywords = threadContext.keywords.filter(kw =>
-      itemText.includes(kw)
-    );
+    const matchedKeywords = threadContext.keywords.filter((kw) => itemText.includes(kw));
 
     const keywordScore = (matchedKeywords.length / threadContext.keywords.length) * 0.4;
     score += keywordScore;
   }
 
-  const qualityScore = (item.marketplace_metadata?.rating || 0) / 5 * 0.2;
+  const qualityScore = ((item.marketplace_metadata?.rating || 0) / 5) * 0.2;
   score += qualityScore;
 
   return Math.min(score, 1.0);
@@ -613,7 +646,7 @@ function applyFreshnessDecay(item: any): number {
   const now = Date.now();
   const daysOld = (now - createdAt) / (1000 * 60 * 60 * 24);
 
-  return Math.max(0.7, 1 - (daysOld * 0.01));
+  return Math.max(0.7, 1 - daysOld * 0.01);
 }
 
 /**
@@ -623,7 +656,7 @@ function ensureDiversity(suggestions: any[]): any[] {
   const diverse: any[] = [];
   const seenCategories = new Set<string>();
 
-  suggestions.forEach(item => {
+  suggestions.forEach((item) => {
     const category = item.marketplace_metadata?.category || 'other';
     if (!seenCategories.has(category)) {
       diverse.push(item);
@@ -631,7 +664,7 @@ function ensureDiversity(suggestions: any[]): any[] {
     }
   });
 
-  suggestions.forEach(item => {
+  suggestions.forEach((item) => {
     if (diverse.length >= 10) return;
     if (!diverse.includes(item)) {
       diverse.push(item);
@@ -645,26 +678,25 @@ function ensureDiversity(suggestions: any[]): any[] {
  * Get personalized marketplace suggestions
  * GET /api/semantic/suggestions
  */
-async function getSuggestions(req: NextApiRequest, res: NextApiResponse) {
+async function getSuggestions(req: VercelRequest, res: VercelResponse) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
+    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+      global: {
+        headers: {
+          Authorization: authHeader,
         },
-      }
-    );
+      },
+    });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return res.status(401).json({ error: 'Invalid authentication' });
@@ -690,9 +722,7 @@ async function getSuggestions(req: NextApiRequest, res: NextApiResponse) {
       .eq('status', 'succeeded');
 
     const purchasedItems = new Set(
-      (purchases || [])
-        .map((p: any) => p.metadata?.item_id)
-        .filter(Boolean)
+      (purchases || []).map((p: any) => p.metadata?.item_id).filter(Boolean)
     );
 
     const { data: items, error: itemsError } = await supabase
@@ -721,9 +751,9 @@ async function getSuggestions(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const scored = items
-      .filter(item => !purchasedItems.has(item.id))
-      .filter(item => item.marketplace_metadata?.status === 'active')
-      .map(item => {
+      .filter((item) => !purchasedItems.has(item.id))
+      .filter((item) => item.marketplace_metadata?.status === 'active')
+      .map((item) => {
         const relevanceScore = calculateRelevanceScore(item, userInterests, threadContext);
         const freshnessDecay = applyFreshnessDecay(item);
         const finalScore = relevanceScore * freshnessDecay;
@@ -742,7 +772,7 @@ async function getSuggestions(req: NextApiRequest, res: NextApiResponse) {
 
         return suggestion;
       })
-      .filter(s => s.relevance_score >= 0.3)
+      .filter((s) => s.relevance_score >= 0.3)
       .sort((a, b) => b.relevance_score - a.relevance_score);
 
     const diverse = ensureDiversity(scored);
@@ -769,10 +799,7 @@ async function getSuggestions(req: NextApiRequest, res: NextApiResponse) {
 // Main Handler
 // ============================================================================
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { pathname } = new URL(req.url || '', `http://${req.headers.host}`);
 
   // Route: /api/semantic/analyze-thread

@@ -7,7 +7,7 @@
  * POST /api/marketplace/reviews - Create a new review
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -15,10 +15,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { method } = req;
 
   // Get user from authorization header
@@ -28,7 +25,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -53,11 +53,7 @@ export default async function handler(
 /**
  * GET - List reviews for an item
  */
-async function handleGet(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
+async function handleGet(req: VercelRequest, res: VercelResponse, userId: string) {
   const {
     item_id,
     rating,
@@ -76,11 +72,13 @@ async function handleGet(
 
   let query = supabase
     .from('marketplace_reviews')
-    .select(`
+    .select(
+      `
       *,
       reviewer:auth.users!reviewer_id(id, email),
       profiles!reviewer_id(username, display_name, avatar_url)
-    `)
+    `
+    )
     .eq('item_id', item_id)
     .eq('moderation_status', 'approved')
     .range(offsetNum, offsetNum + limitNum - 1);
@@ -146,17 +144,8 @@ async function handleGet(
 /**
  * POST - Create a new review
  */
-async function handlePost(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
-  const {
-    item_id,
-    rating,
-    title,
-    content,
-  } = req.body;
+async function handlePost(req: VercelRequest, res: VercelResponse, userId: string) {
+  const { item_id, rating, title, content } = req.body;
 
   // Validate required fields
   if (!item_id || !rating || !title || !content) {
@@ -215,11 +204,13 @@ async function handlePost(
       verified_purchase: verifiedPurchase,
       moderation_status: 'pending', // Will be moderated
     })
-    .select(`
+    .select(
+      `
       *,
       reviewer:auth.users!reviewer_id(id, email),
       profiles!reviewer_id(username, display_name, avatar_url)
-    `)
+    `
+    )
     .single();
 
   if (error) {
@@ -243,7 +234,7 @@ function calculateSummary(reviews: any[]) {
   const averageRating = totalRating / reviews.length;
 
   const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  reviews.forEach(r => {
+  reviews.forEach((r) => {
     distribution[r.rating] = (distribution[r.rating] || 0) + 1;
   });
 

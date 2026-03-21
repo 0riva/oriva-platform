@@ -7,7 +7,7 @@
  * POST /api/marketplace/checkout - Create Stripe payment intent and initiate transaction
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
@@ -20,10 +20,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
@@ -36,19 +33,17 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
   try {
-    const {
-      item_id,
-      payment_method_id,
-      uses_escrow = false,
-      return_url,
-    } = req.body;
+    const { item_id, payment_method_id, uses_escrow = false, return_url } = req.body;
 
     if (!item_id) {
       return res.status(400).json({ error: 'item_id required' });
@@ -92,7 +87,7 @@ export default async function handler(
 
     if (!sellerAccount || !sellerAccount.charges_enabled) {
       return res.status(400).json({
-        error: 'Seller payment account not configured'
+        error: 'Seller payment account not configured',
       });
     }
 
@@ -104,9 +99,9 @@ export default async function handler(
     const platformFeeRates: Record<string, number> = {
       creator: 0.15,
       vendor: 0.12,
-      developer: 0.20,
+      developer: 0.2,
       advertiser: 0.15,
-      affiliate: 0.10,
+      affiliate: 0.1,
       influencer: 0.18,
     };
 
@@ -128,10 +123,12 @@ export default async function handler(
         enabled: true,
         allow_redirects: 'never',
       },
-      transfer_data: uses_escrow ? undefined : {
-        destination: sellerAccount.stripe_account_id,
-        amount: seller_net_cents,
-      },
+      transfer_data: uses_escrow
+        ? undefined
+        : {
+            destination: sellerAccount.stripe_account_id,
+            amount: seller_net_cents,
+          },
       metadata: {
         item_id,
         buyer_id: user.id,
@@ -173,15 +170,13 @@ export default async function handler(
 
     // If using escrow, create escrow record
     if (uses_escrow) {
-      await supabase
-        .from('orivapay_escrow')
-        .insert({
-          transaction_id: transaction.id,
-          amount_cents: seller_net_cents,
-          currency: metadata.currency || 'USD',
-          release_type: 'manual',
-          status: 'held',
-        });
+      await supabase.from('orivapay_escrow').insert({
+        transaction_id: transaction.id,
+        amount_cents: seller_net_cents,
+        currency: metadata.currency || 'USD',
+        release_type: 'manual',
+        status: 'held',
+      });
     }
 
     return res.status(200).json({
@@ -190,7 +185,6 @@ export default async function handler(
       client_secret: paymentIntent.client_secret,
       status: paymentIntent.status,
     });
-
   } catch (error) {
     console.error('[Checkout Error]:', error);
     if (error instanceof Stripe.errors.StripeError) {

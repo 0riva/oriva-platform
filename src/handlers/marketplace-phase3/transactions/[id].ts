@@ -7,7 +7,7 @@
  * PATCH /api/marketplace/transactions/[id] - Update transaction status
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -15,10 +15,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { method, query } = req;
   const { id } = query;
 
@@ -33,7 +30,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -59,14 +59,15 @@ export default async function handler(
  * GET - Get transaction details
  */
 async function handleGet(
-  req: NextApiRequest,
-  res: NextApiResponse,
+  req: VercelRequest,
+  res: VercelResponse,
   userId: string,
   transactionId: string
 ) {
   const { data: transaction, error } = await supabase
     .from('orivapay_transactions')
-    .select(`
+    .select(
+      `
       *,
       buyer:auth.users!buyer_id(id, email),
       seller:auth.users!seller_id(id, email),
@@ -78,7 +79,8 @@ async function handleGet(
         profiles!inner(id, username, display_name, avatar_url)
       ),
       escrow:orivapay_escrow(*)
-    `)
+    `
+    )
     .eq('id', transactionId)
     .single();
 
@@ -102,8 +104,8 @@ async function handleGet(
  * PATCH - Update transaction status (service role only)
  */
 async function handlePatch(
-  req: NextApiRequest,
-  res: NextApiResponse,
+  req: VercelRequest,
+  res: VercelResponse,
   userId: string,
   transactionId: string
 ) {

@@ -7,7 +7,7 @@
  * GET /api/marketplace/analytics - Get aggregated analytics data
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -15,10 +15,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
@@ -31,7 +28,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -48,11 +48,7 @@ export default async function handler(
 /**
  * GET - Get analytics data for the authenticated user
  */
-async function handleGet(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  userId: string
-) {
+async function handleGet(req: VercelRequest, res: VercelResponse, userId: string) {
   const {
     role = 'seller', // 'buyer' or 'seller'
     period = '30d', // '7d', '30d', '90d', 'all'
@@ -63,19 +59,14 @@ async function handleGet(
   const startDate = getStartDate(period as string);
 
   // Fetch all analytics data in parallel
-  const [
-    revenueData,
-    salesCountData,
-    topItemsData,
-    recentSalesData,
-    conversionData,
-  ] = await Promise.all([
-    getRevenueMetrics(userId, role as string, startDate, earner_type as string),
-    getSalesCount(userId, role as string, startDate, earner_type as string),
-    getTopItems(userId, role as string, startDate, earner_type as string),
-    getRecentSales(userId, role as string, startDate, earner_type as string),
-    getConversionMetrics(userId, role as string, startDate, earner_type as string),
-  ]);
+  const [revenueData, salesCountData, topItemsData, recentSalesData, conversionData] =
+    await Promise.all([
+      getRevenueMetrics(userId, role as string, startDate, earner_type as string),
+      getSalesCount(userId, role as string, startDate, earner_type as string),
+      getTopItems(userId, role as string, startDate, earner_type as string),
+      getRecentSales(userId, role as string, startDate, earner_type as string),
+      getConversionMetrics(userId, role as string, startDate, earner_type as string),
+    ]);
 
   return res.status(200).json({
     period,
@@ -100,7 +91,9 @@ async function getRevenueMetrics(
 ) {
   let query = supabase
     .from('orivapay_transactions')
-    .select('amount_cents, seller_net_cents, platform_fee_cents, stripe_fee_cents, created_at, currency, status');
+    .select(
+      'amount_cents, seller_net_cents, platform_fee_cents, stripe_fee_cents, created_at, currency, status'
+    );
 
   if (role === 'buyer') {
     query = query.eq('buyer_id', userId);
@@ -125,22 +118,26 @@ async function getRevenueMetrics(
   let filteredData = data;
   if (earnerType && role === 'seller') {
     // Join with item metadata to filter by earner type
-    const itemIds = data.map(t => t.item_id);
+    const itemIds = data.map((t) => t.item_id);
     const { data: items } = await supabase
       .from('entries')
       .select('id, marketplace_metadata')
       .in('id', itemIds);
 
-    const relevantItemIds = items
-      ?.filter(item => item.marketplace_metadata?.earner_type === earnerType)
-      .map(item => item.id) || [];
+    const relevantItemIds =
+      items
+        ?.filter((item) => item.marketplace_metadata?.earner_type === earnerType)
+        .map((item) => item.id) || [];
 
-    filteredData = data.filter(t => relevantItemIds.includes(t.item_id));
+    filteredData = data.filter((t) => relevantItemIds.includes(t.item_id));
   }
 
   // Calculate totals
   const totalRevenue = filteredData.reduce((sum, t) => sum + t.amount_cents, 0);
-  const totalNet = filteredData.reduce((sum, t) => sum + (role === 'seller' ? t.seller_net_cents : t.amount_cents), 0);
+  const totalNet = filteredData.reduce(
+    (sum, t) => sum + (role === 'seller' ? t.seller_net_cents : t.amount_cents),
+    0
+  );
   const totalPlatformFees = filteredData.reduce((sum, t) => sum + t.platform_fee_cents, 0);
   const totalStripeFees = filteredData.reduce((sum, t) => sum + t.stripe_fee_cents, 0);
 
@@ -166,9 +163,7 @@ async function getSalesCount(
   startDate: Date | null,
   earnerType?: string
 ) {
-  let query = supabase
-    .from('orivapay_transactions')
-    .select('id, status, created_at, item_id');
+  let query = supabase.from('orivapay_transactions').select('id, status, created_at, item_id');
 
   if (role === 'buyer') {
     query = query.eq('buyer_id', userId);
@@ -190,23 +185,28 @@ async function getSalesCount(
   // Filter by earner type if specified
   let filteredData = data;
   if (earnerType && role === 'seller') {
-    const itemIds = data.map(t => t.item_id);
+    const itemIds = data.map((t) => t.item_id);
     const { data: items } = await supabase
       .from('entries')
       .select('id, marketplace_metadata')
       .in('id', itemIds);
 
-    const relevantItemIds = items
-      ?.filter(item => item.marketplace_metadata?.earner_type === earnerType)
-      .map(item => item.id) || [];
+    const relevantItemIds =
+      items
+        ?.filter((item) => item.marketplace_metadata?.earner_type === earnerType)
+        .map((item) => item.id) || [];
 
-    filteredData = data.filter(t => relevantItemIds.includes(t.item_id));
+    filteredData = data.filter((t) => relevantItemIds.includes(t.item_id));
   }
 
   const totalSales = filteredData.length;
-  const succeededSales = filteredData.filter(t => t.status === 'succeeded').length;
-  const pendingSales = filteredData.filter(t => t.status === 'pending' || t.status === 'processing').length;
-  const failedSales = filteredData.filter(t => t.status === 'failed' || t.status === 'cancelled').length;
+  const succeededSales = filteredData.filter((t) => t.status === 'succeeded').length;
+  const pendingSales = filteredData.filter(
+    (t) => t.status === 'pending' || t.status === 'processing'
+  ).length;
+  const failedSales = filteredData.filter(
+    (t) => t.status === 'failed' || t.status === 'cancelled'
+  ).length;
 
   return {
     total: totalSales,
@@ -247,20 +247,23 @@ async function getTopItems(
   }
 
   // Group by item_id
-  const itemStats = data.reduce((acc, t) => {
-    if (!acc[t.item_id]) {
-      acc[t.item_id] = {
-        item_id: t.item_id,
-        sales_count: 0,
-        total_revenue_cents: 0,
-        total_net_cents: 0,
-      };
-    }
-    acc[t.item_id].sales_count++;
-    acc[t.item_id].total_revenue_cents += t.amount_cents;
-    acc[t.item_id].total_net_cents += t.seller_net_cents;
-    return acc;
-  }, {} as Record<string, any>);
+  const itemStats = data.reduce(
+    (acc, t) => {
+      if (!acc[t.item_id]) {
+        acc[t.item_id] = {
+          item_id: t.item_id,
+          sales_count: 0,
+          total_revenue_cents: 0,
+          total_net_cents: 0,
+        };
+      }
+      acc[t.item_id].sales_count++;
+      acc[t.item_id].total_revenue_cents += t.amount_cents;
+      acc[t.item_id].total_net_cents += t.seller_net_cents;
+      return acc;
+    },
+    {} as Record<string, any>
+  );
 
   // Get item details
   const itemIds = Object.keys(itemStats);
@@ -272,14 +275,14 @@ async function getTopItems(
   // Filter by earner type if specified
   let filteredItems = items || [];
   if (earnerType) {
-    filteredItems = filteredItems.filter(item =>
-      item.marketplace_metadata?.earner_type === earnerType
+    filteredItems = filteredItems.filter(
+      (item) => item.marketplace_metadata?.earner_type === earnerType
     );
   }
 
   // Combine and sort
   const topItems = filteredItems
-    .map(item => ({
+    .map((item) => ({
       ...itemStats[item.id],
       title: item.title,
       earner_type: item.marketplace_metadata?.earner_type,
@@ -302,7 +305,8 @@ async function getRecentSales(
 ) {
   let query = supabase
     .from('orivapay_transactions')
-    .select(`
+    .select(
+      `
       id,
       amount_cents,
       seller_net_cents,
@@ -311,7 +315,8 @@ async function getRecentSales(
       item:entries!item_id(id, title, marketplace_metadata),
       buyer:auth.users!buyer_id(id, email),
       seller:auth.users!seller_id(id, email)
-    `)
+    `
+    )
     .order('created_at', { ascending: false })
     .limit(20);
 
@@ -335,9 +340,7 @@ async function getRecentSales(
   // Filter by earner type if specified
   let filteredData = data;
   if (earnerType && role === 'seller') {
-    filteredData = data.filter(t =>
-      t.item?.marketplace_metadata?.earner_type === earnerType
-    );
+    filteredData = data.filter((t) => t.item?.marketplace_metadata?.earner_type === earnerType);
   }
 
   return filteredData.slice(0, 10);
@@ -382,17 +385,18 @@ async function getConversionMetrics(
 
   // Filter by earner type if specified
   if (earnerType && transactions) {
-    const itemIds = transactions.map(t => t.item_id);
+    const itemIds = transactions.map((t) => t.item_id);
     const { data: items } = await supabase
       .from('entries')
       .select('id, marketplace_metadata')
       .in('id', itemIds);
 
-    const relevantItemIds = items
-      ?.filter(item => item.marketplace_metadata?.earner_type === earnerType)
-      .map(item => item.id) || [];
+    const relevantItemIds =
+      items
+        ?.filter((item) => item.marketplace_metadata?.earner_type === earnerType)
+        .map((item) => item.id) || [];
 
-    conversions = transactions.filter(t => relevantItemIds.includes(t.item_id)).length;
+    conversions = transactions.filter((t) => relevantItemIds.includes(t.item_id)).length;
   }
 
   return {
@@ -409,7 +413,7 @@ async function getConversionMetrics(
 function calculateDailyBreakdown(transactions: any[], role: string) {
   const breakdown: Record<string, number> = {};
 
-  transactions.forEach(t => {
+  transactions.forEach((t) => {
     const date = new Date(t.created_at).toISOString().split('T')[0];
     const amount = role === 'seller' ? t.seller_net_cents : t.amount_cents;
 

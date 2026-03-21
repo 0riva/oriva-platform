@@ -28,7 +28,7 @@ import {
 // ============================================================================
 
 const stripe = new Stripe(process.env.LIMOHAWK_STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-09-30.clover',
 });
 
 // ============================================================================
@@ -181,7 +181,7 @@ export async function handleStripeLimohawkWebhook(
  * by examining metadata in the event object
  */
 function checkIfLimohawkEvent(event: Stripe.Event): boolean {
-  const eventObject = event.data.object as Record<string, unknown>;
+  const eventObject = event.data.object as unknown as Record<string, unknown>;
 
   // Check for limohawk_account_id in various places
   if (eventObject.metadata && typeof eventObject.metadata === 'object') {
@@ -193,15 +193,18 @@ function checkIfLimohawkEvent(event: Stripe.Event): boolean {
 
   // For invoice events, check the subscription metadata
   if (event.type.startsWith('invoice.')) {
-    const invoice = eventObject as Stripe.Invoice;
-    if (invoice.subscription_details?.metadata?.limohawk_account_id) {
+    const invoice = eventObject as unknown as Stripe.Invoice;
+    if (
+      (invoice as unknown as Record<string, any>).subscription_details?.metadata
+        ?.limohawk_account_id
+    ) {
       return true;
     }
   }
 
   // For subscription events, check metadata
   if (event.type.startsWith('customer.subscription.')) {
-    const subscription = eventObject as Stripe.Subscription;
+    const subscription = eventObject as unknown as Stripe.Subscription;
     if (subscription.metadata?.limohawk_account_id) {
       return true;
     }

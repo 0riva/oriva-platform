@@ -8,7 +8,7 @@
  * POST /api/marketplace/escrow/[id]/dispute - Open dispute
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -16,10 +16,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { method, query } = req;
   const { id } = query;
 
@@ -34,7 +31,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -58,14 +58,15 @@ export default async function handler(
  * GET - Get escrow details
  */
 async function handleGet(
-  req: NextApiRequest,
-  res: NextApiResponse,
+  req: VercelRequest,
+  res: VercelResponse,
   userId: string,
   escrowId: string
 ) {
   const { data: escrow, error } = await supabase
     .from('orivapay_escrow')
-    .select(`
+    .select(
+      `
       *,
       transaction:orivapay_transactions!transaction_id(
         id,
@@ -80,7 +81,8 @@ async function handleGet(
       ),
       released_by_user:auth.users!released_by(id, email),
       agreement:agreements(id, title, status)
-    `)
+    `
+    )
     .eq('id', escrowId)
     .single();
 
@@ -93,10 +95,7 @@ async function handleGet(
   }
 
   // Verify user has access (buyer or seller)
-  if (
-    escrow.transaction.buyer_id !== userId &&
-    escrow.transaction.seller_id !== userId
-  ) {
+  if (escrow.transaction.buyer_id !== userId && escrow.transaction.seller_id !== userId) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 

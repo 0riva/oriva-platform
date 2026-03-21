@@ -6,7 +6,7 @@
  * GET /api/marketplace/analytics/sales - Get detailed sales analytics
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -14,10 +14,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
@@ -30,7 +27,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -86,7 +86,7 @@ export default async function handler(
         revenue_cents: revenue,
         sales_count: sales,
         average_order_value_cents: Math.round(averageValue),
-        transactions: txs.map(tx => ({
+        transactions: txs.map((tx) => ({
           id: tx.id,
           amount_cents: tx.amount_cents,
           seller_net_cents: tx.seller_net_cents,
@@ -102,20 +102,16 @@ export default async function handler(
         sales_count: transactions?.length || 0,
       },
     });
-
   } catch (error) {
     console.error('[Sales Analytics Error]:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-function groupTransactions(
-  transactions: any[],
-  groupBy: string
-): Record<string, any[]> {
+function groupTransactions(transactions: any[], groupBy: string): Record<string, any[]> {
   const grouped: Record<string, any[]> = {};
 
-  transactions.forEach(tx => {
+  transactions.forEach((tx) => {
     const date = new Date(tx.created_at);
     let key: string;
 

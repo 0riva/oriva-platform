@@ -6,7 +6,7 @@
  * POST /api/marketplace/reviews/[id]/vote - Vote on review helpfulness
  */
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -14,10 +14,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
@@ -37,7 +34,10 @@ export default async function handler(
   }
 
   const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -95,13 +95,11 @@ export default async function handler(
     }
 
     // Create new vote
-    const { error: voteError } = await supabase
-      .from('marketplace_review_votes')
-      .insert({
-        review_id: id,
-        user_id: user.id,
-        vote_type,
-      });
+    const { error: voteError } = await supabase.from('marketplace_review_votes').insert({
+      review_id: id,
+      user_id: user.id,
+      vote_type,
+    });
 
     if (voteError) {
       console.error('[Create Vote Error]:', voteError);
@@ -116,7 +114,6 @@ export default async function handler(
     }
 
     return res.status(201).json({ message: 'Vote recorded', vote_type });
-
   } catch (error) {
     console.error('[Review Vote API Error]:', error);
     return res.status(500).json({ error: 'Internal server error' });
