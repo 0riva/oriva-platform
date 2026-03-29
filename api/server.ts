@@ -48,6 +48,7 @@ import locationsRoutes from '../src/express/routes/locations';
 import limohawkRoutes from '../src/express/routes/limohawk';
 import limohawkCustomerRoutes from '../src/express/routes/limohawk-customer';
 import { realtimeDeliveryService } from '../src/services/realtimeDeliveryService';
+import { setupWebSocket } from '../src/express/middleware/websocketHandler';
 
 /**
  * Create and configure Express application
@@ -191,13 +192,19 @@ export const startServer = (port: number = 3002): void => {
   // Initialize real-time delivery service
   realtimeDeliveryService.initialize();
 
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`🚀 API server running on port ${port}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔐 Multi-tenant mode: enabled`);
     console.log(`📍 API prefix: /api/v1`);
     console.log(`📡 Real-time delivery service initialized`);
   });
+
+  // Wire up WebSocket server for local dev (PM2-managed standalone server)
+  // NOTE: Vercel serverless does not support native WS upgrades — this only
+  // runs when the BFF is started directly (e.g., `node api/server.ts` via PM2)
+  const wss = setupWebSocket(server);
+  console.log(`🔌 WebSocket server attached at /api/v1/events/subscribe`);
 };
 
 // Start server if run directly

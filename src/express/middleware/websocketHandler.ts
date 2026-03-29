@@ -22,10 +22,59 @@ export const setupWebSocket = (server: http.Server): WebSocketServer => {
 
   wss.on('connection', async (ws: WebSocket, req: Request) => {
     try {
-      // Extract user context from request
-      const userId = (req as any).user?.id;
-      const appIds = (req as any).appIds || [];
-      const authToken = req.headers.authorization?.replace('Bearer ', '');
+      // Parse request URL for query params (appIds, legacy auth fallback)
+      const url = new URL(req.url || '', 'http://localhost');
+
+      // --- Auth token extraction (priority order) ---
+      // 1. Sec-WebSocket-Protocol header (browser-safe, no log/history leakage)
+      //    Client sends: new WebSocket(url, [`Bearer.${token}`, 'v1.events.subscribe'])
+      const protocols =
+        req.headers['sec-websocket-protocol']?.split(',').map((p) => p.trim()) || [];
+      const bearerProtocol = protocols.find((p) => p.startsWith('Bearer.'));
+      const subprotocolToken = bearerProtocol?.replace('Bearer.', '');
+
+      // 2. Authorization header (non-browser clients)
+      // 3. Query param (legacy — deprecated, will be removed)
+      const authToken =
+        subprotocolToken ||
+        req.headers.authorization?.replace('Bearer ', '') ||
+        url.searchParams.get('authorization')?.replace('Bearer ', '');
+
+      // Echo back the non-auth subprotocol so the client knows it was accepted
+      if (subprotocolToken) {
+        const echoProtocol = protocols.find((p) => !p.startsWith('Bearer.'));
+        if (echoProtocol) {
+          // ws library handles protocol negotiation via the headers already sent
+          // during upgrade — this is informational for logging
+          logger.info('WebSocket subprotocol auth used', {
+            protocol: echoProtocol,
+          });
+        }
+      }
+
+      // --- User ID extraction ---
+      // Prefer middleware-set user (standalone server with upgrade middleware)
+      // Fall back to JWT validation (Vercel/serverless or no upgrade middleware)
+      let userId = (req as any).user?.id;
+      if (!userId && authToken) {
+        try {
+          const { getSupabaseClient } = await import('../../config/supabase');
+          const supabase = getSupabaseClient();
+          const {
+            data: { user },
+            error,
+          } = await supabase.auth.getUser(authToken);
+          if (!error && user) {
+            userId = user.id;
+          }
+        } catch {
+          // Auth validation failed — userId stays undefined, connection will be rejected below
+        }
+      }
+
+      // --- App IDs extraction ---
+      const appIds =
+        (req as any).appIds || url.searchParams.get('appIds')?.split(',').filter(Boolean) || [];
 
       if (!userId || !authToken) {
         ws.close(1008, 'Unauthorized');
