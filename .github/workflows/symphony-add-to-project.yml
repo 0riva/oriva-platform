@@ -1,0 +1,19 @@
+name: Symphony — auto-add labelled issues to project board
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+
+jobs:
+  add-to-project:
+    name: Add to Symphony Queue
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'symphony/todo') ||
+      contains(github.event.issue.labels.*.name, 'symphony/in-progress') ||
+      contains(github.event.issue.labels.*.name, 'symphony/human-review') ||
+      contains(github.event.issue.labels.*.name, 'symphony/rework')
+    steps:
+      - uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: https://github.com/users/timebinder/projects/4
+          github-token: ${{ secrets.SYMPHONY_PROJECT_PAT }}
