@@ -1,0 +1,172 @@
+name: Symphony — poll Status column → labels
+
+# Polls the IV Project board (user-owned, https://github.com/users/timebinder/projects/4)
+# every 2 minutes and syncs each issue's Status field → matching symphony/* label.
+#
+# Why polling (not webhooks): projects_v2_item webhook events are organisation-level only.
+# The IV Project board is user-owned, so webhooks never fire. This workflow polls via
+# GraphQL instead. Each repo installs an identical copy; each copy only processes issues
+# in its own repository to avoid cross-repo label writes.
+#
+# Required secret: SYMPHONY_PROJECT_PAT
+#   Classic PAT (timebinder account) with scopes: repo, read:project
+#   Must be set on every repo that installs this workflow.
+#
+# Status → label mapping:
+#   Todo          → symphony/todo
+#   In Progress   → symphony/in-progress
+#   Human Review  → symphony/human-review
+#   Rework        → symphony/rework
+#   Done          → symphony/done
+
+on:
+  schedule:
+    - cron: '*/2 * * * *'   # every 2 minutes
+  workflow_dispatch:          # allow manual runs for testing
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  poll-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync project Status → symphony/* labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.SYMPHONY_PROJECT_PAT }}
+          script: |
+            // ── Config ─────────────────────────────────────────────────────────
+            const PROJECT_OWNER   = 'timebinder';
+            const PROJECT_NUMBER  = 4;
+            const THIS_REPO_OWNER = context.repo.owner;
+            const THIS_REPO_NAME  = context.repo.repo;
+
+            // Status option ID → symphony/* label
+            const STATUS_MAP = {
+              '24710543': 'symphony/todo',
+              'effa981c': 'symphony/in-progress',
+              'd8493e20': 'symphony/human-review',
+              '0cd033e4': 'symphony/rework',
+              'f31dd533': 'symphony/done',
+            };
+
+            const ALL_SYMPHONY_LABELS = new Set(Object.values(STATUS_MAP));
+
+            // ── Fetch all items from the project board ─────────────────────────
+            // Fetch up to 100 items (more than enough for current board size).
+            // If the board ever exceeds 100, add pagination here.
+            const projectData = await github.graphql(`
+              query($owner: String!, $number: Int!) {
+                user(login: $owner) {
+                  projectV2(number: $number) {
+                    items(first: 100) {
+                      totalCount
+                      nodes {
+                        fieldValueByName(name: "Status") {
+                          ... on ProjectV2ItemFieldSingleSelectValue {
+                            optionId
+                          }
+                        }
+                        content {
+                          ... on Issue {
+                            number
+                            repository {
+                              name
+                              owner { login }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { owner: PROJECT_OWNER, number: PROJECT_NUMBER });
+
+            const allItems = projectData?.user?.projectV2?.items?.nodes ?? [];
+
+            // ── Filter to issues in THIS repo only ─────────────────────────────
+            const myItems = allItems.filter(item => {
+              const content = item?.content;
+              return (
+                content?.number &&
+                content?.repository?.owner?.login === THIS_REPO_OWNER &&
+                content?.repository?.name === THIS_REPO_NAME
+              );
+            });
+
+            let changesCount = 0;
+
+            // ── Reconcile labels for each issue ────────────────────────────────
+            for (const item of myItems) {
+              const issueNum  = item.content.number;
+              const optionId  = item?.fieldValueByName?.optionId;
+              const wantLabel = optionId ? STATUS_MAP[optionId] : null;
+
+              // Fetch current labels on the issue
+              const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+                owner:        THIS_REPO_OWNER,
+                repo:         THIS_REPO_NAME,
+                issue_number: issueNum,
+              });
+
+              const currentSymphonyLabels = currentLabels
+                .map(l => l.name)
+                .filter(n => ALL_SYMPHONY_LABELS.has(n));
+
+              // Idempotence check: if already correct, skip silently
+              if (
+                wantLabel &&
+                currentSymphonyLabels.length === 1 &&
+                currentSymphonyLabels[0] === wantLabel
+              ) {
+                continue;
+              }
+
+              // Strip stale symphony/* labels
+              for (const stale of currentSymphonyLabels) {
+                if (stale !== wantLabel) {
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner:        THIS_REPO_OWNER,
+                      repo:         THIS_REPO_NAME,
+                      issue_number: issueNum,
+                      name:         stale,
+                    });
+                  } catch (e) {
+                    if (e.status !== 404) throw e;
+                  }
+                }
+              }
+
+              // Apply the correct label (if Status is set)
+              if (wantLabel) {
+                await github.rest.issues.addLabels({
+                  owner:        THIS_REPO_OWNER,
+                  repo:         THIS_REPO_NAME,
+                  issue_number: issueNum,
+                  labels:       [wantLabel],
+                });
+
+                const was = currentSymphonyLabels.length
+                  ? currentSymphonyLabels.join(', ')
+                  : '(none)';
+                core.info(`#${issueNum}: set ${wantLabel} (was: ${was})`);
+                changesCount++;
+              } else {
+                // Status is unset on the board — strip all symphony/* labels
+                if (currentSymphonyLabels.length > 0) {
+                  core.info(`#${issueNum}: Status unset on board — stripped ${currentSymphonyLabels.join(', ')}`);
+                  changesCount++;
+                }
+              }
+            }
+
+            // ── Summary (only printed once per run) ───────────────────────────
+            if (changesCount === 0) {
+              core.info(`No changes — ${myItems.length} item(s) checked in ${THIS_REPO_OWNER}/${THIS_REPO_NAME}`);
+            } else {
+              core.info(`Done — ${changesCount} change(s) across ${myItems.length} item(s) in ${THIS_REPO_OWNER}/${THIS_REPO_NAME}`);
+            }
