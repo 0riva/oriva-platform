@@ -1,0 +1,181 @@
+name: Symphony — label change → project Status column
+
+# Fires when a label is added or removed on any issue in this repo.
+# If the changed label is a symphony/* state label, finds the issue's project
+# item on IV Project board #4 (timebinder) and updates the Status field to match.
+#
+# This is the INVERSE of symphony-status-to-label.yml (which polls Status → labels).
+# Together they form a bidirectional sync. Idempotence guards prevent an infinite loop:
+#   - This workflow reads current Status before writing; no-ops if already correct.
+#   - The polling workflow skips if labels already match Status.
+# Loop scenario: human drags card → polling sets label → this workflow fires →
+#   reads Status, finds match → no-op. Dead after one cycle.
+#
+# Required secret: SYMPHONY_PROJECT_PAT
+#   Classic PAT (timebinder account) with scopes: repo, project
+#
+# Label → Status option ID mapping (project PVT_kwHOAIHtkM4BW6tN):
+#   symphony/todo          → 24710543
+#   symphony/in-progress   → effa981c
+#   symphony/human-review  → d8493e20
+#   symphony/rework        → 0cd033e4
+#   symphony/done          → f31dd533
+#
+# Precedence (multiple symphony/* labels): in-progress > rework > human-review > todo > done
+
+on:
+  issues:
+    types: [labeled, unlabeled]
+
+permissions:
+  issues: read
+  contents: read
+
+jobs:
+  sync-label-to-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync symphony/* label → project Status field
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.SYMPHONY_PROJECT_PAT }}
+          script: |
+            // ── Config ─────────────────────────────────────────────────────────
+            const PROJECT_OWNER  = 'timebinder';
+            const PROJECT_NUMBER = 4;
+            const PROJECT_ID     = 'PVT_kwHOAIHtkM4BW6tN';
+            const STATUS_FIELD_ID = 'PVTSSF_lAHOAIHtkM4BW6tNzhSLP60';
+
+            // symphony/* label → Status option ID
+            const LABEL_TO_OPTION = {
+              'symphony/todo':         '24710543',
+              'symphony/in-progress':  'effa981c',
+              'symphony/human-review': 'd8493e20',
+              'symphony/rework':       '0cd033e4',
+              'symphony/done':         'f31dd533',
+            };
+
+            // Precedence order (highest first) for multi-label resolution
+            const PRECEDENCE = [
+              'symphony/in-progress',
+              'symphony/rework',
+              'symphony/human-review',
+              'symphony/todo',
+              'symphony/done',
+            ];
+
+            const ALL_SYMPHONY_LABELS = new Set(Object.keys(LABEL_TO_OPTION));
+
+            // ── Guard: only act on symphony/* label events ────────────────────
+            const changedLabel = context.payload.label?.name ?? '';
+            if (!ALL_SYMPHONY_LABELS.has(changedLabel)) {
+              core.info(`Label "${changedLabel}" is not a symphony/* label — no-op`);
+              return;
+            }
+
+            const issueNumber   = context.payload.issue.number;
+            const issueNodeId   = context.payload.issue.node_id;
+            const repoOwner     = context.repo.owner;
+            const repoName      = context.repo.repo;
+
+            core.info(`symphony/* label event on #${issueNumber}: "${changedLabel}" ${context.payload.action}`);
+
+            // ── Determine which symphony/* labels are currently on the issue ──
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner:        repoOwner,
+              repo:         repoName,
+              issue_number: issueNumber,
+            });
+
+            const presentSymphonyLabels = currentLabels
+              .map(l => l.name)
+              .filter(n => ALL_SYMPHONY_LABELS.has(n));
+
+            // Resolve target label by precedence
+            let targetLabel = null;
+            for (const label of PRECEDENCE) {
+              if (presentSymphonyLabels.includes(label)) {
+                targetLabel = label;
+                break;
+              }
+            }
+
+            if (!targetLabel) {
+              core.info(`No symphony/* labels remain on #${issueNumber} — no Status update`);
+              return;
+            }
+
+            const targetOptionId = LABEL_TO_OPTION[targetLabel];
+            core.info(`Target Status for #${issueNumber}: "${targetLabel}" → optionId ${targetOptionId}`);
+
+            // ── Find the project item ID for this issue ────────────────────────
+            const itemData = await github.graphql(`
+              query($issueId: ID!) {
+                node(id: $issueId) {
+                  ... on Issue {
+                    projectItems(first: 10) {
+                      nodes {
+                        id
+                        project {
+                          id
+                          number
+                          owner {
+                            ... on User { login }
+                          }
+                        }
+                        fieldValueByName(name: "Status") {
+                          ... on ProjectV2ItemFieldSingleSelectValue {
+                            optionId
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { issueId: issueNodeId });
+
+            const projectItems = itemData?.node?.projectItems?.nodes ?? [];
+
+            // Filter to IV Project board #4 owned by timebinder
+            const boardItem = projectItems.find(item =>
+              item?.project?.number === PROJECT_NUMBER &&
+              item?.project?.owner?.login === PROJECT_OWNER
+            );
+
+            if (!boardItem) {
+              core.info(`Issue #${issueNumber} is not on project board ${PROJECT_NUMBER} — no-op`);
+              return;
+            }
+
+            const projectItemId     = boardItem.id;
+            const currentOptionId   = boardItem?.fieldValueByName?.optionId ?? null;
+
+            // ── Idempotence guard: skip if Status already matches ─────────────
+            if (currentOptionId === targetOptionId) {
+              core.info(`Status already correct (${targetOptionId}) for #${issueNumber} — no-op (loop guard)`);
+              return;
+            }
+
+            core.info(`Updating Status for #${issueNumber}: ${currentOptionId ?? '(unset)'} → ${targetOptionId}`);
+
+            // ── Update the Status field on the project item ───────────────────
+            await github.graphql(`
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId:    $itemId
+                  fieldId:   $fieldId
+                  value:     { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `, {
+              projectId: PROJECT_ID,
+              itemId:    projectItemId,
+              fieldId:   STATUS_FIELD_ID,
+              optionId:  targetOptionId,
+            });
+
+            core.info(`Done — #${issueNumber} Status updated to "${targetLabel}"`);
