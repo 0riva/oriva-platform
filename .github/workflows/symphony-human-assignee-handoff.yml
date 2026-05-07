@@ -10,9 +10,9 @@ name: Symphony — hand off to human when Chairman assigns themselves
 # Loop safety: Workflow A (auto-assign-bot) fires on `labeled`, not
 # `assigned`. Workflow B (this file) fires on `assigned`. Workflow A's
 # bot self-assign triggers this workflow, but guard #1 below catches
-# iv-agent and exits — no loop.
+# ivagent and exits — no loop.
 #
-# Bot username: iv-agent
+# Bot username: ivagent
 # NOTE: update the BOT_USER constant if the account is renamed.
 
 on:
@@ -32,7 +32,7 @@ jobs:
         with:
           script: |
             // Bot username constant — update here if account is renamed
-            const BOT_USER = 'iv-agent';
+            const BOT_USER = 'ivagent';
 
             const assignee = context.payload.assignee?.login;
             const issue = context.payload.issue;
@@ -71,7 +71,7 @@ jobs:
               }
             }
 
-            // Remove iv-agent as assignee if present (clean handoff — only
+            // Remove ivagent as assignee if present (clean handoff — only
             // the human is assigned going forward)
             const botIsAssigned = (issue.assignees || [])
               .some(a => a.login === BOT_USER);
