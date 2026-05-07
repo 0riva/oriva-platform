@@ -1,0 +1,89 @@
+name: Symphony — hand off to human when Chairman assigns themselves
+
+# When any non-bot user becomes the assignee on an issue, strip all
+# symphony/* labels so the daemon stops processing. This is the
+# "click Assign yourself" takeover flow.
+#
+# To hand back: human unassigns themselves → daemon picks it up on
+# next label cycle (human re-adds symphony/todo label to re-queue).
+#
+# Loop safety: Workflow A (auto-assign-bot) fires on `labeled`, not
+# `assigned`. Workflow B (this file) fires on `assigned`. Workflow A's
+# bot self-assign triggers this workflow, but guard #1 below catches
+# iv-agent and exits — no loop.
+#
+# Bot username: iv-agent
+# NOTE: update the BOT_USER constant if the account is renamed.
+
+on:
+  issues:
+    types: [assigned]
+
+permissions:
+  issues: write
+
+jobs:
+  human-handoff:
+    name: Strip symphony labels on human assignment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hand off if a human (non-bot) was assigned
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Bot username constant — update here if account is renamed
+            const BOT_USER = 'iv-agent';
+
+            const assignee = context.payload.assignee?.login;
+            const issue = context.payload.issue;
+
+            // Guard 1: if the newly assigned user is the bot, this is the
+            // auto-assign-bot workflow firing — ignore to prevent loop.
+            if (assignee === BOT_USER) {
+              core.info(`Assignee is ${BOT_USER} (bot self-assign) — skipping handoff.`);
+              return;
+            }
+
+            // Guard 2: check whether the issue has any symphony/* labels.
+            // If not, there's nothing to strip — already handed off or never claimed.
+            const symphonyLabels = (issue.labels || [])
+              .map(l => (typeof l === 'string' ? l : l.name))
+              .filter(n => n?.startsWith('symphony/'));
+
+            if (symphonyLabels.length === 0) {
+              core.info(`Issue #${issue.number} has no symphony/* labels — nothing to strip.`);
+              return;
+            }
+
+            core.info(`Human ${assignee} assigned to #${issue.number}. Stripping labels: ${symphonyLabels.join(', ')}`);
+
+            // Remove all symphony/* state labels
+            for (const label of symphonyLabels) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  name: label,
+                });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+            }
+
+            // Remove iv-agent as assignee if present (clean handoff — only
+            // the human is assigned going forward)
+            const botIsAssigned = (issue.assignees || [])
+              .some(a => a.login === BOT_USER);
+
+            if (botIsAssigned) {
+              await github.rest.issues.removeAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                assignees: [BOT_USER],
+              });
+              core.info(`Removed ${BOT_USER} as assignee from #${issue.number}.`);
+            }
+
+            core.info(`Handoff complete. Issue #${issue.number} is now owned by ${assignee}.`);
