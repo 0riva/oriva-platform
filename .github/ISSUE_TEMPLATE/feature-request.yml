@@ -1,0 +1,117 @@
+name: Feature Request
+description: Describe a feature for the autonomous agent queue
+title: "Feature: "
+labels:
+  - "symphony/todo"
+  - "enhancement"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## User Story
+
+  - type: input
+    id: role
+    attributes:
+      label: As a...
+      description: Who is the user? (e.g. "member", "admin", "guest")
+      placeholder: member
+    validations:
+      required: true
+
+  - type: input
+    id: action
+    attributes:
+      label: I want to...
+      description: What action do they want to perform?
+      placeholder: view my match history in one place
+    validations:
+      required: true
+
+  - type: input
+    id: outcome
+    attributes:
+      label: So I can...
+      description: What outcome do they get?
+      placeholder: understand my patterns over time
+    validations:
+      required: true
+
+  - type: textarea
+    id: standards
+    attributes:
+      label: Standards
+      description: Design system, brand voice, component patterns, security/accessibility constraints to follow.
+      placeholder: |
+        - Follow the existing Tamagui component patterns
+        - Maintain brand voice (see brand VM skill)
+        - WCAG AA contrast on all new text
+    validations:
+      required: false
+
+  - type: textarea
+    id: user-criteria
+    attributes:
+      label: User Criteria
+      description: Acceptance from the user's perspective.
+      placeholder: |
+        - [ ] User can see X
+        - [ ] User receives feedback when Y
+        - [ ] Edge case Z is handled gracefully
+    validations:
+      required: true
+
+  - type: textarea
+    id: tech-criteria
+    attributes:
+      label: Tech Criteria
+      description: Technical acceptance — tests pass, types compile, no perf regression, etc.
+      placeholder: |
+        - [ ] TypeScript compiles with no errors
+        - [ ] Existing tests pass
+        - [ ] New behaviour has test coverage
+        - [ ] No new console errors or warnings
+    validations:
+      required: true
+
+  - type: textarea
+    id: sketch-ideas
+    attributes:
+      label: Sketch Ideas
+      description: Rough approach ideas — component names, data flow, file paths to consider. Not prescriptive.
+      placeholder: |
+        - Could extend `MatchHistoryCard` to accept a `compact` prop
+        - Data likely comes from `useMatchHistory()` hook in packages/shared
+        - Route: `app/(tabs)/history/index.tsx`
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: enhance-existing
+    attributes:
+      label: Approach preference
+      options:
+        - label: Prefer extending existing code and patterns over creating new abstractions
+          required: false
+    validations:
+      required: false
+
+  - type: textarea
+    id: skills
+    attributes:
+      label: Skills to consult
+      description: |
+        List skill names for the agent to invoke before writing code.
+        Examples: `oriva-component-development`, `oriva-screen-development`, `oriva-db-environment`,
+        `apple-hig`, `eas-build-preflight`, `oriva-rls-patterns`, `migration-deploy`, `oriva-api-design`
+      placeholder: |
+        oriva-component-development
+        oriva-screen-development
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **Agent**: Use relevant sub-agents and skills for implementation. Read related `src/` pattern files to plan your work BEFORE writing code.
