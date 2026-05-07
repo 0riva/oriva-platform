@@ -1,0 +1,50 @@
+name: Symphony — auto-assign iv-agent when daemon claims issue
+
+# When the daemon flips an issue to symphony/in-progress, self-assign
+# the iv-agent bot account so the issue's Assignee field reflects who
+# is working it. This enables "click Assign yourself" takeover semantics.
+#
+# Bot username: iv-agent
+# NOTE: if the iv-agent GitHub account is renamed, update the single
+# constant below. The account may not exist yet (see operations#23).
+# If it doesn't exist, gh's --add-assignee will fail gracefully; the
+# workflow is ready and will activate once the account is created.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  auto-assign-bot:
+    name: Assign iv-agent on daemon claim
+    runs-on: ubuntu-latest
+    # Guard: only fire when the label that was just added is symphony/in-progress
+    if: github.event.label.name == 'symphony/in-progress'
+    steps:
+      - name: Assign iv-agent if no assignee yet
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Bot username constant — update here if account is renamed
+            const BOT_USER = 'iv-agent';
+
+            const issue = context.payload.issue;
+
+            // Guard: if the issue already has any assignee, do not override.
+            // This protects human takeover: if Chairman assigned themselves
+            // before the label change arrived, we leave it alone.
+            if (issue.assignees && issue.assignees.length > 0) {
+              core.info(`Issue #${issue.number} already has assignee(s) — skipping bot self-assign.`);
+              return;
+            }
+
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              assignees: [BOT_USER],
+            });
+            core.info(`Assigned ${BOT_USER} to issue #${issue.number}.`);
