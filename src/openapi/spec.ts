@@ -6,6 +6,10 @@ import './schemas/user';
 import './schemas/profiles';
 import './schemas/groups';
 import './schemas/auth';
+import './schemas/sessions';
+import './schemas/marketplace';
+import './schemas/developer';
+import './schemas/entries';
 
 const generator = new OpenApiGeneratorV31(registry.definitions);
 
