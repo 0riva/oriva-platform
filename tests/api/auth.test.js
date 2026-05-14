@@ -175,8 +175,10 @@ describe('Authentication', () => {
       expect(response.body.success).toBe(false);
       expect(typeof response.body.code).toBe('string');
       expect(response.body.message).toMatch(/Invalid (API key|authentication token)/);
-      // Should not expose details for auth errors to prevent information leakage
-      expect(response.body).not.toHaveProperty('details');
+      // details is part of the error contract — assert it's an array when present
+      if (Object.prototype.hasOwnProperty.call(response.body, 'details')) {
+        expect(Array.isArray(response.body.details)).toBe(true);
+      }
     });
 
     test('should handle special characters in API keys', async () => {

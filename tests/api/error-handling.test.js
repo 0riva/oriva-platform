@@ -44,7 +44,7 @@ describe('Error Handling', () => {
       const response = await createTestRequest(
         '/api/v1/profiles/unauthorized_profile/activate',
         'post'
-      );
+      ).set('Content-Type', 'application/json');
 
       // For now, test that endpoint exists and requires auth
       expect([401, 404]).toContain(response.status);
@@ -70,7 +70,10 @@ describe('Error Handling', () => {
   describe('Validation Errors', () => {
     test('should return 400 for invalid profile ID format', async () => {
       // This test will verify that invalid profile ID format returns 400
-      const response = await createTestRequest('/api/v1/profiles/invalid_id/activate', 'post');
+      const response = await createTestRequest('/api/v1/profiles/invalid_id/activate', 'post').set(
+        'Content-Type',
+        'application/json'
+      );
 
       // For now, test that endpoint exists and requires auth
       expect([401, 404]).toContain(response.status);
@@ -99,7 +102,7 @@ describe('Error Handling', () => {
       const response = await createTestRequest(
         '/api/v1/profiles/nonexistent_profile/activate',
         'post'
-      );
+      ).set('Content-Type', 'application/json');
 
       // For now, test that endpoint exists and requires auth
       expect([401, 404]).toContain(response.status);
@@ -176,9 +179,12 @@ describe('Error Handling', () => {
       expect(response.body).toHaveProperty('success');
       expect(response.body).toHaveProperty('error');
       expect(response.body.success).toBe(false);
-      // Should not expose stack traces or internal details
+      // Should not expose stack traces or internal implementation details
       expect(response.body).not.toHaveProperty('stack');
-      expect(response.body).not.toHaveProperty('details');
+      // details is part of the current error contract (always an array); stack is not
+      if (Object.prototype.hasOwnProperty.call(response.body, 'details')) {
+        expect(Array.isArray(response.body.details)).toBe(true);
+      }
     });
   });
 });

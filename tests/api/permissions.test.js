@@ -22,7 +22,7 @@ describe('Permission Validation', () => {
       const response = await createTestRequest(
         '/api/v1/profiles/unauthorized_profile/activate',
         'post'
-      );
+      ).set('Content-Type', 'application/json');
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -31,7 +31,10 @@ describe('Permission Validation', () => {
 
     test('should validate profile ID format before checking permissions', async () => {
       // This test will verify that invalid profile IDs are rejected before permission checks
-      const response = await createTestRequest('/api/v1/profiles/invalid_id/activate', 'post');
+      const response = await createTestRequest('/api/v1/profiles/invalid_id/activate', 'post').set(
+        'Content-Type',
+        'application/json'
+      );
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);

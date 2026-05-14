@@ -12,6 +12,10 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
   testTimeout: 15000, // 15s timeout for API tests
+  // The tests/api suite hits a shared Supabase instance. Parallel workers
+  // race on that shared state, so the suite is run serially for
+  // deterministic results. (Proper per-test isolation is tracked on #30.)
+  maxWorkers: 1,
   globalSetup: '<rootDir>/tests/setup/global-setup.ts',
   globalTeardown: '<rootDir>/tests/setup/global-teardown.ts',
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],

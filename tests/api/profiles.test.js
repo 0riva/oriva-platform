@@ -42,7 +42,10 @@ describe('Profile Endpoints', () => {
 
   describe('POST /api/v1/profiles/:profileId/activate', () => {
     test('should require authentication', async () => {
-      const response = await createTestRequest('/api/v1/profiles/profile_123/activate', 'post');
+      const response = await createTestRequest('/api/v1/profiles/profile_123/activate', 'post').set(
+        'Content-Type',
+        'application/json'
+      );
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);

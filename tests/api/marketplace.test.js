@@ -351,7 +351,10 @@ describe('Marketplace API', () => {
 
   describe('POST /api/v1/marketplace/install/:appId', () => {
     test('should require authentication', async () => {
-      const response = await createTestRequest('/api/v1/marketplace/install/test-app-123', 'post');
+      const response = await createTestRequest(
+        '/api/v1/marketplace/install/test-app-123',
+        'post'
+      ).set('Content-Type', 'application/json');
 
       expectTypedMarketplaceError(response, 'Authorization header required');
     });
@@ -381,7 +384,10 @@ describe('Marketplace API', () => {
 
     test('should validate app ID parameter', async () => {
       const response = await withAuth(
-        createTestRequest('/api/v1/marketplace/install/', 'post'),
+        createTestRequest('/api/v1/marketplace/install/', 'post').set(
+          'Content-Type',
+          'application/json'
+        ),
         testData.validApiKey
       );
 

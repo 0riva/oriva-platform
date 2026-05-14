@@ -257,7 +257,7 @@ describe('Developer API', () => {
       const response = await createTestRequest(
         '/api/v1/developer/apps/test-app-123/submit',
         'post'
-      );
+      ).set('Content-Type', 'application/json');
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -299,7 +299,7 @@ describe('Developer API', () => {
       const response = await createTestRequest(
         '/api/v1/developer/apps/test-app-123/resubmit',
         'post'
-      );
+      ).set('Content-Type', 'application/json');
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -308,7 +308,10 @@ describe('Developer API', () => {
 
     test('should resubmit app for review with valid authentication', async () => {
       const response = await withAuth(
-        createTestRequest('/api/v1/developer/apps/test-app-123/resubmit', 'post'),
+        createTestRequest('/api/v1/developer/apps/test-app-123/resubmit', 'post').set(
+          'Content-Type',
+          'application/json'
+        ),
         testData.validApiKey
       );
 
