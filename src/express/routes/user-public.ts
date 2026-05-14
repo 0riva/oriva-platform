@@ -12,7 +12,7 @@
  * first-match keeps this handler live — preserving pre-extraction behaviour.
  */
 
-import { Router, type Request, type Response, type RequestHandler } from 'express';
+import { Router, type RequestHandler } from 'express';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Logger } from 'winston';
 import type { ApiKeyInfo } from '../../types/middleware/auth';
@@ -76,8 +76,6 @@ type GroupSummary = {
   image_url: string | null; // OCR-82: Optional group image
   external_link: string | null; // OCR-82: Optional external link
 };
-
-type ProfileRouteParams = { profileId: string };
 
 type AuthenticatedHandler = (req: any, res: any, keyInfo: ApiKeyInfo) => Promise<void> | void;
 
@@ -533,7 +531,7 @@ export function createUserPublicRouter(
   router.put(
     '/profiles/:profileId',
     validateApiKey,
-    async (req: Request<ProfileRouteParams>, res: Response) => {
+    withAuthContext(async (req, res, keyInfo) => {
       try {
         const { profileId } = validateRequestData(ProfileIdParamSchema, req.params);
         const { profileName, avatar, bio, location } = validateRequestData(
@@ -541,20 +539,38 @@ export function createUserPublicRouter(
           req.body ?? {}
         );
 
-        const updatedProfile = {
-          profileId,
-          profileName: profileName || 'Updated Profile',
-          isActive: true,
-          avatar: avatar || 'https://example.com/avatars/updated-profile.jpg',
-          bio: bio ?? null,
-          location: location ?? null,
-          updatedAt: new Date().toISOString(),
-        };
+        const updates: Record<string, unknown> = {};
+        if (profileName !== undefined) updates.display_name = profileName;
+        if (avatar !== undefined) updates.avatar_url = avatar;
+        if (bio !== undefined) updates.bio = bio;
+        if (location !== undefined) updates.location = location;
+
+        if (Object.keys(updates).length === 0) {
+          return respondWithError(
+            res,
+            400,
+            'VALIDATION_ERROR',
+            'At least one field must be provided'
+          );
+        }
+
+        // Ownership: only update a profile owned by the caller's account.
+        const { data, error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', profileId)
+          .eq('account_id', keyInfo.userId)
+          .select('id, display_name, username, bio, location, avatar_url, is_active, updated_at')
+          .single();
+
+        if (error || !data) {
+          return respondWithError(res, 404, 'PROFILE_NOT_FOUND', 'Profile not found');
+        }
 
         res.json({
           ok: true,
           success: true,
-          data: updatedProfile,
+          data,
           message: 'Profile updated successfully',
         });
       } catch (error) {
@@ -562,19 +578,57 @@ export function createUserPublicRouter(
           respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
           return;
         }
-        logger.error('Failed to update profile', { error, profileId: req.params.profileId });
+        logger.error('Failed to update profile', {
+          error,
+          profileId: req.params.profileId,
+          userId: keyInfo.userId,
+        });
         respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to update profile');
       }
-    }
+    })
   );
 
-  // Switch to a different profile
+  // Switch the account's default/active profile
   router.post(
     '/profiles/:profileId/activate',
     validateApiKey,
-    async (req: Request<ProfileRouteParams>, res: Response) => {
+    withAuthContext(async (req, res, keyInfo) => {
       try {
         const { profileId } = validateRequestData(ProfileIdParamSchema, req.params);
+
+        // Ownership: confirm the target profile belongs to the caller.
+        const { data: target, error: lookupError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', profileId)
+          .eq('account_id', keyInfo.userId)
+          .single();
+
+        if (lookupError || !target) {
+          return respondWithError(res, 404, 'PROFILE_NOT_FOUND', 'Profile not found');
+        }
+
+        // Clear is_default across the account's profiles, then set it on the
+        // target. Both updates are scoped by account_id.
+        await supabase
+          .from('profiles')
+          .update({ is_default: false })
+          .eq('account_id', keyInfo.userId);
+
+        const { error: activateError } = await supabase
+          .from('profiles')
+          .update({ is_default: true })
+          .eq('id', profileId)
+          .eq('account_id', keyInfo.userId);
+
+        if (activateError) {
+          logger.error('Failed to switch profile', {
+            error: activateError,
+            profileId,
+            userId: keyInfo.userId,
+          });
+          return respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to switch profile');
+        }
 
         res.json({
           ok: true,
@@ -592,7 +646,7 @@ export function createUserPublicRouter(
         logger.error('Failed to switch profile', { error, profileId: req.params.profileId });
         respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to switch profile');
       }
-    }
+    })
   );
 
   // =============================================================================

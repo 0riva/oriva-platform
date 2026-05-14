@@ -5,10 +5,8 @@
  * Extracted from api/index.ts (Phase 4 sub-router migration).
  * Handlers close over module-level singletons from index.ts, passed in via factory.
  *
- * NOTE: GET /api/v1/auth/profile is also registered inline in api/index.ts
- * (the withAuthContext keyInfo-based version) which is registered earlier and
- * wins Express first-match. The GET /profile handler here is preserved for
- * parity but remains shadowed — behaviour is unchanged from pre-extraction.
+ * NOTE: GET /api/v1/auth/profile is served by user-public.ts (mounted first,
+ * wins Express first-match). It is intentionally not registered here.
  */
 
 import { Router, type RequestHandler } from 'express';
@@ -23,6 +21,8 @@ import {
   RegisterBodySchema,
   LoginBodySchema,
   TokenRefreshBodySchema,
+  PatchProfileBodySchema,
+  PutProfileBodySchema,
 } from '../../openapi/schemas/auth';
 
 export function createAuthPublicRouter(
@@ -241,33 +241,18 @@ export function createAuthPublicRouter(
     }
   });
 
-  // GET /api/v1/auth/profile - Get user profile (requires auth)
-  router.get('/profile', ...validateAuth, async (req, res) => {
-    try {
-      const userId = (req as any).authContext.userId;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, username, bio, avatar_url, location, website_url')
-        .eq('id', userId)
-        .single();
-
-      if (error || !data) {
-        return respondWithError(res, 404, 'USER_NOT_FOUND', 'User not found');
-      }
-
-      res.status(200).json(data);
-    } catch (error) {
-      logger.error('Get profile error', { error });
-      respondWithError(res, 500, 'PROFILE_ERROR', getErrorMessage(error));
-    }
-  });
+  // GET /api/v1/auth/profile is intentionally NOT registered here — the
+  // withAuthContext version in user-public.ts is mounted first and wins
+  // Express first-match. Registering a second handler here would be dead code.
 
   // PATCH /api/v1/auth/profile - Update user profile (requires auth)
   router.patch('/profile', ...validateAuth, async (req, res) => {
     try {
       const userId = (req as any).authContext.userId;
-      const { name, bio, avatar_url, location, website_url } = req.body;
+      const { name, bio, avatar_url, location, website_url } = validateRequestData(
+        PatchProfileBodySchema,
+        req.body ?? {}
+      );
 
       if (!name && !bio && !avatar_url && !location && !website_url) {
         return respondWithError(
@@ -299,6 +284,10 @@ export function createAuthPublicRouter(
 
       res.status(200).json(data);
     } catch (error) {
+      if (error instanceof ValidationError) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+        return;
+      }
       logger.error('Update profile error', { error });
       respondWithError(res, 500, 'PROFILE_ERROR', getErrorMessage(error));
     }
@@ -309,7 +298,7 @@ export function createAuthPublicRouter(
     try {
       const userId = (req as any).authContext.userId;
       const { name, bio, avatar_url, location, website_url, preferences, data_retention_days } =
-        req.body;
+        validateRequestData(PutProfileBodySchema, req.body ?? {});
 
       if (
         !name &&
@@ -325,16 +314,6 @@ export function createAuthPublicRouter(
           400,
           'VALIDATION_ERROR',
           'At least one field must be provided'
-        );
-      }
-
-      // Validate data_retention_days if provided
-      if (data_retention_days !== undefined && data_retention_days < 30) {
-        return respondWithError(
-          res,
-          400,
-          'VALIDATION_ERROR',
-          'data_retention_days must be at least 30'
         );
       }
 
@@ -361,6 +340,10 @@ export function createAuthPublicRouter(
 
       res.status(200).json(data);
     } catch (error) {
+      if (error instanceof ValidationError) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+        return;
+      }
       logger.error('Update profile error', { error });
       respondWithError(res, 500, 'PROFILE_ERROR', getErrorMessage(error));
     }

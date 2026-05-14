@@ -19,7 +19,6 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import rateLimit from 'express-rate-limit';
 import { param, validationResult } from 'express-validator';
 import winston from 'winston';
 import type { Logger } from 'winston';
@@ -84,8 +83,6 @@ const logger: Logger = winston.createLogger({
 });
 
 const asAuthRequest = (req: Request): AuthenticatedRequest => req as AuthenticatedRequest;
-
-const API_RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 1000);
 
 interface AuthContext {
   authReq: AuthenticatedRequest;
@@ -509,15 +506,10 @@ app.use((req, res, next) => {
 // SECURITY: Validate Content-Type headers
 app.use(validateContentType);
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: API_RATE_LIMIT_MAX,
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
+// Rate limiting is applied below via apiRateLimiter (Redis-backed in prod).
+// A second in-memory express-rate-limit was removed — in serverless it
+// resets every cold start, so it provided no real protection and only
+// duplicated apiRateLimiter's coverage of /api.
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -590,35 +582,6 @@ refreshCorsCache()
 // Admin token from environment (used to protect dev-only endpoints)
 const ADMIN_TOKEN = process.env.ORIVA_ADMIN_TOKEN || '';
 
-// Very small in-memory rate limiter for dev endpoints (per IP)
-const rateLimitState = new Map();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 30; // 30 requests per minute per IP for dev endpoints
-
-const devRateLimiter: ApiMiddleware = (req, res, next) => {
-  const now = Date.now();
-  const ip =
-    req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
-    req.socket.remoteAddress ||
-    'unknown';
-  const state = rateLimitState.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
-
-  if (now > state.resetAt) {
-    state.count = 0;
-    state.resetAt = now + RATE_LIMIT_WINDOW_MS;
-  }
-
-  state.count += 1;
-  rateLimitState.set(ip, state);
-
-  if (state.count > RATE_LIMIT_MAX) {
-    respondWithError(res, 429, 'RATE_LIMITED', 'Rate limit exceeded');
-    return;
-  }
-
-  next();
-};
-
 // Guard for dev/admin endpoints
 const requireAdminToken: ApiMiddleware = (req, res, next) => {
   // Only enforce when an admin token is configured
@@ -647,14 +610,9 @@ const requireAdminToken: ApiMiddleware = (req, res, next) => {
 // API Key validation using Supabase
 const hashAPIKey = async (key: string): Promise<string> => {
   try {
-    console.log('🔐 DEBUG: Starting hashAPIKey', {
-      keyLength: key.length,
-      keyPrefix: key.substring(0, 20),
-    });
-
-    // Check if crypto.subtle is available
+    // Do NOT log the key or hash (even prefixes) — a key prefix plus a hash
+    // prefix narrows an offline preimage search and serves no diagnostic need.
     if (!webcrypto?.subtle) {
-      console.error('❌ crypto.subtle not available');
       throw new Error('crypto.subtle not available');
     }
 
@@ -662,15 +620,9 @@ const hashAPIKey = async (key: string): Promise<string> => {
     const data = encoder.encode(key);
     const hashBuffer = await webcrypto.subtle.digest('SHA-256', data);
     const hashArray = new Uint8Array(hashBuffer);
-    const hash = Array.from(hashArray, (byte) => byte.toString(16).padStart(2, '0')).join('');
-
-    console.log('✅ DEBUG: hashAPIKey success', {
-      hashLength: hash.length,
-      hashPrefix: hash.substring(0, 16),
-    });
-    return hash;
+    return Array.from(hashArray, (byte) => byte.toString(16).padStart(2, '0')).join('');
   } catch (error) {
-    console.error('❌ DEBUG: hashAPIKey failed', { error: getErrorMessage(error) });
+    logger.error('hashAPIKey failed', { error: getErrorMessage(error) });
     throw error instanceof Error ? error : new Error(getErrorMessage(error));
   }
 };

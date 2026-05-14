@@ -61,6 +61,19 @@ const pickWritableAppFields = (body: unknown): Partial<MarketplaceApp> => {
   return result as Partial<MarketplaceApp>;
 };
 
+// Sanitize a user-supplied search term before interpolating it into a
+// PostgREST .or() filter expression. PostgREST treats , ( ) : * as filter
+// syntax — leaving them in lets a crafted term break out of the ilike clause
+// and inject extra predicates. Strip those, escape the LIKE wildcards % and _,
+// and bound the length.
+const sanitizeSearchTerm = (raw: string): string =>
+  raw
+    .slice(0, 100)
+    .replace(/[,()*:\\]/g, ' ')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_')
+    .trim();
+
 export function createMarketplaceRouter(
   supabase: SupabaseClient,
   logger: Logger,
@@ -399,7 +412,7 @@ export function createMarketplaceRouter(
       }
 
       if (searchTerm) {
-        const escaped = searchTerm.replace(/%/g, '\\%').replace(/_/g, '\\_');
+        const escaped = sanitizeSearchTerm(searchTerm);
         query = query.or(
           `name.ilike.%${escaped}%,tagline.ilike.%${escaped}%,description.ilike.%${escaped}%`
         );
@@ -869,7 +882,7 @@ export function createMarketplaceRouter(
       }
 
       if (searchTerm) {
-        const escaped = searchTerm.replace(/%/g, '\\%').replace(/_/g, '\\_');
+        const escaped = sanitizeSearchTerm(searchTerm);
         query = query.or(`title.ilike.%${escaped}%,content.ilike.%${escaped}%`);
       }
 
@@ -1139,7 +1152,9 @@ export function createMarketplaceRouter(
   // MARKETPLACE SEARCH ENDPOINT
   // =============================================================================
 
-  // Advanced search (public)
+  // Advanced search — intentionally public (unauthenticated). Only returns
+  // is_published marketplace items; no user-scoped data is exposed. Search
+  // input is sanitized via sanitizeSearchTerm before filter interpolation.
   router.post('/marketplace/search', async (req, res) => {
     try {
       const {
@@ -1169,7 +1184,7 @@ export function createMarketplaceRouter(
 
       // Apply search query
       if (searchQuery && searchQuery.trim() !== '') {
-        const escaped = searchQuery.replace(/%/g, '\\%').replace(/_/g, '\\_');
+        const escaped = sanitizeSearchTerm(searchQuery);
         query = query.or(`title.ilike.%${escaped}%,content.ilike.%${escaped}%`);
       }
 

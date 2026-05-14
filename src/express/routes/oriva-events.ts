@@ -203,6 +203,9 @@ export function createOrivaEventsRouter(
   /**
    * GET /api/oriva/events - Get all events (with optional filtering)
    * Query parameters: category, limit, offset, startDate, endDate
+   *
+   * Intentionally unauthenticated — this is a public event listing. Only
+   * is_active events are returned; no user-scoped data is exposed.
    */
   router.get('/', async (req, res) => {
     try {
@@ -265,6 +268,9 @@ export function createOrivaEventsRouter(
 
   /**
    * GET /api/oriva/events/:eventId - Get a specific event
+   *
+   * Intentionally unauthenticated — public event detail, mirrors the
+   * public listing above.
    */
   router.get('/:eventId', async (req, res) => {
     try {
