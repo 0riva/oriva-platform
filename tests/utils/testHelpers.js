@@ -5,12 +5,14 @@
 
 const request = require('supertest');
 
-// We'll import the app once we set up the test environment
+// The Express app under test. Lazily loaded on first use so that
+// tests/setup.js has already set NODE_ENV=test and the Supabase env vars
+// before api/index.ts is evaluated.
 let app;
 
 /**
- * Initialize the test app
- * This should be called in test setup
+ * Override the test app (e.g. when a test file builds its own instance).
+ * Optional — createTestRequest lazy-loads api/index by default.
  */
 const initTestApp = (testApp) => {
   app = testApp;
@@ -24,9 +26,11 @@ const initTestApp = (testApp) => {
  */
 const createTestRequest = (endpoint, method = 'get') => {
   if (!app) {
-    throw new Error('Test app not initialized. Call initTestApp() first.');
+    // Lazy-load the real Express app. tests/setup.js runs first and sets
+    // NODE_ENV=test + NO_SERVER=true so importing this does not start a server.
+    app = require('../../api/index').default;
   }
-  
+
   return request(app)[method](endpoint);
 };
 
@@ -59,7 +63,7 @@ const testData = {
   invalidApiKey: 'oriva_pk_test_invalid_key',
   testUserId: 'test_user_123',
   testProfileId: 'test_profile_456',
-  testGroupId: 'test_group_789'
+  testGroupId: 'test_group_789',
 };
 
 /**
@@ -67,7 +71,7 @@ const testData = {
  */
 const mockSupabaseResponse = (data, error = null) => ({
   data,
-  error
+  error,
 });
 
 /**
@@ -75,7 +79,7 @@ const mockSupabaseResponse = (data, error = null) => ({
  */
 const mockOrivaCoreResponse = (data, success = true) => ({
   success,
-  data
+  data,
 });
 
 module.exports = {
@@ -85,5 +89,5 @@ module.exports = {
   createAuthenticatedRequest,
   testData,
   mockSupabaseResponse,
-  mockOrivaCoreResponse
+  mockOrivaCoreResponse,
 };
