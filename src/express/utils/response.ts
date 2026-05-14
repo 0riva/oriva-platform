@@ -38,3 +38,23 @@ export function sendNotFound(res: Response, message: string = 'Resource not foun
     error: message,
   });
 }
+
+/**
+ * Send a structured error response (ok/success/error/message/code/details shape)
+ */
+export const respondWithError = (
+  res: Response,
+  status: number,
+  code: string,
+  message: string,
+  details: unknown[] = []
+): void => {
+  res.status(status).json({
+    ok: false,
+    success: false,
+    error: message,
+    message,
+    code,
+    details,
+  });
+};

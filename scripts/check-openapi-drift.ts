@@ -54,22 +54,43 @@ const EXCLUDED_EXPRESS_ROUTES = new Set([
 // Route path prefixes that are entirely excluded (deprecated tenant API).
 const EXCLUDED_PREFIXES = ['/api/v1/tenant/'];
 
-// ── Extract Express routes from api/index.ts ──────────────────────────────────
+// Sub-routers extracted from api/index.ts (Phase 4) whose routes are part of
+// the public spec. The drift check only sees app.(method)(...) in index.ts, so
+// migrated routers must be listed here with their mount prefix to stay covered.
+// As Phase 4 extraction proceeds, add each { file, prefix } entry.
+const SCANNED_SUBROUTERS: { file: string; prefix: string }[] = [
+  { file: '../src/express/routes/oriva-events.ts', prefix: '/api/oriva/events' },
+  { file: '../src/express/routes/auth-public.ts', prefix: '/api/v1/auth' },
+];
 
-const indexPath = path.resolve(__dirname, '../api/index.ts');
-const source = fs.readFileSync(indexPath, 'utf-8');
-
-// Matches: app.get('/path') or app.post( '/path') or app.delete("/path")
-const routePattern = /app\.(get|post|put|patch|delete)\s*\(\s*['"`](\/[^'"`\n]+)['"`]/gi;
+// ── Extract Express routes ────────────────────────────────────────────────────
 
 const expressRoutes = new Set<string>();
-let m: RegExpExecArray | null;
 
+// Convert Express :param → OpenAPI {param}
+const toOpenApiPath = (p: string): string => p.replace(/:([^/\s]+)/g, '{$1}');
+
+// Scan api/index.ts for top-level app.(method)('/path') registrations.
+const indexPath = path.resolve(__dirname, '../api/index.ts');
+const source = fs.readFileSync(indexPath, 'utf-8');
+const routePattern = /app\.(get|post|put|patch|delete)\s*\(\s*['"`](\/[^'"`\n]+)['"`]/gi;
+
+let m: RegExpExecArray | null;
 while ((m = routePattern.exec(source)) !== null) {
-  const method = m[1].toUpperCase();
-  // Convert Express :param → OpenAPI {param}
-  const openApiPath = m[2].replace(/:([^/\s]+)/g, '{$1}');
-  expressRoutes.add(`${method} ${openApiPath}`);
+  expressRoutes.add(`${m[1].toUpperCase()} ${toOpenApiPath(m[2])}`);
+}
+
+// Scan migrated sub-routers for router.(method)('/subpath') registrations,
+// combining each with its mount prefix.
+const subRoutePattern = /router\.(get|post|put|patch|delete)\s*\(\s*['"`](\/[^'"`\n]*)['"`]/gi;
+
+for (const { file, prefix } of SCANNED_SUBROUTERS) {
+  const routerSource = fs.readFileSync(path.resolve(__dirname, file), 'utf-8');
+  let rm: RegExpExecArray | null;
+  while ((rm = subRoutePattern.exec(routerSource)) !== null) {
+    const subPath = rm[2] === '/' ? '' : rm[2];
+    expressRoutes.add(`${rm[1].toUpperCase()} ${prefix}${toOpenApiPath(subPath)}`);
+  }
 }
 
 // ── Extract spec paths ────────────────────────────────────────────────────────
