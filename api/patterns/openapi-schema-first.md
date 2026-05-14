@@ -8,7 +8,7 @@
 
 ## The Rule
 
-Every public API endpoint must be registered in `src/openapi/schemas/` BEFORE it ships. Drift between routes and the spec is a CI failure (Phase 5, pending). For now, the contract is: register or don't merge.
+Every public API endpoint must be registered in `src/openapi/schemas/` BEFORE it ships. **Drift is a CI failure** — `npm run docs:check` (runs in `test` job) blocks any PR where an Express route isn't in the spec or vice versa.
 
 ---
 
