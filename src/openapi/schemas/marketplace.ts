@@ -425,7 +425,8 @@ registry.registerPath({
   path: '/api/v1/marketplace/categories/tree',
   tags: ['Marketplace'],
   summary: 'Category tree',
-  description: 'Returns marketplace categories as a hierarchical tree from the collections table.',
+  description:
+    'Returns marketplace categories as a hierarchical tree from the collections table. Children are nested category objects of the same shape.',
   responses: {
     200: {
       description: 'Category tree',
@@ -436,7 +437,7 @@ registry.registerPath({
             success: z.boolean(),
             data: z.array(
               CategorySchema.extend({
-                children: z.array(z.lazy(() => CategorySchema)).optional(),
+                children: z.array(z.record(z.unknown())).optional(),
               })
             ),
           }),
