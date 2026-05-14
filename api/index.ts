@@ -61,6 +61,16 @@ import locationsRouter from '../src/express/routes/locations';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
 import { validateContentType } from '../src/express/middleware/contentTypeValidator';
 import { requestIdMiddleware } from '../src/express/middleware/requestId';
+import swaggerUi from 'swagger-ui-express';
+import { openApiDocument } from '../src/openapi/spec';
+import { validateRequestData, ValidationError } from '../src/middleware/validation';
+import { ProfileIdParamSchema, UpdateProfileBodySchema } from '../src/openapi/schemas/profiles';
+import { GroupIdParamSchema } from '../src/openapi/schemas/groups';
+import {
+  RegisterBodySchema,
+  LoginBodySchema,
+  TokenRefreshBodySchema,
+} from '../src/openapi/schemas/auth';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 
@@ -226,6 +236,26 @@ const withAuthContext = (handler: AuthenticatedHandler) => async (req: Request, 
   await handler(context.authReq, res, context.keyInfo);
 };
 
+/**
+ * Check if an origin is a valid localhost origin
+ * Supports: localhost, 127.0.0.1, host.docker.internal, any port
+ */
+function isLocalhostOrigin(origin: string): boolean {
+  if (!origin) return false;
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname;
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === 'host.docker.internal' ||
+      hostname === '::1' // IPv6 localhost
+    );
+  } catch {
+    return false;
+  }
+}
+
 // Helper function to refresh CORS cache
 async function refreshCorsCache() {
   try {
@@ -272,17 +302,48 @@ async function refreshCorsCache() {
   }
 }
 
-// Core origins that must always work (high-trust domains)
-// Currently using dynamic CORS from database
+// ============================================================================
+// CORS Configuration: Allowed Origins for Cross-Origin Requests
+// ============================================================================
 
-// Static origins that must always work (high-trust domains)
-const STATIC_CORS_ORIGINS = process.env.CORS_ORIGIN?.split(',') || [
+/**
+ * Core origins that must always work (high-trust domains)
+ *
+ * Configuration strategy:
+ * 1. CORS_ORIGIN env var: Comma-separated list to override defaults (production)
+ * 2. Default origins: Built-in for production deployments and common dev ports
+ * 3. Development mode: Additional flexible localhost handling in middleware (line 321)
+ *
+ * Environment Variables:
+ * - CORS_ORIGIN: Override default origins (comma-separated, no spaces)
+ *   Example: CORS_ORIGIN=https://custom.domain,https://another.domain
+ * - NODE_ENV: If 'development', all localhost:* origins are allowed
+ *
+ * Local Development Ports:
+ * - 8081: o-core (React Native / Expo) Metro bundler
+ * - 8084: o-orig (Ultra Concierge) Metro bundler
+ * - 8087: o-orig (Love Puzl) Metro bundler
+ * - 3000: Next.js development server (e.g., o-orig web app)
+ * - 5173: Vite development server
+ */
+const STATIC_CORS_ORIGINS = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()) || [
+  // Production deployments
   'https://oriva.io',
   'https://www.oriva.io',
   'https://app.oriva.io',
   'https://o-originals.vercel.app', // o-orig marketplace apps deployment
-  'http://localhost:8081', // Added for Oriva Core team development
-  'http://localhost:8084', // o-orig local development
+
+  // Local development - specific ports (serves as fallback when NODE_ENV !== 'development')
+  'http://localhost:8081', // o-core Metro bundler
+  'http://localhost:8084', // o-orig Ultra Concierge Metro bundler
+  'http://localhost:8087', // o-orig Love Puzl Metro bundler
+  'http://localhost:3000', // Next.js dev server
+  'http://localhost:5173', // Vite dev server
+  'http://127.0.0.1:8081',
+  'http://127.0.0.1:8084',
+  'http://127.0.0.1:8087',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
 ];
 
 // CORS cache for marketplace apps (loaded at startup)
@@ -316,11 +377,27 @@ app.use(
         return callback(null, true);
       }
 
-      // Development: Allow localhost and Docker host (for Playwright testing)
-      if (
-        process.env.NODE_ENV === 'development' &&
-        (origin.includes('localhost') || origin.includes('host.docker.internal'))
-      ) {
+      /**
+       * LOCALHOST CORS HANDLING (Development Mode)
+       *
+       * In development mode, we allow ALL localhost origins to facilitate:
+       * - Multiple Metro bundlers (8081, 8084, 8087, custom ports)
+       * - Next.js dev servers (3000, 3001, etc.)
+       * - Vite dev servers (5173, 5174, etc.)
+       * - Docker localhost access (host.docker.internal)
+       * - Playwright testing via host.docker.internal
+       * - IPv6 localhost (::1)
+       *
+       * This is safe because:
+       * 1. Development only (NODE_ENV === 'development')
+       * 2. Authentication is still enforced (API keys, JWT tokens)
+       * 3. Localhost is non-routable by default (no external risk)
+       */
+      if (process.env.NODE_ENV === 'development' && isLocalhostOrigin(origin)) {
+        logger.debug('CORS: Development localhost origin allowed', {
+          origin,
+          mode: 'dev-flexible',
+        });
         return callback(null, true);
       }
 
@@ -1658,20 +1735,13 @@ app.get(
 app.put(
   '/api/v1/profiles/:profileId',
   validateApiKey,
-  param('profileId')
-    .matches(/^ext_[a-f0-9]{16}$/)
-    .withMessage('Invalid profile ID format'),
-  validateRequest,
   async (req: Request<ProfileRouteParams>, res: Response) => {
     try {
-      const { profileId } = getProfileParams(req);
-      const { profileName, avatar, bio, location } =
-        (req.body as Partial<{
-          profileName: string;
-          avatar: string;
-          bio: string | null;
-          location: string | null;
-        }>) ?? {};
+      const { profileId } = validateRequestData(ProfileIdParamSchema, req.params);
+      const { profileName, avatar, bio, location } = validateRequestData(
+        UpdateProfileBodySchema,
+        req.body ?? {}
+      );
 
       const updatedProfile = {
         profileId,
@@ -1690,10 +1760,11 @@ app.put(
         message: 'Profile updated successfully',
       });
     } catch (error) {
-      logger.error('Failed to update profile', {
-        error,
-        profileId: getProfileParams(req).profileId,
-      });
+      if (error instanceof ValidationError) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+        return;
+      }
+      logger.error('Failed to update profile', { error, profileId: req.params.profileId });
       respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to update profile');
     }
   }
@@ -1703,13 +1774,9 @@ app.put(
 app.post(
   '/api/v1/profiles/:profileId/activate',
   validateApiKey,
-  param('profileId')
-    .matches(/^ext_[a-f0-9]{16}$/)
-    .withMessage('Invalid profile ID format'),
-  validateRequest,
   async (req: Request<ProfileRouteParams>, res: Response) => {
     try {
-      const { profileId } = getProfileParams(req);
+      const { profileId } = validateRequestData(ProfileIdParamSchema, req.params);
 
       res.json({
         ok: true,
@@ -1720,10 +1787,11 @@ app.post(
         },
       });
     } catch (error) {
-      logger.error('Failed to switch profile', {
-        error,
-        profileId: getProfileParams(req).profileId,
-      });
+      if (error instanceof ValidationError) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+        return;
+      }
+      logger.error('Failed to switch profile', { error, profileId: req.params.profileId });
       respondWithError(res, 500, 'PROFILES_ERROR', 'Failed to switch profile');
     }
   }
@@ -1888,11 +1956,9 @@ app.get(
 app.get(
   '/api/v1/groups/:groupId/members',
   validateApiKey,
-  param('groupId').isUUID().withMessage('Invalid group ID format'),
-  validateRequest,
   withAuthContext(async (req, res, keyInfo) => {
     try {
-      const { groupId } = getGroupParams(req);
+      const { groupId } = validateRequestData(GroupIdParamSchema, req.params);
 
       // Step 1: Check if user created the group
       const { data: group, error: groupError } = await supabase
@@ -2011,9 +2077,13 @@ app.get(
 
       res.json(response);
     } catch (error) {
+      if (error instanceof ValidationError) {
+        respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+        return;
+      }
       logger.error('Failed to fetch group members', {
         error,
-        groupId: getGroupParams(req).groupId,
+        groupId: req.params.groupId,
         userId: keyInfo.userId,
       });
       respondWithError(res, 500, 'GROUP_MEMBERS_ERROR', 'Failed to fetch group members');
@@ -3786,25 +3856,10 @@ function isStrongPassword(password: string): boolean {
 // POST /api/v1/auth/register - User registration
 app.post('/api/v1/auth/register', async (req, res) => {
   try {
-    const { email, password, username, name, preferences } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Email and password are required');
-    }
-
-    if (!isValidEmail(email)) {
-      return respondWithError(res, 400, 'INVALID_EMAIL', 'Invalid email format');
-    }
-
-    if (!isStrongPassword(password)) {
-      return respondWithError(
-        res,
-        400,
-        'WEAK_PASSWORD',
-        'Password must be at least 8 characters with uppercase, lowercase, and numbers'
-      );
-    }
+    const { email, password, username, name, preferences } = validateRequestData(
+      RegisterBodySchema,
+      req.body ?? {}
+    );
 
     // Create Supabase auth user using anon client (public signup)
     const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
@@ -3885,6 +3940,10 @@ app.post('/api/v1/auth/register', async (req, res) => {
       expires_in: sessionData.session.expires_in || 3600,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+      return;
+    }
     logger.error('Registration error', { error });
     respondWithError(res, 500, 'REGISTRATION_ERROR', getErrorMessage(error));
   }
@@ -3893,12 +3952,7 @@ app.post('/api/v1/auth/register', async (req, res) => {
 // POST /api/v1/auth/login - User login
 app.post('/api/v1/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Email and password are required');
-    }
+    const { email, password } = validateRequestData(LoginBodySchema, req.body ?? {});
 
     // Authenticate with Supabase
     const { data: sessionData, error: authError } = await supabaseAuth.auth.signInWithPassword({
@@ -3941,6 +3995,10 @@ app.post('/api/v1/auth/login', async (req, res) => {
       expires_in: sessionData.session.expires_in || 3600,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+      return;
+    }
     logger.error('Login error', { error });
     respondWithError(res, 500, 'LOGIN_ERROR', getErrorMessage(error));
   }
@@ -3965,11 +4023,7 @@ app.post('/api/v1/auth/logout', async (req, res) => {
 // POST /api/v1/auth/token/refresh - Refresh access token
 app.post('/api/v1/auth/token/refresh', async (req, res) => {
   try {
-    const { refresh_token } = req.body;
-
-    if (!refresh_token) {
-      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Refresh token is required');
-    }
+    const { refresh_token } = validateRequestData(TokenRefreshBodySchema, req.body ?? {});
 
     const { data, error } = await supabase.auth.refreshSession({ refresh_token });
 
@@ -3988,6 +4042,10 @@ app.post('/api/v1/auth/token/refresh', async (req, res) => {
       expires_in: data.session.expires_in || 3600,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+      return;
+    }
     logger.error('Token refresh error', { error });
     respondWithError(res, 500, 'REFRESH_ERROR', getErrorMessage(error));
   }
@@ -4438,6 +4496,10 @@ app.get('/api/oriva/events/:eventId', async (req, res) => {
     respondWithError(res, 500, 'SERVER_ERROR', 'Internal server error');
   }
 });
+
+// OpenAPI docs — unauthenticated, public
+app.get('/api/openapi.json', (_req, res) => res.json(openApiDocument));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 // 404 handler for unmatched routes
 app.use('*', (req, res) => {
