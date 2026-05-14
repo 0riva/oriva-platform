@@ -12,7 +12,7 @@ describe('Developer API', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expect(response.body.error).toBe('Authorization header required');
     });
 
     test('should return developer apps with valid API key', async () => {
@@ -42,7 +42,7 @@ describe('Developer API', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expect(response.body.error).toBe('Authorization header required');
     });
 
     test('should return specific developer app with valid API key', async () => {
@@ -74,16 +74,15 @@ describe('Developer API', () => {
 
   describe('POST /api/v1/developer/apps', () => {
     test('should require authentication', async () => {
-      const response = await createTestRequest('/api/v1/developer/apps', 'post')
-        .send({
-          name: 'Test App',
-          slug: 'test-app',
-          description: 'A test application'
-        });
+      const response = await createTestRequest('/api/v1/developer/apps', 'post').send({
+        name: 'Test App',
+        slug: 'test-app',
+        description: 'A test application',
+      });
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expect(response.body.error).toBe('Authorization header required');
     });
 
     test('should create new app with valid data and authentication', async () => {
@@ -95,7 +94,7 @@ describe('Developer API', () => {
         category: 'productivity',
         icon_url: 'https://example.com/icon.png',
         version: '1.0.0',
-        pricing_model: 'free'
+        pricing_model: 'free',
       };
 
       const response = await withAuth(
@@ -138,7 +137,7 @@ describe('Developer API', () => {
         slug: null,
         description: true,
         category: [],
-        version: {}
+        version: {},
       };
 
       const response = await withAuth(
@@ -152,15 +151,14 @@ describe('Developer API', () => {
 
   describe('PUT /api/v1/developer/apps/:appId', () => {
     test('should require authentication', async () => {
-      const response = await createTestRequest('/api/v1/developer/apps/test-app-123', 'put')
-        .send({
-          name: 'Updated Test App',
-          description: 'Updated description'
-        });
+      const response = await createTestRequest('/api/v1/developer/apps/test-app-123', 'put').send({
+        name: 'Updated Test App',
+        description: 'Updated description',
+      });
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expect(response.body.error).toBe('Authorization header required');
     });
 
     test('should update app with valid data and authentication', async () => {
@@ -168,7 +166,7 @@ describe('Developer API', () => {
         name: 'Updated Test App',
         tagline: 'Updated tagline',
         description: 'Updated comprehensive description',
-        version: '1.1.0'
+        version: '1.1.0',
       };
 
       const response = await withAuth(
@@ -183,14 +181,14 @@ describe('Developer API', () => {
         expect(response.body.data).toBeDefined();
       } else if (response.status === 404) {
         expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('App not found');
+        expect(response.body.error).toBe('App not found or unauthorized');
       }
     });
 
     test('should handle partial updates', async () => {
       const response = await withAuth(
         createTestRequest('/api/v1/developer/apps/test-app-123', 'put').send({
-          version: '1.2.0'
+          version: '1.2.0',
         }),
         testData.validApiKey
       );
@@ -201,7 +199,7 @@ describe('Developer API', () => {
     test('should validate update data', async () => {
       const invalidData = {
         name: '', // Empty name
-        version: 'invalid-version-format'
+        version: 'invalid-version-format',
       };
 
       const response = await withAuth(
@@ -219,7 +217,7 @@ describe('Developer API', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expect(response.body.error).toBe('Authorization header required');
     });
 
     test('should delete app with valid authentication', async () => {
@@ -256,11 +254,14 @@ describe('Developer API', () => {
 
   describe('POST /api/v1/developer/apps/:appId/submit', () => {
     test('should require authentication', async () => {
-      const response = await createTestRequest('/api/v1/developer/apps/test-app-123/submit', 'post');
+      const response = await createTestRequest(
+        '/api/v1/developer/apps/test-app-123/submit',
+        'post'
+      );
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expect(response.body.error).toBe('Authorization header required');
     });
 
     test('should submit app for review with valid authentication', async () => {
@@ -279,7 +280,7 @@ describe('Developer API', () => {
         expect(response.body.error).toMatch(/already submitted|review/i);
       } else if (response.status === 404) {
         expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('App not found');
+        expect(response.body.error).toBe('App not found or already submitted');
       }
     });
 
@@ -295,11 +296,14 @@ describe('Developer API', () => {
 
   describe('POST /api/v1/developer/apps/:appId/resubmit', () => {
     test('should require authentication', async () => {
-      const response = await createTestRequest('/api/v1/developer/apps/test-app-123/resubmit', 'post');
+      const response = await createTestRequest(
+        '/api/v1/developer/apps/test-app-123/resubmit',
+        'post'
+      );
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('API key required');
+      expect(response.body.error).toBe('Authorization header required');
     });
 
     test('should resubmit app for review with valid authentication', async () => {
@@ -318,7 +322,7 @@ describe('Developer API', () => {
         expect(response.body.error).toMatch(/cannot resubmit|not rejected/i);
       } else if (response.status === 404) {
         expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('App not found');
+        expect(response.body.error).toBe('App not found or not in rejected status');
       }
     });
 
@@ -361,7 +365,7 @@ describe('Developer API', () => {
     test('should handle extremely large request payloads', async () => {
       const largeData = {
         name: 'Test App',
-        description: 'a'.repeat(100000) // Very large description
+        description: 'a'.repeat(100000), // Very large description
       };
 
       const response = await withAuth(
@@ -374,7 +378,7 @@ describe('Developer API', () => {
 
     test('should handle SQL injection attempts in parameters', async () => {
       const response = await withAuth(
-        createTestRequest('/api/v1/developer/apps/\'; DROP TABLE plugin_marketplace_apps; --'),
+        createTestRequest("/api/v1/developer/apps/'; DROP TABLE plugin_marketplace_apps; --"),
         testData.validApiKey
       );
 

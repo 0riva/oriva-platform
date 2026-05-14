@@ -4,6 +4,8 @@
 // Load environment variables FIRST before any other code
 require('dotenv').config();
 
+import { seedTestData } from './seed-test-data';
+
 export default async function globalSetup() {
   console.log('🔧 Setting up test environment...');
 
@@ -25,6 +27,9 @@ export default async function globalSetup() {
   if (!process.env.API_KEY_HUGO_CAREER) {
     process.env.API_KEY_HUGO_CAREER = 'test-api-key-hugo-career';
   }
+
+  // Seed the developer_api_keys row the suite authenticates with.
+  await seedTestData();
 
   console.log('✅ Test environment ready');
   console.log('[SETUP] API Keys configured:', {

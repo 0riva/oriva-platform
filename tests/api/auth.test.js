@@ -20,28 +20,31 @@ describe('Authentication', () => {
     test('should reject requests without authorization header', async () => {
       const response = await createTestRequest('/api/v1/user/me');
 
-      expectTypedAuthError(response, 'API key required');
+      expectTypedAuthError(response, 'Authorization header required');
     });
 
     test('should reject requests without Bearer prefix', async () => {
-      const response = await createTestRequest('/api/v1/user/me')
-        .set('Authorization', 'invalid_format');
+      const response = await createTestRequest('/api/v1/user/me').set(
+        'Authorization',
+        'invalid_format'
+      );
 
-      expectTypedAuthError(response, 'API key required');
+      expectTypedAuthError(response, 'Invalid API key format');
     });
 
     test('should reject empty Bearer token', async () => {
-      const response = await createTestRequest('/api/v1/user/me')
-        .set('Authorization', 'Bearer ');
+      const response = await createTestRequest('/api/v1/user/me').set('Authorization', 'Bearer ');
 
-      expectTypedAuthError(response, 'API key required');
+      expectTypedAuthError(response, 'Invalid API key format');
     });
 
     test('should reject non-string tokens', async () => {
-      const response = await createTestRequest('/api/v1/user/me')
-        .set('Authorization', 'Bearer null');
+      const response = await createTestRequest('/api/v1/user/me').set(
+        'Authorization',
+        'Bearer null'
+      );
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key format');
     });
   });
 
@@ -55,24 +58,18 @@ describe('Authentication', () => {
           `${prefix}invalid_key_suffix`
         );
 
-        expectTypedAuthError(response, 'Invalid API key');
+        expectTypedAuthError(response, 'Invalid or expired API key');
       }
     });
 
     test('should reject invalid API keys', async () => {
-      const response = await withAuth(
-        createTestRequest('/api/v1/user/me'),
-        testData.invalidApiKey
-      );
+      const response = await withAuth(createTestRequest('/api/v1/user/me'), testData.invalidApiKey);
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid or expired API key');
     });
 
     test('should accept valid API key and attach keyInfo', async () => {
-      const response = await withAuth(
-        createTestRequest('/api/v1/user/me'),
-        testData.validApiKey
-      );
+      const response = await withAuth(createTestRequest('/api/v1/user/me'), testData.validApiKey);
 
       // Should either succeed with 200 or fail with auth error (depending on endpoint implementation)
       expect([200, 401, 404, 500]).toContain(response.status);
@@ -89,7 +86,7 @@ describe('Authentication', () => {
         'oriva_pk_test_malformed_key_123'
       );
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid or expired API key');
     });
 
     test('should handle database lookup errors gracefully', async () => {
@@ -99,7 +96,7 @@ describe('Authentication', () => {
         'oriva_pk_test_non_existent_key_hash'
       );
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid or expired API key');
     });
   });
 
@@ -110,7 +107,7 @@ describe('Authentication', () => {
         'invalid_token_without_prefix'
       );
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key format');
     });
 
     test('should reject malformed JWT-like tokens', async () => {
@@ -119,7 +116,7 @@ describe('Authentication', () => {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid_payload'
       );
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key format');
     });
   });
 
@@ -129,14 +126,14 @@ describe('Authentication', () => {
       '/api/v1/entries',
       '/api/v1/templates',
       '/api/v1/storage',
-      '/api/v1/developer/apps'
+      '/api/v1/developer/apps',
     ];
 
-    protectedEndpoints.forEach(endpoint => {
+    protectedEndpoints.forEach((endpoint) => {
       test(`should require authentication for ${endpoint}`, async () => {
         const response = await createTestRequest(endpoint);
 
-        expectTypedAuthError(response, 'API key required');
+        expectTypedAuthError(response, 'Authorization header required');
       });
     });
 
@@ -147,17 +144,14 @@ describe('Authentication', () => {
       // Accept either 401 (auth required) or 404 (endpoint not found)
       expect([401, 404]).toContain(response.status);
       if (response.status === 401) {
-        expectTypedAuthError(response, 'API key required');
+        expectTypedAuthError(response, 'Authorization header required');
       }
     });
   });
 
   describe('Request Context and Key Info', () => {
     test('should attach API key info to request object for valid API keys', async () => {
-      const response = await withAuth(
-        createTestRequest('/api/v1/user/me'),
-        testData.validApiKey
-      );
+      const response = await withAuth(createTestRequest('/api/v1/user/me'), testData.validApiKey);
 
       // Test that the authentication middleware processes the request
       expect([200, 401, 404, 500]).toContain(response.status);
@@ -165,10 +159,7 @@ describe('Authentication', () => {
 
     test('should handle API key usage tracking', async () => {
       // Test that usage statistics are updated for valid API keys
-      const response = await withAuth(
-        createTestRequest('/api/v1/user/me'),
-        testData.validApiKey
-      );
+      const response = await withAuth(createTestRequest('/api/v1/user/me'), testData.validApiKey);
 
       expect([200, 401, 404, 500]).toContain(response.status);
       // Usage tracking happens asynchronously and shouldn't affect response
@@ -177,9 +168,8 @@ describe('Authentication', () => {
 
   describe('Edge Cases and Error Handling', () => {
     test('should handle extremely long authorization headers', async () => {
-      const longToken = `Bearer ${  'a'.repeat(10000)}`;
-      const response = await createTestRequest('/api/v1/user/me')
-        .set('Authorization', longToken);
+      const longToken = `Bearer ${'a'.repeat(10000)}`;
+      const response = await createTestRequest('/api/v1/user/me').set('Authorization', longToken);
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -191,30 +181,26 @@ describe('Authentication', () => {
 
     test('should handle special characters in API keys', async () => {
       const specialCharsKey = 'oriva_pk_test_!@#$%^&*()';
-      const response = await withAuth(
-        createTestRequest('/api/v1/user/me'),
-        specialCharsKey
-      );
+      const response = await withAuth(createTestRequest('/api/v1/user/me'), specialCharsKey);
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid or expired API key');
     });
 
     test('should handle case sensitivity in API keys', async () => {
       const upperCaseKey = testData.validApiKey.toUpperCase();
-      const response = await withAuth(
-        createTestRequest('/api/v1/user/me'),
-        upperCaseKey
-      );
+      const response = await withAuth(createTestRequest('/api/v1/user/me'), upperCaseKey);
 
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key format');
     });
 
     test('should handle authorization header with extra whitespace', async () => {
-      const response = await createTestRequest('/api/v1/user/me')
-        .set('Authorization', `  Bearer  ${  testData.validApiKey  }  `);
+      const response = await createTestRequest('/api/v1/user/me').set(
+        'Authorization',
+        `  Bearer  ${testData.validApiKey}  `
+      );
 
       // The middleware parses the key but it has extra spaces, so fails validation
-      expectTypedAuthError(response, 'Invalid API key');
+      expectTypedAuthError(response, 'Invalid API key format');
     });
   });
 
@@ -231,8 +217,10 @@ describe('Authentication', () => {
     });
 
     test('should reject invalid admin tokens', async () => {
-      const response = await createTestRequest('/api/v1/admin/test')
-        .set('x-admin-token', 'invalid_admin_token');
+      const response = await createTestRequest('/api/v1/admin/test').set(
+        'x-admin-token',
+        'invalid_admin_token'
+      );
 
       expect([401, 404]).toContain(response.status);
       if (response.status === 401) {

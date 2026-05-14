@@ -32,12 +32,14 @@ const expectMarketplaceAppShape = (app) => {
 const expectPaginatedMeta = (meta) => {
   expect(meta).toBeDefined();
   expect(meta).toHaveProperty('pagination');
-  expect(meta.pagination).toEqual(expect.objectContaining({
-    page: expect.any(Number),
-    limit: expect.any(Number),
-    total: expect.any(Number),
-    totalPages: expect.any(Number)
-  }));
+  expect(meta.pagination).toEqual(
+    expect.objectContaining({
+      page: expect.any(Number),
+      limit: expect.any(Number),
+      total: expect.any(Number),
+      totalPages: expect.any(Number),
+    })
+  );
 };
 
 describe('Marketplace API', () => {
@@ -45,7 +47,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/apps');
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should return marketplace apps with valid API key', async () => {
@@ -131,7 +133,9 @@ describe('Marketplace API', () => {
 
     test('should handle combined filtering and pagination', async () => {
       const response = await withAuth(
-        createTestRequest('/api/v1/marketplace/apps?category=productivity&search=task&limit=10&offset=0'),
+        createTestRequest(
+          '/api/v1/marketplace/apps?category=productivity&search=task&limit=10&offset=0'
+        ),
         testData.validApiKey
       );
 
@@ -154,7 +158,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/trending');
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should return trending apps with valid API key', async () => {
@@ -200,7 +204,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/featured');
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should return featured apps with valid API key', async () => {
@@ -246,7 +250,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/categories');
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should return categories with valid API key', async () => {
@@ -272,7 +276,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/apps/test-app-123');
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should return specific app with valid API key', async () => {
@@ -321,7 +325,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/installed');
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should return installed apps for authenticated user', async () => {
@@ -349,7 +353,7 @@ describe('Marketplace API', () => {
     test('should require authentication', async () => {
       const response = await createTestRequest('/api/v1/marketplace/install/test-app-123', 'post');
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should handle app installation with valid authentication', async () => {
@@ -391,9 +395,12 @@ describe('Marketplace API', () => {
 
   describe('DELETE /api/v1/marketplace/uninstall/:appId', () => {
     test('should require authentication', async () => {
-      const response = await createTestRequest('/api/v1/marketplace/uninstall/test-app-123', 'delete');
+      const response = await createTestRequest(
+        '/api/v1/marketplace/uninstall/test-app-123',
+        'delete'
+      );
 
-      expectTypedMarketplaceError(response, 'API key required');
+      expectTypedMarketplaceError(response, 'Authorization header required');
     });
 
     test('should handle app uninstallation with valid authentication', async () => {
@@ -478,7 +485,9 @@ describe('Marketplace API', () => {
 
     test('should handle SQL injection attempts in search', async () => {
       const response = await withAuth(
-        createTestRequest('/api/v1/marketplace/apps?search=\'; DROP TABLE plugin_marketplace_apps; --'),
+        createTestRequest(
+          "/api/v1/marketplace/apps?search='; DROP TABLE plugin_marketplace_apps; --"
+        ),
         testData.validApiKey
       );
 
