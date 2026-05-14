@@ -15,6 +15,22 @@ export interface AuthContext {
 }
 
 /**
+ * Standard error-response shape, kept consistent with respondWithError in
+ * src/express/utils/response.ts so JWT-auth failures match the error contract
+ * the rest of the API returns.
+ */
+function sendAuthError(res: VercelResponse, status: number, code: string, message: string): void {
+  res.status(status).json({
+    ok: false,
+    success: false,
+    error: message,
+    message,
+    code,
+    details: [],
+  });
+}
+
+/**
  * Authentication middleware for Vercel Edge Functions
  * Verifies JWT token from Authorization header and attaches user context
  */
@@ -30,10 +46,7 @@ export async function authenticate(
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       trackAuthEvent('login', false);
-      res.status(401).json({
-        error: 'Missing or invalid Authorization header',
-        code: 'AUTH_MISSING',
-      });
+      sendAuthError(res, 401, 'AUTH_MISSING', 'Missing or invalid Authorization header');
       return;
     }
 
@@ -48,10 +61,7 @@ export async function authenticate(
 
     if (error || !user) {
       trackAuthEvent('login', false);
-      res.status(401).json({
-        error: 'Invalid or expired token',
-        code: 'AUTH_INVALID',
-      });
+      sendAuthError(res, 401, 'AUTH_INVALID', 'Invalid or expired token');
       return;
     }
 
@@ -126,10 +136,7 @@ export async function authenticate(
 
         if (createError || !newProfile) {
           console.error('[Auth] Failed to auto-create profile:', createError);
-          res.status(500).json({
-            error: 'Failed to create user profile',
-            code: 'PROFILE_CREATE_FAILED',
-          });
+          sendAuthError(res, 500, 'PROFILE_CREATE_FAILED', 'Failed to create user profile');
           return;
         }
 
@@ -144,10 +151,7 @@ export async function authenticate(
     // Final check - must have a profile
     if (!userProfile) {
       console.error('[Auth] No profile found and could not create one:', { userId: user.id });
-      res.status(500).json({
-        error: 'User profile not found',
-        code: 'PROFILE_NOT_FOUND',
-      });
+      sendAuthError(res, 500, 'PROFILE_NOT_FOUND', 'User profile not found');
       return;
     }
 
@@ -189,10 +193,7 @@ export async function authenticate(
     trackAuthEvent('login', false);
     trackAPIResponseTime('auth.middleware', Date.now() - startTime);
     console.error('Authentication error:', error);
-    res.status(500).json({
-      error: 'Internal authentication error',
-      code: 'AUTH_ERROR',
-    });
+    sendAuthError(res, 500, 'AUTH_ERROR', 'Internal authentication error');
   }
 }
 
