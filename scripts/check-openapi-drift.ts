@@ -62,6 +62,7 @@ const SCANNED_SUBROUTERS: { file: string; prefix: string }[] = [
   { file: '../src/express/routes/oriva-events.ts', prefix: '/api/oriva/events' },
   { file: '../src/express/routes/auth-public.ts', prefix: '/api/v1/auth' },
   { file: '../src/express/routes/marketplace.ts', prefix: '/api/v1' },
+  { file: '../src/express/routes/user-public.ts', prefix: '/api/v1' },
 ];
 
 // ── Extract Express routes ────────────────────────────────────────────────────
