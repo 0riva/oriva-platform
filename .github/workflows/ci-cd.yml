@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'api/**'
       - 'src/**'
@@ -15,7 +15,7 @@ on:
       - 'vercel.json'
       - '.github/workflows/ci-cd.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'api/**'
       - 'src/**'
@@ -27,72 +27,75 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         node-version: [18.x, 20.x]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run linting
-      run: npm run lint || echo "Linting not configured yet"
-      
-    - name: Run tests
-      run: npm test
 
-    - name: Generate test coverage
-      run: npm run test:coverage
-      
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage/lcov.info
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint || echo "Linting not configured yet"
+
+      - name: Check OpenAPI spec drift
+        run: npm run docs:check
+
+      - name: Run tests
+        run: npm test
+
+      - name: Generate test coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
 
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Run security audit
-      run: npm audit --audit-level moderate
-      
-    - name: Check for known vulnerabilities
-      run: npm audit --audit-level high
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security audit
+        run: npm audit --audit-level moderate
+
+      - name: Check for known vulnerabilities
+        run: npm audit --audit-level high
 
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: [test, security-scan]
     if: github.ref == 'refs/heads/develop'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Deploy to Vercel Staging
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        vercel-args: '--prod=false'
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel Staging
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod=false'
 
   deploy-production:
     name: Deploy to Production
@@ -106,82 +109,82 @@ jobs:
       !startsWith(github.event.head_commit.message, 'chore:')
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Deploy to Vercel Production
-      id: deploy
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        vercel-args: '--prod'
+      - name: Deploy to Vercel Production
+        id: deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
 
-    - name: Wait for deployment to be ready
-      run: sleep 30
+      - name: Wait for deployment to be ready
+        run: sleep 30
 
-    - name: Health check
-      run: |
-        echo "Running health check..."
-        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.deploy.outputs.preview-url }}/api/health)
-        if [ $RESPONSE -eq 200 ]; then
-          echo "✅ Health check passed"
-        else
-          echo "❌ Health check failed with status $RESPONSE"
-          exit 1
-        fi
+      - name: Health check
+        run: |
+          echo "Running health check..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.deploy.outputs.preview-url }}/api/health)
+          if [ $RESPONSE -eq 200 ]; then
+            echo "✅ Health check passed"
+          else
+            echo "❌ Health check failed with status $RESPONSE"
+            exit 1
+          fi
 
-    - name: Verify database connectivity
-      run: |
-        echo "Checking database connection..."
-        DB_STATUS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/health | jq -r '.checks.database')
-        if [ "$DB_STATUS" = "healthy" ]; then
-          echo "✅ Database connectivity verified"
-        else
-          echo "❌ Database connectivity check failed"
-          exit 1
-        fi
+      - name: Verify database connectivity
+        run: |
+          echo "Checking database connection..."
+          DB_STATUS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/health | jq -r '.checks.database')
+          if [ "$DB_STATUS" = "healthy" ]; then
+            echo "✅ Database connectivity verified"
+          else
+            echo "❌ Database connectivity check failed"
+            exit 1
+          fi
 
-    - name: Verify environment variables
-      run: |
-        echo "Checking environment configuration..."
-        ENV_STATUS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/health | jq -r '.checks.environment')
-        if [ "$ENV_STATUS" = "healthy" ]; then
-          echo "✅ Environment variables verified"
-        else
-          echo "❌ Environment variables check failed"
-          exit 1
-        fi
+      - name: Verify environment variables
+        run: |
+          echo "Checking environment configuration..."
+          ENV_STATUS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/health | jq -r '.checks.environment')
+          if [ "$ENV_STATUS" = "healthy" ]; then
+            echo "✅ Environment variables verified"
+          else
+            echo "❌ Environment variables check failed"
+            exit 1
+          fi
 
-    - name: Check for critical alerts
-      run: |
-        echo "Checking for critical alerts..."
-        CRITICAL_ALERTS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/alerts?action=status | jq -r '.alerts.critical')
-        if [ "$CRITICAL_ALERTS" -eq 0 ]; then
-          echo "✅ No critical alerts"
-        else
-          echo "⚠️  Warning: $CRITICAL_ALERTS critical alerts detected"
-        fi
+      - name: Check for critical alerts
+        run: |
+          echo "Checking for critical alerts..."
+          CRITICAL_ALERTS=$(curl -s ${{ steps.deploy.outputs.preview-url }}/api/alerts?action=status | jq -r '.alerts.critical')
+          if [ "$CRITICAL_ALERTS" -eq 0 ]; then
+            echo "✅ No critical alerts"
+          else
+            echo "⚠️  Warning: $CRITICAL_ALERTS critical alerts detected"
+          fi
 
   notify:
     name: Notify Deployment
     runs-on: ubuntu-latest
     needs: [deploy-staging, deploy-production]
     if: always()
-    
+
     steps:
-    - name: Notify Success
-      if: needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success'
-      run: |
-        echo "✅ Deployment successful!"
-        echo "Staging: ${{ needs.deploy-staging.result }}"
-        echo "Production: ${{ needs.deploy-production.result }}"
-        
-    - name: Notify Failure
-      if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
-      run: |
-        echo "❌ Deployment failed!"
-        echo "Staging: ${{ needs.deploy-staging.result }}"
-        echo "Production: ${{ needs.deploy-production.result }}"
-        exit 1
+      - name: Notify Success
+        if: needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success'
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Staging: ${{ needs.deploy-staging.result }}"
+          echo "Production: ${{ needs.deploy-production.result }}"
+
+      - name: Notify Failure
+        if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Staging: ${{ needs.deploy-staging.result }}"
+          echo "Production: ${{ needs.deploy-production.result }}"
+          exit 1

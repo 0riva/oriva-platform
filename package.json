@@ -16,6 +16,7 @@
     "clean": "rm -rf dist build",
     "build:watch": "tsc --project api/tsconfig.json --watch",
     "type-check": "tsc --project api/tsconfig.json --noEmit",
+    "docs:check": "ts-node --project tsconfig.json scripts/check-openapi-drift.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
