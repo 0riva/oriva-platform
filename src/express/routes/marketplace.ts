@@ -32,6 +32,35 @@ type AuthenticatedHandler = (req: any, res: any, keyInfo: ApiKeyInfo) => Promise
 
 type WithAuthContext = (handler: AuthenticatedHandler) => RequestHandler;
 
+// Fields a developer is permitted to set on their own marketplace app.
+// Everything else — id, developer_id, developer_name, status, is_active,
+// install_count, timestamps, review fields — is server-controlled and must
+// never be taken from the request body, or a developer could approve their
+// own app, reassign ownership, or fake install counts.
+const DEVELOPER_WRITABLE_APP_FIELDS = [
+  'name',
+  'slug',
+  'tagline',
+  'description',
+  'category',
+  'icon_url',
+  'screenshots',
+  'version',
+  'pricing_model',
+  'pricing_config',
+  'supported_audience',
+  'external_id',
+] as const;
+
+const pickWritableAppFields = (body: unknown): Partial<MarketplaceApp> => {
+  const source = (body ?? {}) as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const key of DEVELOPER_WRITABLE_APP_FIELDS) {
+    if (source[key] !== undefined) result[key] = source[key];
+  }
+  return result as Partial<MarketplaceApp>;
+};
+
 export function createMarketplaceRouter(
   supabase: SupabaseClient,
   logger: Logger,
@@ -116,11 +145,10 @@ export function createMarketplaceRouter(
     validateApiKey,
     withAuthContext(async (req, res, keyInfo) => {
       try {
-        const payload = req.body as Partial<MarketplaceApp>;
         const now = new Date().toISOString();
 
         const appRecord: Partial<MarketplaceApp> = {
-          ...payload,
+          ...pickWritableAppFields(req.body),
           developer_id: keyInfo.userId,
           developer_name: keyInfo.name ?? 'Developer',
           status: 'draft',
@@ -163,11 +191,9 @@ export function createMarketplaceRouter(
         const { appId } = getAppParams(req);
         const now = new Date().toISOString();
         const updates: Partial<MarketplaceApp> = {
-          ...(req.body as Partial<MarketplaceApp>),
+          ...pickWritableAppFields(req.body),
           updated_at: now,
         };
-
-        delete (updates as Record<string, unknown>).status;
 
         const { data, error } = await supabase
           .from('plugin_marketplace_apps')
@@ -295,12 +321,11 @@ export function createMarketplaceRouter(
       try {
         const { appId } = getAppParams(req);
         const now = new Date().toISOString();
-        const updates = req.body as Partial<MarketplaceApp>;
 
         const { data, error } = await supabase
           .from('plugin_marketplace_apps')
           .update({
-            ...updates,
+            ...pickWritableAppFields(req.body),
             status: 'pending_review',
             submitted_at: now,
             updated_at: now,

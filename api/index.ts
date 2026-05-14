@@ -911,8 +911,10 @@ app.get('/api/v1/test', (req, res) => {
 // GET /dev-profiles - Public endpoint for dev login (development mode only)
 // Returns available profiles for dev login without requiring authentication
 app.get('/dev-profiles', async (req, res) => {
-  // Only available in development mode
-  if (process.env.NODE_ENV !== 'development' && !process.env.VERCEL_ENV?.includes('preview')) {
+  // Only available in local development. NOT enabled on Vercel preview
+  // deployments — VERCEL_ENV is "preview" on every PR/branch preview URL,
+  // which would expose this unauthenticated profile dump publicly.
+  if (process.env.NODE_ENV !== 'development') {
     return res.status(403).json({
       ok: false,
       success: false,

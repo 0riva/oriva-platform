@@ -17,6 +17,8 @@ import type { Logger } from 'winston';
 import { respondWithError } from '../utils/response';
 import { getErrorMessage } from '../utils/query';
 import { validateRequestData, ValidationError } from '../../middleware/validation';
+import { createUserSupabaseClient } from '../../middleware/auth';
+import { authRateLimiter } from '../../middleware/rateLimiter';
 import {
   RegisterBodySchema,
   LoginBodySchema,
@@ -32,7 +34,8 @@ export function createAuthPublicRouter(
   const router = Router();
 
   // POST /api/v1/auth/register - User registration
-  router.post('/register', async (req, res) => {
+  // authRateLimiter (5 / 15 min) guards against automated signup abuse.
+  router.post('/register', authRateLimiter, async (req, res) => {
     try {
       const { email, password, username, name, preferences } = validateRequestData(
         RegisterBodySchema,
@@ -57,12 +60,9 @@ export function createAuthPublicRouter(
           message: authError.message,
           status: authError.status,
         });
-        return respondWithError(
-          res,
-          500,
-          'SIGNUP_ERROR',
-          `Database error creating new user: ${authError.message}`
-        );
+        // Do not surface the raw Supabase error to the client — it can
+        // contain internal schema / constraint detail. Logged above.
+        return respondWithError(res, 500, 'SIGNUP_ERROR', 'Registration failed');
       }
 
       if (!authData.user) {
@@ -135,7 +135,8 @@ export function createAuthPublicRouter(
   });
 
   // POST /api/v1/auth/login - User login
-  router.post('/login', async (req, res) => {
+  // authRateLimiter (5 / 15 min) guards against credential brute-force.
+  router.post('/login', authRateLimiter, async (req, res) => {
     try {
       const { email, password } = validateRequestData(LoginBodySchema, req.body ?? {});
 
@@ -193,11 +194,15 @@ export function createAuthPublicRouter(
   router.post('/logout', async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
-      if (!authHeader) {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return respondWithError(res, 401, 'AUTH_MISSING', 'Missing authorization header');
       }
 
-      await supabase.auth.signOut();
+      // Sign out the caller's own session. A service-role signOut would not
+      // invalidate the user's token — it must be done on a client scoped to
+      // their access token.
+      const token = authHeader.substring(7);
+      await createUserSupabaseClient(token).auth.signOut();
       res.status(204).end();
     } catch (error) {
       logger.error('Logout error', { error });
@@ -366,11 +371,35 @@ export function createAuthPublicRouter(
     try {
       const userId = (req as any).authContext.userId;
 
+      // Resolve the underlying auth user id before deleting the profile row.
+      // authContext.userId is profiles.id, not auth.users.id.
+      const { data: profile, error: lookupError } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('id', userId)
+        .single();
+
+      if (lookupError || !profile) {
+        return respondWithError(res, 404, 'USER_NOT_FOUND', 'User not found');
+      }
+
       const { error } = await supabase.from('profiles').delete().eq('id', userId);
 
       if (error) {
         logger.error('Delete account error', { error });
         return respondWithError(res, 500, 'DELETE_FAILED', 'Failed to delete account');
+      }
+
+      // Remove the Supabase Auth user so the account cannot be re-authenticated
+      // and any outstanding JWTs become orphaned.
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(profile.account_id);
+
+      if (authDeleteError) {
+        logger.error('Failed to delete auth user after profile deletion', {
+          error: authDeleteError,
+          accountId: profile.account_id,
+        });
+        return respondWithError(res, 500, 'DELETE_FAILED', 'Failed to fully delete account');
       }
 
       res.status(204).end();
