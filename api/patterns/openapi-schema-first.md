@@ -98,6 +98,57 @@ app.post('/api/v1/your-path/:id', validateApiKey, async (req, res) => {
 
 ---
 
+## Sub-Router Architecture (Phase 4)
+
+Routes increasingly live in mounted sub-routers under `src/express/routes/`,
+not inline in `api/index.ts`. Each uses a **factory function** that receives
+the module-level singletons (`supabase`, `logger`) and middleware
+(`validateApiKey`, `validateAuth`, `withAuthContext`, `requireAdminToken`) as
+arguments rather than closing over them:
+
+```typescript
+// src/express/routes/your-domain.ts
+export function createYourDomainRouter(
+  supabase: SupabaseClient,
+  logger: Logger,
+  validateApiKey: RequestHandler,
+): Router {
+  const router = Router();
+  router.get('/subpath', validateApiKey, async (req, res) => { ... });
+  return router;
+}
+
+// api/index.ts — mount in the SUB-ROUTER MOUNTS section
+app.use('/api/v1', createYourDomainRouter(supabase, logger, validateApiKey));
+```
+
+### Drift check must know about the sub-router
+
+`scripts/check-openapi-drift.ts` only regex-scans `api/index.ts` for
+`app.METHOD(...)`. Sub-router files are invisible to it unless listed in
+`SCANNED_SUBROUTERS` with their mount prefix:
+
+```typescript
+const SCANNED_SUBROUTERS: { file: string; prefix: string }[] = [
+  { file: '../src/express/routes/your-domain.ts', prefix: '/api/v1' },
+];
+```
+
+The check then combines `prefix + router subpath` (e.g. `/api/v1` + `/subpath`)
+to reconstruct the full route. **When you extract routes into a new
+sub-router, add it here** or the drift check will report its spec'd routes as
+`STALE SPEC ENTRIES`.
+
+### Mount-order still matters for shadowed routes
+
+Express first-match applies across sub-router mounts too. `GET
+/api/v1/auth/profile` is registered in BOTH `user-public.ts` (the
+`withAuthContext` keyInfo version) and `auth-public.ts` (a shadowed copy) —
+`user-public` is mounted first so its handler wins, preserving pre-extraction
+behaviour.
+
+---
+
 ## Critical Gotchas
 
 ### ❌ WRONG — Zod v4 incompatibility
