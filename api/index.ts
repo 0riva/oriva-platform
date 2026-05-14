@@ -66,6 +66,11 @@ import { openApiDocument } from '../src/openapi/spec';
 import { validateRequestData, ValidationError } from '../src/middleware/validation';
 import { ProfileIdParamSchema, UpdateProfileBodySchema } from '../src/openapi/schemas/profiles';
 import { GroupIdParamSchema } from '../src/openapi/schemas/groups';
+import {
+  RegisterBodySchema,
+  LoginBodySchema,
+  TokenRefreshBodySchema,
+} from '../src/openapi/schemas/auth';
 
 const webcrypto = globalThis.crypto ?? crypto.webcrypto;
 
@@ -3851,25 +3856,10 @@ function isStrongPassword(password: string): boolean {
 // POST /api/v1/auth/register - User registration
 app.post('/api/v1/auth/register', async (req, res) => {
   try {
-    const { email, password, username, name, preferences } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Email and password are required');
-    }
-
-    if (!isValidEmail(email)) {
-      return respondWithError(res, 400, 'INVALID_EMAIL', 'Invalid email format');
-    }
-
-    if (!isStrongPassword(password)) {
-      return respondWithError(
-        res,
-        400,
-        'WEAK_PASSWORD',
-        'Password must be at least 8 characters with uppercase, lowercase, and numbers'
-      );
-    }
+    const { email, password, username, name, preferences } = validateRequestData(
+      RegisterBodySchema,
+      req.body ?? {}
+    );
 
     // Create Supabase auth user using anon client (public signup)
     const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
@@ -3950,6 +3940,10 @@ app.post('/api/v1/auth/register', async (req, res) => {
       expires_in: sessionData.session.expires_in || 3600,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+      return;
+    }
     logger.error('Registration error', { error });
     respondWithError(res, 500, 'REGISTRATION_ERROR', getErrorMessage(error));
   }
@@ -3958,12 +3952,7 @@ app.post('/api/v1/auth/register', async (req, res) => {
 // POST /api/v1/auth/login - User login
 app.post('/api/v1/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Email and password are required');
-    }
+    const { email, password } = validateRequestData(LoginBodySchema, req.body ?? {});
 
     // Authenticate with Supabase
     const { data: sessionData, error: authError } = await supabaseAuth.auth.signInWithPassword({
@@ -4006,6 +3995,10 @@ app.post('/api/v1/auth/login', async (req, res) => {
       expires_in: sessionData.session.expires_in || 3600,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+      return;
+    }
     logger.error('Login error', { error });
     respondWithError(res, 500, 'LOGIN_ERROR', getErrorMessage(error));
   }
@@ -4030,11 +4023,7 @@ app.post('/api/v1/auth/logout', async (req, res) => {
 // POST /api/v1/auth/token/refresh - Refresh access token
 app.post('/api/v1/auth/token/refresh', async (req, res) => {
   try {
-    const { refresh_token } = req.body;
-
-    if (!refresh_token) {
-      return respondWithError(res, 400, 'VALIDATION_ERROR', 'Refresh token is required');
-    }
+    const { refresh_token } = validateRequestData(TokenRefreshBodySchema, req.body ?? {});
 
     const { data, error } = await supabase.auth.refreshSession({ refresh_token });
 
@@ -4053,6 +4042,10 @@ app.post('/api/v1/auth/token/refresh', async (req, res) => {
       expires_in: data.session.expires_in || 3600,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      respondWithError(res, 400, 'VALIDATION_ERROR', error.message, error.details as unknown[]);
+      return;
+    }
     logger.error('Token refresh error', { error });
     respondWithError(res, 500, 'REFRESH_ERROR', getErrorMessage(error));
   }

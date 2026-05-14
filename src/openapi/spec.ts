@@ -5,6 +5,7 @@ import { registry } from './registry';
 import './schemas/user';
 import './schemas/profiles';
 import './schemas/groups';
+import './schemas/auth';
 
 const generator = new OpenApiGeneratorV31(registry.definitions);
 
