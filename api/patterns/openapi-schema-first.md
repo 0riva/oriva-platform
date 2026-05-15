@@ -35,6 +35,7 @@ export const MyParamSchema = z.object({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/your-path/{id}',      // OpenAPI uses {id}, Express uses :id
+  operationId: 'getYourThing',         // REQUIRED — verb+noun, becomes SDK method / MCP tool / CLI subcommand name
   tags: ['YourTag'],
   summary: 'One-line description',
   security: [{ ApiKeyAuth: [] }],       // or BearerAuth
@@ -151,6 +152,33 @@ behaviour.
 
 ## Critical Gotchas
 
+### ❌ WRONG — Missing operationId (breaks SDK / MCP / CLI codegen)
+
+```typescript
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/profiles',
+  tags: ['Profiles'],          // ← operationId missing
+  summary: 'List profiles',
+  ...
+});
+```
+
+`openapi-generator-cli` will fall back to a generated name like `getApiV1Profiles` for the SDK method. MCP tool names and CLI subcommands inherit the same garbage. Always add `operationId: 'listProfiles'` (verb+noun) — these names ARE the public-facing API for every downstream generator.
+
+**Naming convention** (matches what's already registered):
+
+| Verb        | Pattern                                                  | Example                                       |
+| ----------- | -------------------------------------------------------- | --------------------------------------------- |
+| List        | `list<Plural>`                                           | `listProfiles`, `listEvents`                  |
+| Get         | `get<Singular>`                                          | `getMarketplaceApp`, `getEvent`               |
+| Create      | `create<Singular>`                                       | `createEvent`, `createDeveloperApp`           |
+| Update      | `update<Singular>` / `patch<Singular>` / `put<Singular>` | `updateProfile`, `patchAuthProfile`           |
+| Delete      | `delete<Singular>`                                       | `deleteAccount`, `deleteDeveloperApp`         |
+| Action verb | `<verb><Singular>`                                       | `installMarketplaceApp`, `submitDeveloperApp` |
+
+**Why this isn't caught by `docs:check`**: the drift gate only validates path↔Express alignment, not operationId presence. Missing operationIds ship silently and only surface when someone runs codegen and gets ugly method names. The full inventory + naming map is in `claudedocs/sample-sdk-typescript/apis/` (May 14 2026 hardening pass — every public path got its operationId there).
+
 ### ❌ WRONG — Zod v4 incompatibility
 
 ```bash
@@ -217,14 +245,22 @@ Before registering a path in the spec, `grep -n "'/api/v1/your-path'" api/index.
 
 ---
 
-## What's already registered (as of Phase 0–2, May 2026)
+## What's already registered (as of May 14 2026 — contract hardening complete)
 
-| Tag       | Paths                                                                                 |
-| --------- | ------------------------------------------------------------------------------------- |
-| User      | `GET /api/v1/user/me`                                                                 |
-| Analytics | `GET /api/v1/analytics/summary`                                                       |
-| Profiles  | `GET available`, `GET active`, `PUT /:profileId`, `POST /:profileId/activate`         |
-| Groups    | `GET /groups`, `GET /groups/:groupId/members`                                         |
-| Auth      | `POST register/login/logout/token/refresh`, `GET/PATCH/PUT profile`, `DELETE account` |
+**46 public paths, 100% coverage, all with operationIds.** Public contract is documented in `docs/public-api-contract.md`. Full operationId map: `claudedocs/openapi-snapshot.json`.
 
-Next: Marketplace + Developer routes (Phase 3).
+| Tag         | Paths | Schema file                          |
+| ----------- | ----- | ------------------------------------ |
+| Auth        | 8     | `src/openapi/schemas/auth.ts`        |
+| User        | 1     | `src/openapi/schemas/user.ts`        |
+| Analytics   | 1     | `src/openapi/schemas/user.ts`        |
+| Profiles    | 4     | `src/openapi/schemas/profiles.ts`    |
+| Groups      | 2     | `src/openapi/schemas/groups.ts`      |
+| Sessions    | 2     | `src/openapi/schemas/sessions.ts`    |
+| Team        | 1     | `src/openapi/schemas/sessions.ts`    |
+| Entries     | 4     | `src/openapi/schemas/entries.ts`     |
+| Events      | 3     | `src/openapi/schemas/events.ts`      |
+| Marketplace | 13    | `src/openapi/schemas/marketplace.ts` |
+| Developer   | 7     | `src/openapi/schemas/developer.ts`   |
+
+**Adding a new public endpoint**: register the path, add the operationId, update `docs/public-api-contract.md` with the classification row. `npm run docs:check` enforces path/route alignment; operationId discipline is enforced by review.
