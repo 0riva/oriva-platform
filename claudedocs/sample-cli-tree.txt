@@ -1,0 +1,59 @@
+oriva  (CLI command tree — derived from OpenAPI operationIds)
+├── user
+│   ├── get           # GET /api/v1/user/me  (getCurrentUser)
+├── analytics
+│   ├── get           # GET /api/v1/analytics/summary  (getAnalyticsSummary)
+├── profiles
+│   ├── list          # GET /api/v1/profiles/available  (listProfiles)
+│   ├── get           # GET /api/v1/profiles/active  (getActiveProfile)
+│   ├── update        # PUT /api/v1/profiles/{profileId}  (updateProfile)
+│   ├── activate      # POST /api/v1/profiles/{profileId}/activate  (activateProfile)
+├── groups
+│   ├── list          # GET /api/v1/groups  (listGroups)
+│   ├── list          # GET /api/v1/groups/{groupId}/members  (listGroupMembers)
+├── auth
+│   ├── register      # POST /api/v1/auth/register  (register)
+│   ├── login         # POST /api/v1/auth/login  (login)
+│   ├── logout        # POST /api/v1/auth/logout  (logout)
+│   ├── refresh       # POST /api/v1/auth/token/refresh  (refreshToken)
+│   ├── get           # GET /api/v1/auth/profile  (getAuthProfile)
+│   ├── update        # PATCH /api/v1/auth/profile  (patchAuthProfile)
+│   ├── update        # PUT /api/v1/auth/profile  (putAuthProfile)
+│   ├── delete        # DELETE /api/v1/auth/account  (deleteAccount)
+├── sessions
+│   ├── list          # GET /api/v1/sessions  (listSessions)
+│   ├── list          # GET /api/v1/sessions/upcoming  (listUpcomingSessions)
+├── team
+│   ├── list          # GET /api/v1/team/members  (listTeamMembers)
+├── marketplace
+│   ├── list          # GET /api/v1/marketplace/apps  (listMarketplaceApps)
+│   ├── list          # GET /api/v1/marketplace/trending  (listTrendingApps)
+│   ├── list          # GET /api/v1/marketplace/featured  (listFeaturedApps)
+│   ├── list          # GET /api/v1/marketplace/categories  (listMarketplaceCategories)
+│   ├── get           # GET /api/v1/marketplace/apps/{appId}  (getMarketplaceApp)
+│   ├── list          # GET /api/v1/marketplace/installed  (listInstalledApps)
+│   ├── install       # POST /api/v1/marketplace/install/{appId}  (installMarketplaceApp)
+│   ├── uninstall     # DELETE /api/v1/marketplace/uninstall/{appId}  (uninstallMarketplaceApp)
+│   ├── list          # GET /api/v1/marketplace/items  (listMarketplaceItems)
+│   ├── get           # GET /api/v1/marketplace/items/{id}  (getMarketplaceItem)
+│   ├── search        # POST /api/v1/marketplace/search  (searchMarketplace)
+│   ├── get           # GET /api/v1/marketplace/categories/tree  (getCategoryTree)
+│   ├── get           # GET /api/v1/marketplace/categories/{id}  (getMarketplaceCategory)
+├── apps
+│   ├── list          # GET /api/v1/developer/apps  (listDeveloperApps)
+│   ├── create        # POST /api/v1/developer/apps  (createDeveloperApp)
+│   ├── get           # GET /api/v1/developer/apps/{appId}  (getDeveloperApp)
+│   ├── update        # PUT /api/v1/developer/apps/{appId}  (updateDeveloperApp)
+│   ├── delete        # DELETE /api/v1/developer/apps/{appId}  (deleteDeveloperApp)
+│   ├── submitdeveloper  # POST /api/v1/developer/apps/{appId}/submit  (submitDeveloperApp)
+│   ├── resubmitdeveloper  # POST /api/v1/developer/apps/{appId}/resubmit  (resubmitDeveloperApp)
+├── entries
+│   ├── list          # GET /api/v1/entries  (listEntries)
+│   ├── list          # GET /api/v1/templates  (listTemplates)
+│   ├── get           # GET /api/v1/storage  (getStorage)
+├── ui
+│   ├── create        # POST /api/v1/ui/notifications  (createUiNotification)
+├── events
+│   ├── list          # GET /api/oriva/events  (listEvents)
+│   ├── create        # POST /api/oriva/events  (createEvent)
+│   ├── get           # GET /api/oriva/events/{eventId}  (getEvent)
