@@ -1,0 +1,9 @@
+{
+  "name": "oriva-api-function",
+  "private": true,
+  "version": "1.0.0",
+  "description": "REQUIRED placeholder. Vercel auto-detects api/ as a serverless functions directory and runs `npm install` inside it during build — if this file is missing, Vercel deploy fails with ENOENT on api/package.json. Keep this file even though the API uses root package.json deps; api/index.ts imports from ../src/... and the root deps are what actually runs.",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
