@@ -33,6 +33,7 @@ export const TeamMemberSchema = registry.register(
 registry.registerPath({
   method: 'get',
   path: '/api/v1/sessions',
+  operationId: 'listSessions',
   tags: ['Sessions'],
   summary: 'List sessions',
   description:
@@ -60,6 +61,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/sessions/upcoming',
+  operationId: 'listUpcomingSessions',
   tags: ['Sessions'],
   summary: 'List upcoming sessions',
   description:
@@ -86,6 +88,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/team/members',
+  operationId: 'listTeamMembers',
   tags: ['Team'],
   summary: 'List team members',
   description:

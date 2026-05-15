@@ -33,6 +33,7 @@ export const GroupMemberSchema = registry.register(
 registry.registerPath({
   method: 'get',
   path: '/api/v1/groups',
+  operationId: 'listGroups',
   tags: ['Groups'],
   summary: 'List groups',
   description: 'Returns all groups the authenticated user created or joined.',
@@ -57,6 +58,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/groups/{groupId}/members',
+  operationId: 'listGroupMembers',
   tags: ['Groups'],
   summary: 'Get group members',
   description: 'Returns members of a group. Requires the caller to be the creator or a member.',

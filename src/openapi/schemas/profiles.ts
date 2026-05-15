@@ -55,6 +55,7 @@ export const UpdatedProfileSchema = registry.register(
 registry.registerPath({
   method: 'get',
   path: '/api/v1/profiles/available',
+  operationId: 'listProfiles',
   tags: ['Profiles'],
   summary: 'List available profiles',
   description: 'Returns all non-anonymous active profiles for the authenticated API key.',
@@ -79,6 +80,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/profiles/active',
+  operationId: 'getActiveProfile',
   tags: ['Profiles'],
   summary: 'Get active profile',
   description: 'Returns the default active (non-anonymous) profile for the authenticated API key.',
@@ -103,6 +105,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'put',
   path: '/api/v1/profiles/{profileId}',
+  operationId: 'updateProfile',
   tags: ['Profiles'],
   summary: 'Update a profile',
   security: [{ ApiKeyAuth: [] }],
@@ -125,6 +128,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/profiles/{profileId}/activate',
+  operationId: 'activateProfile',
   tags: ['Profiles'],
   summary: 'Activate a profile',
   description: 'Switches the active profile to the specified profile.',

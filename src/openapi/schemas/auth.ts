@@ -135,6 +135,7 @@ export const TokenRefreshResponseSchema = registry.register(
 registry.registerPath({
   method: 'post',
   path: '/api/v1/auth/register',
+  operationId: 'register',
   tags: ['Auth'],
   summary: 'Register a new user',
   request: {
@@ -153,6 +154,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/auth/login',
+  operationId: 'login',
   tags: ['Auth'],
   summary: 'Log in',
   request: {
@@ -171,6 +173,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/auth/logout',
+  operationId: 'logout',
   tags: ['Auth'],
   summary: 'Log out',
   description: 'Invalidates the current session. Requires Authorization header.',
@@ -184,6 +187,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/auth/token/refresh',
+  operationId: 'refreshToken',
   tags: ['Auth'],
   summary: 'Refresh access token',
   request: {
@@ -202,6 +206,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/auth/profile',
+  operationId: 'getAuthProfile',
   tags: ['Auth'],
   summary: 'Get auth profile',
   description: 'Returns the authenticated user identity and API key metadata.',
@@ -218,6 +223,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'patch',
   path: '/api/v1/auth/profile',
+  operationId: 'patchAuthProfile',
   tags: ['Auth'],
   summary: 'Update profile (partial)',
   security: [{ BearerAuth: [] }],
@@ -237,6 +243,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'put',
   path: '/api/v1/auth/profile',
+  operationId: 'putAuthProfile',
   tags: ['Auth'],
   summary: 'Update profile (full)',
   description: 'Superset of PATCH — also accepts preferences and data_retention_days (min 30).',
@@ -257,6 +264,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'delete',
   path: '/api/v1/auth/account',
+  operationId: 'deleteAccount',
   tags: ['Auth'],
   summary: 'Delete account',
   security: [{ BearerAuth: [] }],

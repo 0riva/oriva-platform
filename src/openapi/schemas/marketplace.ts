@@ -98,6 +98,7 @@ const CategoryIdParamSchema = z.object({ id: z.string().uuid() });
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/apps',
+  operationId: 'listMarketplaceApps',
   tags: ['Marketplace'],
   summary: 'Browse marketplace apps',
   description: 'Returns paginated list of approved, active marketplace apps.',
@@ -129,6 +130,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/trending',
+  operationId: 'listTrendingApps',
   tags: ['Marketplace'],
   summary: 'Trending apps',
   description: 'Returns approved apps sorted by install count (top 20).',
@@ -153,6 +155,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/featured',
+  operationId: 'listFeaturedApps',
   tags: ['Marketplace'],
   summary: 'Featured apps',
   description: 'Returns featured approved apps (curated subset of top apps).',
@@ -177,6 +180,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/categories',
+  operationId: 'listMarketplaceCategories',
   tags: ['Marketplace'],
   summary: 'List app categories',
   description:
@@ -209,6 +213,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/apps/{appId}',
+  operationId: 'getMarketplaceApp',
   tags: ['Marketplace'],
   summary: 'Get app details',
   security: [{ ApiKeyAuth: [] }],
@@ -236,6 +241,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/installed',
+  operationId: 'listInstalledApps',
   tags: ['Marketplace'],
   summary: 'List installed apps',
   description: 'Returns all apps installed by the authenticated user.',
@@ -262,6 +268,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/marketplace/install/{appId}',
+  operationId: 'installMarketplaceApp',
   tags: ['Marketplace'],
   summary: 'Install app',
   security: [{ BearerAuth: [] }],
@@ -298,6 +305,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'delete',
   path: '/api/v1/marketplace/uninstall/{appId}',
+  operationId: 'uninstallMarketplaceApp',
   tags: ['Marketplace'],
   summary: 'Uninstall app',
   security: [{ BearerAuth: [] }],
@@ -325,6 +333,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/items',
+  operationId: 'listMarketplaceItems',
   tags: ['Marketplace'],
   summary: 'List marketplace items',
   description:
@@ -360,6 +369,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/items/{id}',
+  operationId: 'getMarketplaceItem',
   tags: ['Marketplace'],
   summary: 'Get marketplace item',
   description: 'Returns a single published marketplace item by ID.',
@@ -384,6 +394,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/marketplace/search',
+  operationId: 'searchMarketplace',
   tags: ['Marketplace'],
   summary: 'Search marketplace',
   description: 'Full-text search across marketplace items. No authentication required.',
@@ -423,6 +434,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/categories/tree',
+  operationId: 'getCategoryTree',
   tags: ['Marketplace'],
   summary: 'Category tree',
   description:
@@ -450,6 +462,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/marketplace/categories/{id}',
+  operationId: 'getMarketplaceCategory',
   tags: ['Marketplace'],
   summary: 'Get category',
   description: 'Returns a single marketplace category from the collections table.',
