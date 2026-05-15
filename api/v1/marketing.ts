@@ -1,3 +1,5 @@
+// FIRST-PARTY ONLY — excluded from public OpenAPI contract
+// Affiliate campaign management and ad serving are internal Oriva monetisation infrastructure.
 /**
  * Consolidated Marketing API (Affiliate + Advertising)
  *

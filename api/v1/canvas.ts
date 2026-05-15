@@ -1,3 +1,5 @@
+// FIRST-PARTY ONLY — excluded from public OpenAPI contract
+// Canvas/whiteboard is an internal Oriva Core feature; no 3rd-party use case.
 // Consolidated Canvas API Handler
 // Handles: GET    /api/v1/canvas/canvases
 //          POST   /api/v1/canvas/canvases

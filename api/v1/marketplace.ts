@@ -1,3 +1,5 @@
+// FIRST-PARTY ONLY — excluded from public OpenAPI contract
+// Superseded by src/express/routes/marketplace.ts (createMarketplaceRouter).
 // @ts-nocheck - TODO: Fix type errors
 // Consolidated Marketplace API Handler
 // Handles: GET /api/v1/marketplace/categories
