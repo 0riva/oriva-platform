@@ -28,6 +28,7 @@ const PaginationMetaSchema = z.object({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/entries',
+  operationId: 'listEntries',
   tags: ['Entries'],
   summary: 'List entries',
   description: "Returns paginated entries for the authenticated user's profile.",
@@ -60,6 +61,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/templates',
+  operationId: 'listTemplates',
   tags: ['Entries'],
   summary: 'List templates',
   description: 'Returns available entry templates. Not yet implemented — returns empty list.',
@@ -85,6 +87,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/storage',
+  operationId: 'getStorage',
   tags: ['Entries'],
   summary: 'Get storage info',
   description:
@@ -110,6 +113,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/ui/notifications',
+  operationId: 'createUiNotification',
   tags: ['UI'],
   summary: 'Create notification',
   description: 'Creates a UI notification for the authenticated user.',

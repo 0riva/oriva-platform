@@ -1,3 +1,5 @@
+// FIRST-PARTY ONLY — excluded from public OpenAPI contract
+// Events/notifications/webhooks integration infrastructure; not a public API primitive.
 // Consolidated Integrations API Handler
 // Handles: Events, Notifications, and Webhooks
 //
@@ -76,7 +78,11 @@ interface UpdateWebhookRequest {
 // Events Handlers
 // ============================================================================
 
-async function handlePublishEvent(req: VercelRequest, res: VercelResponse, appId: string): Promise<void> {
+async function handlePublishEvent(
+  req: VercelRequest,
+  res: VercelResponse,
+  appId: string
+): Promise<void> {
   const {
     user_id,
     event_category,
@@ -123,9 +129,12 @@ async function handlePublishEvent(req: VercelRequest, res: VercelResponse, appId
         return;
       }
     }
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Failed to publish event'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Failed to publish event'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -133,7 +142,11 @@ async function handlePublishEvent(req: VercelRequest, res: VercelResponse, appId
   }
 }
 
-async function handleQueryEvents(req: VercelRequest, res: VercelResponse, appId: string): Promise<void> {
+async function handleQueryEvents(
+  req: VercelRequest,
+  res: VercelResponse,
+  appId: string
+): Promise<void> {
   const {
     user_id,
     event_category,
@@ -169,9 +182,12 @@ async function handleQueryEvents(req: VercelRequest, res: VercelResponse, appId:
       },
     });
   } catch (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Query failed'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Query failed'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -183,7 +199,11 @@ async function handleQueryEvents(req: VercelRequest, res: VercelResponse, appId:
 // Notifications Handlers
 // ============================================================================
 
-async function handleCreateNotification(req: VercelRequest, res: VercelResponse, appId: string): Promise<void> {
+async function handleCreateNotification(
+  req: VercelRequest,
+  res: VercelResponse,
+  appId: string
+): Promise<void> {
   const requestData: CreateNotificationRequest = req.body;
 
   // Validate required fields
@@ -216,9 +236,12 @@ async function handleCreateNotification(req: VercelRequest, res: VercelResponse,
         return;
       }
     }
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -226,14 +249,12 @@ async function handleCreateNotification(req: VercelRequest, res: VercelResponse,
   }
 }
 
-async function handleQueryNotifications(req: VercelRequest, res: VercelResponse, userId: string): Promise<void> {
-  const {
-    status,
-    app_id,
-    priority,
-    limit = '50',
-    offset = '0',
-  } = req.query;
+async function handleQueryNotifications(
+  req: VercelRequest,
+  res: VercelResponse,
+  userId: string
+): Promise<void> {
+  const { status, app_id, priority, limit = '50', offset = '0' } = req.query;
 
   const parsedLimit = Math.min(parseInt(limit as string, 10) || 50, 100);
   const parsedOffset = parseInt(offset as string, 10) || 0;
@@ -262,9 +283,12 @@ async function handleQueryNotifications(req: VercelRequest, res: VercelResponse,
       },
     });
   } catch (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -272,7 +296,12 @@ async function handleQueryNotifications(req: VercelRequest, res: VercelResponse,
   }
 }
 
-async function handleUpdateNotification(req: VercelRequest, res: VercelResponse, id: string, userId: string): Promise<void> {
+async function handleUpdateNotification(
+  req: VercelRequest,
+  res: VercelResponse,
+  id: string,
+  userId: string
+): Promise<void> {
   const { status, metadata }: UpdateNotificationRequest = req.body;
 
   if (!status) {
@@ -304,9 +333,12 @@ async function handleUpdateNotification(req: VercelRequest, res: VercelResponse,
         return;
       }
     }
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -314,7 +346,12 @@ async function handleUpdateNotification(req: VercelRequest, res: VercelResponse,
   }
 }
 
-async function handleDeleteNotification(req: VercelRequest, res: VercelResponse, id: string, appId: string): Promise<void> {
+async function handleDeleteNotification(
+  req: VercelRequest,
+  res: VercelResponse,
+  id: string,
+  appId: string
+): Promise<void> {
   try {
     await deleteNotification(id, appId);
     res.status(204).end();
@@ -329,9 +366,12 @@ async function handleDeleteNotification(req: VercelRequest, res: VercelResponse,
         return;
       }
     }
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -343,7 +383,11 @@ async function handleDeleteNotification(req: VercelRequest, res: VercelResponse,
 // Webhooks Handlers
 // ============================================================================
 
-async function handleCreateWebhook(req: VercelRequest, res: VercelResponse, appId: string): Promise<void> {
+async function handleCreateWebhook(
+  req: VercelRequest,
+  res: VercelResponse,
+  appId: string
+): Promise<void> {
   const { webhook_url, subscribed_events }: CreateWebhookRequest = req.body;
 
   // Validate webhook_url
@@ -365,7 +409,9 @@ async function handleCreateWebhook(req: VercelRequest, res: VercelResponse, appI
 
   // Validate subscribed_events
   if (!subscribed_events || !Array.isArray(subscribed_events) || subscribed_events.length === 0) {
-    res.status(400).json({ error: 'subscribed_events must be a non-empty array', code: 'INVALID_EVENTS' });
+    res
+      .status(400)
+      .json({ error: 'subscribed_events must be a non-empty array', code: 'INVALID_EVENTS' });
     return;
   }
 
@@ -397,9 +443,12 @@ async function handleCreateWebhook(req: VercelRequest, res: VercelResponse, appI
       webhook_secret: webhookSecret,
     });
   } catch (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -407,7 +456,11 @@ async function handleCreateWebhook(req: VercelRequest, res: VercelResponse, appI
   }
 }
 
-async function handleListWebhooks(req: VercelRequest, res: VercelResponse, appId: string): Promise<void> {
+async function handleListWebhooks(
+  req: VercelRequest,
+  res: VercelResponse,
+  appId: string
+): Promise<void> {
   try {
     const supabase = getSupabaseClient();
 
@@ -428,9 +481,12 @@ async function handleListWebhooks(req: VercelRequest, res: VercelResponse, appId
       webhooks: data || [],
     });
   } catch (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -438,7 +494,12 @@ async function handleListWebhooks(req: VercelRequest, res: VercelResponse, appId
   }
 }
 
-async function handleUpdateWebhook(req: VercelRequest, res: VercelResponse, appId: string, id: string): Promise<void> {
+async function handleUpdateWebhook(
+  req: VercelRequest,
+  res: VercelResponse,
+  appId: string,
+  id: string
+): Promise<void> {
   const { webhook_url, subscribed_events, is_active }: UpdateWebhookRequest = req.body;
 
   if (!webhook_url && !subscribed_events && is_active === undefined) {
@@ -466,7 +527,9 @@ async function handleUpdateWebhook(req: VercelRequest, res: VercelResponse, appI
 
   if (subscribed_events) {
     if (!Array.isArray(subscribed_events) || subscribed_events.length === 0) {
-      res.status(400).json({ error: 'subscribed_events must be a non-empty array', code: 'INVALID_EVENTS' });
+      res
+        .status(400)
+        .json({ error: 'subscribed_events must be a non-empty array', code: 'INVALID_EVENTS' });
       return;
     }
     updates.subscribed_events = subscribed_events;
@@ -498,9 +561,12 @@ async function handleUpdateWebhook(req: VercelRequest, res: VercelResponse, appI
 
     res.status(200).json(data);
   } catch (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -508,7 +574,12 @@ async function handleUpdateWebhook(req: VercelRequest, res: VercelResponse, appI
   }
 }
 
-async function handleDeleteWebhook(req: VercelRequest, res: VercelResponse, appId: string, id: string): Promise<void> {
+async function handleDeleteWebhook(
+  req: VercelRequest,
+  res: VercelResponse,
+  appId: string,
+  id: string
+): Promise<void> {
   try {
     const supabase = getSupabaseClient();
 
@@ -525,9 +596,12 @@ async function handleDeleteWebhook(req: VercelRequest, res: VercelResponse, appI
 
     res.status(204).end();
   } catch (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
     res.status(500).json({
       error: errorMessage,
       code: 'INTERNAL_ERROR',
@@ -593,7 +667,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         // PATCH /api/v1/notifications/:id (update)
         if (method === 'PATCH' && id) {
           if (typeof id !== 'string') {
-            res.status(400).json({ error: 'Notification ID is required', code: 'VALIDATION_ERROR' });
+            res
+              .status(400)
+              .json({ error: 'Notification ID is required', code: 'VALIDATION_ERROR' });
             return;
           }
           const authReq = req as AuthenticatedRequest;
@@ -604,7 +680,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         // DELETE /api/v1/notifications/:id (delete)
         if (method === 'DELETE' && id) {
           if (typeof id !== 'string') {
-            res.status(400).json({ error: 'Notification ID is required', code: 'VALIDATION_ERROR' });
+            res
+              .status(400)
+              .json({ error: 'Notification ID is required', code: 'VALIDATION_ERROR' });
             return;
           }
           const headerAppId = req.headers['x-app-id'] as string;

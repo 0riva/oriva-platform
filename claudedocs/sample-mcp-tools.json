@@ -1,0 +1,922 @@
+[
+  {
+    "name": "getCurrentUser",
+    "description": "Get current user",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "getAnalyticsSummary",
+    "description": "Get analytics summary",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listProfiles",
+    "description": "List available profiles",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "getActiveProfile",
+    "description": "Get active profile",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "updateProfile",
+    "description": "Update a profile",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "pattern": "^ext_[a-f0-9]{16}$",
+          "example": "ext_a1b2c3d4e5f6a7b8"
+        },
+        "body": {
+          "type": "object",
+          "properties": {
+            "profileName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "avatar": {
+              "type": "string",
+              "format": "uri"
+            },
+            "bio": {
+              "type": ["string", "null"]
+            },
+            "location": {
+              "type": ["string", "null"]
+            }
+          }
+        }
+      },
+      "required": ["profileId", "body"]
+    }
+  },
+  {
+    "name": "activateProfile",
+    "description": "Activate a profile",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "pattern": "^ext_[a-f0-9]{16}$",
+          "example": "ext_a1b2c3d4e5f6a7b8"
+        }
+      },
+      "required": ["profileId"]
+    }
+  },
+  {
+    "name": "listGroups",
+    "description": "List groups",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listGroupMembers",
+    "description": "Get group members",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        }
+      },
+      "required": ["groupId"]
+    }
+  },
+  {
+    "name": "register",
+    "description": "Register a new user",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "password": {
+              "type": "string",
+              "minLength": 8,
+              "pattern": "[A-Z]"
+            },
+            "name": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "preferences": {}
+          },
+          "required": ["email", "password"]
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "login",
+    "description": "Log in",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "password": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["email", "password"]
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "logout",
+    "description": "Log out",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "refreshToken",
+    "description": "Refresh access token",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "refresh_token": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["refresh_token"]
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "getAuthProfile",
+    "description": "Get auth profile",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "patchAuthProfile",
+    "description": "Update profile (partial)",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "bio": {
+              "type": "string"
+            },
+            "avatar_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "location": {
+              "type": "string"
+            },
+            "website_url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "putAuthProfile",
+    "description": "Update profile (full)",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "bio": {
+              "type": "string"
+            },
+            "avatar_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "location": {
+              "type": "string"
+            },
+            "website_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "preferences": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "data_retention_days": {
+              "type": "integer",
+              "minimum": 30
+            }
+          }
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "deleteAccount",
+    "description": "Delete account",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listSessions",
+    "description": "List sessions",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listUpcomingSessions",
+    "description": "List upcoming sessions",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listTeamMembers",
+    "description": "List team members",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listMarketplaceApps",
+    "description": "Browse marketplace apps",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "category": {
+          "type": "string"
+        },
+        "search": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "name": "listTrendingApps",
+    "description": "Trending apps",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listFeaturedApps",
+    "description": "Featured apps",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listMarketplaceCategories",
+    "description": "List app categories",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "getMarketplaceApp",
+    "description": "Get app details",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["appId"]
+    }
+  },
+  {
+    "name": "listInstalledApps",
+    "description": "List installed apps",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  {
+    "name": "installMarketplaceApp",
+    "description": "Install app",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "body": {
+          "type": "object",
+          "properties": {
+            "settings": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          }
+        }
+      },
+      "required": ["appId", "body"]
+    }
+  },
+  {
+    "name": "uninstallMarketplaceApp",
+    "description": "Uninstall app",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["appId"]
+    }
+  },
+  {
+    "name": "listMarketplaceItems",
+    "description": "List marketplace items",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "item_type": {
+          "type": "string"
+        },
+        "earner_type": {
+          "type": "string"
+        },
+        "category_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "min_price": {
+          "type": "number"
+        },
+        "max_price": {
+          "type": "number"
+        },
+        "seller_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "search": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "name": "getMarketplaceItem",
+    "description": "Get marketplace item",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["id"]
+    }
+  },
+  {
+    "name": "searchMarketplace",
+    "description": "Search marketplace",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1
+            },
+            "filters": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "limit": {
+              "type": "integer",
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer"
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "getCategoryTree",
+    "description": "Category tree",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "getMarketplaceCategory",
+    "description": "Get category",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["id"]
+    }
+  },
+  {
+    "name": "listDeveloperApps",
+    "description": "List developer apps",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "createDeveloperApp",
+    "description": "Create app",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slug": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tagline": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string",
+              "minLength": 1
+            },
+            "icon_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "screenshots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "version": {
+              "type": "string",
+              "default": "1.0.0"
+            },
+            "pricing_model": {
+              "type": "string",
+              "default": "free"
+            },
+            "pricing_config": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "supported_audience": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["name", "slug", "category"]
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "getDeveloperApp",
+    "description": "Get developer app",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["appId"]
+    }
+  },
+  {
+    "name": "updateDeveloperApp",
+    "description": "Update app",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "body": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slug": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tagline": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "icon_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "screenshots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "version": {
+              "type": "string"
+            },
+            "pricing_model": {
+              "type": "string"
+            },
+            "pricing_config": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "supported_audience": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required": ["appId", "body"]
+    }
+  },
+  {
+    "name": "deleteDeveloperApp",
+    "description": "Delete app",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["appId"]
+    }
+  },
+  {
+    "name": "submitDeveloperApp",
+    "description": "Submit app for review",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["appId"]
+    }
+  },
+  {
+    "name": "resubmitDeveloperApp",
+    "description": "Resubmit rejected app",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "body": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slug": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tagline": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "icon_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "screenshots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "version": {
+              "type": "string"
+            },
+            "pricing_model": {
+              "type": "string"
+            },
+            "pricing_config": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "supported_audience": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required": ["appId", "body"]
+    }
+  },
+  {
+    "name": "listEntries",
+    "description": "List entries",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    }
+  },
+  {
+    "name": "listTemplates",
+    "description": "List templates",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "getStorage",
+    "description": "Get storage info",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "createUiNotification",
+    "description": "Create notification",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "listEvents",
+    "description": "List events",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "limit": {
+          "type": "integer",
+          "maximum": 100,
+          "default": 20
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    }
+  },
+  {
+    "name": "createEvent",
+    "description": "Create event",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1
+            },
+            "startDate": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "endDate": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "isOnline": {
+              "type": "boolean"
+            },
+            "category": {
+              "type": "string",
+              "minLength": 1
+            },
+            "location": {
+              "type": ["string", "null"]
+            },
+            "maxAttendees": {
+              "type": ["integer", "null"],
+              "exclusiveMinimum": 0
+            },
+            "price": {
+              "type": "number",
+              "minimum": 0
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 20
+            },
+            "imageUrl": {
+              "type": ["string", "null"],
+              "format": "uri"
+            }
+          },
+          "required": [
+            "title",
+            "description",
+            "startDate",
+            "endDate",
+            "isOnline",
+            "category"
+          ]
+        }
+      },
+      "required": ["body"]
+    }
+  },
+  {
+    "name": "getEvent",
+    "description": "Get event",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["eventId"]
+    }
+  }
+]

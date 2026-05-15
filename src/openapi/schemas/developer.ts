@@ -52,6 +52,7 @@ export const ResubmitAppBodySchema = UpdateAppBodySchema;
 registry.registerPath({
   method: 'get',
   path: '/api/v1/developer/apps',
+  operationId: 'listDeveloperApps',
   tags: ['Developer'],
   summary: 'List developer apps',
   description: 'Returns all marketplace apps owned by the authenticated developer.',
@@ -76,6 +77,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/v1/developer/apps/{appId}',
+  operationId: 'getDeveloperApp',
   tags: ['Developer'],
   summary: 'Get developer app',
   security: [{ ApiKeyAuth: [] }],
@@ -101,6 +103,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/developer/apps',
+  operationId: 'createDeveloperApp',
   tags: ['Developer'],
   summary: 'Create app',
   security: [{ ApiKeyAuth: [] }],
@@ -127,6 +130,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'put',
   path: '/api/v1/developer/apps/{appId}',
+  operationId: 'updateDeveloperApp',
   tags: ['Developer'],
   summary: 'Update app',
   security: [{ ApiKeyAuth: [] }],
@@ -155,6 +159,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'delete',
   path: '/api/v1/developer/apps/{appId}',
+  operationId: 'deleteDeveloperApp',
   tags: ['Developer'],
   summary: 'Delete app',
   description: 'Only draft apps can be deleted. Approved apps must be deactivated first.',
@@ -171,6 +176,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/developer/apps/{appId}/submit',
+  operationId: 'submitDeveloperApp',
   tags: ['Developer'],
   summary: 'Submit app for review',
   description: 'Transitions app from draft → pending_review.',
@@ -199,6 +205,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/v1/developer/apps/{appId}/resubmit',
+  operationId: 'resubmitDeveloperApp',
   tags: ['Developer'],
   summary: 'Resubmit rejected app',
   description: 'Updates fields and resubmits a rejected app for review.',

@@ -1,3 +1,5 @@
+// FIRST-PARTY ONLY — excluded from public OpenAPI contract
+// Superseded by src/express/routes/auth-public.ts (createAuthPublicRouter).
 // Consolidated Auth API Handler
 // Handles: POST /api/v1/auth/register
 //          POST /api/v1/auth/login

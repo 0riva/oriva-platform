@@ -1,3 +1,6 @@
+// FIRST-PARTY ONLY — excluded from public OpenAPI contract
+// Hugo AI is the legacy name for Merlin AI (Anthropic); internal product feature.
+// Superseded by /api/merlin routes in api/index.ts.
 // @ts-nocheck - TODO: Fix type errors
 // Consolidated Hugo AI & Conversations API Handler
 // Handles: POST /api/v1/hugo/chat
@@ -10,7 +13,12 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticate, AuthenticatedRequest } from '../../src/middleware/auth';
-import { asyncHandler, validationError, notFoundError, forbiddenError } from '../../src/middleware/error-handler';
+import {
+  asyncHandler,
+  validationError,
+  notFoundError,
+  forbiddenError,
+} from '../../src/middleware/error-handler';
 import { rateLimit } from '../../src/middleware/rate-limit';
 import { composeChatContext, buildSystemPrompt, saveMessage } from '../../src/services/chat';
 import { searchKnowledge } from '../../src/services/knowledge';
@@ -73,7 +81,7 @@ async function handleChat(req: AuthenticatedRequest, res: VercelResponse): Promi
     userId,
     appId,
     conversation_id,
-    additionalContext,
+    additionalContext
   );
 
   const userMessage = await saveMessage(conversation_id, 'user', message);
@@ -133,9 +141,12 @@ async function handleChat(req: AuthenticatedRequest, res: VercelResponse): Promi
 
     res.end();
   } catch (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Chat error occurred'
-      : (error instanceof Error ? error.message : 'Unknown error occurred');
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Chat error occurred'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error occurred';
     sendSSE('error', {
       error: errorMessage,
       code: 'CHAT_ERROR',
@@ -144,7 +155,10 @@ async function handleChat(req: AuthenticatedRequest, res: VercelResponse): Promi
   }
 }
 
-async function handleKnowledgeSearch(req: AuthenticatedRequest, res: VercelResponse): Promise<void> {
+async function handleKnowledgeSearch(
+  req: AuthenticatedRequest,
+  res: VercelResponse
+): Promise<void> {
   const { query, category, limit = 5 }: KnowledgeSearchRequest = req.body;
 
   if (!query || query.trim().length === 0) {
@@ -171,7 +185,10 @@ async function handleKnowledgeSearch(req: AuthenticatedRequest, res: VercelRespo
 // Conversation Management
 // ============================================================================
 
-async function handleCreateConversation(req: AuthenticatedRequest, res: VercelResponse): Promise<void> {
+async function handleCreateConversation(
+  req: AuthenticatedRequest,
+  res: VercelResponse
+): Promise<void> {
   const appId = req.headers['x-app-id'] as string;
   if (!appId) {
     throw validationError('X-App-ID header is required');
@@ -189,7 +206,8 @@ async function handleCreateConversation(req: AuthenticatedRequest, res: VercelRe
     .single();
 
   if (appError || !appData) {
-    const errorMessage = process.env.NODE_ENV === 'production' ? 'App not found' : `App not found: ${appId}`;
+    const errorMessage =
+      process.env.NODE_ENV === 'production' ? 'App not found' : `App not found: ${appId}`;
     throw new Error(errorMessage);
   }
 
@@ -207,16 +225,20 @@ async function handleCreateConversation(req: AuthenticatedRequest, res: VercelRe
     .single();
 
   if (error || !data) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Failed to create conversation'
-      : `Failed to create conversation: ${error?.message}`;
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Failed to create conversation'
+        : `Failed to create conversation: ${error?.message}`;
     throw new Error(errorMessage);
   }
 
   res.status(201).json(data);
 }
 
-async function handleListConversations(req: AuthenticatedRequest, res: VercelResponse): Promise<void> {
+async function handleListConversations(
+  req: AuthenticatedRequest,
+  res: VercelResponse
+): Promise<void> {
   const appId = req.headers['x-app-id'] as string;
   if (!appId) {
     throw validationError('X-App-ID header is required');
@@ -234,7 +256,8 @@ async function handleListConversations(req: AuthenticatedRequest, res: VercelRes
     .single();
 
   if (appError || !appData) {
-    const errorMessage = process.env.NODE_ENV === 'production' ? 'App not found' : `App not found: ${appId}`;
+    const errorMessage =
+      process.env.NODE_ENV === 'production' ? 'App not found' : `App not found: ${appId}`;
     throw new Error(errorMessage);
   }
 
@@ -257,9 +280,10 @@ async function handleListConversations(req: AuthenticatedRequest, res: VercelRes
   const { data, error, count } = await query;
 
   if (error) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Failed to fetch conversations'
-      : `Failed to fetch conversations: ${error.message}`;
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Failed to fetch conversations'
+        : `Failed to fetch conversations: ${error.message}`;
     throw new Error(errorMessage);
   }
 
@@ -273,7 +297,11 @@ async function handleListConversations(req: AuthenticatedRequest, res: VercelRes
   });
 }
 
-async function handleGetConversation(req: AuthenticatedRequest, res: VercelResponse, conversationId: string): Promise<void> {
+async function handleGetConversation(
+  req: AuthenticatedRequest,
+  res: VercelResponse,
+  conversationId: string
+): Promise<void> {
   const { userId } = req.authContext;
   const supabase = getSupabaseClient();
 
@@ -298,9 +326,10 @@ async function handleGetConversation(req: AuthenticatedRequest, res: VercelRespo
     .order('created_at', { ascending: true });
 
   if (messagesError) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Failed to fetch messages'
-      : `Failed to fetch messages: ${messagesError.message}`;
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Failed to fetch messages'
+        : `Failed to fetch messages: ${messagesError.message}`;
     throw new Error(errorMessage);
   }
 
@@ -310,7 +339,11 @@ async function handleGetConversation(req: AuthenticatedRequest, res: VercelRespo
   });
 }
 
-async function handleDeleteConversation(req: AuthenticatedRequest, res: VercelResponse, conversationId: string): Promise<void> {
+async function handleDeleteConversation(
+  req: AuthenticatedRequest,
+  res: VercelResponse,
+  conversationId: string
+): Promise<void> {
   const { userId } = req.authContext;
   const supabase = getSupabaseClient();
 
@@ -334,9 +367,10 @@ async function handleDeleteConversation(req: AuthenticatedRequest, res: VercelRe
     .eq('id', conversationId);
 
   if (deleteError) {
-    const errorMessage = process.env.NODE_ENV === 'production'
-      ? 'Failed to delete conversation'
-      : `Failed to delete conversation: ${deleteError.message}`;
+    const errorMessage =
+      process.env.NODE_ENV === 'production'
+        ? 'Failed to delete conversation'
+        : `Failed to delete conversation: ${deleteError.message}`;
     throw new Error(errorMessage);
   }
 

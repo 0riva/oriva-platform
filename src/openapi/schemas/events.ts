@@ -49,6 +49,7 @@ export const CreateEventBodySchema = z
 registry.registerPath({
   method: 'get',
   path: '/api/oriva/events',
+  operationId: 'listEvents',
   tags: ['Events'],
   summary: 'List events',
   description: 'Returns active events with optional filtering by category and date range.',
@@ -83,6 +84,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'get',
   path: '/api/oriva/events/{eventId}',
+  operationId: 'getEvent',
   tags: ['Events'],
   summary: 'Get event',
   request: { params: EventIdParamSchema },
@@ -106,6 +108,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/oriva/events',
+  operationId: 'createEvent',
   tags: ['Events'],
   summary: 'Create event',
   security: [{ BearerAuth: [] }],

@@ -33,6 +33,7 @@ export const UserMeSchema = registry.register(
 registry.registerPath({
   method: 'get',
   path: '/api/v1/user/me',
+  operationId: 'getCurrentUser',
   tags: ['User'],
   summary: 'Get current user',
   description: "Returns the authenticated user's active profile and API key metadata.",
@@ -77,6 +78,7 @@ export const AnalyticsSummarySchema = registry.register(
 registry.registerPath({
   method: 'get',
   path: '/api/v1/analytics/summary',
+  operationId: 'getAnalyticsSummary',
   tags: ['Analytics'],
   summary: 'Get analytics summary',
   description: 'Returns 7-day usage analytics for the authenticated API key.',
