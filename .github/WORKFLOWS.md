@@ -5,13 +5,13 @@ This directory contains GitHub Actions workflows for the Oriva Platform API.
 ## Available Workflows
 
 - **`ci-cd.yml`** - Main CI/CD pipeline for testing and deployment
-- **`api-ci.yml`** - API-specific continuous integration
-- **`sdk-ci.yml`** - Plugin SDK continuous integration  
+- **`sdk-ci.yml`** - Plugin SDK continuous integration
 - **`pages.yml`** - Documentation site deployment
 
 ## Workflow Details
 
 ### CI/CD Pipeline (`ci-cd.yml`)
+
 - **Triggers**: Push to `main` or `develop` branches, Pull Requests
 - **Jobs**:
   - **Test**: Runs tests on Node.js 18.x and 20.x
