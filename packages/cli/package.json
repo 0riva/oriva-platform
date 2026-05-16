@@ -1,0 +1,60 @@
+{
+  "name": "@oriva/cli",
+  "version": "0.1.0",
+  "description": "Spec-driven CLI for the Oriva public API. Every endpoint is a subcommand — no Node code required to call the API.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "oriva": "bin/oriva.js"
+  },
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "files": [
+    "dist/**/*",
+    "bin/**/*",
+    "openapi-snapshot.json",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "prebuild": "node scripts/copy-spec.mjs",
+    "build": "tsc",
+    "clean": "rm -rf dist openapi-snapshot.json",
+    "test": "node scripts/copy-spec.mjs && NODE_OPTIONS=--experimental-vm-modules jest",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "peerDependencies": {
+    "@oriva/sdk": "0.1.x"
+  },
+  "peerDependenciesMeta": {
+    "@oriva/sdk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.4",
+    "typescript": "^5.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0riva/o-platform.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://api.oriva.io",
+  "keywords": [
+    "oriva",
+    "cli",
+    "openapi",
+    "api-client",
+    "agent-tools"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
