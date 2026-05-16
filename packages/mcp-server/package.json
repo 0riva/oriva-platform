@@ -1,0 +1,46 @@
+{
+  "name": "@oriva/mcp-server",
+  "version": "0.1.1",
+  "description": "Model Context Protocol server for the Oriva public API. Exposes all 46 public endpoints as MCP tools for use in Claude Code, Cursor, Continue, and Claude Desktop.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "oriva-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "prebuild": "node scripts/copy-spec.mjs",
+    "build": "tsc && node scripts/post-build.mjs",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0riva/o-platform.git",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://api.oriva.io",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "oriva",
+    "claude",
+    "ai-tools"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
