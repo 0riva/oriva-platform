@@ -20,8 +20,6 @@ name: Symphony — poll Status column → labels
 #   Done          → symphony/done
 
 on:
-  schedule:
-    - cron: '*/15 * * * *' # every 15 minutes (was */2 — reduced May 16 2026 to cap GH Actions burn)
   workflow_dispatch: # allow manual runs for testing
 
 permissions:
