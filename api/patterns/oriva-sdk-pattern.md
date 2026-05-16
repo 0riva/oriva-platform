@@ -70,6 +70,14 @@ Despite `npm whoami` returning `timebinder` and being able to update existing `@
 
 The wildcard granted by selecting the scope itself covers all current AND future packages under `@oriva/*`. Store the token in `~/.npmrc` via `npm config set //registry.npmjs.org/:_authToken=TOKEN`. For CI auto-publish, set the same token as `NPM_TOKEN` repo secret.
 
+**Convenient one-liner** (pipes the token from `~/.npmrc` to `gh secret set` via stdin — token never appears in process args or terminal scrollback):
+
+```bash
+grep '_authToken' "$HOME/.npmrc" | sed 's/.*_authToken=//' | gh secret set NPM_TOKEN --repo 0riva/oriva-platform
+```
+
+**Status**: `NPM_TOKEN` is set on `0riva/oriva-platform` as of 2026-05-16 (`gh secret list --repo 0riva/oriva-platform | grep NPM_TOKEN` to verify). CI auto-publish pipeline (`api-sdk-ci.yml`) will fire on next SDK or MCP version bump pushed to main.
+
 ## CI drift guard
 
 `.github/workflows/api-sdk-ci.yml` runs on push/PR touching `packages/sdk/**`, `claudedocs/openapi-snapshot.json`, or itself:
