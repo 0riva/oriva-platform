@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Oriva Platform API",
   "main": "api/index.ts",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "ts-node -r dotenv/config api/index.ts",
     "start": "ts-node api/index.ts",

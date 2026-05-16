@@ -1,0 +1,53 @@
+{
+  "name": "@oriva/sdk",
+  "version": "0.1.0",
+  "description": "Typed TypeScript SDK for the Oriva public API. Generated from the OpenAPI v3 spec.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./generated": {
+      "types": "./dist/generated/index.d.ts",
+      "import": "./dist/generated/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "generate": "openapi-ts",
+    "prebuild": "npm run generate",
+    "build": "tsc",
+    "clean": "rm -rf dist src/generated"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.97.1",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0riva/o-platform.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://api.oriva.io",
+  "keywords": [
+    "oriva",
+    "sdk",
+    "openapi",
+    "typescript",
+    "api-client"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

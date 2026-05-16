@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+
+# Generated SDK files ARE committed (see CLAUDE.md - "Generated code: commit").
+# Do NOT add src/generated/ here.
