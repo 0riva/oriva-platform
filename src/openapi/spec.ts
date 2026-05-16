@@ -11,6 +11,7 @@ import './schemas/marketplace';
 import './schemas/developer';
 import './schemas/entries';
 import './schemas/events';
+import './schemas/me-tokens';
 
 const generator = new OpenApiGeneratorV31(registry.definitions);
 
