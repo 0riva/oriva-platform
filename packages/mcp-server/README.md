@@ -69,10 +69,10 @@ Restart the client after editing the config. The Oriva tools appear in the clien
 
 ## Environment variables
 
-| Variable             | Required | Purpose                                                                                                    |
-| -------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| `ORIVA_API_KEY`      | yes      | Bearer key for `Authorization` header. Get one from https://api.oriva.io/developer                         |
-| `ORIVA_API_BASE_URL` | no       | Override the API base URL (default `https://api.oriva.io`). Useful for local development against a tunnel. |
+| Variable             | Required | Purpose                                                                                                                                                                                       |
+| -------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ORIVA_API_KEY`      | yes      | `oriva_pk_live_*` Personal Access Token used as the `Authorization: Bearer …` header. Generate at https://oriva.io/settings/personal-access-tokens (see "Get a Personal Access Token" above). |
+| `ORIVA_API_BASE_URL` | no       | Override the API base URL (default `https://api.oriva.io`). Useful for local development against a tunnel.                                                                                    |
 
 ## What's exposed
 
