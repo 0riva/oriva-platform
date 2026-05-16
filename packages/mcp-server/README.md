@@ -2,7 +2,17 @@
 
 Model Context Protocol server for the [Oriva](https://api.oriva.io) public API.
 
-Exposes all 46 public Oriva API endpoints as MCP tools so AI agents (Claude Code, Cursor, Continue, Claude Desktop) can read and write Oriva data on behalf of a user with an `oriva_pk_*` API key.
+Exposes 46 public Oriva API endpoints as MCP tools so AI agents (Claude Code, Cursor, Continue, Claude Desktop) can read and write Oriva data on behalf of a user with an `oriva_pk_live_*` Personal Access Token.
+
+## Get a Personal Access Token
+
+1. Sign in to [oriva.io](https://oriva.io)
+2. Go to [Settings → Personal Access Tokens](https://oriva.io/settings/personal-access-tokens)
+3. Click **Create Token**, name it (e.g. `claude-code`), and optionally set an expiry
+4. **Copy the token now** — the full value is shown only once
+5. Treat it like a password — never commit it to git, never paste it into chat
+
+Token format: `oriva_pk_live_<48 hex chars>`. The token grants read+write on your account; revoke any time from the same settings page.
 
 ## Install + connect (Claude Code)
 
@@ -15,6 +25,47 @@ Then in any Claude Code session, `/mcp` lists `oriva` and you can ask things lik
 - "use oriva to show my current user"
 - "list my marketplace apps with oriva"
 - "create an Oriva event titled 'Demo Day' on 2026-06-01"
+
+## Install + connect (other MCP clients)
+
+For clients that read a JSON config file (Claude Desktop, Cursor, Continue, etc.), add this entry to your MCP config — the exact filename and location differs per client, see your client's docs.
+
+```json
+{
+  "mcpServers": {
+    "oriva": {
+      "command": "npx",
+      "args": ["-y", "@oriva/mcp-server"],
+      "env": {
+        "ORIVA_API_KEY": "oriva_pk_live_xxx"
+      }
+    }
+  }
+}
+```
+
+Common config locations:
+
+| Client                                            | Config file                                                                                                                         |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Desktop                                    | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) / `%APPDATA%\Claude\claude_desktop_config.json` (Windows) |
+| Cursor                                            | `~/.cursor/mcp.json` (user-level) or `<project>/.cursor/mcp.json` (project-level)                                                   |
+| Continue                                          | `~/.continue/config.json` under the `experimental.modelContextProtocolServers` key                                                  |
+| Project-level (any client supporting `.mcp.json`) | `<project-root>/.mcp.json`                                                                                                          |
+
+Restart the client after editing the config. The Oriva tools appear in the client's tool picker once the connection succeeds.
+
+## Troubleshooting
+
+| Symptom                                                                | Likely cause                                                                             | Fix                                                                                                                                                                      |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tool call returns `isError: true` with `HTTP 401 / INVALID_API_KEY`    | `ORIVA_API_KEY` is missing, has whitespace, or is wrong                                  | Re-export the env var, verify with `echo "$ORIVA_API_KEY" \| head -c 14` (should print `oriva_pk_live_`)                                                                 |
+| Tool call returns `HTTP 401 / API_KEY_EXPIRED`                         | The token's `expires_at` is in the past                                                  | Mint a fresh token at [Settings → Personal Access Tokens](https://oriva.io/settings/personal-access-tokens) and update the env var                                       |
+| Tool call returns `HTTP 401 / API_KEY_INACTIVE`                        | Token was revoked                                                                        | Mint a new one                                                                                                                                                           |
+| Tool call returns `HTTP 401 / Invalid API key format`                  | Token doesn't start with `oriva_pk_live_` (e.g. you pasted a JWT or a developer-app key) | Generate a PAT — see "Get a Personal Access Token" above                                                                                                                 |
+| Server fails at boot: `ORIVA_API_KEY environment variable is required` | Env var not reaching the spawned process                                                 | Most MCP clients require env vars under an `env` key in the JSON config, not inherited from the shell                                                                    |
+| `/mcp` in Claude Code shows oriva but tool count is 0                  | The bundled spec failed to parse, or `npx` couldn't download the package                 | Run `npx @oriva/mcp-server` manually with `ORIVA_API_KEY` set — the stderr line `[oriva-mcp] Loaded N tools from spec` tells you the actual count, plus any parse errors |
+| Old version of the package keeps running after upgrade                 | `npx` caches packages by name+version                                                    | Force-refresh: `npx -y @oriva/mcp-server@latest`                                                                                                                         |
 
 ## Environment variables
 
@@ -38,6 +89,7 @@ Every public Oriva API endpoint that the OpenAPI spec marks with an `operationId
 - First-party tenant routes (`/api/v1/tenant/*`) — never part of the public contract
 - Internal debug / dev routes (`/dev-profiles`, `/api/v1/debug/cors`)
 - Admin routes that require a separate `requireAdminToken`
+- Personal Access Token management routes (`POST/GET/DELETE /api/v1/me/tokens`) — these require a Supabase session JWT, not a PAT, because of a chain-of-trust constraint: a PAT cannot mint or revoke another PAT. Manage tokens from the web at [oriva.io/settings/personal-access-tokens](https://oriva.io/settings/personal-access-tokens) instead. The routes still exist on the live API for browser clients; only the MCP tool projection is filtered.
 
 The complete list lives in `claudedocs/public-api-contract.md` in the o-platform repo.
 
@@ -76,6 +128,21 @@ To add the locally-built server to Claude Code:
 ```bash
 claude mcp add oriva-dev -e ORIVA_API_KEY=oriva_pk_live_xxx -- node $PWD/dist/index.js
 ```
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for what changed in each release.
+
+## Reporting issues
+
+Open an issue at https://github.com/0riva/o-platform/issues with the `mcp-server` label. Include:
+
+- The MCP client you're using (Claude Code, Claude Desktop, Cursor, etc.) and its version
+- The output of `npx @oriva/mcp-server@latest --help` if it errors at boot, OR the `[oriva-mcp] Loaded N tools` line if it boots cleanly
+- The tool call that misbehaved (tool name + the arguments you passed, redacting any PII)
+- The actual response (`HTTP <status>` + body), redacting `Authorization` headers and PAT values
+
+Never paste your `ORIVA_API_KEY` value into an issue — only the `oriva_pk_live_` prefix is safe to share for diagnostics.
 
 ## License
 
