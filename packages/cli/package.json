@@ -27,7 +27,7 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "peerDependencies": {
-    "@oriva/sdk": "0.1.x"
+    "@oriva/sdk": "0.1.x || 0.2.x"
   },
   "peerDependenciesMeta": {
     "@oriva/sdk": {
