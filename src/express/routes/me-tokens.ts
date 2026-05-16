@@ -7,7 +7,8 @@
  * PATs are auth.users-scoped only. Rate-limited via authRateLimiter.
  * NOT authenticated by API key — these are the routes that CREATE the keys.
  *
- * Key format: oriva_pk_<48 hex chars>  (no test_/live_ qualifier)
+ * Key format: oriva_pk_live_<48 hex chars> — uses the live_ qualifier so the
+ * shared validateApiKey middleware accepts it (it requires test_/live_ prefix).
  * Key stored: SHA-256 hash only — full value returned once on creation.
  */
 
@@ -82,11 +83,13 @@ export function createMeTokensRouter(
         return respondWithError(res, 401, 'AUTH_REQUIRED', 'Could not resolve authenticated user');
       }
 
-      // Generate token: oriva_pk_<48 random hex chars>
-      const tokenValue = `oriva_pk_${crypto.randomBytes(24).toString('hex')}`;
+      // Generate token: oriva_pk_live_<48 random hex chars>
+      // The `live_` qualifier is required by the shared validateApiKey middleware,
+      // which only accepts oriva_pk_test_ or oriva_pk_live_ prefixed keys.
+      const tokenValue = `oriva_pk_live_${crypto.randomBytes(24).toString('hex')}`;
       const keyHash = crypto.createHash('sha256').update(tokenValue).digest('hex');
-      // Store first 20 chars as display prefix (safe to show in lists)
-      const keyPrefix = tokenValue.slice(0, 20);
+      // Store first 24 chars as display prefix (safe to show in lists — includes oriva_pk_live_)
+      const keyPrefix = tokenValue.slice(0, 24);
 
       const insertPayload: Record<string, unknown> = {
         user_id: authUserId,
