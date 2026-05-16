@@ -4,6 +4,20 @@ All notable changes to `@oriva/mcp-server` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] — 2026-05-16
+
+### Documentation
+
+- Step-by-step Personal Access Token generation walkthrough.
+- Multi-client install configs: Claude Desktop, Cursor, Continue, plus a project-level `.mcp.json` example.
+- Seven-row troubleshooting table covering `INVALID_API_KEY`, the new `API_KEY_EXPIRED`, `API_KEY_INACTIVE`, format mismatch, env-var-not-reaching-process, zero-tool boot, and `npx` cache pinning.
+- Note explaining why the three Personal Access Token management operations are intentionally not exposed as MCP tools (chain-of-trust: a PAT cannot mint or revoke another PAT).
+- Issue-reporting template with explicit token-redaction guidance.
+- Environment-variables table aligned to the canonical PAT URL.
+- Link to this changelog from the README.
+
+No code changes. `npm install @oriva/mcp-server@0.1.3` behaves identically to `0.1.2`.
+
 ## [0.1.2] — 2026-05-16
 
 ### Changed
