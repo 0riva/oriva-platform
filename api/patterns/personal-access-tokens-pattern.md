@@ -61,6 +61,19 @@ npm publish --access public
 
 If you ship API changes without re-publishing the MCP package, customers' installed `@oriva/mcp-server` won't expose the new endpoints — silent gap, not an error.
 
+### npm publish auth — bypass-2FA granular token required
+
+The `timebinder` npm account has 2FA set to "Authorization and writes" mode AND uses **WebAuthn / security-key** as the second factor (not TOTP). Classic "Publish tokens" (the `npm token create` legacy type) DO NOT bypass this — every publish demands a second-factor challenge.
+
+**Critical**: because the second factor is a security key, not TOTP, the `--otp=<6-digit-code>` flag has **no value the user can provide** — there is no authenticator app generating codes. The npm CLI's error suggests OTP as a workaround, but it's a dead end for this account. Skip directly to the token / 2FA-mode unblock paths below.
+
+Two supported unblocks (preference order):
+
+1. **Switch account 2FA mode** at https://www.npmjs.com/settings/timebinder/profile from "Authorization and writes" → "Authorization only". The existing classic token in `~/.npmrc` then publishes without challenge forever. Fastest and easiest; small security tradeoff because any leaked publish token can ship a release without a second factor.
+2. **Generate a Granular Access Token with "Bypass 2FA" enabled** at https://www.npmjs.com/settings/timebinder/tokens, scoped only to `@oriva/mcp-server` with read+write permission. Paste into `~/.npmrc` as `//registry.npmjs.org/:_authToken=<token>`. Account 2FA stays on auth-and-writes; only the scoped token bypasses. More secure but a one-time setup cost and the token has to live somewhere (env var, secrets vault, ~/.npmrc — agent doesn't enforce a location).
+
+A third path "supply --otp= at publish" exists in general npm UX but is **unavailable on this account** because the second factor is a hardware security key, not TOTP — there's no 6-digit code to type. Surface the two options above, recommend (1) for speed.
+
 ---
 
 ## Invariant 4 — Token plaintext NEVER round-trips after creation
