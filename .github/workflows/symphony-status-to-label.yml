@@ -21,8 +21,8 @@ name: Symphony — poll Status column → labels
 
 on:
   schedule:
-    - cron: '*/2 * * * *'   # every 2 minutes
-  workflow_dispatch:          # allow manual runs for testing
+    - cron: '*/15 * * * *' # every 15 minutes (was */2 — reduced May 16 2026 to cap GH Actions burn)
+  workflow_dispatch: # allow manual runs for testing
 
 permissions:
   issues: write
