@@ -50,16 +50,29 @@ The `@oriva/mcp-server` npm package bundles `dist/spec.json` (a copy of `clauded
 # 1. Refresh the bundled snapshot from live API
 curl -s https://api.oriva.io/api/openapi.json > /Users/cosmic/o-platform/claudedocs/openapi-snapshot.json
 
-# 2. Rebuild (prebuild copies snapshot → src/spec.json; build embeds it in dist/)
+# 2. Update CHANGELOG.md with a new ## [X.Y.Z] entry covering what changed
+#    (Keep-a-Changelog format: Added/Changed/Deprecated/Removed/Fixed/Security)
+#    Skipping this step means the npm package page shows a stale CHANGELOG.
+
+# 3. Rebuild (prebuild copies snapshot + filters MCP_HIDDEN_OPERATION_IDS → src/spec.json;
+#    build embeds it in dist/)
 cd /Users/cosmic/o-platform/packages/mcp-server
 npm run build
 
-# 3. Bump version + publish
+# 4. Bump version + publish
 npm version patch --no-git-tag-version
 npm publish --access public
+
+# 5. Commit the version bump + CHANGELOG (do NOT commit dist/ — gitignored)
+cd /Users/cosmic/o-platform
+git add packages/mcp-server/package.json packages/mcp-server/package-lock.json packages/mcp-server/CHANGELOG.md
+git commit -m "chore(mcp): publish X.Y.Z — <one-line summary>"
+git push origin main
 ```
 
 If you ship API changes without re-publishing the MCP package, customers' installed `@oriva/mcp-server` won't expose the new endpoints — silent gap, not an error.
+
+**Docs-only republishes are cheap.** When you only update the README / CHANGELOG (no code change), still bump the patch version and republish — the npm package page renders the README from the published tarball, so README updates only reach npm-visiting developers via a fresh publish. The granular bypass-2FA token (see below) makes this cost-free.
 
 ### npm publish auth — bypass-2FA granular token required
 
