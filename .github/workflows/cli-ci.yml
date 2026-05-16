@@ -1,0 +1,106 @@
+name: CLI CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/cli/**'
+      - 'claudedocs/openapi-snapshot.json'
+      - '.github/workflows/cli-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/cli/**'
+      - 'claudedocs/openapi-snapshot.json'
+      - '.github/workflows/cli-ci.yml'
+
+env:
+  NODE_VERSION: '20'
+  WORKING_DIRECTORY: './packages/cli'
+
+jobs:
+  test:
+    name: Test CLI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (workspace root)
+        run: npm install --no-fund --no-audit
+
+      # Note: drift-guard deferred to v0.1.1 — canonical claudedocs/openapi-snapshot.json
+      # is Prettier-formatted (compact arrays), but JSON.stringify can't match that
+      # byte-for-byte. The bundled packages/cli/openapi-snapshot.json is maintained
+      # manually for now; v0.1.1 will adopt Prettier in copy-spec.mjs and re-enable
+      # the guard.
+
+      - name: Type-check
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm test
+
+      - name: Build
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run build
+
+      - name: Test pack
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm pack --dry-run
+
+  publish:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies (workspace root)
+        run: npm install --no-fund --no-audit
+
+      # Publish uses the committed packages/cli/openapi-snapshot.json verbatim —
+      # whatever was tested in the test job is what ships. See test-job comment
+      # re: drift-guard deferral to v0.1.1.
+
+      - name: Build
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run build
+
+      - name: Check version against npm
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          NPM_VERSION=$(npm view @oriva/cli version 2>/dev/null || echo "0.0.0")
+          if [ "$PACKAGE_VERSION" != "$NPM_VERSION" ]; then
+            echo "VERSION_CHANGED=true" >> $GITHUB_ENV
+            echo "New version detected: $PACKAGE_VERSION (current: $NPM_VERSION)"
+          else
+            echo "VERSION_CHANGED=false" >> $GITHUB_ENV
+            echo "Version unchanged: $PACKAGE_VERSION"
+          fi
+
+      - name: Publish to NPM
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        if: env.VERSION_CHANGED == 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
