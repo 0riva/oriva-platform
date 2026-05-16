@@ -896,6 +896,115 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "CreatedPersonalToken": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "success": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "Full token value — displayed ONCE. Store it now; it cannot be retrieved again."
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "prefix": {
+                "type": "string",
+                "description": "First 20 characters of the token, safe to display later."
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "expires_at": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "token",
+              "id",
+              "name",
+              "prefix",
+              "created_at",
+              "expires_at"
+            ]
+          }
+        },
+        "required": ["ok", "success", "data"]
+      },
+      "PersonalTokenSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_used_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "created_at",
+          "last_used_at",
+          "expires_at",
+          "is_active"
+        ]
+      },
+      "PersonalTokenList": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "success": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonalTokenSummary"
+            }
+          }
+        },
+        "required": ["ok", "success", "data"]
       }
     },
     "parameters": {}
@@ -3659,6 +3768,122 @@
           },
           "404": {
             "description": "Event not found"
+          }
+        }
+      }
+    },
+    "/api/v1/me/tokens": {
+      "post": {
+        "operationId": "createPersonalAccessToken",
+        "tags": ["PersonalTokens"],
+        "summary": "Create a Personal Access Token",
+        "description": "Issues a new Personal Access Token (PAT) scoped to the authenticated account. The full token value is returned **once** and cannot be retrieved again. PATs carry broad `[\"read\",\"write\"]` permissions and are intended for personal tooling (e.g. MCP servers).",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "Human-readable label for the token"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 expiry date. Omit for a non-expiring token."
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Token created — contains the full one-time token value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedPersonalToken"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      },
+      "get": {
+        "operationId": "listPersonalAccessTokens",
+        "tags": ["PersonalTokens"],
+        "summary": "List Personal Access Tokens",
+        "description": "Returns all PATs belonging to the authenticated account. Full token values and hashes are never returned.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of PATs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalTokenList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/v1/me/tokens/{id}": {
+      "delete": {
+        "operationId": "revokePersonalAccessToken",
+        "tags": ["PersonalTokens"],
+        "summary": "Revoke a Personal Access Token",
+        "description": "Sets `is_active = false` on the token (soft-delete). The row is preserved for audit purposes. Returns 404 if the token does not belong to this account.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked successfully"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "Token not found or does not belong to this account"
           }
         }
       }

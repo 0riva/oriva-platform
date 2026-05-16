@@ -167,6 +167,124 @@ export type Options<
 };
 
 /**
+ * Get current user
+ *
+ * Returns the authenticated user's active profile and API key metadata.
+ */
+export const getCurrentUser = <ThrowOnError extends boolean = false>(
+  options?: Options<GetCurrentUserData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<GetCurrentUserResponses, GetCurrentUserErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/user/me',
+    ...options,
+  });
+
+/**
+ * Get analytics summary
+ *
+ * Returns 7-day usage analytics for the authenticated API key.
+ */
+export const getAnalyticsSummary = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAnalyticsSummaryData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    GetAnalyticsSummaryResponses,
+    GetAnalyticsSummaryErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/analytics/summary',
+    ...options,
+  });
+
+/**
+ * List available profiles
+ *
+ * Returns all non-anonymous active profiles for the authenticated API key.
+ */
+export const listProfiles = <ThrowOnError extends boolean = false>(
+  options?: Options<ListProfilesData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<ListProfilesResponses, ListProfilesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/profiles/available',
+    ...options,
+  });
+
+/**
+ * Get active profile
+ *
+ * Returns the default active (non-anonymous) profile for the authenticated API key.
+ */
+export const getActiveProfile = <ThrowOnError extends boolean = false>(
+  options?: Options<GetActiveProfileData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<GetActiveProfileResponses, GetActiveProfileErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/profiles/active',
+    ...options,
+  });
+
+/**
+ * Update a profile
+ */
+export const updateProfile = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateProfileData, ThrowOnError>
+) =>
+  (options.client ?? client).put<UpdateProfileResponses, UpdateProfileErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/profiles/{profileId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Activate a profile
+ *
+ * Switches the active profile to the specified profile.
+ */
+export const activateProfile = <ThrowOnError extends boolean = false>(
+  options: Options<ActivateProfileData, ThrowOnError>
+) =>
+  (options.client ?? client).post<ActivateProfileResponses, ActivateProfileErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/profiles/{profileId}/activate',
+    ...options,
+  });
+
+/**
+ * List groups
+ *
+ * Returns all groups the authenticated user created or joined.
+ */
+export const listGroups = <ThrowOnError extends boolean = false>(
+  options?: Options<ListGroupsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<ListGroupsResponses, ListGroupsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/groups',
+    ...options,
+  });
+
+/**
+ * Get group members
+ *
+ * Returns members of a group. Requires the caller to be the creator or a member.
+ */
+export const listGroupMembers = <ThrowOnError extends boolean = false>(
+  options: Options<ListGroupMembersData, ThrowOnError>
+) =>
+  (options.client ?? client).get<ListGroupMembersResponses, ListGroupMembersErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/groups/{groupId}/members',
+    ...options,
+  });
+
+/**
  * Register a new user
  */
 export const register = <ThrowOnError extends boolean = false>(
@@ -289,124 +407,6 @@ export const deleteAccount = <ThrowOnError extends boolean = false>(
   (options?.client ?? client).delete<DeleteAccountResponses, DeleteAccountErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/auth/account',
-    ...options,
-  });
-
-/**
- * List available profiles
- *
- * Returns all non-anonymous active profiles for the authenticated API key.
- */
-export const listProfiles = <ThrowOnError extends boolean = false>(
-  options?: Options<ListProfilesData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<ListProfilesResponses, ListProfilesErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/profiles/available',
-    ...options,
-  });
-
-/**
- * Get active profile
- *
- * Returns the default active (non-anonymous) profile for the authenticated API key.
- */
-export const getActiveProfile = <ThrowOnError extends boolean = false>(
-  options?: Options<GetActiveProfileData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<GetActiveProfileResponses, GetActiveProfileErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/profiles/active',
-    ...options,
-  });
-
-/**
- * Update a profile
- */
-export const updateProfile = <ThrowOnError extends boolean = false>(
-  options: Options<UpdateProfileData, ThrowOnError>
-) =>
-  (options.client ?? client).put<UpdateProfileResponses, UpdateProfileErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/profiles/{profileId}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Activate a profile
- *
- * Switches the active profile to the specified profile.
- */
-export const activateProfile = <ThrowOnError extends boolean = false>(
-  options: Options<ActivateProfileData, ThrowOnError>
-) =>
-  (options.client ?? client).post<ActivateProfileResponses, ActivateProfileErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/profiles/{profileId}/activate',
-    ...options,
-  });
-
-/**
- * List groups
- *
- * Returns all groups the authenticated user created or joined.
- */
-export const listGroups = <ThrowOnError extends boolean = false>(
-  options?: Options<ListGroupsData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<ListGroupsResponses, ListGroupsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/groups',
-    ...options,
-  });
-
-/**
- * Get group members
- *
- * Returns members of a group. Requires the caller to be the creator or a member.
- */
-export const listGroupMembers = <ThrowOnError extends boolean = false>(
-  options: Options<ListGroupMembersData, ThrowOnError>
-) =>
-  (options.client ?? client).get<ListGroupMembersResponses, ListGroupMembersErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/groups/{groupId}/members',
-    ...options,
-  });
-
-/**
- * Get current user
- *
- * Returns the authenticated user's active profile and API key metadata.
- */
-export const getCurrentUser = <ThrowOnError extends boolean = false>(
-  options?: Options<GetCurrentUserData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<GetCurrentUserResponses, GetCurrentUserErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/user/me',
-    ...options,
-  });
-
-/**
- * Get analytics summary
- *
- * Returns 7-day usage analytics for the authenticated API key.
- */
-export const getAnalyticsSummary = <ThrowOnError extends boolean = false>(
-  options?: Options<GetAnalyticsSummaryData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    GetAnalyticsSummaryResponses,
-    GetAnalyticsSummaryErrors,
-    ThrowOnError
-  >({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/analytics/summary',
     ...options,
   });
 
