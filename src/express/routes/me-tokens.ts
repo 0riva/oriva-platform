@@ -2,7 +2,9 @@
  * Personal Access Token (PAT) routes
  * Mounted at /api/v1 (subpaths: /me/tokens, /me/tokens/:id)
  *
- * Auth: JWT via validateAuth middleware (the user logs in to manage THEIR tokens).
+ * Auth: inline JWT verify via supabase.auth.getUser() — deliberately NOT using the
+ * shared validateAuth middleware (which auto-loads/creates a public.profiles row).
+ * PATs are auth.users-scoped only. Rate-limited via authRateLimiter.
  * NOT authenticated by API key — these are the routes that CREATE the keys.
  *
  * Key format: oriva_pk_<48 hex chars>  (no test_/live_ qualifier)
@@ -15,6 +17,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Logger } from 'winston';
 import type { RequestHandler } from 'express';
 import { respondWithError } from '../utils/response';
+import { authRateLimiter } from '../../middleware/rateLimiter';
 import { z } from 'zod';
 
 // ── Validation ─────────────────────────────────────────────────────────────
@@ -29,18 +32,19 @@ const CreateTokenBodySchema = z.object({
 export function createMeTokensRouter(
   supabase: SupabaseClient,
   logger: Logger,
-  validateAuth: RequestHandler[]
+  _validateAuth?: RequestHandler[]
 ): Router {
   const router = Router();
 
   /**
    * Helper: resolve auth.users.id from the Supabase JWT on the request.
-   * validateAuth already verified the JWT and set req.authContext.userId to
-   * the profiles.id (not auth.users.id).  We need auth.users.id for the
-   * developer_api_keys.user_id column (per insert-api-key.ts pattern).
    *
-   * We extract the raw Bearer token and call supabase.auth.getUser() to get
-   * the canonical auth user id.
+   * PAT routes deliberately do NOT use the shared validateAuth middleware
+   * because that middleware auto-creates a row in public.profiles when one
+   * doesn't exist for the user. PATs are auth.users-scoped (not profile-
+   * scoped), so the profile dependency is wrong here — and the auto-create
+   * fails for some users with "Failed to create user profile" (a separate
+   * bug). We instead inline JWT verify + user resolution.
    */
   async function resolveAuthUserId(req: any): Promise<string | null> {
     try {
@@ -60,7 +64,7 @@ export function createMeTokensRouter(
 
   // ── POST /me/tokens — create a PAT ────────────────────────────────────────
 
-  router.post('/me/tokens', ...validateAuth, async (req: any, res: any) => {
+  router.post('/me/tokens', authRateLimiter, async (req: any, res: any) => {
     try {
       const parse = CreateTokenBodySchema.safeParse(req.body ?? {});
       if (!parse.success) {
@@ -127,7 +131,7 @@ export function createMeTokensRouter(
 
   // ── GET /me/tokens — list PATs ────────────────────────────────────────────
 
-  router.get('/me/tokens', ...validateAuth, async (req: any, res: any) => {
+  router.get('/me/tokens', authRateLimiter, async (req: any, res: any) => {
     try {
       const authUserId = await resolveAuthUserId(req);
       if (!authUserId) {
@@ -167,7 +171,7 @@ export function createMeTokensRouter(
 
   // ── DELETE /me/tokens/:id — revoke a PAT ─────────────────────────────────
 
-  router.delete('/me/tokens/:id', ...validateAuth, async (req: any, res: any) => {
+  router.delete('/me/tokens/:id', authRateLimiter, async (req: any, res: any) => {
     try {
       const { id } = req.params;
       if (!id || typeof id !== 'string') {
