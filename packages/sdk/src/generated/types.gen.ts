@@ -4,95 +4,6 @@ export type ClientOptions = {
   baseUrl: 'https://api.oriva.io' | 'http://localhost:3002' | (string & {});
 };
 
-export type AuthSessionResponse = {
-  user: {
-    id: string;
-    email: string | null;
-    display_name: string | null;
-    username: string | null;
-    subscription_tier: string;
-    created_at: string;
-  };
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-};
-
-export type AuthProfileResponse = {
-  ok: boolean;
-  success: boolean;
-  data: {
-    id: string;
-    email: string | null;
-    displayName: string;
-    avatar: string | null;
-    authType: string;
-    permissions: Array<string>;
-    lastLogin: string;
-    accountStatus: string;
-    twoFactorEnabled: boolean;
-    emailVerified: boolean;
-  };
-};
-
-export type RawProfileResponse = {
-  id: string;
-  display_name: string | null;
-  username: string | null;
-  bio: string | null;
-  avatar_url: string | null;
-  location: string | null;
-  website_url: string | null;
-};
-
-export type TokenRefreshResponse = {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-};
-
-export type ProfileSummary = {
-  profileId: string;
-  profileName: string;
-  isActive: boolean;
-  avatar: string | null;
-  isDefault: boolean;
-};
-
-export type UpdatedProfile = {
-  ok: boolean;
-  success: boolean;
-  data: {
-    profileId: string;
-    profileName: string;
-    isActive: boolean;
-    avatar: string | null;
-    bio: string | null;
-    location: string | null;
-    updatedAt: string;
-  };
-  message?: string;
-};
-
-export type GroupSummary = {
-  groupId: string;
-  groupName: string;
-  memberCount: number;
-  isActive: boolean;
-  role: string;
-  description: string | null;
-  image_url: string | null;
-  external_link: string | null;
-};
-
-export type GroupMember = {
-  memberId: string;
-  displayName: string;
-  role: string;
-  joinedAt: string;
-  avatar: string | null;
-};
-
 export type UserMe = {
   ok: boolean;
   success: boolean;
@@ -140,6 +51,95 @@ export type AnalyticsSummary = {
     };
   };
   message?: string;
+};
+
+export type ProfileSummary = {
+  profileId: string;
+  profileName: string;
+  isActive: boolean;
+  avatar: string | null;
+  isDefault: boolean;
+};
+
+export type UpdatedProfile = {
+  ok: boolean;
+  success: boolean;
+  data: {
+    profileId: string;
+    profileName: string;
+    isActive: boolean;
+    avatar: string | null;
+    bio: string | null;
+    location: string | null;
+    updatedAt: string;
+  };
+  message?: string;
+};
+
+export type GroupSummary = {
+  groupId: string;
+  groupName: string;
+  memberCount: number;
+  isActive: boolean;
+  role: string;
+  description: string | null;
+  image_url: string | null;
+  external_link: string | null;
+};
+
+export type GroupMember = {
+  memberId: string;
+  displayName: string;
+  role: string;
+  joinedAt: string;
+  avatar: string | null;
+};
+
+export type AuthSessionResponse = {
+  user: {
+    id: string;
+    email: string | null;
+    display_name: string | null;
+    username: string | null;
+    subscription_tier: string;
+    created_at: string;
+  };
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+};
+
+export type AuthProfileResponse = {
+  ok: boolean;
+  success: boolean;
+  data: {
+    id: string;
+    email: string | null;
+    displayName: string;
+    avatar: string | null;
+    authType: string;
+    permissions: Array<string>;
+    lastLogin: string;
+    accountStatus: string;
+    twoFactorEnabled: boolean;
+    emailVerified: boolean;
+  };
+};
+
+export type RawProfileResponse = {
+  id: string;
+  display_name: string | null;
+  username: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  location: string | null;
+  website_url: string | null;
+};
+
+export type TokenRefreshResponse = {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
 };
 
 export type TeamMember = {
@@ -278,6 +278,245 @@ export type PersonalTokenList = {
   success: true;
   data: Array<PersonalTokenSummary>;
 };
+
+export type GetCurrentUserData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/api/v1/user/me';
+};
+
+export type GetCurrentUserErrors = {
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+};
+
+export type GetCurrentUserResponses = {
+  /**
+   * Current user
+   */
+  200: UserMe;
+};
+
+export type GetCurrentUserResponse = GetCurrentUserResponses[keyof GetCurrentUserResponses];
+
+export type GetAnalyticsSummaryData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/api/v1/analytics/summary';
+};
+
+export type GetAnalyticsSummaryErrors = {
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+};
+
+export type GetAnalyticsSummaryResponses = {
+  /**
+   * Analytics summary
+   */
+  200: AnalyticsSummary;
+};
+
+export type GetAnalyticsSummaryResponse =
+  GetAnalyticsSummaryResponses[keyof GetAnalyticsSummaryResponses];
+
+export type ListProfilesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/api/v1/profiles/available';
+};
+
+export type ListProfilesErrors = {
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+};
+
+export type ListProfilesResponses = {
+  /**
+   * Available profiles
+   */
+  200: {
+    ok: boolean;
+    success: boolean;
+    data: Array<ProfileSummary>;
+  };
+};
+
+export type ListProfilesResponse = ListProfilesResponses[keyof ListProfilesResponses];
+
+export type GetActiveProfileData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/api/v1/profiles/active';
+};
+
+export type GetActiveProfileErrors = {
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+};
+
+export type GetActiveProfileResponses = {
+  /**
+   * Active profile
+   */
+  200: {
+    ok: boolean;
+    success: boolean;
+    data: ProfileSummary;
+  };
+};
+
+export type GetActiveProfileResponse = GetActiveProfileResponses[keyof GetActiveProfileResponses];
+
+export type UpdateProfileData = {
+  body?: {
+    profileName?: string;
+    avatar?: string;
+    bio?: string | null;
+    location?: string | null;
+  };
+  path: {
+    profileId: string;
+  };
+  query?: never;
+  url: '/api/v1/profiles/{profileId}';
+};
+
+export type UpdateProfileErrors = {
+  /**
+   * Validation error — invalid profileId format or body
+   */
+  400: unknown;
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+};
+
+export type UpdateProfileResponses = {
+  /**
+   * Profile updated
+   */
+  200: UpdatedProfile;
+};
+
+export type UpdateProfileResponse = UpdateProfileResponses[keyof UpdateProfileResponses];
+
+export type ActivateProfileData = {
+  body?: never;
+  path: {
+    profileId: string;
+  };
+  query?: never;
+  url: '/api/v1/profiles/{profileId}/activate';
+};
+
+export type ActivateProfileErrors = {
+  /**
+   * Validation error — invalid profileId format
+   */
+  400: unknown;
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+};
+
+export type ActivateProfileResponses = {
+  /**
+   * Profile activated
+   */
+  200: {
+    ok: boolean;
+    success: boolean;
+    data: {
+      activeProfile: string;
+      switchedAt: string;
+    };
+  };
+};
+
+export type ActivateProfileResponse = ActivateProfileResponses[keyof ActivateProfileResponses];
+
+export type ListGroupsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/api/v1/groups';
+};
+
+export type ListGroupsErrors = {
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+};
+
+export type ListGroupsResponses = {
+  /**
+   * User groups
+   */
+  200: {
+    ok: boolean;
+    success: boolean;
+    data: Array<GroupSummary>;
+  };
+};
+
+export type ListGroupsResponse = ListGroupsResponses[keyof ListGroupsResponses];
+
+export type ListGroupMembersData = {
+  body?: never;
+  path: {
+    groupId: string;
+  };
+  query?: never;
+  url: '/api/v1/groups/{groupId}/members';
+};
+
+export type ListGroupMembersErrors = {
+  /**
+   * Validation error — invalid groupId format
+   */
+  400: unknown;
+  /**
+   * Invalid or missing API key
+   */
+  401: unknown;
+  /**
+   * Not a member or creator of this group
+   */
+  403: unknown;
+  /**
+   * Group not found
+   */
+  404: unknown;
+};
+
+export type ListGroupMembersResponses = {
+  /**
+   * Group members
+   */
+  200: {
+    ok: boolean;
+    success: boolean;
+    data: Array<GroupMember>;
+  };
+};
+
+export type ListGroupMembersResponse = ListGroupMembersResponses[keyof ListGroupMembersResponses];
 
 export type RegisterData = {
   body?: {
@@ -509,245 +748,6 @@ export type DeleteAccountResponses = {
 };
 
 export type DeleteAccountResponse = DeleteAccountResponses[keyof DeleteAccountResponses];
-
-export type ListProfilesData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/api/v1/profiles/available';
-};
-
-export type ListProfilesErrors = {
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-};
-
-export type ListProfilesResponses = {
-  /**
-   * Available profiles
-   */
-  200: {
-    ok: boolean;
-    success: boolean;
-    data: Array<ProfileSummary>;
-  };
-};
-
-export type ListProfilesResponse = ListProfilesResponses[keyof ListProfilesResponses];
-
-export type GetActiveProfileData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/api/v1/profiles/active';
-};
-
-export type GetActiveProfileErrors = {
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-};
-
-export type GetActiveProfileResponses = {
-  /**
-   * Active profile
-   */
-  200: {
-    ok: boolean;
-    success: boolean;
-    data: ProfileSummary;
-  };
-};
-
-export type GetActiveProfileResponse = GetActiveProfileResponses[keyof GetActiveProfileResponses];
-
-export type UpdateProfileData = {
-  body?: {
-    profileName?: string;
-    avatar?: string;
-    bio?: string | null;
-    location?: string | null;
-  };
-  path: {
-    profileId: string;
-  };
-  query?: never;
-  url: '/api/v1/profiles/{profileId}';
-};
-
-export type UpdateProfileErrors = {
-  /**
-   * Validation error — invalid profileId format or body
-   */
-  400: unknown;
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-};
-
-export type UpdateProfileResponses = {
-  /**
-   * Profile updated
-   */
-  200: UpdatedProfile;
-};
-
-export type UpdateProfileResponse = UpdateProfileResponses[keyof UpdateProfileResponses];
-
-export type ActivateProfileData = {
-  body?: never;
-  path: {
-    profileId: string;
-  };
-  query?: never;
-  url: '/api/v1/profiles/{profileId}/activate';
-};
-
-export type ActivateProfileErrors = {
-  /**
-   * Validation error — invalid profileId format
-   */
-  400: unknown;
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-};
-
-export type ActivateProfileResponses = {
-  /**
-   * Profile activated
-   */
-  200: {
-    ok: boolean;
-    success: boolean;
-    data: {
-      activeProfile: string;
-      switchedAt: string;
-    };
-  };
-};
-
-export type ActivateProfileResponse = ActivateProfileResponses[keyof ActivateProfileResponses];
-
-export type ListGroupsData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/api/v1/groups';
-};
-
-export type ListGroupsErrors = {
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-};
-
-export type ListGroupsResponses = {
-  /**
-   * User groups
-   */
-  200: {
-    ok: boolean;
-    success: boolean;
-    data: Array<GroupSummary>;
-  };
-};
-
-export type ListGroupsResponse = ListGroupsResponses[keyof ListGroupsResponses];
-
-export type ListGroupMembersData = {
-  body?: never;
-  path: {
-    groupId: string;
-  };
-  query?: never;
-  url: '/api/v1/groups/{groupId}/members';
-};
-
-export type ListGroupMembersErrors = {
-  /**
-   * Validation error — invalid groupId format
-   */
-  400: unknown;
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-  /**
-   * Not a member or creator of this group
-   */
-  403: unknown;
-  /**
-   * Group not found
-   */
-  404: unknown;
-};
-
-export type ListGroupMembersResponses = {
-  /**
-   * Group members
-   */
-  200: {
-    ok: boolean;
-    success: boolean;
-    data: Array<GroupMember>;
-  };
-};
-
-export type ListGroupMembersResponse = ListGroupMembersResponses[keyof ListGroupMembersResponses];
-
-export type GetCurrentUserData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/api/v1/user/me';
-};
-
-export type GetCurrentUserErrors = {
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-};
-
-export type GetCurrentUserResponses = {
-  /**
-   * Current user
-   */
-  200: UserMe;
-};
-
-export type GetCurrentUserResponse = GetCurrentUserResponses[keyof GetCurrentUserResponses];
-
-export type GetAnalyticsSummaryData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/api/v1/analytics/summary';
-};
-
-export type GetAnalyticsSummaryErrors = {
-  /**
-   * Invalid or missing API key
-   */
-  401: unknown;
-};
-
-export type GetAnalyticsSummaryResponses = {
-  /**
-   * Analytics summary
-   */
-  200: AnalyticsSummary;
-};
-
-export type GetAnalyticsSummaryResponse =
-  GetAnalyticsSummaryResponses[keyof GetAnalyticsSummaryResponses];
 
 export type ListSessionsData = {
   body?: never;
