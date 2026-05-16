@@ -6,14 +6,8 @@
     "description": "Public API for 3rd party Oriva developers. Authenticate with your API key as a Bearer token."
   },
   "servers": [
-    {
-      "url": "https://api.oriva.io",
-      "description": "Production"
-    },
-    {
-      "url": "http://localhost:3002",
-      "description": "Local BFF proxy"
-    }
+    { "url": "https://api.oriva.io", "description": "Production" },
+    { "url": "http://localhost:3002", "description": "Local BFF proxy" }
   ],
   "components": {
     "securitySchemes": {
@@ -29,76 +23,209 @@
       }
     },
     "schemas": {
-      "UserMe": {
+      "AuthSessionResponse": {
         "type": "object",
         "properties": {
-          "ok": {
-            "type": "boolean"
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "email": { "type": ["string", "null"], "format": "email" },
+              "display_name": { "type": ["string", "null"] },
+              "username": { "type": ["string", "null"] },
+              "subscription_tier": { "type": "string" },
+              "created_at": { "type": "string", "format": "date-time" }
+            },
+            "required": [
+              "id",
+              "email",
+              "display_name",
+              "username",
+              "subscription_tier",
+              "created_at"
+            ]
           },
-          "success": {
-            "type": "boolean"
-          },
+          "access_token": { "type": "string" },
+          "refresh_token": { "type": "string" },
+          "expires_in": { "type": "integer" }
+        },
+        "required": ["user", "access_token", "refresh_token", "expires_in"]
+      },
+      "AuthProfileResponse": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "success": { "type": "boolean" },
           "data": {
             "type": "object",
             "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "username": {
-                "type": ["string", "null"]
-              },
-              "displayName": {
-                "type": "string"
-              },
-              "email": {
-                "type": ["string", "null"],
-                "format": "email"
-              },
-              "bio": {
-                "type": ["string", "null"]
-              },
-              "location": {
-                "type": ["string", "null"]
-              },
-              "website": {
-                "type": ["string", "null"],
-                "format": "uri"
-              },
-              "avatar": {
-                "type": ["string", "null"],
-                "format": "uri"
-              },
-              "createdAt": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "updatedAt": {
-                "type": "string",
-                "format": "date-time"
-              },
+              "id": { "type": "string", "format": "uuid" },
+              "email": { "type": ["string", "null"], "format": "email" },
+              "displayName": { "type": "string" },
+              "avatar": { "type": ["string", "null"], "format": "uri" },
+              "authType": { "type": "string" },
+              "permissions": { "type": "array", "items": { "type": "string" } },
+              "lastLogin": { "type": "string", "format": "date-time" },
+              "accountStatus": { "type": "string" },
+              "twoFactorEnabled": { "type": "boolean" },
+              "emailVerified": { "type": "boolean" }
+            },
+            "required": [
+              "id",
+              "email",
+              "displayName",
+              "avatar",
+              "authType",
+              "permissions",
+              "lastLogin",
+              "accountStatus",
+              "twoFactorEnabled",
+              "emailVerified"
+            ]
+          }
+        },
+        "required": ["ok", "success", "data"]
+      },
+      "RawProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "display_name": { "type": ["string", "null"] },
+          "username": { "type": ["string", "null"] },
+          "bio": { "type": ["string", "null"] },
+          "avatar_url": { "type": ["string", "null"], "format": "uri" },
+          "location": { "type": ["string", "null"] },
+          "website_url": { "type": ["string", "null"], "format": "uri" }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "username",
+          "bio",
+          "avatar_url",
+          "location",
+          "website_url"
+        ]
+      },
+      "TokenRefreshResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string" },
+          "refresh_token": { "type": "string" },
+          "expires_in": { "type": "integer" }
+        },
+        "required": ["access_token", "refresh_token", "expires_in"]
+      },
+      "ProfileSummary": {
+        "type": "object",
+        "properties": {
+          "profileId": { "type": "string", "example": "ext_a1b2c3d4e5f6a7b8" },
+          "profileName": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "avatar": { "type": ["string", "null"], "format": "uri" },
+          "isDefault": { "type": "boolean" }
+        },
+        "required": [
+          "profileId",
+          "profileName",
+          "isActive",
+          "avatar",
+          "isDefault"
+        ]
+      },
+      "UpdatedProfile": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "success": { "type": "boolean" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "profileId": { "type": "string" },
+              "profileName": { "type": "string" },
+              "isActive": { "type": "boolean" },
+              "avatar": { "type": ["string", "null"], "format": "uri" },
+              "bio": { "type": ["string", "null"] },
+              "location": { "type": ["string", "null"] },
+              "updatedAt": { "type": "string", "format": "date-time" }
+            },
+            "required": [
+              "profileId",
+              "profileName",
+              "isActive",
+              "avatar",
+              "bio",
+              "location",
+              "updatedAt"
+            ]
+          },
+          "message": { "type": "string" }
+        },
+        "required": ["ok", "success", "data"]
+      },
+      "GroupSummary": {
+        "type": "object",
+        "properties": {
+          "groupId": { "type": "string", "format": "uuid" },
+          "groupName": { "type": "string" },
+          "memberCount": { "type": "integer" },
+          "isActive": { "type": "boolean" },
+          "role": { "type": "string", "example": "admin" },
+          "description": { "type": ["string", "null"] },
+          "image_url": { "type": ["string", "null"], "format": "uri" },
+          "external_link": { "type": ["string", "null"], "format": "uri" }
+        },
+        "required": [
+          "groupId",
+          "groupName",
+          "memberCount",
+          "isActive",
+          "role",
+          "description",
+          "image_url",
+          "external_link"
+        ]
+      },
+      "GroupMember": {
+        "type": "object",
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "displayName": { "type": "string" },
+          "role": { "type": "string" },
+          "joinedAt": { "type": "string", "format": "date-time" },
+          "avatar": { "type": ["string", "null"], "format": "uri" }
+        },
+        "required": ["memberId", "displayName", "role", "joinedAt", "avatar"]
+      },
+      "UserMe": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "success": { "type": "boolean" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "username": { "type": ["string", "null"] },
+              "displayName": { "type": "string" },
+              "email": { "type": ["string", "null"], "format": "email" },
+              "bio": { "type": ["string", "null"] },
+              "location": { "type": ["string", "null"] },
+              "website": { "type": ["string", "null"], "format": "uri" },
+              "avatar": { "type": ["string", "null"], "format": "uri" },
+              "createdAt": { "type": "string", "format": "date-time" },
+              "updatedAt": { "type": "string", "format": "date-time" },
               "apiKeyInfo": {
                 "type": "object",
                 "properties": {
-                  "keyId": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "userId": {
-                    "type": "string",
-                    "format": "uuid"
-                  },
+                  "keyId": { "type": "string" },
+                  "name": { "type": "string" },
+                  "userId": { "type": "string", "format": "uuid" },
                   "permissions": {
                     "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
+                    "items": { "type": "string" }
                   },
-                  "usageCount": {
-                    "type": "integer"
-                  }
+                  "usageCount": { "type": "integer" }
                 },
                 "required": [
                   "keyId",
@@ -129,30 +256,18 @@
       "AnalyticsSummary": {
         "type": "object",
         "properties": {
-          "ok": {
-            "type": "boolean"
-          },
-          "success": {
-            "type": "boolean"
-          },
+          "ok": { "type": "boolean" },
+          "success": { "type": "boolean" },
           "data": {
             "type": "object",
             "properties": {
               "overview": {
                 "type": "object",
                 "properties": {
-                  "totalEntries": {
-                    "type": "integer"
-                  },
-                  "totalResponses": {
-                    "type": "integer"
-                  },
-                  "totalGroups": {
-                    "type": "integer"
-                  },
-                  "installedApps": {
-                    "type": "integer"
-                  }
+                  "totalEntries": { "type": "integer" },
+                  "totalResponses": { "type": "integer" },
+                  "totalGroups": { "type": "integer" },
+                  "installedApps": { "type": "integer" }
                 },
                 "required": [
                   "totalEntries",
@@ -164,18 +279,10 @@
               "metrics": {
                 "type": "object",
                 "properties": {
-                  "entriesGrowth": {
-                    "type": "string"
-                  },
-                  "responseGrowth": {
-                    "type": "string"
-                  },
-                  "groupActivity": {
-                    "type": "string"
-                  },
-                  "appUsage": {
-                    "type": "string"
-                  }
+                  "entriesGrowth": { "type": "string" },
+                  "responseGrowth": { "type": "string" },
+                  "groupActivity": { "type": "string" },
+                  "appUsage": { "type": "string" }
                 },
                 "required": [
                   "entriesGrowth",
@@ -184,381 +291,36 @@
                   "appUsage"
                 ]
               },
-              "recentActivity": {
-                "type": "array",
-                "items": {}
-              },
+              "recentActivity": { "type": "array", "items": {} },
               "timeRange": {
                 "type": "object",
                 "properties": {
-                  "start": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "end": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
+                  "start": { "type": "string", "format": "date-time" },
+                  "end": { "type": "string", "format": "date-time" }
                 },
                 "required": ["start", "end"]
               }
             },
             "required": ["overview", "metrics", "recentActivity", "timeRange"]
           },
-          "message": {
-            "type": "string"
-          }
+          "message": { "type": "string" }
         },
         "required": ["ok", "success", "data"]
-      },
-      "ProfileSummary": {
-        "type": "object",
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "example": "ext_a1b2c3d4e5f6a7b8"
-          },
-          "profileName": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "avatar": {
-            "type": ["string", "null"],
-            "format": "uri"
-          },
-          "isDefault": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "profileId",
-          "profileName",
-          "isActive",
-          "avatar",
-          "isDefault"
-        ]
-      },
-      "UpdatedProfile": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean"
-          },
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "profileId": {
-                "type": "string"
-              },
-              "profileName": {
-                "type": "string"
-              },
-              "isActive": {
-                "type": "boolean"
-              },
-              "avatar": {
-                "type": ["string", "null"],
-                "format": "uri"
-              },
-              "bio": {
-                "type": ["string", "null"]
-              },
-              "location": {
-                "type": ["string", "null"]
-              },
-              "updatedAt": {
-                "type": "string",
-                "format": "date-time"
-              }
-            },
-            "required": [
-              "profileId",
-              "profileName",
-              "isActive",
-              "avatar",
-              "bio",
-              "location",
-              "updatedAt"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["ok", "success", "data"]
-      },
-      "GroupSummary": {
-        "type": "object",
-        "properties": {
-          "groupId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "groupName": {
-            "type": "string"
-          },
-          "memberCount": {
-            "type": "integer"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "role": {
-            "type": "string",
-            "example": "admin"
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "image_url": {
-            "type": ["string", "null"],
-            "format": "uri"
-          },
-          "external_link": {
-            "type": ["string", "null"],
-            "format": "uri"
-          }
-        },
-        "required": [
-          "groupId",
-          "groupName",
-          "memberCount",
-          "isActive",
-          "role",
-          "description",
-          "image_url",
-          "external_link"
-        ]
-      },
-      "GroupMember": {
-        "type": "object",
-        "properties": {
-          "memberId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "displayName": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          },
-          "joinedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "avatar": {
-            "type": ["string", "null"],
-            "format": "uri"
-          }
-        },
-        "required": ["memberId", "displayName", "role", "joinedAt", "avatar"]
-      },
-      "AuthSessionResponse": {
-        "type": "object",
-        "properties": {
-          "user": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "email": {
-                "type": ["string", "null"],
-                "format": "email"
-              },
-              "display_name": {
-                "type": ["string", "null"]
-              },
-              "username": {
-                "type": ["string", "null"]
-              },
-              "subscription_tier": {
-                "type": "string"
-              },
-              "created_at": {
-                "type": "string",
-                "format": "date-time"
-              }
-            },
-            "required": [
-              "id",
-              "email",
-              "display_name",
-              "username",
-              "subscription_tier",
-              "created_at"
-            ]
-          },
-          "access_token": {
-            "type": "string"
-          },
-          "refresh_token": {
-            "type": "string"
-          },
-          "expires_in": {
-            "type": "integer"
-          }
-        },
-        "required": ["user", "access_token", "refresh_token", "expires_in"]
-      },
-      "AuthProfileResponse": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean"
-          },
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "email": {
-                "type": ["string", "null"],
-                "format": "email"
-              },
-              "displayName": {
-                "type": "string"
-              },
-              "avatar": {
-                "type": ["string", "null"],
-                "format": "uri"
-              },
-              "authType": {
-                "type": "string"
-              },
-              "permissions": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "lastLogin": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "accountStatus": {
-                "type": "string"
-              },
-              "twoFactorEnabled": {
-                "type": "boolean"
-              },
-              "emailVerified": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "id",
-              "email",
-              "displayName",
-              "avatar",
-              "authType",
-              "permissions",
-              "lastLogin",
-              "accountStatus",
-              "twoFactorEnabled",
-              "emailVerified"
-            ]
-          }
-        },
-        "required": ["ok", "success", "data"]
-      },
-      "RawProfileResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "display_name": {
-            "type": ["string", "null"]
-          },
-          "username": {
-            "type": ["string", "null"]
-          },
-          "bio": {
-            "type": ["string", "null"]
-          },
-          "avatar_url": {
-            "type": ["string", "null"],
-            "format": "uri"
-          },
-          "location": {
-            "type": ["string", "null"]
-          },
-          "website_url": {
-            "type": ["string", "null"],
-            "format": "uri"
-          }
-        },
-        "required": [
-          "id",
-          "display_name",
-          "username",
-          "bio",
-          "avatar_url",
-          "location",
-          "website_url"
-        ]
-      },
-      "TokenRefreshResponse": {
-        "type": "object",
-        "properties": {
-          "access_token": {
-            "type": "string"
-          },
-          "refresh_token": {
-            "type": "string"
-          },
-          "expires_in": {
-            "type": "integer"
-          }
-        },
-        "required": ["access_token", "refresh_token", "expires_in"]
       },
       "TeamMember": {
         "type": "object",
         "properties": {
-          "profileId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "displayName": {
-            "type": ["string", "null"]
-          },
-          "username": {
-            "type": ["string", "null"]
-          },
-          "avatarUrl": {
-            "type": ["string", "null"],
-            "format": "uri"
-          },
-          "role": {
-            "type": "string"
-          },
-          "joinedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
+          "profileId": { "type": "string", "format": "uuid" },
+          "displayName": { "type": ["string", "null"] },
+          "username": { "type": ["string", "null"] },
+          "avatarUrl": { "type": ["string", "null"], "format": "uri" },
+          "role": { "type": "string" },
+          "joinedAt": { "type": "string", "format": "date-time" },
           "group": {
             "type": "object",
             "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "name": {
-                "type": "string"
-              }
+              "id": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" }
             },
             "required": ["id", "name"]
           }
@@ -576,80 +338,38 @@
       "MarketplaceApp": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "external_id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "tagline": {
-            "type": ["string", "null"]
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "category": {
-            "type": "string"
-          },
-          "icon_url": {
-            "type": ["string", "null"],
-            "format": "uri"
-          },
+          "id": { "type": "string", "format": "uuid" },
+          "external_id": { "type": "string" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "tagline": { "type": ["string", "null"] },
+          "description": { "type": ["string", "null"] },
+          "category": { "type": "string" },
+          "icon_url": { "type": ["string", "null"], "format": "uri" },
           "screenshots": {
             "type": ["array", "null"],
-            "items": {
-              "type": "string",
-              "format": "uri"
-            }
+            "items": { "type": "string", "format": "uri" }
           },
-          "version": {
-            "type": "string"
-          },
-          "pricing_model": {
-            "type": "string"
-          },
+          "version": { "type": "string" },
+          "pricing_model": { "type": "string" },
           "pricing_config": {
             "type": ["object", "null"],
             "additionalProperties": {}
           },
-          "install_count": {
-            "type": "integer"
-          },
-          "developer_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "developer_name": {
-            "type": "string"
-          },
+          "install_count": { "type": "integer" },
+          "developer_id": { "type": "string", "format": "uuid" },
+          "developer_name": { "type": "string" },
           "status": {
             "type": "string",
             "enum": ["draft", "pending_review", "approved", "rejected"]
           },
-          "is_active": {
-            "type": "boolean"
-          },
+          "is_active": { "type": "boolean" },
           "supported_audience": {
             "type": ["array", "null"],
-            "items": {
-              "type": "string"
-            }
+            "items": { "type": "string" }
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         },
         "required": [
           "id",
@@ -670,24 +390,14 @@
       "InstalledApp": {
         "type": "object",
         "properties": {
-          "installationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "installedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
+          "installationId": { "type": "string", "format": "uuid" },
+          "installedAt": { "type": "string", "format": "date-time" },
+          "isActive": { "type": "boolean" },
           "settings": {
             "type": ["object", "null"],
             "additionalProperties": {}
           },
-          "app": {
-            "$ref": "#/components/schemas/MarketplaceApp"
-          }
+          "app": { "$ref": "#/components/schemas/MarketplaceApp" }
         },
         "required": [
           "installationId",
@@ -700,35 +410,17 @@
       "MarketplaceItem": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "content": {
-            "type": ["string", "null"]
-          },
-          "profile_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "entry_type": {
-            "type": "string"
-          },
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "content": { "type": ["string", "null"] },
+          "profile_id": { "type": "string", "format": "uuid" },
+          "entry_type": { "type": "string" },
           "marketplace_metadata": {
             "type": ["object", "null"],
             "additionalProperties": {}
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         },
         "required": [
           "id",
@@ -742,31 +434,16 @@
       "Category": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "collection_type": {
-            "type": "string"
-          },
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "collection_type": { "type": "string" },
           "organization_rules": {
             "type": ["object", "null"],
             "additionalProperties": {}
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         },
         "required": [
           "id",
@@ -779,31 +456,13 @@
       "Entry": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "content": {
-            "type": "string"
-          },
-          "profile_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "audience_type": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "profile_id": { "type": "string", "format": "uuid" },
+          "audience_type": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         },
         "required": [
           "id",
@@ -818,65 +477,22 @@
       "Event": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "startDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "location": {
-            "type": ["string", "null"]
-          },
-          "isOnline": {
-            "type": "boolean"
-          },
-          "category": {
-            "type": "string"
-          },
-          "organizer": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "maxAttendees": {
-            "type": ["integer", "null"]
-          },
-          "currentAttendees": {
-            "type": ["integer", "null"]
-          },
-          "price": {
-            "type": "number",
-            "minimum": 0
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "imageUrl": {
-            "type": ["string", "null"],
-            "format": "uri"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "startDate": { "type": "string", "format": "date-time" },
+          "endDate": { "type": "string", "format": "date-time" },
+          "location": { "type": ["string", "null"] },
+          "isOnline": { "type": "boolean" },
+          "category": { "type": "string" },
+          "organizer": { "type": "string", "format": "uuid" },
+          "maxAttendees": { "type": ["integer", "null"] },
+          "currentAttendees": { "type": ["integer", "null"] },
+          "price": { "type": "number", "minimum": 0 },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "imageUrl": { "type": ["string", "null"], "format": "uri" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
         },
         "required": [
           "id",
@@ -896,64 +512,309 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "CreatedPersonalToken": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean", "enum": [true] },
+          "success": { "type": "boolean", "enum": [true] },
+          "data": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "Full token value — displayed ONCE. Store it now; it cannot be retrieved again."
+              },
+              "id": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "prefix": {
+                "type": "string",
+                "description": "First 20 characters of the token, safe to display later."
+              },
+              "created_at": { "type": "string", "format": "date-time" },
+              "expires_at": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "token",
+              "id",
+              "name",
+              "prefix",
+              "created_at",
+              "expires_at"
+            ]
+          }
+        },
+        "required": ["ok", "success", "data"]
+      },
+      "PersonalTokenSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "prefix": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "last_used_at": { "type": ["string", "null"], "format": "date-time" },
+          "expires_at": { "type": ["string", "null"], "format": "date-time" },
+          "is_active": { "type": "boolean" }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "created_at",
+          "last_used_at",
+          "expires_at",
+          "is_active"
+        ]
+      },
+      "PersonalTokenList": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean", "enum": [true] },
+          "success": { "type": "boolean", "enum": [true] },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PersonalTokenSummary" }
+          }
+        },
+        "required": ["ok", "success", "data"]
       }
     },
     "parameters": {}
   },
   "paths": {
-    "/api/v1/user/me": {
-      "get": {
-        "operationId": "getCurrentUser",
-        "tags": ["User"],
-        "summary": "Get current user",
-        "description": "Returns the authenticated user's active profile and API key metadata.",
-        "security": [
-          {
-            "ApiKeyAuth": []
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register",
+        "tags": ["Auth"],
+        "summary": "Register a new user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "pattern": "[A-Z]"
+                  },
+                  "name": { "type": "string" },
+                  "username": { "type": "string" },
+                  "preferences": {}
+                },
+                "required": ["email", "password"]
+              }
+            }
           }
-        ],
+        },
         "responses": {
-          "200": {
-            "description": "Current user",
+          "201": {
+            "description": "User registered and session created",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserMe"
-                }
+                "schema": { "$ref": "#/components/schemas/AuthSessionResponse" }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "400": {
+            "description": "Validation error — weak password or invalid email"
+          },
+          "409": { "description": "Email already registered" }
         }
       }
     },
-    "/api/v1/analytics/summary": {
-      "get": {
-        "operationId": "getAnalyticsSummary",
-        "tags": ["Analytics"],
-        "summary": "Get analytics summary",
-        "description": "Returns 7-day usage analytics for the authenticated API key.",
-        "security": [
-          {
-            "ApiKeyAuth": []
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "tags": ["Auth"],
+        "summary": "Log in",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 1 }
+                },
+                "required": ["email", "password"]
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "Analytics summary",
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthSessionResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error — missing email or password"
+          },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": ["Auth"],
+        "summary": "Log out",
+        "description": "Invalidates the current session. Requires Authorization header.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Logged out" },
+          "401": { "description": "Missing authorization header" }
+        }
+      }
+    },
+    "/api/v1/auth/token/refresh": {
+      "post": {
+        "operationId": "refreshToken",
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refresh_token": { "type": "string", "minLength": 1 }
+                },
+                "required": ["refresh_token"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New tokens issued",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnalyticsSummary"
+                  "$ref": "#/components/schemas/TokenRefreshResponse"
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
+          "400": { "description": "Validation error — missing refresh_token" },
+          "401": { "description": "Invalid or expired refresh token" }
+        }
+      }
+    },
+    "/api/v1/auth/profile": {
+      "get": {
+        "operationId": "getAuthProfile",
+        "tags": ["Auth"],
+        "summary": "Get auth profile",
+        "description": "Returns the authenticated user identity and API key metadata.",
+        "security": [{ "ApiKeyAuth": [] }, { "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Auth profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthProfileResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "patch": {
+        "operationId": "patchAuthProfile",
+        "tags": ["Auth"],
+        "summary": "Update profile (partial)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "bio": { "type": "string" },
+                  "avatar_url": { "type": "string", "format": "uri" },
+                  "location": { "type": "string" },
+                  "website_url": { "type": "string", "format": "uri" }
+                }
+              }
+            }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile row",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RawProfileResponse" }
+              }
+            }
+          },
+          "400": { "description": "No fields provided" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "put": {
+        "operationId": "putAuthProfile",
+        "tags": ["Auth"],
+        "summary": "Update profile (full)",
+        "description": "Superset of PATCH — also accepts preferences and data_retention_days (min 30).",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "bio": { "type": "string" },
+                  "avatar_url": { "type": "string", "format": "uri" },
+                  "location": { "type": "string" },
+                  "website_url": { "type": "string", "format": "uri" },
+                  "preferences": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "data_retention_days": { "type": "integer", "minimum": 30 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile row",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RawProfileResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "No fields provided, or data_retention_days < 30"
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/auth/account": {
+      "delete": {
+        "operationId": "deleteAccount",
+        "tags": ["Auth"],
+        "summary": "Delete account",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Account deleted" },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
@@ -963,11 +824,7 @@
         "tags": ["Profiles"],
         "summary": "List available profiles",
         "description": "Returns all non-anonymous active profiles for the authenticated API key.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Available profiles",
@@ -976,17 +833,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProfileSummary"
-                      }
+                      "items": { "$ref": "#/components/schemas/ProfileSummary" }
                     }
                   },
                   "required": ["ok", "success", "data"]
@@ -994,9 +845,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1006,11 +855,7 @@
         "tags": ["Profiles"],
         "summary": "Get active profile",
         "description": "Returns the default active (non-anonymous) profile for the authenticated API key.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Active profile",
@@ -1019,24 +864,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ProfileSummary"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/ProfileSummary" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1045,11 +882,7 @@
         "operationId": "updateProfile",
         "tags": ["Profiles"],
         "summary": "Update a profile",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
             "schema": {
@@ -1068,20 +901,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "profileName": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "avatar": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "bio": {
-                    "type": ["string", "null"]
-                  },
-                  "location": {
-                    "type": ["string", "null"]
-                  }
+                  "profileName": { "type": "string", "minLength": 1 },
+                  "avatar": { "type": "string", "format": "uri" },
+                  "bio": { "type": ["string", "null"] },
+                  "location": { "type": ["string", "null"] }
                 }
               }
             }
@@ -1092,18 +915,14 @@
             "description": "Profile updated",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdatedProfile"
-                }
+                "schema": { "$ref": "#/components/schemas/UpdatedProfile" }
               }
             }
           },
           "400": {
             "description": "Validation error — invalid profileId format or body"
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1113,11 +932,7 @@
         "tags": ["Profiles"],
         "summary": "Activate a profile",
         "description": "Switches the active profile to the specified profile.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
             "schema": {
@@ -1138,18 +953,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "activeProfile": {
-                          "type": "string"
-                        },
+                        "activeProfile": { "type": "string" },
                         "switchedAt": {
                           "type": "string",
                           "format": "date-time"
@@ -1166,9 +975,7 @@
           "400": {
             "description": "Validation error — invalid profileId format"
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1178,11 +985,7 @@
         "tags": ["Groups"],
         "summary": "List groups",
         "description": "Returns all groups the authenticated user created or joined.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "User groups",
@@ -1191,17 +994,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/GroupSummary"
-                      }
+                      "items": { "$ref": "#/components/schemas/GroupSummary" }
                     }
                   },
                   "required": ["ok", "success", "data"]
@@ -1209,9 +1006,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1221,11 +1016,7 @@
         "tags": ["Groups"],
         "summary": "Get group members",
         "description": "Returns members of a group. Requires the caller to be the creator or a member.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
             "schema": {
@@ -1246,17 +1037,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/GroupMember"
-                      }
+                      "items": { "$ref": "#/components/schemas/GroupMember" }
                     }
                   },
                   "required": ["ok", "success", "data"]
@@ -1264,350 +1049,50 @@
               }
             }
           },
-          "400": {
-            "description": "Validation error — invalid groupId format"
-          },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
-          "403": {
-            "description": "Not a member or creator of this group"
-          },
-          "404": {
-            "description": "Group not found"
-          }
+          "400": { "description": "Validation error — invalid groupId format" },
+          "401": { "description": "Invalid or missing API key" },
+          "403": { "description": "Not a member or creator of this group" },
+          "404": { "description": "Group not found" }
         }
       }
     },
-    "/api/v1/auth/register": {
-      "post": {
-        "operationId": "register",
-        "tags": ["Auth"],
-        "summary": "Register a new user",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email"
-                  },
-                  "password": {
-                    "type": "string",
-                    "minLength": 8,
-                    "pattern": "[A-Z]"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "preferences": {}
-                },
-                "required": ["email", "password"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "User registered and session created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error — weak password or invalid email"
-          },
-          "409": {
-            "description": "Email already registered"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/login": {
-      "post": {
-        "operationId": "login",
-        "tags": ["Auth"],
-        "summary": "Log in",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email"
-                  },
-                  "password": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": ["email", "password"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error — missing email or password"
-          },
-          "401": {
-            "description": "Invalid credentials"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/logout": {
-      "post": {
-        "operationId": "logout",
-        "tags": ["Auth"],
-        "summary": "Log out",
-        "description": "Invalidates the current session. Requires Authorization header.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Logged out"
-          },
-          "401": {
-            "description": "Missing authorization header"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/token/refresh": {
-      "post": {
-        "operationId": "refreshToken",
-        "tags": ["Auth"],
-        "summary": "Refresh access token",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "refresh_token": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": ["refresh_token"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "New tokens issued",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenRefreshResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error — missing refresh_token"
-          },
-          "401": {
-            "description": "Invalid or expired refresh token"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/profile": {
+    "/api/v1/user/me": {
       "get": {
-        "operationId": "getAuthProfile",
-        "tags": ["Auth"],
-        "summary": "Get auth profile",
-        "description": "Returns the authenticated user identity and API key metadata.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          },
-          {
-            "BearerAuth": []
-          }
-        ],
+        "operationId": "getCurrentUser",
+        "tags": ["User"],
+        "summary": "Get current user",
+        "description": "Returns the authenticated user's active profile and API key metadata.",
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
-            "description": "Auth profile",
+            "description": "Current user",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthProfileResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/UserMe" }
               }
             }
           },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      },
-      "patch": {
-        "operationId": "patchAuthProfile",
-        "tags": ["Auth"],
-        "summary": "Update profile (partial)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "bio": {
-                    "type": "string"
-                  },
-                  "avatar_url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "location": {
-                    "type": "string"
-                  },
-                  "website_url": {
-                    "type": "string",
-                    "format": "uri"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Updated profile row",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RawProfileResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "No fields provided"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      },
-      "put": {
-        "operationId": "putAuthProfile",
-        "tags": ["Auth"],
-        "summary": "Update profile (full)",
-        "description": "Superset of PATCH — also accepts preferences and data_retention_days (min 30).",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "bio": {
-                    "type": "string"
-                  },
-                  "avatar_url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "location": {
-                    "type": "string"
-                  },
-                  "website_url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "preferences": {
-                    "type": "object",
-                    "additionalProperties": {}
-                  },
-                  "data_retention_days": {
-                    "type": "integer",
-                    "minimum": 30
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Updated profile row",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RawProfileResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "No fields provided, or data_retention_days < 30"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
-    "/api/v1/auth/account": {
-      "delete": {
-        "operationId": "deleteAccount",
-        "tags": ["Auth"],
-        "summary": "Delete account",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
+    "/api/v1/analytics/summary": {
+      "get": {
+        "operationId": "getAnalyticsSummary",
+        "tags": ["Analytics"],
+        "summary": "Get analytics summary",
+        "description": "Returns 7-day usage analytics for the authenticated API key.",
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
-          "204": {
-            "description": "Account deleted"
+          "200": {
+            "description": "Analytics summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AnalyticsSummary" }
+              }
+            }
           },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1617,11 +1102,7 @@
         "tags": ["Sessions"],
         "summary": "List sessions",
         "description": "Returns the user's sessions. Sessions feature is not yet implemented — returns empty paginated list.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Sessions list (currently always empty)",
@@ -1630,52 +1111,33 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {}
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": {} },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pagination": {
                           "type": "object",
                           "properties": {
-                            "page": {
-                              "type": "integer"
-                            },
-                            "limit": {
-                              "type": "integer"
-                            },
-                            "total": {
-                              "type": "integer"
-                            },
-                            "totalPages": {
-                              "type": "integer"
-                            }
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
                           },
                           "required": ["page", "limit", "total", "totalPages"]
                         }
                       },
                       "required": ["pagination"]
                     },
-                    "message": {
-                      "type": "string"
-                    }
+                    "message": { "type": "string" }
                   },
                   "required": ["ok", "success", "data", "meta"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1685,11 +1147,7 @@
         "tags": ["Sessions"],
         "summary": "List upcoming sessions",
         "description": "Returns upcoming sessions. Sessions feature is not yet implemented — returns empty list.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Upcoming sessions (currently always empty)",
@@ -1698,28 +1156,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {}
-                    },
-                    "message": {
-                      "type": "string"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": {} },
+                    "message": { "type": "string" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1729,11 +1176,7 @@
         "tags": ["Team"],
         "summary": "List team members",
         "description": "Returns group memberships for the authenticated user as a flat list of team members.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Team members",
@@ -1742,29 +1185,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/TeamMember"
-                      }
+                      "items": { "$ref": "#/components/schemas/TeamMember" }
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
-                        "total": {
-                          "type": "integer"
-                        },
+                        "total": { "type": "integer" },
                         "roles": {
                           "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
+                          "items": { "type": "string" }
                         }
                       },
                       "required": ["total", "roles"]
@@ -1775,9 +1208,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1787,43 +1218,28 @@
         "tags": ["Marketplace"],
         "summary": "Browse marketplace apps",
         "description": "Returns paginated list of approved, active marketplace apps.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100
-            },
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100 },
             "required": false,
             "name": "limit",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 0
-            },
+            "schema": { "type": "integer", "minimum": 0 },
             "required": false,
             "name": "offset",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string"
-            },
+            "schema": { "type": "string" },
             "required": false,
             "name": "category",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string"
-            },
+            "schema": { "type": "string" },
             "required": false,
             "name": "search",
             "in": "query"
@@ -1837,17 +1253,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/MarketplaceApp"
-                      }
+                      "items": { "$ref": "#/components/schemas/MarketplaceApp" }
                     },
                     "meta": {
                       "type": "object",
@@ -1855,18 +1265,10 @@
                         "pagination": {
                           "type": "object",
                           "properties": {
-                            "page": {
-                              "type": "integer"
-                            },
-                            "limit": {
-                              "type": "integer"
-                            },
-                            "total": {
-                              "type": "integer"
-                            },
-                            "totalPages": {
-                              "type": "integer"
-                            }
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
                           },
                           "required": ["page", "limit", "total", "totalPages"]
                         }
@@ -1879,9 +1281,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1891,11 +1291,7 @@
         "tags": ["Marketplace"],
         "summary": "Trending apps",
         "description": "Returns approved apps sorted by install count (top 20).",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Trending apps",
@@ -1904,17 +1300,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/MarketplaceApp"
-                      }
+                      "items": { "$ref": "#/components/schemas/MarketplaceApp" }
                     }
                   },
                   "required": ["ok", "success", "data"]
@@ -1922,9 +1312,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1934,11 +1322,7 @@
         "tags": ["Marketplace"],
         "summary": "Featured apps",
         "description": "Returns featured approved apps (curated subset of top apps).",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Featured apps",
@@ -1947,17 +1331,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/MarketplaceApp"
-                      }
+                      "items": { "$ref": "#/components/schemas/MarketplaceApp" }
                     }
                   },
                   "required": ["ok", "success", "data"]
@@ -1965,9 +1343,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -1977,11 +1353,7 @@
         "tags": ["Marketplace"],
         "summary": "List app categories",
         "description": "Returns distinct categories from approved apps with their app counts. Note: a second registration of this path exists (no auth, collections-table version) but is shadowed by this route (Express first-match).",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Category counts",
@@ -1990,23 +1362,15 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "category": {
-                            "type": "string"
-                          },
-                          "count": {
-                            "type": "integer"
-                          }
+                          "category": { "type": "string" },
+                          "count": { "type": "integer" }
                         },
                         "required": ["category", "count"]
                       }
@@ -2017,9 +1381,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -2028,17 +1390,10 @@
         "operationId": "getMarketplaceApp",
         "tags": ["Marketplace"],
         "summary": "Get app details",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
@@ -2052,27 +1407,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MarketplaceApp"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/MarketplaceApp" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
-          "404": {
-            "description": "App not found"
-          }
+          "401": { "description": "Invalid or missing API key" },
+          "404": { "description": "App not found" }
         }
       }
     },
@@ -2082,27 +1427,16 @@
         "tags": ["Marketplace"],
         "summary": "List installed apps",
         "description": "Returns all apps installed by the authenticated user.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
+        "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100
-            },
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100 },
             "required": false,
             "name": "limit",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 0
-            },
+            "schema": { "type": "integer", "minimum": 0 },
             "required": false,
             "name": "offset",
             "in": "query"
@@ -2116,17 +1450,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/InstalledApp"
-                      }
+                      "items": { "$ref": "#/components/schemas/InstalledApp" }
                     },
                     "meta": {
                       "type": "object",
@@ -2134,18 +1462,10 @@
                         "pagination": {
                           "type": "object",
                           "properties": {
-                            "page": {
-                              "type": "integer"
-                            },
-                            "limit": {
-                              "type": "integer"
-                            },
-                            "total": {
-                              "type": "integer"
-                            },
-                            "totalPages": {
-                              "type": "integer"
-                            }
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
                           },
                           "required": ["page", "limit", "total", "totalPages"]
                         }
@@ -2158,9 +1478,7 @@
               }
             }
           },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "401": { "description": "Unauthorized" }
         }
       }
     },
@@ -2169,17 +1487,10 @@
         "operationId": "installMarketplaceApp",
         "tags": ["Marketplace"],
         "summary": "Install app",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
+        "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
@@ -2191,10 +1502,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "settings": {
-                    "type": "object",
-                    "additionalProperties": {}
-                  }
+                  "settings": { "type": "object", "additionalProperties": {} }
                 }
               }
             }
@@ -2208,33 +1516,21 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/InstalledApp"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/InstalledApp" },
+                    "message": { "type": "string" }
                   },
                   "required": ["ok", "success", "data", "message"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Unauthorized"
-          },
+          "401": { "description": "Unauthorized" },
           "404": {
             "description": "App not found or not available for installation"
           },
-          "409": {
-            "description": "App already installed"
-          }
+          "409": { "description": "App already installed" }
         }
       }
     },
@@ -2243,17 +1539,10 @@
         "operationId": "uninstallMarketplaceApp",
         "tags": ["Marketplace"],
         "summary": "Uninstall app",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
+        "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
@@ -2267,27 +1556,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" }
                   },
                   "required": ["ok", "success", "message"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "App installation not found"
-          }
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "App installation not found" }
         }
       }
     },
@@ -2299,78 +1578,55 @@
         "description": "Public listing of published marketplace items (entry-based). No authentication required.",
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100
-            },
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100 },
             "required": false,
             "name": "limit",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 0
-            },
+            "schema": { "type": "integer", "minimum": 0 },
             "required": false,
             "name": "offset",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string"
-            },
+            "schema": { "type": "string" },
             "required": false,
             "name": "item_type",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string"
-            },
+            "schema": { "type": "string" },
             "required": false,
             "name": "earner_type",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": false,
             "name": "category_id",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "number"
-            },
+            "schema": { "type": "number" },
             "required": false,
             "name": "min_price",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "number"
-            },
+            "schema": { "type": "number" },
             "required": false,
             "name": "max_price",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": false,
             "name": "seller_id",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string"
-            },
+            "schema": { "type": "string" },
             "required": false,
             "name": "search",
             "in": "query"
@@ -2384,12 +1640,8 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
                       "items": {
@@ -2402,18 +1654,10 @@
                         "pagination": {
                           "type": "object",
                           "properties": {
-                            "page": {
-                              "type": "integer"
-                            },
-                            "limit": {
-                              "type": "integer"
-                            },
-                            "total": {
-                              "type": "integer"
-                            },
-                            "totalPages": {
-                              "type": "integer"
-                            }
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
                           },
                           "required": ["page", "limit", "total", "totalPages"]
                         }
@@ -2437,10 +1681,7 @@
         "description": "Returns a single published marketplace item by ID.",
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "id",
             "in": "path"
@@ -2454,24 +1695,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MarketplaceItem"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/MarketplaceItem" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "404": {
-            "description": "Item not found"
-          }
+          "404": { "description": "Item not found" }
         }
       }
     },
@@ -2487,21 +1720,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "query": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "filters": {
-                    "type": "object",
-                    "additionalProperties": {}
-                  },
-                  "limit": {
-                    "type": "integer",
-                    "maximum": 100
-                  },
-                  "offset": {
-                    "type": "integer"
-                  }
+                  "query": { "type": "string", "minLength": 1 },
+                  "filters": { "type": "object", "additionalProperties": {} },
+                  "limit": { "type": "integer", "maximum": 100 },
+                  "offset": { "type": "integer" }
                 },
                 "required": ["query"]
               }
@@ -2516,12 +1738,8 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
                       "items": {
@@ -2534,18 +1752,10 @@
                         "pagination": {
                           "type": "object",
                           "properties": {
-                            "page": {
-                              "type": "integer"
-                            },
-                            "limit": {
-                              "type": "integer"
-                            },
-                            "total": {
-                              "type": "integer"
-                            },
-                            "totalPages": {
-                              "type": "integer"
-                            }
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
                           },
                           "required": ["page", "limit", "total", "totalPages"]
                         }
@@ -2575,19 +1785,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
                       "items": {
                         "allOf": [
-                          {
-                            "$ref": "#/components/schemas/Category"
-                          },
+                          { "$ref": "#/components/schemas/Category" },
                           {
                             "type": "object",
                             "properties": {
@@ -2620,10 +1824,7 @@
         "description": "Returns a single marketplace category from the collections table.",
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "id",
             "in": "path"
@@ -2637,24 +1838,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Category"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Category" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "404": {
-            "description": "Category not found"
-          }
+          "404": { "description": "Category not found" }
         }
       }
     },
@@ -2664,11 +1857,7 @@
         "tags": ["Developer"],
         "summary": "List developer apps",
         "description": "Returns all marketplace apps owned by the authenticated developer.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Developer apps",
@@ -2677,17 +1866,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/MarketplaceApp"
-                      }
+                      "items": { "$ref": "#/components/schemas/MarketplaceApp" }
                     }
                   },
                   "required": ["ok", "success", "data"]
@@ -2695,72 +1878,39 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       },
       "post": {
         "operationId": "createDeveloperApp",
         "tags": ["Developer"],
         "summary": "Create app",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "slug": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "tagline": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "category": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "icon_url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
+                  "name": { "type": "string", "minLength": 1 },
+                  "slug": { "type": "string", "minLength": 1 },
+                  "tagline": { "type": "string" },
+                  "description": { "type": "string" },
+                  "category": { "type": "string", "minLength": 1 },
+                  "icon_url": { "type": "string", "format": "uri" },
                   "screenshots": {
                     "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uri"
-                    }
+                    "items": { "type": "string", "format": "uri" }
                   },
-                  "version": {
-                    "type": "string",
-                    "default": "1.0.0"
-                  },
-                  "pricing_model": {
-                    "type": "string",
-                    "default": "free"
-                  },
+                  "version": { "type": "string", "default": "1.0.0" },
+                  "pricing_model": { "type": "string", "default": "free" },
                   "pricing_config": {
                     "type": "object",
                     "additionalProperties": {}
                   },
                   "supported_audience": {
                     "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
+                    "items": { "type": "string" }
                   }
                 },
                 "required": ["name", "slug", "category"]
@@ -2776,24 +1926,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MarketplaceApp"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/MarketplaceApp" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -2802,17 +1944,10 @@
         "operationId": "getDeveloperApp",
         "tags": ["Developer"],
         "summary": "Get developer app",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
@@ -2826,24 +1961,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MarketplaceApp"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/MarketplaceApp" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
+          "401": { "description": "Invalid or missing API key" },
           "404": {
             "description": "App not found or not owned by this developer"
           }
@@ -2853,17 +1980,10 @@
         "operationId": "updateDeveloperApp",
         "tags": ["Developer"],
         "summary": "Update app",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
@@ -2875,49 +1995,25 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "slug": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "tagline": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "icon_url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
+                  "name": { "type": "string", "minLength": 1 },
+                  "slug": { "type": "string", "minLength": 1 },
+                  "tagline": { "type": "string" },
+                  "description": { "type": "string" },
+                  "category": { "type": "string" },
+                  "icon_url": { "type": "string", "format": "uri" },
                   "screenshots": {
                     "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uri"
-                    }
+                    "items": { "type": "string", "format": "uri" }
                   },
-                  "version": {
-                    "type": "string"
-                  },
-                  "pricing_model": {
-                    "type": "string"
-                  },
+                  "version": { "type": "string" },
+                  "pricing_model": { "type": "string" },
                   "pricing_config": {
                     "type": "object",
                     "additionalProperties": {}
                   },
                   "supported_audience": {
                     "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
+                    "items": { "type": "string" }
                   }
                 }
               }
@@ -2932,24 +2028,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MarketplaceApp"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/MarketplaceApp" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
+          "401": { "description": "Invalid or missing API key" },
           "404": {
             "description": "App not found or not owned by this developer"
           }
@@ -2960,32 +2048,21 @@
         "tags": ["Developer"],
         "summary": "Delete app",
         "description": "Only draft apps can be deleted. Approved apps must be deactivated first.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
           }
         ],
         "responses": {
-          "204": {
-            "description": "App deleted"
-          },
+          "204": { "description": "App deleted" },
           "400": {
             "description": "App is not in draft status — cannot delete"
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
+          "401": { "description": "Invalid or missing API key" },
           "404": {
             "description": "App not found or not owned by this developer"
           }
@@ -2998,17 +2075,10 @@
         "tags": ["Developer"],
         "summary": "Submit app for review",
         "description": "Transitions app from draft → pending_review.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
@@ -3022,30 +2092,18 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MarketplaceApp"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/MarketplaceApp" },
+                    "message": { "type": "string" }
                   },
                   "required": ["ok", "success", "data", "message"]
                 }
               }
             }
           },
-          "400": {
-            "description": "App is not in draft status"
-          },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
+          "400": { "description": "App is not in draft status" },
+          "401": { "description": "Invalid or missing API key" },
           "404": {
             "description": "App not found or not owned by this developer"
           }
@@ -3058,17 +2116,10 @@
         "tags": ["Developer"],
         "summary": "Resubmit rejected app",
         "description": "Updates fields and resubmits a rejected app for review.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "appId",
             "in": "path"
@@ -3080,49 +2131,25 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "slug": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "tagline": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "icon_url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
+                  "name": { "type": "string", "minLength": 1 },
+                  "slug": { "type": "string", "minLength": 1 },
+                  "tagline": { "type": "string" },
+                  "description": { "type": "string" },
+                  "category": { "type": "string" },
+                  "icon_url": { "type": "string", "format": "uri" },
                   "screenshots": {
                     "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uri"
-                    }
+                    "items": { "type": "string", "format": "uri" }
                   },
-                  "version": {
-                    "type": "string"
-                  },
-                  "pricing_model": {
-                    "type": "string"
-                  },
+                  "version": { "type": "string" },
+                  "pricing_model": { "type": "string" },
                   "pricing_config": {
                     "type": "object",
                     "additionalProperties": {}
                   },
                   "supported_audience": {
                     "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
+                    "items": { "type": "string" }
                   }
                 }
               }
@@ -3137,30 +2164,18 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MarketplaceApp"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/MarketplaceApp" },
+                    "message": { "type": "string" }
                   },
                   "required": ["ok", "success", "data", "message"]
                 }
               }
             }
           },
-          "400": {
-            "description": "App is not in rejected status"
-          },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
+          "400": { "description": "App is not in rejected status" },
+          "401": { "description": "Invalid or missing API key" },
           "404": {
             "description": "App not found or not owned by this developer"
           }
@@ -3173,11 +2188,7 @@
         "tags": ["Entries"],
         "summary": "List entries",
         "description": "Returns paginated entries for the authenticated user's profile.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
             "schema": {
@@ -3191,11 +2202,7 @@
             "in": "query"
           },
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
+            "schema": { "type": "integer", "minimum": 0, "default": 0 },
             "required": false,
             "name": "offset",
             "in": "query"
@@ -3209,17 +2216,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Entry"
-                      }
+                      "items": { "$ref": "#/components/schemas/Entry" }
                     },
                     "meta": {
                       "type": "object",
@@ -3227,18 +2228,10 @@
                         "pagination": {
                           "type": "object",
                           "properties": {
-                            "page": {
-                              "type": "integer"
-                            },
-                            "limit": {
-                              "type": "integer"
-                            },
-                            "total": {
-                              "type": "integer"
-                            },
-                            "totalPages": {
-                              "type": "integer"
-                            }
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
                           },
                           "required": ["page", "limit", "total", "totalPages"]
                         }
@@ -3251,12 +2244,8 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          },
-          "404": {
-            "description": "User profile not found"
-          }
+          "401": { "description": "Invalid or missing API key" },
+          "404": { "description": "User profile not found" }
         }
       }
     },
@@ -3266,11 +2255,7 @@
         "tags": ["Entries"],
         "summary": "List templates",
         "description": "Returns available entry templates. Not yet implemented — returns empty list.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Templates list (currently always empty)",
@@ -3279,34 +2264,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {}
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": {} },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pagination": {
                           "type": "object",
                           "properties": {
-                            "page": {
-                              "type": "integer"
-                            },
-                            "limit": {
-                              "type": "integer"
-                            },
-                            "total": {
-                              "type": "integer"
-                            },
-                            "totalPages": {
-                              "type": "integer"
-                            }
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
                           },
                           "required": ["page", "limit", "total", "totalPages"]
                         }
@@ -3319,9 +2289,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -3331,11 +2299,7 @@
         "tags": ["Entries"],
         "summary": "Get storage info",
         "description": "Returns storage usage for the authenticated user. Not yet implemented — returns empty object.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Storage info",
@@ -3344,25 +2308,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": {}
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "type": "object", "additionalProperties": {} }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -3372,11 +2327,7 @@
         "tags": ["UI"],
         "summary": "Create notification",
         "description": "Creates a UI notification for the authenticated user.",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "Notification created",
@@ -3385,19 +2336,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        }
-                      },
+                      "properties": { "id": { "type": "string" } },
                       "required": ["id"]
                     }
                   },
@@ -3406,9 +2349,7 @@
               }
             }
           },
-          "401": {
-            "description": "Invalid or missing API key"
-          }
+          "401": { "description": "Invalid or missing API key" }
         }
       }
     },
@@ -3420,47 +2361,31 @@
         "description": "Returns active events with optional filtering by category and date range.",
         "parameters": [
           {
-            "schema": {
-              "type": "string"
-            },
+            "schema": { "type": "string" },
             "required": false,
             "name": "category",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
+            "schema": { "type": "string", "format": "date-time" },
             "required": false,
             "name": "startDate",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
+            "schema": { "type": "string", "format": "date-time" },
             "required": false,
             "name": "endDate",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "default": 20
-            },
+            "schema": { "type": "integer", "maximum": 100, "default": 20 },
             "required": false,
             "name": "limit",
             "in": "query"
           },
           {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
+            "schema": { "type": "integer", "minimum": 0, "default": 0 },
             "required": false,
             "name": "offset",
             "in": "query"
@@ -3474,27 +2399,15 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Event"
-                      }
+                      "items": { "$ref": "#/components/schemas/Event" }
                     },
-                    "total": {
-                      "type": "integer"
-                    },
-                    "limit": {
-                      "type": "integer"
-                    },
-                    "offset": {
-                      "type": "integer"
-                    }
+                    "total": { "type": "integer" },
+                    "limit": { "type": "integer" },
+                    "offset": { "type": "integer" }
                   },
                   "required": [
                     "ok",
@@ -3514,62 +2427,31 @@
         "operationId": "createEvent",
         "tags": ["Events"],
         "summary": "Create event",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
+        "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "title": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "description": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "startDate": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "endDate": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "isOnline": {
-                    "type": "boolean"
-                  },
-                  "category": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "location": {
-                    "type": ["string", "null"]
-                  },
+                  "title": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string", "minLength": 1 },
+                  "startDate": { "type": "string", "format": "date-time" },
+                  "endDate": { "type": "string", "format": "date-time" },
+                  "isOnline": { "type": "boolean" },
+                  "category": { "type": "string", "minLength": 1 },
+                  "location": { "type": ["string", "null"] },
                   "maxAttendees": {
                     "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
-                  "price": {
-                    "type": "number",
-                    "minimum": 0
-                  },
+                  "price": { "type": "number", "minimum": 0 },
                   "tags": {
                     "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
+                    "items": { "type": "string" },
                     "maxItems": 20
                   },
-                  "imageUrl": {
-                    "type": ["string", "null"],
-                    "format": "uri"
-                  }
+                  "imageUrl": { "type": ["string", "null"], "format": "uri" }
                 },
                 "required": [
                   "title",
@@ -3591,18 +2473,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Event"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Event" },
+                    "message": { "type": "string" }
                   },
                   "required": ["ok", "success", "data", "message"]
                 }
@@ -3612,9 +2486,7 @@
           "400": {
             "description": "Validation error — missing required fields or invalid category"
           },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "401": { "description": "Unauthorized" }
         }
       }
     },
@@ -3625,10 +2497,7 @@
         "summary": "Get event",
         "parameters": [
           {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
+            "schema": { "type": "string", "format": "uuid" },
             "required": true,
             "name": "eventId",
             "in": "path"
@@ -3642,23 +2511,104 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Event"
-                    }
+                    "ok": { "type": "boolean" },
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Event" }
                   },
                   "required": ["ok", "success", "data"]
                 }
               }
             }
           },
+          "404": { "description": "Event not found" }
+        }
+      }
+    },
+    "/api/v1/me/tokens": {
+      "post": {
+        "operationId": "createPersonalAccessToken",
+        "tags": ["PersonalTokens"],
+        "summary": "Create a Personal Access Token",
+        "description": "Issues a new Personal Access Token (PAT) scoped to the authenticated account. The full token value is returned **once** and cannot be retrieved again. PATs carry broad `[\"read\",\"write\"]` permissions and are intended for personal tooling (e.g. MCP servers).",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "Human-readable label for the token"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 expiry date. Omit for a non-expiring token."
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Token created — contains the full one-time token value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedPersonalToken"
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Not authenticated" }
+        }
+      },
+      "get": {
+        "operationId": "listPersonalAccessTokens",
+        "tags": ["PersonalTokens"],
+        "summary": "List Personal Access Tokens",
+        "description": "Returns all PATs belonging to the authenticated account. Full token values and hashes are never returned.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of PATs",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PersonalTokenList" }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/v1/me/tokens/{id}": {
+      "delete": {
+        "operationId": "revokePersonalAccessToken",
+        "tags": ["PersonalTokens"],
+        "summary": "Revoke a Personal Access Token",
+        "description": "Sets `is_active = false` on the token (soft-delete). The row is preserved for audit purposes. Returns 404 if the token does not belong to this account.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Revoked successfully" },
+          "401": { "description": "Not authenticated" },
           "404": {
-            "description": "Event not found"
+            "description": "Token not found or does not belong to this account"
           }
         }
       }
