@@ -40,6 +40,14 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: npm run generate
 
+      # The openapi-ts generator's bundled Prettier doesn't read the workspace's
+      # .prettierrc. Husky's pre-commit lint-staged DOES — so committed SDK
+      # output is workspace-Prettier-formatted. CI must apply workspace Prettier
+      # too or the drift-guard fails on every PR.
+      - name: Apply workspace Prettier to generated SDK
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npx prettier --write 'src/generated/**/*.ts'
+
       - name: Drift guard — fail if generated SDK differs from committed
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
