@@ -740,17 +740,22 @@ const validateApiKey: ApiMiddleware = async (req, res, next) => {
     // Look up the API key in the database
     const { data: apiKeyRecord, error: keyError } = await supabase
       .from('developer_api_keys')
-      .select('id, user_id, name, permissions, usage_count, is_active, last_used_at')
+      .select('id, user_id, name, permissions, usage_count, is_active, last_used_at, expires_at')
       .eq('key_hash', keyHash)
       .single();
 
     if (keyError || !apiKeyRecord) {
-      respondWithError(res, 401, 'INVALID_API_KEY', 'Invalid or expired API key');
+      respondWithError(res, 401, 'INVALID_API_KEY', 'Invalid API key');
       return;
     }
 
     if (!apiKeyRecord.is_active) {
       respondWithError(res, 401, 'API_KEY_INACTIVE', 'API key is inactive');
+      return;
+    }
+
+    if (apiKeyRecord.expires_at && new Date(apiKeyRecord.expires_at).getTime() <= Date.now()) {
+      respondWithError(res, 401, 'API_KEY_EXPIRED', 'API key has expired');
       return;
     }
 
