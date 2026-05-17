@@ -33,6 +33,7 @@ import { coerceArgs } from './coerce.js';
 import { readBody } from './readBody.js';
 import { resolveAuth } from './auth.js';
 import { renderOutput, renderEnvelope } from './output.js';
+import * as skillPublish from './commands/skillPublish.js';
 
 const CLI_VERSION = '0.1.0';
 const DEFAULT_BASE_URL = 'https://api.oriva.io';
@@ -101,6 +102,22 @@ export async function run(deps: RunDeps = {}): Promise<number> {
     stdout.write(renderCommandHelp(op));
     stdout.write('\n');
     return 0;
+  }
+
+  // Special-case built-in commands that are NOT OpenAPI operations.
+  // These must be checked BEFORE the opsByName lookup so that they are
+  // dispatched even if an operationId with the same name exists in the spec.
+  const BUILTIN_COMMANDS: Record<string, true> = { 'skill-publish': true, 'skill:publish': true };
+  if (parsed.command && BUILTIN_COMMANDS[parsed.command]) {
+    // Pass remaining argv tokens as positional args for flag parsing inside the command.
+    const remainingArgv = argv.slice(argv.indexOf(parsed.command!) + 1);
+    return skillPublish.run({
+      argv: remainingArgv,
+      env,
+      stdout,
+      stderr,
+      configPath: deps.configPath,
+    });
   }
 
   // kind === 'command'

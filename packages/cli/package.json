@@ -26,6 +26,10 @@
     "type-check": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm test"
   },
+  "dependencies": {
+    "ajv": "^6.12.6",
+    "js-yaml": "^3.14.1"
+  },
   "peerDependencies": {
     "@oriva/sdk": "0.1.x || 0.2.x"
   },

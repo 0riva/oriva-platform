@@ -7,6 +7,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { callOperation } from './client.js';
 import { getSpecInfo, projectTools } from './openapi.js';
+import { getActiveManifestForTool, emitInvokeSkillEvent } from './reaEmitter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8')) as {
@@ -59,8 +60,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       isError: true,
     };
   }
+
+  // --- REA invoke-skill emission (OQ-10: only when active manifest exists) ---
+  let invocationId: string | undefined;
   try {
-    const result = await callOperation(op, request.params.arguments ?? {}, { apiKey });
+    const manifest = await getActiveManifestForTool(op.toolName, apiKey);
+    if (manifest) {
+      invocationId = crypto.randomUUID();
+      // Fire-and-forget — do not await; do not let emission failure surface to the agent.
+      emitInvokeSkillEvent(
+        {
+          manifest_id: manifest.id,
+          invocation_id: invocationId,
+          mcp_tool_name: op.toolName,
+          agent_principal_id: null, // Phase 1: agent identity not yet threaded through API key context
+        },
+        apiKey
+      ).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`[oriva-mcp] background invoke-skill emission error: ${message}\n`);
+      });
+    }
+  } catch (err) {
+    // Manifest lookup errors must never block the tool call.
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`[oriva-mcp] manifest lookup error for "${op.toolName}": ${message}\n`);
+  }
+  // -------------------------------------------------------------------------
+
+  try {
+    const args = request.params.arguments ?? {};
+    // Thread the invocation_id into request args so tool logic can include it
+    // in payment-link metadata (T-09). The field is prefixed to avoid collision
+    // with OpenAPI-defined body fields.
+    const enrichedArgs = invocationId ? { ...args, _oriva_invocation_id: invocationId } : args;
+
+    const result = await callOperation(op, enrichedArgs, { apiKey });
     const prefix = result.ok ? '' : `HTTP ${result.status}\n`;
     return {
       content: [{ type: 'text', text: `${prefix}${result.text}` }],

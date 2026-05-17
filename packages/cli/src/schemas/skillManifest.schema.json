@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "skill.yaml",
+  "description": "Schema for the Oriva skill manifest file published via `oriva skill-publish`.",
+  "type": "object",
+  "required": [
+    "mcp_tool_name",
+    "version",
+    "pricing_model",
+    "revenue_share_bps",
+    "outcome_verifier_type",
+    "outcome_verifier_config"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "mcp_tool_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Canonical MCP tool identifier (e.g. 'oriva.checkout.create_payment_link')."
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Semver string (e.g. '1.0.0')."
+    },
+    "pricing_model": {
+      "type": "string",
+      "const": "per-outcome",
+      "description": "Phase 1 supports only 'per-outcome'."
+    },
+    "revenue_share_bps": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000,
+      "description": "Revenue share in basis points (0 = 0%, 10000 = 100%)."
+    },
+    "outcome_verifier_type": {
+      "type": "string",
+      "const": "stripe_webhook",
+      "description": "Phase 1 supports only 'stripe_webhook'."
+    },
+    "outcome_verifier_config": {
+      "type": "object",
+      "description": "Verifier-specific configuration. For stripe_webhook: { event_types: [\"checkout.session.completed\"] }.",
+      "additionalProperties": true
+    }
+  }
+}

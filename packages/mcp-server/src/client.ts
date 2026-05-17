@@ -59,12 +59,36 @@ export async function callOperation(
 ): Promise<CallResult> {
   const baseUrl = options.baseUrl ?? process.env.ORIVA_API_BASE_URL ?? DEFAULT_BASE_URL;
 
+  // Extract the Oriva-internal invocation ID injected by the CallToolRequestSchema handler.
+  // This field is NOT part of the OpenAPI spec, so we strip it from args before passing to
+  // buildBody / pickByKeys, then merge it into the request body's metadata field so that
+  // downstream tools (e.g. createPaymentLink) can thread it into Stripe payment-link metadata.
+  const invocationId = args._oriva_invocation_id as string | undefined;
+  const cleanArgs = invocationId
+    ? Object.fromEntries(Object.entries(args).filter(([k]) => k !== '_oriva_invocation_id'))
+    : args;
+
+  const body = buildBody(cleanArgs, op.bodyFields);
+
+  // Merge invocation tracking into the body metadata field if the tool supports it
+  // (i.e. the body is non-empty, so this is a mutating operation tool like createPaymentLink).
+  if (invocationId && Object.keys(body).length > 0) {
+    const existingMetadata =
+      body.metadata && typeof body.metadata === 'object' && !Array.isArray(body.metadata)
+        ? (body.metadata as Record<string, unknown>)
+        : {};
+    body.metadata = {
+      ...existingMetadata,
+      oriva_invocation_id: invocationId,
+    };
+  }
+
   const result = await runCli(
     {
       toolName: op.toolName,
-      pathParams: pickByKeys(args, op.pathParams),
-      queryParams: pickByKeys(args, op.queryParams),
-      body: buildBody(args, op.bodyFields),
+      pathParams: pickByKeys(cleanArgs, op.pathParams),
+      queryParams: pickByKeys(cleanArgs, op.queryParams),
+      body,
     },
     {
       apiKey: options.apiKey,
