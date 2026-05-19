@@ -1,6 +1,6 @@
 {
   "name": "@oriva/cli",
-  "version": "0.1.2",
+  "version": "0.2.1",
   "description": "Spec-driven CLI for the Oriva public API. Every endpoint is a subcommand \u2014 no Node code required to call the API.",
   "license": "MIT",
   "type": "module",
