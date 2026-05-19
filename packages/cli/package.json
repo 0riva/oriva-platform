@@ -1,6 +1,6 @@
 {
   "name": "@oriva/cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Spec-driven CLI for the Oriva public API. Every endpoint is a subcommand \u2014 no Node code required to call the API.",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,7 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "peerDependencies": {
-    "@oriva/sdk": "0.1.x || 0.2.x"
+    "@oriva/sdk": "0.1.x || 0.2.x || 0.3.x"
   },
   "peerDependenciesMeta": {
     "@oriva/sdk": {
