@@ -45,6 +45,7 @@ import { createAuthPublicRouter } from '../src/express/routes/auth-public';
 import { createMarketplaceRouter } from '../src/express/routes/marketplace';
 import { createUserPublicRouter } from '../src/express/routes/user-public';
 import { createMeTokensRouter } from '../src/express/routes/me-tokens';
+import { createPaymentsRouter } from '../src/express/routes/payments';
 // TEMPORARILY DISABLED - limohawk feature incomplete, missing service files
 // import limohawkRouter from '../src/express/routes/limohawk';
 import { optionalSchemaRouter } from '../src/express/middleware/schemaRouter';
@@ -1163,6 +1164,9 @@ app.use('/api/v1/auth', createAuthPublicRouter(supabase, supabaseAuth, logger, v
 
 // Mount Personal Access Tokens router (JWT-authed PAT management at /api/v1/me/tokens)
 app.use('/api/v1', createMeTokensRouter(supabase, logger, validateAuth));
+
+// Mount Payments router (API-key-authed at /api/v1/payments/*)
+app.use('/api/v1/payments', createPaymentsRouter(supabase, logger, validateApiKey));
 
 // Mount Merlin AI router (renamed from Hugo AI)
 const merlinRouter = createMerlinAIRouter(supabase);
