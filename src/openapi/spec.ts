@@ -12,6 +12,7 @@ import './schemas/developer';
 import './schemas/entries';
 import './schemas/events';
 import './schemas/me-tokens';
+import './schemas/payments';
 
 const generator = new OpenApiGeneratorV31(registry.definitions);
 

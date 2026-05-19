@@ -46,27 +46,45 @@
                 "format": "uuid"
               },
               "username": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "displayName": {
                 "type": "string"
               },
               "email": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "email"
               },
               "bio": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "location": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "website": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uri"
               },
               "avatar": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uri"
               },
               "createdAt": {
@@ -124,7 +142,11 @@
             ]
           }
         },
-        "required": ["ok", "success", "data"]
+        "required": [
+          "ok",
+          "success",
+          "data"
+        ]
       },
       "AnalyticsSummary": {
         "type": "object",
@@ -200,16 +222,28 @@
                     "format": "date-time"
                   }
                 },
-                "required": ["start", "end"]
+                "required": [
+                  "start",
+                  "end"
+                ]
               }
             },
-            "required": ["overview", "metrics", "recentActivity", "timeRange"]
+            "required": [
+              "overview",
+              "metrics",
+              "recentActivity",
+              "timeRange"
+            ]
           },
           "message": {
             "type": "string"
           }
         },
-        "required": ["ok", "success", "data"]
+        "required": [
+          "ok",
+          "success",
+          "data"
+        ]
       },
       "ProfileSummary": {
         "type": "object",
@@ -225,7 +259,10 @@
             "type": "boolean"
           },
           "avatar": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           },
           "isDefault": {
@@ -262,14 +299,23 @@
                 "type": "boolean"
               },
               "avatar": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uri"
               },
               "bio": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "location": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "updatedAt": {
                 "type": "string",
@@ -290,7 +336,11 @@
             "type": "string"
           }
         },
-        "required": ["ok", "success", "data"]
+        "required": [
+          "ok",
+          "success",
+          "data"
+        ]
       },
       "GroupSummary": {
         "type": "object",
@@ -313,14 +363,23 @@
             "example": "admin"
           },
           "description": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "image_url": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           },
           "external_link": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           }
         },
@@ -353,11 +412,20 @@
             "format": "date-time"
           },
           "avatar": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           }
         },
-        "required": ["memberId", "displayName", "role", "joinedAt", "avatar"]
+        "required": [
+          "memberId",
+          "displayName",
+          "role",
+          "joinedAt",
+          "avatar"
+        ]
       },
       "AuthSessionResponse": {
         "type": "object",
@@ -369,14 +437,23 @@
                 "type": "string"
               },
               "email": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "email"
               },
               "display_name": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "username": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "subscription_tier": {
                 "type": "string"
@@ -405,7 +482,12 @@
             "type": "integer"
           }
         },
-        "required": ["user", "access_token", "refresh_token", "expires_in"]
+        "required": [
+          "user",
+          "access_token",
+          "refresh_token",
+          "expires_in"
+        ]
       },
       "AuthProfileResponse": {
         "type": "object",
@@ -424,14 +506,20 @@
                 "format": "uuid"
               },
               "email": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "email"
               },
               "displayName": {
                 "type": "string"
               },
               "avatar": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uri"
               },
               "authType": {
@@ -471,7 +559,11 @@
             ]
           }
         },
-        "required": ["ok", "success", "data"]
+        "required": [
+          "ok",
+          "success",
+          "data"
+        ]
       },
       "RawProfileResponse": {
         "type": "object",
@@ -480,23 +572,41 @@
             "type": "string"
           },
           "display_name": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "username": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "bio": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "avatar_url": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           },
           "location": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "website_url": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           }
         },
@@ -523,7 +633,11 @@
             "type": "integer"
           }
         },
-        "required": ["access_token", "refresh_token", "expires_in"]
+        "required": [
+          "access_token",
+          "refresh_token",
+          "expires_in"
+        ]
       },
       "TeamMember": {
         "type": "object",
@@ -533,13 +647,22 @@
             "format": "uuid"
           },
           "displayName": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "username": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "avatarUrl": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           },
           "role": {
@@ -560,7 +683,10 @@
                 "type": "string"
               }
             },
-            "required": ["id", "name"]
+            "required": [
+              "id",
+              "name"
+            ]
           }
         },
         "required": [
@@ -590,20 +716,32 @@
             "type": "string"
           },
           "tagline": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "description": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "category": {
             "type": "string"
           },
           "icon_url": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           },
           "screenshots": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string",
               "format": "uri"
@@ -616,7 +754,10 @@
             "type": "string"
           },
           "pricing_config": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "additionalProperties": {}
           },
           "install_count": {
@@ -631,13 +772,21 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "pending_review", "approved", "rejected"]
+            "enum": [
+              "draft",
+              "pending_review",
+              "approved",
+              "rejected"
+            ]
           },
           "is_active": {
             "type": "boolean"
           },
           "supported_audience": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             }
@@ -682,7 +831,10 @@
             "type": "boolean"
           },
           "settings": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "additionalProperties": {}
           },
           "app": {
@@ -708,7 +860,10 @@
             "type": "string"
           },
           "content": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "profile_id": {
             "type": "string",
@@ -718,7 +873,10 @@
             "type": "string"
           },
           "marketplace_metadata": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "additionalProperties": {}
           },
           "created_at": {
@@ -750,13 +908,19 @@
             "type": "string"
           },
           "description": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "collection_type": {
             "type": "string"
           },
           "organization_rules": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "additionalProperties": {}
           },
           "created_at": {
@@ -837,7 +1001,10 @@
             "format": "date-time"
           },
           "location": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "isOnline": {
             "type": "boolean"
@@ -850,10 +1017,16 @@
             "format": "uuid"
           },
           "maxAttendees": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "currentAttendees": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "price": {
             "type": "number",
@@ -866,7 +1039,10 @@
             }
           },
           "imageUrl": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           },
           "createdAt": {
@@ -902,11 +1078,15 @@
         "properties": {
           "ok": {
             "type": "boolean",
-            "enum": [true]
+            "enum": [
+              true
+            ]
           },
           "success": {
             "type": "boolean",
-            "enum": [true]
+            "enum": [
+              true
+            ]
           },
           "data": {
             "type": "object",
@@ -931,7 +1111,10 @@
                 "format": "date-time"
               },
               "expires_at": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               }
             },
@@ -945,7 +1128,11 @@
             ]
           }
         },
-        "required": ["ok", "success", "data"]
+        "required": [
+          "ok",
+          "success",
+          "data"
+        ]
       },
       "PersonalTokenSummary": {
         "type": "object",
@@ -965,11 +1152,17 @@
             "format": "date-time"
           },
           "last_used_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "expires_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "is_active": {
@@ -991,11 +1184,15 @@
         "properties": {
           "ok": {
             "type": "boolean",
-            "enum": [true]
+            "enum": [
+              true
+            ]
           },
           "success": {
             "type": "boolean",
-            "enum": [true]
+            "enum": [
+              true
+            ]
           },
           "data": {
             "type": "array",
@@ -1004,7 +1201,55 @@
             }
           }
         },
-        "required": ["ok", "success", "data"]
+        "required": [
+          "ok",
+          "success",
+          "data"
+        ]
+      },
+      "PaymentLink": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Stripe Checkout Session ID (cs_…)."
+              },
+              "url": {
+                "type": "string",
+                "description": "Hosted Checkout URL. Redirect the buyer here."
+              },
+              "expires_at": {
+                "type": "integer",
+                "description": "Unix timestamp (seconds) when the Checkout Session expires."
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "expires_at"
+            ]
+          }
+        },
+        "required": [
+          "ok",
+          "success",
+          "data"
+        ]
       }
     },
     "parameters": {}
@@ -1013,7 +1258,9 @@
     "/api/v1/user/me": {
       "get": {
         "operationId": "getCurrentUser",
-        "tags": ["User"],
+        "tags": [
+          "User"
+        ],
         "summary": "Get current user",
         "description": "Returns the authenticated user's active profile and API key metadata.",
         "security": [
@@ -1041,7 +1288,9 @@
     "/api/v1/analytics/summary": {
       "get": {
         "operationId": "getAnalyticsSummary",
-        "tags": ["Analytics"],
+        "tags": [
+          "Analytics"
+        ],
         "summary": "Get analytics summary",
         "description": "Returns 7-day usage analytics for the authenticated API key.",
         "security": [
@@ -1069,7 +1318,9 @@
     "/api/v1/profiles/available": {
       "get": {
         "operationId": "listProfiles",
-        "tags": ["Profiles"],
+        "tags": [
+          "Profiles"
+        ],
         "summary": "List available profiles",
         "description": "Returns all non-anonymous active profiles for the authenticated API key.",
         "security": [
@@ -1098,7 +1349,11 @@
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -1112,7 +1367,9 @@
     "/api/v1/profiles/active": {
       "get": {
         "operationId": "getActiveProfile",
-        "tags": ["Profiles"],
+        "tags": [
+          "Profiles"
+        ],
         "summary": "Get active profile",
         "description": "Returns the default active (non-anonymous) profile for the authenticated API key.",
         "security": [
@@ -1138,7 +1395,11 @@
                       "$ref": "#/components/schemas/ProfileSummary"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -1152,7 +1413,9 @@
     "/api/v1/profiles/{profileId}": {
       "put": {
         "operationId": "updateProfile",
-        "tags": ["Profiles"],
+        "tags": [
+          "Profiles"
+        ],
         "summary": "Update a profile",
         "security": [
           {
@@ -1186,10 +1449,16 @@
                     "format": "uri"
                   },
                   "bio": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "location": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -1219,7 +1488,9 @@
     "/api/v1/profiles/{profileId}/activate": {
       "post": {
         "operationId": "activateProfile",
-        "tags": ["Profiles"],
+        "tags": [
+          "Profiles"
+        ],
         "summary": "Activate a profile",
         "description": "Switches the active profile to the specified profile.",
         "security": [
@@ -1264,10 +1535,17 @@
                           "format": "date-time"
                         }
                       },
-                      "required": ["activeProfile", "switchedAt"]
+                      "required": [
+                        "activeProfile",
+                        "switchedAt"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -1284,7 +1562,9 @@
     "/api/v1/groups": {
       "get": {
         "operationId": "listGroups",
-        "tags": ["Groups"],
+        "tags": [
+          "Groups"
+        ],
         "summary": "List groups",
         "description": "Returns all groups the authenticated user created or joined.",
         "security": [
@@ -1313,7 +1593,11 @@
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -1327,7 +1611,9 @@
     "/api/v1/groups/{groupId}/members": {
       "get": {
         "operationId": "listGroupMembers",
-        "tags": ["Groups"],
+        "tags": [
+          "Groups"
+        ],
         "summary": "Get group members",
         "description": "Returns members of a group. Requires the caller to be the creator or a member.",
         "security": [
@@ -1368,7 +1654,11 @@
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -1391,7 +1681,9 @@
     "/api/v1/auth/register": {
       "post": {
         "operationId": "register",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Register a new user",
         "requestBody": {
           "content": {
@@ -1416,7 +1708,10 @@
                   },
                   "preferences": {}
                 },
-                "required": ["email", "password"]
+                "required": [
+                  "email",
+                  "password"
+                ]
               }
             }
           }
@@ -1444,7 +1739,9 @@
     "/api/v1/auth/login": {
       "post": {
         "operationId": "login",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Log in",
         "requestBody": {
           "content": {
@@ -1461,7 +1758,10 @@
                     "minLength": 1
                   }
                 },
-                "required": ["email", "password"]
+                "required": [
+                  "email",
+                  "password"
+                ]
               }
             }
           }
@@ -1489,7 +1789,9 @@
     "/api/v1/auth/logout": {
       "post": {
         "operationId": "logout",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Log out",
         "description": "Invalidates the current session. Requires Authorization header.",
         "security": [
@@ -1510,7 +1812,9 @@
     "/api/v1/auth/token/refresh": {
       "post": {
         "operationId": "refreshToken",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Refresh access token",
         "requestBody": {
           "content": {
@@ -1523,7 +1827,9 @@
                     "minLength": 1
                   }
                 },
-                "required": ["refresh_token"]
+                "required": [
+                  "refresh_token"
+                ]
               }
             }
           }
@@ -1551,7 +1857,9 @@
     "/api/v1/auth/profile": {
       "get": {
         "operationId": "getAuthProfile",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Get auth profile",
         "description": "Returns the authenticated user identity and API key metadata.",
         "security": [
@@ -1580,7 +1888,9 @@
       },
       "patch": {
         "operationId": "patchAuthProfile",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Update profile (partial)",
         "security": [
           {
@@ -1636,7 +1946,9 @@
       },
       "put": {
         "operationId": "putAuthProfile",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Update profile (full)",
         "description": "Superset of PATCH — also accepts preferences and data_retention_days (min 30).",
         "security": [
@@ -1703,7 +2015,9 @@
     "/api/v1/auth/account": {
       "delete": {
         "operationId": "deleteAccount",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Delete account",
         "security": [
           {
@@ -1723,7 +2037,9 @@
     "/api/v1/sessions": {
       "get": {
         "operationId": "listSessions",
-        "tags": ["Sessions"],
+        "tags": [
+          "Sessions"
+        ],
         "summary": "List sessions",
         "description": "Returns the user's sessions. Sessions feature is not yet implemented — returns empty paginated list.",
         "security": [
@@ -1768,16 +2084,28 @@
                               "type": "integer"
                             }
                           },
-                          "required": ["page", "limit", "total", "totalPages"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
-                      "required": ["pagination"]
+                      "required": [
+                        "pagination"
+                      ]
                     },
                     "message": {
                       "type": "string"
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -1791,7 +2119,9 @@
     "/api/v1/sessions/upcoming": {
       "get": {
         "operationId": "listUpcomingSessions",
-        "tags": ["Sessions"],
+        "tags": [
+          "Sessions"
+        ],
         "summary": "List upcoming sessions",
         "description": "Returns upcoming sessions. Sessions feature is not yet implemented — returns empty list.",
         "security": [
@@ -1821,7 +2151,11 @@
                       "type": "string"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -1835,7 +2169,9 @@
     "/api/v1/team/members": {
       "get": {
         "operationId": "listTeamMembers",
-        "tags": ["Team"],
+        "tags": [
+          "Team"
+        ],
         "summary": "List team members",
         "description": "Returns group memberships for the authenticated user as a flat list of team members.",
         "security": [
@@ -1876,10 +2212,18 @@
                           }
                         }
                       },
-                      "required": ["total", "roles"]
+                      "required": [
+                        "total",
+                        "roles"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -1893,7 +2237,9 @@
     "/api/v1/marketplace/apps": {
       "get": {
         "operationId": "listMarketplaceApps",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Browse marketplace apps",
         "description": "Returns paginated list of approved, active marketplace apps.",
         "security": [
@@ -1977,13 +2323,25 @@
                               "type": "integer"
                             }
                           },
-                          "required": ["page", "limit", "total", "totalPages"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
-                      "required": ["pagination"]
+                      "required": [
+                        "pagination"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -1997,7 +2355,9 @@
     "/api/v1/marketplace/trending": {
       "get": {
         "operationId": "listTrendingApps",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Trending apps",
         "description": "Returns approved apps sorted by install count (top 20).",
         "security": [
@@ -2026,7 +2386,11 @@
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2040,7 +2404,9 @@
     "/api/v1/marketplace/featured": {
       "get": {
         "operationId": "listFeaturedApps",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Featured apps",
         "description": "Returns featured approved apps (curated subset of top apps).",
         "security": [
@@ -2069,7 +2435,11 @@
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2083,7 +2453,9 @@
     "/api/v1/marketplace/categories": {
       "get": {
         "operationId": "listMarketplaceCategories",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "List app categories",
         "description": "Returns distinct categories from approved apps with their app counts. Note: a second registration of this path exists (no auth, collections-table version) but is shadowed by this route (Express first-match).",
         "security": [
@@ -2117,11 +2489,18 @@
                             "type": "integer"
                           }
                         },
-                        "required": ["category", "count"]
+                        "required": [
+                          "category",
+                          "count"
+                        ]
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2135,7 +2514,9 @@
     "/api/v1/marketplace/apps/{appId}": {
       "get": {
         "operationId": "getMarketplaceApp",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Get app details",
         "security": [
           {
@@ -2171,7 +2552,11 @@
                       "$ref": "#/components/schemas/MarketplaceApp"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2188,7 +2573,9 @@
     "/api/v1/marketplace/installed": {
       "get": {
         "operationId": "listInstalledApps",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "List installed apps",
         "description": "Returns all apps installed by the authenticated user.",
         "security": [
@@ -2256,13 +2643,25 @@
                               "type": "integer"
                             }
                           },
-                          "required": ["page", "limit", "total", "totalPages"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
-                      "required": ["pagination"]
+                      "required": [
+                        "pagination"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -2276,7 +2675,9 @@
     "/api/v1/marketplace/install/{appId}": {
       "post": {
         "operationId": "installMarketplaceApp",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Install app",
         "security": [
           {
@@ -2330,7 +2731,12 @@
                       "type": "string"
                     }
                   },
-                  "required": ["ok", "success", "data", "message"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "message"
+                  ]
                 }
               }
             }
@@ -2350,7 +2756,9 @@
     "/api/v1/marketplace/uninstall/{appId}": {
       "delete": {
         "operationId": "uninstallMarketplaceApp",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Uninstall app",
         "security": [
           {
@@ -2386,7 +2794,11 @@
                       "type": "string"
                     }
                   },
-                  "required": ["ok", "success", "message"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "message"
+                  ]
                 }
               }
             }
@@ -2403,7 +2815,9 @@
     "/api/v1/marketplace/items": {
       "get": {
         "operationId": "listMarketplaceItems",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "List marketplace items",
         "description": "Public listing of published marketplace items (entry-based). No authentication required.",
         "parameters": [
@@ -2524,13 +2938,25 @@
                               "type": "integer"
                             }
                           },
-                          "required": ["page", "limit", "total", "totalPages"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
-                      "required": ["pagination"]
+                      "required": [
+                        "pagination"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -2541,7 +2967,9 @@
     "/api/v1/marketplace/items/{id}": {
       "get": {
         "operationId": "getMarketplaceItem",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Get marketplace item",
         "description": "Returns a single published marketplace item by ID.",
         "parameters": [
@@ -2573,7 +3001,11 @@
                       "$ref": "#/components/schemas/MarketplaceItem"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2587,7 +3019,9 @@
     "/api/v1/marketplace/search": {
       "post": {
         "operationId": "searchMarketplace",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Search marketplace",
         "description": "Full-text search across marketplace items. No authentication required.",
         "requestBody": {
@@ -2612,7 +3046,9 @@
                     "type": "integer"
                   }
                 },
-                "required": ["query"]
+                "required": [
+                  "query"
+                ]
               }
             }
           }
@@ -2656,13 +3092,25 @@
                               "type": "integer"
                             }
                           },
-                          "required": ["page", "limit", "total", "totalPages"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
-                      "required": ["pagination"]
+                      "required": [
+                        "pagination"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -2673,7 +3121,9 @@
     "/api/v1/marketplace/categories/tree": {
       "get": {
         "operationId": "getCategoryTree",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Category tree",
         "description": "Returns marketplace categories as a hierarchical tree from the collections table. Children are nested category objects of the same shape.",
         "responses": {
@@ -2713,7 +3163,11 @@
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2724,7 +3178,9 @@
     "/api/v1/marketplace/categories/{id}": {
       "get": {
         "operationId": "getMarketplaceCategory",
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Get category",
         "description": "Returns a single marketplace category from the collections table.",
         "parameters": [
@@ -2756,7 +3212,11 @@
                       "$ref": "#/components/schemas/Category"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2770,7 +3230,9 @@
     "/api/v1/developer/apps": {
       "get": {
         "operationId": "listDeveloperApps",
-        "tags": ["Developer"],
+        "tags": [
+          "Developer"
+        ],
         "summary": "List developer apps",
         "description": "Returns all marketplace apps owned by the authenticated developer.",
         "security": [
@@ -2799,7 +3261,11 @@
                       }
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2811,7 +3277,9 @@
       },
       "post": {
         "operationId": "createDeveloperApp",
-        "tags": ["Developer"],
+        "tags": [
+          "Developer"
+        ],
         "summary": "Create app",
         "security": [
           {
@@ -2872,7 +3340,11 @@
                     }
                   }
                 },
-                "required": ["name", "slug", "category"]
+                "required": [
+                  "name",
+                  "slug",
+                  "category"
+                ]
               }
             }
           }
@@ -2895,7 +3367,11 @@
                       "$ref": "#/components/schemas/MarketplaceApp"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2909,7 +3385,9 @@
     "/api/v1/developer/apps/{appId}": {
       "get": {
         "operationId": "getDeveloperApp",
-        "tags": ["Developer"],
+        "tags": [
+          "Developer"
+        ],
         "summary": "Get developer app",
         "security": [
           {
@@ -2945,7 +3423,11 @@
                       "$ref": "#/components/schemas/MarketplaceApp"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2960,7 +3442,9 @@
       },
       "put": {
         "operationId": "updateDeveloperApp",
-        "tags": ["Developer"],
+        "tags": [
+          "Developer"
+        ],
         "summary": "Update app",
         "security": [
           {
@@ -3051,7 +3535,11 @@
                       "$ref": "#/components/schemas/MarketplaceApp"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -3066,7 +3554,9 @@
       },
       "delete": {
         "operationId": "deleteDeveloperApp",
-        "tags": ["Developer"],
+        "tags": [
+          "Developer"
+        ],
         "summary": "Delete app",
         "description": "Only draft apps can be deleted. Approved apps must be deactivated first.",
         "security": [
@@ -3104,7 +3594,9 @@
     "/api/v1/developer/apps/{appId}/submit": {
       "post": {
         "operationId": "submitDeveloperApp",
-        "tags": ["Developer"],
+        "tags": [
+          "Developer"
+        ],
         "summary": "Submit app for review",
         "description": "Transitions app from draft → pending_review.",
         "security": [
@@ -3144,7 +3636,12 @@
                       "type": "string"
                     }
                   },
-                  "required": ["ok", "success", "data", "message"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "message"
+                  ]
                 }
               }
             }
@@ -3164,7 +3661,9 @@
     "/api/v1/developer/apps/{appId}/resubmit": {
       "post": {
         "operationId": "resubmitDeveloperApp",
-        "tags": ["Developer"],
+        "tags": [
+          "Developer"
+        ],
         "summary": "Resubmit rejected app",
         "description": "Updates fields and resubmits a rejected app for review.",
         "security": [
@@ -3259,7 +3758,12 @@
                       "type": "string"
                     }
                   },
-                  "required": ["ok", "success", "data", "message"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "message"
+                  ]
                 }
               }
             }
@@ -3279,7 +3783,9 @@
     "/api/v1/entries": {
       "get": {
         "operationId": "listEntries",
-        "tags": ["Entries"],
+        "tags": [
+          "Entries"
+        ],
         "summary": "List entries",
         "description": "Returns paginated entries for the authenticated user's profile.",
         "security": [
@@ -3349,13 +3855,25 @@
                               "type": "integer"
                             }
                           },
-                          "required": ["page", "limit", "total", "totalPages"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
-                      "required": ["pagination"]
+                      "required": [
+                        "pagination"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -3372,7 +3890,9 @@
     "/api/v1/templates": {
       "get": {
         "operationId": "listTemplates",
-        "tags": ["Entries"],
+        "tags": [
+          "Entries"
+        ],
         "summary": "List templates",
         "description": "Returns available entry templates. Not yet implemented — returns empty list.",
         "security": [
@@ -3417,13 +3937,25 @@
                               "type": "integer"
                             }
                           },
-                          "required": ["page", "limit", "total", "totalPages"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
-                      "required": ["pagination"]
+                      "required": [
+                        "pagination"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data", "meta"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -3437,7 +3969,9 @@
     "/api/v1/storage": {
       "get": {
         "operationId": "getStorage",
-        "tags": ["Entries"],
+        "tags": [
+          "Entries"
+        ],
         "summary": "Get storage info",
         "description": "Returns storage usage for the authenticated user. Not yet implemented — returns empty object.",
         "security": [
@@ -3464,7 +3998,11 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -3478,7 +4016,9 @@
     "/api/v1/ui/notifications": {
       "post": {
         "operationId": "createUiNotification",
-        "tags": ["UI"],
+        "tags": [
+          "UI"
+        ],
         "summary": "Create notification",
         "description": "Creates a UI notification for the authenticated user.",
         "security": [
@@ -3507,10 +4047,16 @@
                           "type": "string"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -3524,7 +4070,9 @@
     "/api/oriva/events": {
       "get": {
         "operationId": "listEvents",
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "List events",
         "description": "Returns active events with optional filtering by category and date range.",
         "parameters": [
@@ -3621,7 +4169,9 @@
       },
       "post": {
         "operationId": "createEvent",
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Create event",
         "security": [
           {
@@ -3658,10 +4208,16 @@
                     "minLength": 1
                   },
                   "location": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "maxAttendees": {
-                    "type": ["integer", "null"],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
                     "exclusiveMinimum": 0
                   },
                   "price": {
@@ -3676,7 +4232,10 @@
                     "maxItems": 20
                   },
                   "imageUrl": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "uri"
                   }
                 },
@@ -3713,7 +4272,12 @@
                       "type": "string"
                     }
                   },
-                  "required": ["ok", "success", "data", "message"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data",
+                    "message"
+                  ]
                 }
               }
             }
@@ -3730,7 +4294,9 @@
     "/api/oriva/events/{eventId}": {
       "get": {
         "operationId": "getEvent",
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Get event",
         "parameters": [
           {
@@ -3761,7 +4327,11 @@
                       "$ref": "#/components/schemas/Event"
                     }
                   },
-                  "required": ["ok", "success", "data"]
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -3775,7 +4345,9 @@
     "/api/v1/me/tokens": {
       "post": {
         "operationId": "createPersonalAccessToken",
-        "tags": ["PersonalTokens"],
+        "tags": [
+          "PersonalTokens"
+        ],
         "summary": "Create a Personal Access Token",
         "description": "Issues a new Personal Access Token (PAT) scoped to the authenticated account. The full token value is returned **once** and cannot be retrieved again. PATs carry broad `[\"read\",\"write\"]` permissions and are intended for personal tooling (e.g. MCP servers).",
         "security": [
@@ -3802,7 +4374,9 @@
                     "description": "ISO 8601 expiry date. Omit for a non-expiring token."
                   }
                 },
-                "required": ["name"]
+                "required": [
+                  "name"
+                ]
               }
             }
           }
@@ -3828,7 +4402,9 @@
       },
       "get": {
         "operationId": "listPersonalAccessTokens",
-        "tags": ["PersonalTokens"],
+        "tags": [
+          "PersonalTokens"
+        ],
         "summary": "List Personal Access Tokens",
         "description": "Returns all PATs belonging to the authenticated account. Full token values and hashes are never returned.",
         "security": [
@@ -3856,7 +4432,9 @@
     "/api/v1/me/tokens/{id}": {
       "delete": {
         "operationId": "revokePersonalAccessToken",
-        "tags": ["PersonalTokens"],
+        "tags": [
+          "PersonalTokens"
+        ],
         "summary": "Revoke a Personal Access Token",
         "description": "Sets `is_active = false` on the token (soft-delete). The row is preserved for audit purposes. Returns 404 if the token does not belong to this account.",
         "security": [
@@ -3884,6 +4462,113 @@
           },
           "404": {
             "description": "Token not found or does not belong to this account"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/payment-links": {
+      "post": {
+        "operationId": "createPaymentLink",
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Create a payment link (Checkout Session)",
+        "description": "Creates a Stripe Checkout Session and returns a one-time hosted payment URL.\n\n**Funds-flow modes**\n\n| Mode | When | Who is charged | Oriva fee |\n|---|---|---|---|\n| **Direct Charge** | `merchant_connect_account_id` present | Buyer charged via merchant Connect account | 10% `application_fee_amount` deducted at charge time. `funds_flow=direct_charge` written to session metadata. |\n| **Separate Transfers** | `merchant_connect_account_id` absent | Buyer charged on Oriva platform account | REA cron distributes author share post-settlement. `funds_flow=separate_transfers` written to session metadata. |\n\nThe `funds_flow` field in the Stripe metadata is set automatically by the server based on the presence of `merchant_connect_account_id` — callers do not set it.\n\nRequires an active `oriva_pk_` API key whose owner has a registered REA agent record.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount_cents": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99999999,
+                    "description": "Charge amount in the smallest currency unit (e.g. cents for USD). Range 1–99,999,999."
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "description": "ISO 4217 three-letter currency code (e.g. \"usd\")."
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Product description shown on the Stripe Checkout page."
+                  },
+                  "merchant_connect_account_id": {
+                    "type": "string",
+                    "pattern": "^acct_[A-Za-z0-9]+$",
+                    "description": "Stripe Connect account ID (format: acct_…). When present the session runs as a Direct Charge: Stripe charges the buyer via the merchant account; Oriva collects a 10% application fee. When absent the session falls back to Separate Transfers: Oriva charges on the platform account and distributes via the REA payout cron."
+                  },
+                  "oriva_manifest_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "REA manifest UUID for skill royalty attribution."
+                  },
+                  "oriva_invocation_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Unique invocation UUID for analytics and deduplication."
+                  },
+                  "success_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL the buyer is redirected to after a successful payment. Must use https://."
+                  },
+                  "cancel_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL the buyer is redirected to if they abandon the checkout. Must use https://."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "description": "Arbitrary key-value pairs forwarded to the Stripe Checkout Session metadata."
+                  }
+                },
+                "required": [
+                  "amount_cents",
+                  "currency",
+                  "success_url",
+                  "cancel_url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Checkout Session created. Redirect the buyer to `data.url`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error — missing required field or invalid format"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "403": {
+            "description": "Caller does not have a registered REA agent record. Register as a skill author at oriva.io/settings/developer before using this endpoint."
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "502": {
+            "description": "Stripe API error — details in response body"
           }
         }
       }
