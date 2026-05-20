@@ -45,6 +45,7 @@ import { createAuthPublicRouter } from '../src/express/routes/auth-public';
 import { createMarketplaceRouter } from '../src/express/routes/marketplace';
 import { createUserPublicRouter } from '../src/express/routes/user-public';
 import { createMeTokensRouter } from '../src/express/routes/me-tokens';
+import { createBridgePublicRouter } from '../src/express/routes/bridge-public';
 import { createPaymentsRouter } from '../src/express/routes/payments';
 // TEMPORARILY DISABLED - limohawk feature incomplete, missing service files
 // import limohawkRouter from '../src/express/routes/limohawk';
@@ -1167,6 +1168,9 @@ app.use('/api/v1', createMeTokensRouter(supabase, logger, validateAuth));
 
 // Mount Payments router (API-key-authed at /api/v1/payments/*)
 app.use('/api/v1/payments', createPaymentsRouter(supabase, logger, validateApiKey));
+
+// Mount Oriva Bridge router (API-key-authed cross-tool sync at /api/v1/bridge/*)
+app.use('/api/v1/bridge', createBridgePublicRouter(supabase, logger, validateApiKey, withAuthContext));
 
 // Mount Merlin AI router (renamed from Hugo AI)
 const merlinRouter = createMerlinAIRouter(supabase);

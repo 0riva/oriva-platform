@@ -64,6 +64,7 @@ const SCANNED_SUBROUTERS: { file: string; prefix: string }[] = [
   { file: '../src/express/routes/marketplace.ts', prefix: '/api/v1' },
   { file: '../src/express/routes/user-public.ts', prefix: '/api/v1' },
   { file: '../src/express/routes/me-tokens.ts', prefix: '/api/v1' },
+  { file: '../src/express/routes/bridge-public.ts', prefix: '/api/v1/bridge' },
 ];
 
 // ── Extract Express routes ────────────────────────────────────────────────────
