@@ -1,8 +1,7 @@
 name: Feature Request
-description: Describe a feature for the autonomous agent queue
+description: Describe a feature for the board queue (worked via /iva)
 title: "Feature: "
 labels:
-  - "symphony/todo"
   - "enhancement"
 body:
   - type: markdown
