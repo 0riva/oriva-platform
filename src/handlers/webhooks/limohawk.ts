@@ -16,7 +16,7 @@
 
 import crypto from 'crypto';
 import { Request, Response } from 'express';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 // ============================================================================
 // Types
@@ -58,12 +58,20 @@ const LIMOHAWK_WEBHOOK_SECRET = process.env.LIMOHAWK_WEBHOOK_SECRET || '';
 // Supabase Client
 // ============================================================================
 
-function getSupabaseServiceClient(): SupabaseClient {
+function getSupabaseServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { db: { schema: 'limohawk' } }
   );
 }
+
+/**
+ * A client bound to the `limohawk` schema. Inferred rather than annotated as
+ * `SupabaseClient`, whose default type parameters pin the schema to `public` and
+ * would reject this client.
+ */
+type LimohawkClient = ReturnType<typeof getSupabaseServiceClient>;
 
 // ============================================================================
 // HMAC Signature Verification
@@ -104,13 +112,13 @@ function verifySignature(payload: string, signature: string, secret: string): bo
  * Returns the event ID if successfully stored, null if duplicate
  */
 async function storeBookingEvent(
-  supabase: SupabaseClient,
+  supabase: LimohawkClient,
   payload: LimohawkWebhookPayload,
   rawPayload: string
 ): Promise<string | null> {
   try {
     const { data, error } = await supabase
-      .from('limohawk.booking_events')
+      .from('booking_events')
       .insert({
         booking_id: payload.booking_id,
         external_customer_id: payload.customer.id,
@@ -145,12 +153,12 @@ async function storeBookingEvent(
  * Mark event as processed
  */
 async function markEventProcessed(
-  supabase: SupabaseClient,
+  supabase: LimohawkClient,
   eventId: string,
   error?: string
 ): Promise<void> {
   await supabase
-    .from('limohawk.booking_events')
+    .from('booking_events')
     .update({
       processed_at: new Date().toISOString(),
       processing_error: error || null,
@@ -166,13 +174,13 @@ async function markEventProcessed(
  * Handle booking.completed event - Award loyalty points
  */
 async function handleBookingCompleted(
-  supabase: SupabaseClient,
+  supabase: LimohawkClient,
   payload: LimohawkWebhookPayload
 ): Promise<AwardPointsResult> {
   const { customer, booking_id, fare } = payload;
 
   // Call the stored function to award points
-  const { data, error } = await supabase.rpc('limohawk.award_points', {
+  const { data, error } = await supabase.rpc('award_points', {
     p_external_customer_id: customer.id,
     p_email: customer.email,
     p_name: customer.name || null,
@@ -199,14 +207,14 @@ async function handleBookingCompleted(
  * Handle booking.refunded event - Process refund
  */
 async function handleBookingRefunded(
-  supabase: SupabaseClient,
+  supabase: LimohawkClient,
   payload: LimohawkWebhookPayload
 ): Promise<void> {
   const { customer, booking_id } = payload;
 
   // Find the original points awarded for this booking
   const { data: originalTransaction } = await supabase
-    .from('limohawk.points_ledger')
+    .from('points_ledger')
     .select('account_id, points_amount')
     .eq('booking_id', booking_id)
     .eq('transaction_type', 'booking_earn')
@@ -218,7 +226,7 @@ async function handleBookingRefunded(
   }
 
   // Deduct the points (negative adjustment)
-  const { error } = await supabase.rpc('limohawk.admin_adjust_points', {
+  const { error } = await supabase.rpc('admin_adjust_points', {
     p_account_id: originalTransaction.account_id,
     p_points_adjustment: -originalTransaction.points_amount,
     p_reason: `Refund for booking ${booking_id}`,
