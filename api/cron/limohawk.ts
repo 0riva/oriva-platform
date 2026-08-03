@@ -13,7 +13,7 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import {
   sendExpiryWarningEmail,
   wasNotificationSent,
@@ -30,10 +30,11 @@ const CRON_SECRET = process.env.LIMOHAWK_CRON_SECRET;
 // Supabase Client
 // ============================================================================
 
-function getSupabaseServiceClient(): SupabaseClient {
+function getSupabaseServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { db: { schema: 'limohawk' } }
   );
 }
 
@@ -133,7 +134,7 @@ async function runExpirePointsJob(): Promise<JobResult> {
 
   try {
     // Call the stored function
-    const { data, error } = await supabase.rpc('limohawk.expire_inactive_points');
+    const { data, error } = await supabase.rpc('expire_inactive_points');
 
     if (error) {
       console.error('[LimohawkCron] expire_inactive_points error:', error);
@@ -203,7 +204,7 @@ async function runExpiryWarningsJob(): Promise<JobResult> {
       rangeEnd.setDate(rangeEnd.getDate() - targetDaysAgo);
 
       const { data: accounts, error } = await supabase
-        .from('limohawk.loyalty_accounts')
+        .from('loyalty_accounts')
         .select('id, email, name, points_balance, last_activity_at')
         .gte('last_activity_at', rangeStart.toISOString())
         .lt('last_activity_at', rangeEnd.toISOString())
