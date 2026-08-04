@@ -27,9 +27,33 @@ import {
 // Stripe Client
 // ============================================================================
 
-const stripe = new Stripe(process.env.LIMOHAWK_STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
+/**
+ * Built lazily, NOT at module scope.
+ *
+ * `new Stripe(undefined)` throws "Neither apiKey nor config.authenticator
+ * provided". At module scope that throw happens at IMPORT time, which kills the
+ * entire serverless function before any handler runs — and `api/webhooks.ts`
+ * imports this module alongside the Twilio, Deepgram and LimoHawk loyalty
+ * handlers, so one unset key took all four routes down with it. Observed in
+ * production: every POST to /api/webhooks/limohawk returned
+ * FUNCTION_INVOCATION_FAILED, with this constructor in the stack.
+ *
+ * `LIMOHAWK_STRIPE_SECRET_KEY` is not set in this project — LimoHawk takes
+ * payment through Revolut, so this Stripe path may be vestigial entirely.
+ * Either way a route that is not configured should fail on its own when called,
+ * never at import.
+ */
+let stripeClient: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const key = process.env.LIMOHAWK_STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('LIMOHAWK_STRIPE_SECRET_KEY is not configured');
+    }
+    stripeClient = new Stripe(key, { apiVersion: '2025-09-30.clover' });
+  }
+  return stripeClient;
+}
 
 // ============================================================================
 // Configuration
@@ -96,7 +120,7 @@ export async function handleStripeLimohawkWebhook(
 
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(rawBodyString, signature, WEBHOOK_SECRET);
+      event = getStripe().webhooks.constructEvent(rawBodyString, signature, WEBHOOK_SECRET);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('[StripeLimohawk] Signature verification failed:', errorMessage);
