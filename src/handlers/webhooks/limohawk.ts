@@ -58,12 +58,27 @@ const LIMOHAWK_WEBHOOK_SECRET = process.env.LIMOHAWK_WEBHOOK_SECRET || '';
 // Supabase Client
 // ============================================================================
 
+/**
+ * This service's Supabase URL is `SUPABASE_URL`. `NEXT_PUBLIC_SUPABASE_URL` is
+ * the Next.js convention used by o-sites and is NOT set in this project's
+ * production environment — reading it yields `undefined`, `createClient` throws
+ * "supabaseUrl is required", and because this factory is called BEFORE the
+ * handler's try block that surfaced as an unhandled 500 on every request. The
+ * live endpoint returned 500 for both a missing and a malformed signature,
+ * where it should have returned 400 then 403.
+ *
+ * Fall back to the NEXT_PUBLIC form so local setups carrying only that name
+ * keep working.
+ */
 function getSupabaseServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { db: { schema: 'limohawk' } }
-  );
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error(
+      'Supabase not configured: set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY',
+    );
+  }
+  return createClient(url, key, { db: { schema: 'limohawk' } });
 }
 
 /**
@@ -254,9 +269,14 @@ export async function handleLimohawkWebhook(req: Request, res: Response): Promis
     return;
   }
 
-  const supabase = getSupabaseServiceClient();
-
   try {
+    // Built INSIDE the try: a misconfiguration here should surface as a handled
+    // 500 with a logged reason, not an unhandled throw that masks every other
+    // response code. Previously this sat above the try, so a missing env var
+    // made the endpoint return 500 to a missing signature (should be 400) and
+    // to a bad signature (should be 403) — indistinguishable from a real fault.
+    const supabase = getSupabaseServiceClient();
+
     // 1. Get signature from headers
     const signature = req.headers['x-limohawk-signature'] as string;
     if (!signature) {

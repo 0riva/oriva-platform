@@ -126,6 +126,23 @@ describe('LimoHawk PostgREST schema qualification', () => {
     return res;
   }
 
+  it('resolves Supabase from SUPABASE_URL — the name this service actually has in production', async () => {
+    // o-platform production sets SUPABASE_URL, NOT NEXT_PUBLIC_SUPABASE_URL (the
+    // Next.js/o-sites convention). Reading only the NEXT_PUBLIC name yielded
+    // undefined, createClient threw "supabaseUrl is required", and because the
+    // factory sat above the handler's try block that surfaced as an unhandled
+    // 500 on EVERY request — the live endpoint returned 500 to both a missing
+    // and a malformed signature, where it owes 400 then 403.
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    process.env.SUPABASE_URL = SUPABASE_URL;
+
+    const res = await postWebhook('booking.completed');
+
+    // Reached the handler and did real work rather than throwing at construction.
+    expect(captured.length).toBeGreaterThan(0);
+    expect(res.state.code).not.toBe(500);
+  });
+
   it('a completed booking awards points via a bare function name in the limohawk schema', async () => {
     await postWebhook('booking.completed');
 
