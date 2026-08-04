@@ -126,7 +126,7 @@
     },
     {
       "source": "/api/webhooks/:path*",
-      "destination": "/api/webhooks"
+      "destination": "/api/webhooks?path=:path*"
     },
     {
       "source": "/api/v1/apps/photos/:path*",
