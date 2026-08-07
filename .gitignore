@@ -101,3 +101,18 @@ api/**/*.js
 !api/test-wrapper.js
 api/**/*.js.map
 api/node_modules/
+
+# --- Secrets: ignore by SHAPE, not by filename (ultra-network#3020) ---
+# The previous rules enumerated filenames, so every new variant walked straight
+# past them: .env.production, .env.fresh, .env.vercel and ten .bak forms were all
+# committed while .env / .env.local / .env*.local were correctly ignored.
+# Ignore everything .env-shaped, then allow back only what is meant to ship.
+.env*
+!.env*example
+!.env*sample
+!.env.template
+
+# Agent / editor tooling carries credentials too — an OpenAI key reached o-core
+# history via .cursor/mcp.json, which no .env rule would ever have caught.
+.cursor/
+.aider*
