@@ -6,6 +6,9 @@ import type {
   ActivateProfileData,
   ActivateProfileErrors,
   ActivateProfileResponses,
+  CreateBridgeConnectionData,
+  CreateBridgeConnectionErrors,
+  CreateBridgeConnectionResponses,
   CreateDeveloperAppData,
   CreateDeveloperAppErrors,
   CreateDeveloperAppResponses,
@@ -27,6 +30,9 @@ import type {
   DeleteDeveloperAppData,
   DeleteDeveloperAppErrors,
   DeleteDeveloperAppResponses,
+  DisconnectBridgeConnectionData,
+  DisconnectBridgeConnectionErrors,
+  DisconnectBridgeConnectionResponses,
   GetActiveProfileData,
   GetActiveProfileErrors,
   GetActiveProfileResponses,
@@ -62,6 +68,15 @@ import type {
   InstallMarketplaceAppData,
   InstallMarketplaceAppErrors,
   InstallMarketplaceAppResponses,
+  ListBridgeConnectionsData,
+  ListBridgeConnectionsErrors,
+  ListBridgeConnectionsResponses,
+  ListBridgesData,
+  ListBridgesErrors,
+  ListBridgesResponses,
+  ListBridgeTasksData,
+  ListBridgeTasksErrors,
+  ListBridgeTasksResponses,
   ListDeveloperAppsData,
   ListDeveloperAppsErrors,
   ListDeveloperAppsResponses,
@@ -140,6 +155,9 @@ import type {
   SubmitDeveloperAppData,
   SubmitDeveloperAppErrors,
   SubmitDeveloperAppResponses,
+  TriggerBridgeSyncData,
+  TriggerBridgeSyncErrors,
+  TriggerBridgeSyncResponses,
   UninstallMarketplaceAppData,
   UninstallMarketplaceAppErrors,
   UninstallMarketplaceAppResponses,
@@ -978,5 +996,113 @@ export const createPaymentLink = <ThrowOnError extends boolean = false>(
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
+    },
+  });
+
+/**
+ * List Bridge tool connections
+ *
+ * Lists the external workflow tools connected for the authenticated account’s organizations, with connection status.
+ */
+export const listBridgeConnections = <ThrowOnError extends boolean = false>(
+  options?: Options<ListBridgeConnectionsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ListBridgeConnectionsResponses,
+    ListBridgeConnectionsErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bridge/connections',
+    ...options,
+  });
+
+/**
+ * Connect a tool headlessly with an API token
+ *
+ * Stores an API token for an external workflow tool so it can sync into the org’s bridges. Headless alternative to the in-app OAuth connect. Requires org admin.
+ */
+export const createBridgeConnection = <ThrowOnError extends boolean = false>(
+  options?: Options<CreateBridgeConnectionData, ThrowOnError>
+) =>
+  (options?.client ?? client).post<
+    CreateBridgeConnectionResponses,
+    CreateBridgeConnectionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bridge/connections',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Disconnect a tool
+ *
+ * Removes the stored token for a platform across the caller’s organizations. Requires org admin.
+ */
+export const disconnectBridgeConnection = <ThrowOnError extends boolean = false>(
+  options: Options<DisconnectBridgeConnectionData, ThrowOnError>
+) =>
+  (options.client ?? client).delete<
+    DisconnectBridgeConnectionResponses,
+    DisconnectBridgeConnectionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bridge/connections/{platform}',
+    ...options,
+  });
+
+/**
+ * List bridges
+ *
+ * Lists the bridge groups the authenticated account’s organizations participate in.
+ */
+export const listBridges = <ThrowOnError extends boolean = false>(
+  options?: Options<ListBridgesData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<ListBridgesResponses, ListBridgesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bridge/groups',
+    ...options,
+  });
+
+/**
+ * List bridge tasks
+ *
+ * Lists the canonical synced tasks in a bridge group. Pass ?bridgeGroupId=<uuid>.
+ */
+export const listBridgeTasks = <ThrowOnError extends boolean = false>(
+  options: Options<ListBridgeTasksData, ThrowOnError>
+) =>
+  (options.client ?? client).get<ListBridgeTasksResponses, ListBridgeTasksErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bridge/tasks',
+    ...options,
+  });
+
+/**
+ * Trigger a bridge sync
+ *
+ * Enqueues a sync event for a bridge group so connected tools reconcile. Requires participation in the bridge.
+ */
+export const triggerBridgeSync = <ThrowOnError extends boolean = false>(
+  options?: Options<TriggerBridgeSyncData, ThrowOnError>
+) =>
+  (options?.client ?? client).post<
+    TriggerBridgeSyncResponses,
+    TriggerBridgeSyncErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bridge/sync',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
     },
   });
