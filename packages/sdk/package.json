@@ -30,7 +30,7 @@
     "clean": "rm -rf dist src/generated"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.97.1",
+    "@hey-api/openapi-ts": "0.97.1",
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0"
   },
