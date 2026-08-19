@@ -101,18 +101,26 @@ describe('getRekognitionClient', () => {
 });
 
 describe('isNotFoundError', () => {
-  it('recognises the v3 NotFound that headObject throws', () => {
+  // Each branch is isolated on purpose. A fixture carrying BOTH a name and a
+  // 404 is matched by either check, so it cannot tell you the name check works
+  // — removing that check entirely still passes such a test.
+  it('recognises NotFound from its name alone, with no status metadata', () => {
+    expect(isNotFoundError({ name: 'NotFound' })).toBe(true);
+  });
+
+  it('recognises NoSuchKey from its name alone', () => {
+    // S3 is inconsistent about which it uses: headObject answers NotFound,
+    // getObject answers NoSuchKey. Both must be handled or one of the two call
+    // paths silently rethrows.
+    expect(isNotFoundError({ name: 'NoSuchKey' })).toBe(true);
+  });
+
+  it('recognises a 404 from status metadata alone, with no recognisable name', () => {
+    expect(isNotFoundError({ $metadata: { httpStatusCode: 404 } })).toBe(true);
+  });
+
+  it('recognises the realistic shape carrying both', () => {
     expect(isNotFoundError({ name: 'NotFound', $metadata: { httpStatusCode: 404 } })).toBe(true);
-  });
-
-  it('recognises NoSuchKey, which getObject throws instead', () => {
-    // S3 is inconsistent about which name it uses; both must be handled or one
-    // of the two call paths silently rethrows.
-    expect(isNotFoundError({ name: 'NoSuchKey', $metadata: { httpStatusCode: 404 } })).toBe(true);
-  });
-
-  it('recognises a 404 even when the name is unfamiliar', () => {
-    expect(isNotFoundError({ name: 'SomethingElse', $metadata: { httpStatusCode: 404 } })).toBe(true);
   });
 
   it('does not treat other failures as not-found', () => {
