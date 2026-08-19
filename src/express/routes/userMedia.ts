@@ -7,26 +7,24 @@
  */
 
 import { Router } from 'express';
-import * as AWS from 'aws-sdk';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  PutObjectCommand,
+  HeadObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
+import { DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getS3Client, getRekognitionClient } from '../../services/aws/clients';
+import { randomUUID } from 'crypto';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireJwtAuth } from '../middleware/auth';
 
 const router = Router();
 
 // Configure AWS SDK
-const s3 = new AWS.S3({
-  region: process.env.AWS_REGION || 'us-east-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  signatureVersion: 'v4',
-});
+const s3 = getS3Client();
 
-const rekognition = new AWS.Rekognition({
-  region: process.env.AWS_REGION || 'us-east-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
+const rekognition = getRekognitionClient();
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'oriva-media-storage';
 const UPLOAD_URL_EXPIRY = 300; // 5 minutes
@@ -84,7 +82,7 @@ const getFileExtension = (fileName: string, contentType: string): string => {
 
 const generateS3Key = (userId: string, fileName: string, contentType: string): string => {
   const timestamp = Date.now();
-  const uniqueId = uuidv4();
+  const uniqueId = randomUUID();
   const extension = getFileExtension(fileName, contentType);
   return `avatars/${userId}/${timestamp}-${uniqueId}.${extension}`;
 };
@@ -127,12 +125,11 @@ router.post(
 
     // Generate pre-signed URL
     try {
-      const uploadUrl = await s3.getSignedUrlPromise('putObject', {
-        Bucket: BUCKET_NAME,
-        Key: key,
-        ContentType: contentType,
-        Expires: UPLOAD_URL_EXPIRY,
-      });
+      const uploadUrl = await getSignedUrl(
+        s3,
+        new PutObjectCommand({ Bucket: BUCKET_NAME, Key: key, ContentType: contentType }),
+        { expiresIn: UPLOAD_URL_EXPIRY },
+      );
 
       const response: UploadUrlResponse = {
         uploadUrl,
@@ -191,12 +188,7 @@ router.post(
 
     try {
       // Check if object exists in S3
-      await s3
-        .headObject({
-          Bucket: BUCKET_NAME,
-          Key: key,
-        })
-        .promise();
+      await s3.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: key }));
 
       // Try AWS Rekognition content moderation (optional - may fail if IAM permissions not configured)
       let moderationLabels: string[] = [];
@@ -204,17 +196,12 @@ router.post(
       let moderationSkipped = false;
 
       try {
-        const moderationResult = await rekognition
-          .detectModerationLabels({
-            Image: {
-              S3Object: {
-                Bucket: BUCKET_NAME,
-                Name: key,
-              },
-            },
+        const moderationResult = await rekognition.send(
+          new DetectModerationLabelsCommand({
+            Image: { S3Object: { Bucket: BUCKET_NAME, Name: key } },
             MinConfidence: 60, // 60% confidence threshold
-          })
-          .promise();
+          }),
+        );
 
         // Extract moderation labels
         moderationLabels =
@@ -251,7 +238,7 @@ router.post(
         : '';
 
       // Generate a simple photo ID
-      const photoId = uuidv4();
+      const photoId = randomUUID();
 
       const response: ConfirmUploadResponse = {
         photoId,
@@ -270,12 +257,7 @@ router.post(
 
       // If rejected, optionally delete the file from S3
       if (!isApproved) {
-        await s3
-          .deleteObject({
-            Bucket: BUCKET_NAME,
-            Key: key,
-          })
-          .promise();
+        await s3.send(new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: key }));
       }
 
       res.status(200).json(response);

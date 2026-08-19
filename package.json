@@ -37,16 +37,19 @@
     "health:check:detailed": "ts-node api/monitoring/check-api-health.ts --detailed --verbose",
     "monitor": "ts-node api/monitoring/check-api-health.ts --detailed",
     "prepare": "node -e \"try { require('husky/lib/install') } catch (e) { /* Skip husky install if module not found */ }\"",
-    "check:workspace-versions": "node scripts/check-workspace-versions.mjs"
+    "check:workspace-versions": "node scripts/check-workspace-versions.mjs",
+    "check:undeclared-imports": "node scripts/check-undeclared-imports.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
     "@asteasolutions/zod-to-openapi": "^7.3.4",
+    "@aws-sdk/client-rekognition": "^3.1113.0",
+    "@aws-sdk/client-s3": "^3.1114.0",
+    "@aws-sdk/s3-request-presigner": "^3.1114.0",
     "@deepgram/sdk": "^4.11.2",
     "@sentry/node": "^10.32.1",
     "@supabase/supabase-js": "^2.57.4",
     "@types/micro": "^7.3.7",
-    "aws-sdk": "^2.1692.0",
     "chalk": "^4.1.2",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
@@ -63,6 +66,7 @@
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.10.7",
     "winston": "^3.17.0",
+    "ws": "^8.21.3",
     "xss": "^1.0.15",
     "zod": "^3.25.76"
   },

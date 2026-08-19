@@ -8,7 +8,7 @@
  */
 
 import { Request } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   createQueryBuilder,
   executeQuery,
@@ -52,8 +52,8 @@ class EventBusService {
     userId: string | undefined,
     publishRequest: PublishEventRequest
   ): Promise<Event> => {
-    const eventId = uuidv4();
-    const correlationId = (req.headers['x-correlation-id'] as string) || uuidv4();
+    const eventId = randomUUID();
+    const correlationId = (req.headers['x-correlation-id'] as string) || randomUUID();
     const timestamp = Date.now();
 
     const metadata: EventMetadata = {
@@ -117,7 +117,7 @@ class EventBusService {
     subscribeRequest: SubscribeRequest,
     handler?: EventHandler
   ): Promise<EventSubscription> => {
-    const subscriptionId = uuidv4();
+    const subscriptionId = randomUUID();
     const now = Date.now();
 
     const subscription: EventSubscription = {
