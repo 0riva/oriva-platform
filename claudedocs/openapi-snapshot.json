@@ -1250,6 +1250,164 @@
           "success",
           "data"
         ]
+      },
+      "CreateBridgeConnectionBody": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "monday",
+              "clickup",
+              "asana",
+              "notion"
+            ],
+            "example": "monday"
+          },
+          "apiToken": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A personal/API token for the external tool (headless connect)."
+          }
+        },
+        "required": [
+          "platform",
+          "apiToken"
+        ]
+      },
+      "TriggerBridgeSyncBody": {
+        "type": "object",
+        "properties": {
+          "bridgeGroupId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "bridgeGroupId"
+        ]
+      },
+      "BridgeConnection": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "monday",
+              "clickup",
+              "asana",
+              "notion"
+            ],
+            "example": "monday"
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "workspaceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "connectedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "platform",
+          "connected",
+          "workspaceId",
+          "connectedAt"
+        ]
+      },
+      "BridgeGroup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "participantCount": {
+            "type": "integer"
+          },
+          "health": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "healthy"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "participantCount",
+          "health"
+        ]
+      },
+      "BridgeTask": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bridgeGroupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourcePlatform": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priority": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "bridgeGroupId",
+          "sourcePlatform",
+          "sourceId",
+          "title",
+          "status",
+          "priority",
+          "dueDate"
+        ]
       }
     },
     "parameters": {}
@@ -4569,6 +4727,394 @@
           },
           "502": {
             "description": "Stripe API error — details in response body"
+          }
+        }
+      }
+    },
+    "/api/v1/bridge/connections": {
+      "get": {
+        "operationId": "listBridgeConnections",
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "List Bridge tool connections",
+        "description": "Lists the external workflow tools connected for the authenticated account’s organizations, with connection status.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connected tools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BridgeConnection"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBridgeConnection",
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "Connect a tool headlessly with an API token",
+        "description": "Stores an API token for an external workflow tool so it can sync into the org’s bridges. Headless alternative to the in-app OAuth connect. Requires org admin.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBridgeConnectionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connection stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BridgeConnection"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "description": "Caller is not an admin of any organization"
+          }
+        }
+      }
+    },
+    "/api/v1/bridge/connections/{platform}": {
+      "delete": {
+        "operationId": "disconnectBridgeConnection",
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "Disconnect a tool",
+        "description": "Removes the stored token for a platform across the caller’s organizations. Requires org admin.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "monday",
+                "clickup",
+                "asana",
+                "notion"
+              ],
+              "example": "monday"
+            },
+            "required": true,
+            "name": "platform",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Disconnected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "platform": {
+                          "type": "string",
+                          "enum": [
+                            "monday",
+                            "clickup",
+                            "asana",
+                            "notion"
+                          ],
+                          "example": "monday"
+                        }
+                      },
+                      "required": [
+                        "platform"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "description": "Caller is not an admin of any organization"
+          }
+        }
+      }
+    },
+    "/api/v1/bridge/groups": {
+      "get": {
+        "operationId": "listBridges",
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "List bridges",
+        "description": "Lists the bridge groups the authenticated account’s organizations participate in.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bridges",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BridgeGroup"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key"
+          }
+        }
+      }
+    },
+    "/api/v1/bridge/tasks": {
+      "get": {
+        "operationId": "listBridgeTasks",
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "List bridge tasks",
+        "description": "Lists the canonical synced tasks in a bridge group. Pass ?bridgeGroupId=<uuid>.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "bridgeGroupId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bridge tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BridgeTask"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error — missing or invalid bridgeGroupId"
+          },
+          "401": {
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "description": "Caller does not participate in this bridge"
+          }
+        }
+      }
+    },
+    "/api/v1/bridge/sync": {
+      "post": {
+        "operationId": "triggerBridgeSync",
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "Trigger a bridge sync",
+        "description": "Enqueues a sync event for a bridge group so connected tools reconcile. Requires participation in the bridge.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriggerBridgeSyncBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Sync enqueued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bridgeGroupId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "enqueued": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "bridgeGroupId",
+                        "enqueued"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "description": "Caller does not participate in this bridge"
           }
         }
       }
