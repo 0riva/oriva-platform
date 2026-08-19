@@ -45,6 +45,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Runs immediately after install so a workspace/lockfile desync is named
+      # plainly rather than surfacing as an opaque `npm ci` EUSAGE further down.
+      # See scripts/check-workspace-versions.mjs for the incident this guards.
+      - name: Check workspace versions and lockfile are in step
+        run: npm run check:workspace-versions
+
       - name: Run linting
         run: npm run lint || echo "Linting not configured yet"
 
