@@ -37,7 +37,8 @@
     "health:check:detailed": "ts-node api/monitoring/check-api-health.ts --detailed --verbose",
     "monitor": "ts-node api/monitoring/check-api-health.ts --detailed",
     "prepare": "node -e \"try { require('husky/lib/install') } catch (e) { /* Skip husky install if module not found */ }\"",
-    "check:workspace-versions": "node scripts/check-workspace-versions.mjs"
+    "check:workspace-versions": "node scripts/check-workspace-versions.mjs",
+    "check:undeclared-imports": "node scripts/check-undeclared-imports.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
@@ -64,7 +65,9 @@
     "stripe": "^19.0.0",
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.10.7",
+    "uuid": "^8.3.2",
     "winston": "^3.17.0",
+    "ws": "^8.21.3",
     "xss": "^1.0.15",
     "zod": "^3.25.76"
   },
