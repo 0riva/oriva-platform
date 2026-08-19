@@ -14,7 +14,7 @@ import {
 import { DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getS3Client, getRekognitionClient } from '../../services/aws/clients';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireApiKey, requireJwtAuth } from '../middleware/auth';
 import { optionalSchemaRouter } from '../middleware/schemaRouter';
@@ -96,7 +96,7 @@ const generateS3Key = (
   photoType: string = 'media'
 ): string => {
   const timestamp = Date.now();
-  const uniqueId = uuidv4();
+  const uniqueId = randomUUID();
   const extension = getFileExtension(fileName, contentType);
   // Organize by type: avatars/, profiles/, gallery/, media/
   const typePrefix =
@@ -389,7 +389,7 @@ router.post(
       const publicUrl = isApproved ? `https://${CLOUDFRONT_DOMAIN}/${key}` : '';
 
       // Generate a simple photo ID (you might want to store this in database)
-      const photoId = uuidv4();
+      const photoId = randomUUID();
 
       const response: ConfirmUploadResponse = {
         photoId,
