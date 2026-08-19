@@ -62,7 +62,15 @@ const problems = [];
 // ---- Invariant 1: internal ranges must be satisfiable locally -------------
 for (const p of pkgPaths) {
   const d = read(p);
-  const deps = { ...(d.dependencies ?? {}), ...(d.devDependencies ?? {}) };
+  // peerDependencies matter as much as the rest: @oriva/cli declares @oriva/sdk
+  // as a peer, so an sdk bump can strand that range without touching any
+  // `dependencies` block. Checking only deps+devDeps would miss it entirely.
+  const deps = {
+    ...(d.dependencies ?? {}),
+    ...(d.devDependencies ?? {}),
+    ...(d.peerDependencies ?? {}),
+    ...(d.optionalDependencies ?? {}),
+  };
   for (const [dep, range] of Object.entries(deps)) {
     const target = workspaces.get(dep);
     if (!target) continue; // external dependency, not our concern here
