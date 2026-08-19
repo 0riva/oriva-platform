@@ -51,6 +51,13 @@ jobs:
       - name: Check workspace versions and lockfile are in step
         run: npm run check:workspace-versions
 
+      # An undeclared import resolves locally while some other dependency
+      # happens to pull it in, then fails at require() in a deployment built
+      # from package.json alone. That is how removing aws-sdk v2 took the API
+      # down: photos.ts imported uuid, which only aws-sdk provided.
+      - name: Check every deployed import is a declared dependency
+        run: npm run check:undeclared-imports
+
       - name: Run linting
         run: npm run lint || echo "Linting not configured yet"
 
