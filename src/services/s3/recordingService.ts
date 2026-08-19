@@ -5,7 +5,17 @@
  * Key Pattern: recordings/{organization_id}/{YYYY-MM}/{call_sid}.wav
  */
 
-import * as AWS from 'aws-sdk';
+import {
+  PutObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  type PutObjectCommandInput,
+  type ListObjectsV2CommandInput,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getS3Client, isNotFoundError } from '../aws/clients';
 import {
   S3RecordingUpload,
   S3UploadResult,
@@ -27,12 +37,7 @@ const PLAYBACK_URL_EXPIRY_SECONDS = 900; // 15 minutes
 // S3 Client Initialization
 // ============================================================================
 
-const s3 = new AWS.S3({
-  region: AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  signatureVersion: 'v4',
-});
+const s3 = getS3Client();
 
 // ============================================================================
 // Helper Functions
@@ -107,7 +112,7 @@ class S3RecordingService {
     const buffer = Buffer.from(arrayBuffer);
 
     // Upload to S3 with server-side encryption (AES-256)
-    const uploadParams: AWS.S3.PutObjectRequest = {
+    const uploadParams: PutObjectCommandInput = {
       Bucket: this.bucket,
       Key: s3Key,
       Body: buffer,
@@ -121,7 +126,7 @@ class S3RecordingService {
       },
     };
 
-    await s3.putObject(uploadParams).promise();
+    await s3.send(new PutObjectCommand(uploadParams));
 
     const result: S3UploadResult = {
       s3Key,
@@ -143,11 +148,11 @@ class S3RecordingService {
   async getPlaybackUrl(s3Key: string): Promise<S3PlaybackUrl> {
     const expiresInSeconds = PLAYBACK_URL_EXPIRY_SECONDS;
 
-    const url = await s3.getSignedUrlPromise('getObject', {
-      Bucket: this.bucket,
-      Key: s3Key,
-      Expires: expiresInSeconds,
-    });
+    const url = await getSignedUrl(
+      s3,
+      new GetObjectCommand({ Bucket: this.bucket, Key: s3Key }),
+      { expiresIn: expiresInSeconds },
+    );
 
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
 
@@ -166,13 +171,9 @@ class S3RecordingService {
     // Verify the object exists before deletion
     try {
       await s3
-        .headObject({
-          Bucket: this.bucket,
-          Key: s3Key,
-        })
-        .promise();
+        .send(new HeadObjectCommand({ Bucket: this.bucket, Key: s3Key }));
     } catch (error: any) {
-      if (error.code === 'NotFound' || error.statusCode === 404) {
+      if (isNotFoundError(error)) {
         throw new Error(`Recording not found: ${s3Key}`);
       }
       throw error;
@@ -180,11 +181,7 @@ class S3RecordingService {
 
     // Delete the object
     await s3
-      .deleteObject({
-        Bucket: this.bucket,
-        Key: s3Key,
-      })
-      .promise();
+      .send(new DeleteObjectCommand({ Bucket: this.bucket, Key: s3Key }));
 
     const result: S3DeletionResult = {
       s3Key,
@@ -207,11 +204,7 @@ class S3RecordingService {
     metadata: Record<string, string>;
   }> {
     const head = await s3
-      .headObject({
-        Bucket: this.bucket,
-        Key: s3Key,
-      })
-      .promise();
+      .send(new HeadObjectCommand({ Bucket: this.bucket, Key: s3Key }));
 
     return {
       sizeBytes: head.ContentLength || 0,
@@ -227,14 +220,10 @@ class S3RecordingService {
   async recordingExists(s3Key: string): Promise<boolean> {
     try {
       await s3
-        .headObject({
-          Bucket: this.bucket,
-          Key: s3Key,
-        })
-        .promise();
+        .send(new HeadObjectCommand({ Bucket: this.bucket, Key: s3Key }));
       return true;
     } catch (error: any) {
-      if (error.code === 'NotFound' || error.statusCode === 404) {
+      if (isNotFoundError(error)) {
         return false;
       }
       throw error;
@@ -247,11 +236,11 @@ class S3RecordingService {
    */
   async getTranscriptionUrl(s3Key: string): Promise<string> {
     // Deepgram needs longer access - 1 hour for transcription processing
-    const url = await s3.getSignedUrlPromise('getObject', {
-      Bucket: this.bucket,
-      Key: s3Key,
-      Expires: 3600, // 1 hour
-    });
+    const url = await getSignedUrl(
+      s3,
+      new GetObjectCommand({ Bucket: this.bucket, Key: s3Key }),
+      { expiresIn: 3600 }, // 1 hour
+    );
 
     return url;
   }
@@ -268,14 +257,14 @@ class S3RecordingService {
   }> {
     const { limit = 100, continuationToken } = options;
 
-    const listParams: AWS.S3.ListObjectsV2Request = {
+    const listParams: ListObjectsV2CommandInput = {
       Bucket: this.bucket,
       Prefix: `recordings/${organizationId}/`,
       MaxKeys: limit,
       ContinuationToken: continuationToken,
     };
 
-    const result = await s3.listObjectsV2(listParams).promise();
+    const result = await s3.send(new ListObjectsV2Command(listParams));
 
     const recordings = (result.Contents || []).map((obj) => ({
       key: obj.Key || '',
