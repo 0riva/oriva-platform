@@ -65,6 +65,7 @@ const SCANNED_SUBROUTERS: { file: string; prefix: string }[] = [
   { file: '../src/express/routes/user-public.ts', prefix: '/api/v1' },
   { file: '../src/express/routes/me-tokens.ts', prefix: '/api/v1' },
   { file: '../src/express/routes/bridge-public.ts', prefix: '/api/v1/bridge' },
+  { file: '../src/express/routes/payments.ts', prefix: '/api/v1/payments' },
 ];
 
 // ── Extract Express routes ────────────────────────────────────────────────────
@@ -87,6 +88,29 @@ while ((m = routePattern.exec(source)) !== null) {
 // Scan migrated sub-routers for router.(method)('/subpath') registrations,
 // combining each with its mount prefix.
 const subRoutePattern = /router\.(get|post|put|patch|delete)\s*\(\s*['"`](\/[^'"`\n]*)['"`]/gi;
+
+// The list above is hand-maintained, and it rots silently: a router extracted
+// from index.ts but not added here becomes invisible, so every path it serves
+// looks like a STALE SPEC ENTRY. That is exactly what happened to payments.ts —
+// its /payment-links route existed the whole time and the check reported it as
+// missing from Express. So verify the list covers everything index.ts mounts,
+// and fail loudly if not, rather than silently under-reporting.
+const mountPattern = /app\.use\(\s*['"`](\/[^'"`\n]+)['"`]\s*,\s*create[A-Za-z0-9_]+Router\s*\(/g;
+const mountedPrefixes = new Set<string>();
+let mm: RegExpExecArray | null;
+while ((mm = mountPattern.exec(source)) !== null) mountedPrefixes.add(mm[1]);
+
+const registeredPrefixes = new Set(SCANNED_SUBROUTERS.map((r) => r.prefix));
+const unregistered = [...mountedPrefixes].filter((p) => !registeredPrefixes.has(p));
+if (unregistered.length > 0) {
+  console.error('\n❌ SUB-ROUTERS MOUNTED BUT NOT SCANNED:');
+  for (const p of unregistered) console.error(`   ${p}`);
+  console.error(
+    '   → Add each to SCANNED_SUBROUTERS in this file, or its routes will be\n' +
+      '     invisible here and its spec entries will be reported as stale.',
+  );
+  process.exitCode = 1;
+}
 
 for (const { file, prefix } of SCANNED_SUBROUTERS) {
   const routerSource = fs.readFileSync(path.resolve(__dirname, file), 'utf-8');

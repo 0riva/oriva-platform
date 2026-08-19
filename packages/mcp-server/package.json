@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0",
-    "@oriva/cli": "^0.1.0"
+    "@oriva/cli": "^0.2.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
