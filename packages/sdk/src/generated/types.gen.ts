@@ -298,6 +298,44 @@ export type PaymentLink = {
     };
 };
 
+export type CreateBridgeConnectionBody = {
+    platform: 'monday' | 'clickup' | 'asana' | 'notion';
+    /**
+     * A personal/API token for the external tool (headless connect).
+     */
+    apiToken: string;
+};
+
+export type TriggerBridgeSyncBody = {
+    bridgeGroupId: string;
+};
+
+export type BridgeConnection = {
+    platform: 'monday' | 'clickup' | 'asana' | 'notion';
+    connected: boolean;
+    workspaceId: string | null;
+    connectedAt: string | null;
+};
+
+export type BridgeGroup = {
+    id: string;
+    name: string;
+    description: string | null;
+    participantCount: number;
+    health: string | null;
+};
+
+export type BridgeTask = {
+    id: string;
+    bridgeGroupId: string;
+    sourcePlatform: string;
+    sourceId: string;
+    title: string;
+    status: string | null;
+    priority: string | null;
+    dueDate: string | null;
+};
+
 export type GetCurrentUserData = {
     body?: never;
     path?: never;
@@ -1960,3 +1998,203 @@ export type CreatePaymentLinkResponses = {
 };
 
 export type CreatePaymentLinkResponse = CreatePaymentLinkResponses[keyof CreatePaymentLinkResponses];
+
+export type ListBridgeConnectionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bridge/connections';
+};
+
+export type ListBridgeConnectionsErrors = {
+    /**
+     * Invalid or missing API key
+     */
+    401: unknown;
+};
+
+export type ListBridgeConnectionsResponses = {
+    /**
+     * Connected tools
+     */
+    200: {
+        ok: boolean;
+        success: boolean;
+        data: Array<BridgeConnection>;
+    };
+};
+
+export type ListBridgeConnectionsResponse = ListBridgeConnectionsResponses[keyof ListBridgeConnectionsResponses];
+
+export type CreateBridgeConnectionData = {
+    body?: CreateBridgeConnectionBody;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bridge/connections';
+};
+
+export type CreateBridgeConnectionErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+    /**
+     * Invalid or missing API key
+     */
+    401: unknown;
+    /**
+     * Caller is not an admin of any organization
+     */
+    403: unknown;
+};
+
+export type CreateBridgeConnectionResponses = {
+    /**
+     * Connection stored
+     */
+    200: {
+        ok: boolean;
+        success: boolean;
+        data: BridgeConnection;
+    };
+};
+
+export type CreateBridgeConnectionResponse = CreateBridgeConnectionResponses[keyof CreateBridgeConnectionResponses];
+
+export type DisconnectBridgeConnectionData = {
+    body?: never;
+    path: {
+        platform: 'monday' | 'clickup' | 'asana' | 'notion';
+    };
+    query?: never;
+    url: '/api/v1/bridge/connections/{platform}';
+};
+
+export type DisconnectBridgeConnectionErrors = {
+    /**
+     * Invalid or missing API key
+     */
+    401: unknown;
+    /**
+     * Caller is not an admin of any organization
+     */
+    403: unknown;
+};
+
+export type DisconnectBridgeConnectionResponses = {
+    /**
+     * Disconnected
+     */
+    200: {
+        ok: boolean;
+        success: boolean;
+        data: {
+            platform: 'monday' | 'clickup' | 'asana' | 'notion';
+        };
+    };
+};
+
+export type DisconnectBridgeConnectionResponse = DisconnectBridgeConnectionResponses[keyof DisconnectBridgeConnectionResponses];
+
+export type ListBridgesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bridge/groups';
+};
+
+export type ListBridgesErrors = {
+    /**
+     * Invalid or missing API key
+     */
+    401: unknown;
+};
+
+export type ListBridgesResponses = {
+    /**
+     * Bridges
+     */
+    200: {
+        ok: boolean;
+        success: boolean;
+        data: Array<BridgeGroup>;
+    };
+};
+
+export type ListBridgesResponse = ListBridgesResponses[keyof ListBridgesResponses];
+
+export type ListBridgeTasksData = {
+    body?: never;
+    path?: never;
+    query: {
+        bridgeGroupId: string;
+        limit?: number;
+    };
+    url: '/api/v1/bridge/tasks';
+};
+
+export type ListBridgeTasksErrors = {
+    /**
+     * Validation error — missing or invalid bridgeGroupId
+     */
+    400: unknown;
+    /**
+     * Invalid or missing API key
+     */
+    401: unknown;
+    /**
+     * Caller does not participate in this bridge
+     */
+    403: unknown;
+};
+
+export type ListBridgeTasksResponses = {
+    /**
+     * Bridge tasks
+     */
+    200: {
+        ok: boolean;
+        success: boolean;
+        data: Array<BridgeTask>;
+    };
+};
+
+export type ListBridgeTasksResponse = ListBridgeTasksResponses[keyof ListBridgeTasksResponses];
+
+export type TriggerBridgeSyncData = {
+    body?: TriggerBridgeSyncBody;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bridge/sync';
+};
+
+export type TriggerBridgeSyncErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+    /**
+     * Invalid or missing API key
+     */
+    401: unknown;
+    /**
+     * Caller does not participate in this bridge
+     */
+    403: unknown;
+};
+
+export type TriggerBridgeSyncResponses = {
+    /**
+     * Sync enqueued
+     */
+    202: {
+        ok: boolean;
+        success: boolean;
+        data: {
+            bridgeGroupId: string;
+            enqueued: boolean;
+        };
+    };
+};
+
+export type TriggerBridgeSyncResponse = TriggerBridgeSyncResponses[keyof TriggerBridgeSyncResponses];
