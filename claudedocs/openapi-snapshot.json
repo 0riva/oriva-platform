@@ -1408,6 +1408,379 @@
           "priority",
           "dueDate"
         ]
+      },
+      "AgentError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "What went wrong, in plain words."
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "BuyListingBody": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The marketplace listing (entry) id to buy."
+          },
+          "expectedAmountCents": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The exact current total you agreed to pay, in cents (1200 = 12.00). If the listing price differs, the purchase is refused before any charge."
+          },
+          "variantIndex": {
+            "type": "integer",
+            "description": "Which of the listing's price variants to buy (0-based). Omit for the default."
+          }
+        },
+        "required": [
+          "listingId",
+          "expectedAmountCents"
+        ]
+      },
+      "AgentPurchaseBought": {
+        "type": "object",
+        "properties": {
+          "purchase": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Agent purchase id."
+              },
+              "orderId": {
+                "type": "string",
+                "description": "Marketplace order id."
+              },
+              "orderNumber": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Human-readable order number."
+              },
+              "amountCents": {
+                "type": "integer",
+                "description": "Amount charged, in cents."
+              },
+              "currency": {
+                "type": "string",
+                "description": "ISO 4217 currency code."
+              }
+            },
+            "required": [
+              "id",
+              "orderId",
+              "orderNumber",
+              "amountCents",
+              "currency"
+            ]
+          }
+        },
+        "required": [
+          "purchase"
+        ]
+      },
+      "AgentPurchaseRepeat": {
+        "type": "object",
+        "properties": {
+          "repeat": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "purchase": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "description": "Status of the earlier attempt with this Idempotency-Key."
+              }
+            },
+            "required": [
+              "id",
+              "status"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repeat",
+          "purchase",
+          "message"
+        ]
+      },
+      "AgentPurchasePending": {
+        "type": "object",
+        "properties": {
+          "pending": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "purchase": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "orderId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "orderId"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pending",
+          "purchase",
+          "message"
+        ]
+      },
+      "AgentPurchaseRefused": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Why the purchase was refused."
+          },
+          "refused": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "purchaseId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "refused",
+          "purchaseId"
+        ]
+      },
+      "AgentPurchaseCardFailed": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "The card decline's own message, or \"The card was not charged.\""
+          },
+          "purchaseId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "purchaseId"
+        ]
+      },
+      "AgentPurchaseRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "entry_id": {
+            "type": "string",
+            "description": "The listing that was bought."
+          },
+          "listing_title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "order_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "amount_cents": {
+            "type": "integer"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "pending, succeeded, failed or refused."
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it was refused or failed, when it was."
+          },
+          "created_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "entry_id",
+          "listing_title",
+          "order_id",
+          "amount_cents",
+          "currency",
+          "status",
+          "reason",
+          "created_at"
+        ]
+      },
+      "AgentPurchaseList": {
+        "type": "object",
+        "properties": {
+          "purchases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentPurchaseRecord"
+            }
+          }
+        },
+        "required": [
+          "purchases"
+        ]
+      },
+      "CreateListingBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Listing title, up to 200 characters."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 20000,
+            "description": "What is being sold, up to 20,000 characters. Runs through the content check."
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "Price in currency units (12 = 12.00), 0 to 10000. A paid listing is at least 1."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD"
+            ],
+            "description": "Only USD is supported. Defaults to USD."
+          },
+          "itemType": {
+            "type": "string",
+            "enum": [
+              "digital",
+              "physical",
+              "service",
+              "course",
+              "app",
+              "event"
+            ],
+            "description": "Kind of item. Defaults to digital."
+          },
+          "profileId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "One of the owner's named profiles to list under. Defaults to their default profile."
+          },
+          "publish": {
+            "type": "boolean",
+            "description": "Publish now (default true). Send false to save a draft; publishing a paid listing needs a paid Oriva plan."
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "price"
+        ]
+      },
+      "AgentListingCreated": {
+        "type": "object",
+        "properties": {
+          "listing": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The new listing (entry) id."
+              },
+              "title": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "published": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "price",
+              "currency",
+              "published"
+            ]
+          }
+        },
+        "required": [
+          "listing"
+        ]
+      },
+      "AgentListingContentRefused": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "hint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "hint"
+        ]
       }
     },
     "parameters": {}
@@ -5115,6 +5488,266 @@
           },
           "403": {
             "description": "Caller does not participate in this bridge"
+          }
+        }
+      }
+    },
+    "/api/agent/purchases": {
+      "post": {
+        "operationId": "buyListing",
+        "tags": [
+          "Agent"
+        ],
+        "servers": [
+          {
+            "url": "https://oriva.io",
+            "description": "Oriva web app (o-core)"
+          }
+        ],
+        "summary": "Buy a marketplace listing with the owner's money, within their limits",
+        "description": "Spends the API key owner's REAL money: charges the card they saved, only after they switched agent buying on and only within the per-purchase and per-day limits they set at https://oriva.io/settings/agent-buying. Use only when the owner has asked you to buy this listing; do not use to check a price (read the listing first) or to browse.\n\n- `expectedAmountCents` must be the exact current total; a different price is refused.\n- Always send an `Idempotency-Key` and reuse it when retrying the same purchase; a repeat returns the first attempt (200, `repeat: true`) instead of buying twice.\n- 201 bought. 202 not finished yet: it still counts against the limits, so do NOT buy again; check `listAgentPurchases` later.\n- 403 `refused: true` is final (switched off, over a limit, price changed, own listing...): do not retry; tell the owner the reason.\n- 402 the card was not charged.\n\nAuthorised only by a personal access token (`Bearer oriva_pk_...`), never a browser session. Served by https://oriva.io, not api.oriva.io.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Your id for this purchase attempt, up to 200 characters. Resending the same key returns the first attempt instead of buying again. Always send one, and reuse it when retrying the same purchase. If omitted, the SDK, CLI and MCP server generate one and report it."
+            },
+            "required": false,
+            "description": "Your id for this purchase attempt, up to 200 characters. Resending the same key returns the first attempt instead of buying again. Always send one, and reuse it when retrying the same purchase. If omitted, the SDK, CLI and MCP server generate one and report it.",
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyListingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repeat of an earlier request with the same Idempotency-Key. Nothing new was bought.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPurchaseRepeat"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Bought. The card was charged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPurchaseBought"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Not finished yet. Still counts against the limits; check listAgentPurchases later. Do not buy again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPurchasePending"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input (listingId, expectedAmountCents, variantIndex or Idempotency-Key).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid personal access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "The card was not charged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPurchaseCardFailed"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused, and final: agent buying switched off, over a limit, price changed, own listing, or the account has no email. Do not retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPurchaseRefused"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listAgentPurchases",
+        "tags": [
+          "Agent"
+        ],
+        "servers": [
+          {
+            "url": "https://oriva.io",
+            "description": "Oriva web app (o-core)"
+          }
+        ],
+        "summary": "List the owner's recent agent purchases, refused ones included",
+        "description": "Returns the API key owner's 50 most recent agent purchase attempts, newest first, with status and reason. Use to check on a purchase that answered 202, or to see what has been spent. Read-only; spends nothing. Served by https://oriva.io, not api.oriva.io.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent agent purchases.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPurchaseList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid personal access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account cannot be acted for by an agent (for example, it has no email).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/listings": {
+      "post": {
+        "operationId": "createListing",
+        "tags": [
+          "Agent"
+        ],
+        "servers": [
+          {
+            "url": "https://oriva.io",
+            "description": "Oriva web app (o-core)"
+          }
+        ],
+        "summary": "List an item for sale in the marketplace in the owner's name",
+        "description": "Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to edit an existing listing.\n\n- 422: the content check refused it; `error` and `hint` say what to change before retrying.\n- 403: listing switched off, a paid listing needs a paid plan (retry with `publish: false` to save a draft), or the profile is not the owner's. Do not retry unchanged.\n- 429: over 20 listings an hour; wait before retrying.\n\nServed by https://oriva.io, not api.oriva.io.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Listed (or saved as a draft when publish was false).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentListingCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input — the message names the field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid personal access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Agent listing switched off, paid listing on a free plan, no named profile, or a profile that is not the owner's.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused by the content check. Change what `hint` says and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentListingContentRefused"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 20 agent listings in the last hour. Try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
           }
         }
       }

@@ -19,6 +19,7 @@ ENVIRONMENT
   ORIVA_API_KEY        Bearer key (oriva_pk_live_… / oriva_pk_test_…)
   ORIVA_API_SPEC       OpenAPI source (default: bundled snapshot)
   ORIVA_API_BASE_URL   Override server base URL (default: https://api.oriva.io)
+  ORIVA_APP_BASE_URL   Override the web-app host for Agent commands (default: https://oriva.io)
   ORIVA_API_TAGS       CSV tag filter for which operations are exposed
 
 CONFIG FILE
@@ -29,6 +30,7 @@ GLOBAL FLAGS
   --profile=<name>     Select a config-file profile (default: activeProfile)
   --spec=<url|path>    Override the spec source for this invocation
   --base-url=<url>     Override the base URL for this invocation
+  --app-base-url=<url> Override the web-app host for Agent commands
   --show-status        Print HTTP status + request_id to stderr
   --raw                Print response body unchanged (no JSON pretty-print)
   --json               Emit { ok, status, data, error, request_id } envelope
@@ -73,6 +75,9 @@ export function renderCommandHelp(op: ExtractedOperation): string {
   out.push('');
   out.push(`  ${op.description}`);
   out.push(`  ${op.method.toUpperCase()} ${op.pathTemplate}`);
+  if (op.servers?.length) {
+    out.push(`  served by: ${op.servers[0]}  (override with --app-base-url / ORIVA_APP_BASE_URL)`);
+  }
   if (op.tags?.length) {
     out.push(`  tags: ${op.tags.join(', ')}`);
   }
@@ -96,6 +101,13 @@ export function renderCommandHelp(op: ExtractedOperation): string {
     out.push('QUERY PARAMETERS');
     for (const name of op.queryParams) {
       out.push(formatParam(name, props[name], required.has(name)));
+    }
+    out.push('');
+  }
+  if (op.headerParams?.length) {
+    out.push('HEADER PARAMETERS');
+    for (const { arg } of op.headerParams) {
+      out.push(formatParam(arg, props[arg], required.has(arg)));
     }
     out.push('');
   }
@@ -128,6 +140,7 @@ function formatExample(op: ExtractedOperation): string {
   const parts: string[] = ['  oriva', op.name];
   for (const p of op.pathParams) parts.push(`--${p}=<${p}>`);
   for (const q of op.queryParams.slice(0, 2)) parts.push(`--${q}=<value>`);
+  for (const h of op.headerParams ?? []) parts.push(`--${h.arg}=<value>`);
   if (op.hasBody) parts.push(`--body='{"…":"…"}'`);
   return parts.join(' ');
 }

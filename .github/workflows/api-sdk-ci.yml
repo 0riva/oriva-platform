@@ -62,6 +62,10 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: npx tsc
 
+      - name: Test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm test
+
       - name: Test pack
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: npm pack --dry-run

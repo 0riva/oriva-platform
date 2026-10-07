@@ -6,6 +6,9 @@ import type {
   ActivateProfileData,
   ActivateProfileErrors,
   ActivateProfileResponses,
+  BuyListingData,
+  BuyListingErrors,
+  BuyListingResponses,
   CreateBridgeConnectionData,
   CreateBridgeConnectionErrors,
   CreateBridgeConnectionResponses,
@@ -15,6 +18,9 @@ import type {
   CreateEventData,
   CreateEventErrors,
   CreateEventResponses,
+  CreateListingData,
+  CreateListingErrors,
+  CreateListingResponses,
   CreatePaymentLinkData,
   CreatePaymentLinkErrors,
   CreatePaymentLinkResponses,
@@ -68,6 +74,9 @@ import type {
   InstallMarketplaceAppData,
   InstallMarketplaceAppErrors,
   InstallMarketplaceAppResponses,
+  ListAgentPurchasesData,
+  ListAgentPurchasesErrors,
+  ListAgentPurchasesResponses,
   ListBridgeConnectionsData,
   ListBridgeConnectionsErrors,
   ListBridgeConnectionsResponses,
@@ -1104,5 +1113,73 @@ export const triggerBridgeSync = <ThrowOnError extends boolean = false>(
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
+    },
+  });
+
+/**
+ * List the owner's recent agent purchases, refused ones included
+ *
+ * Returns the API key owner's 50 most recent agent purchase attempts, newest first, with status and reason. Use to check on a purchase that answered 202, or to see what has been spent. Read-only; spends nothing. Served by https://oriva.io, not api.oriva.io.
+ */
+export const listAgentPurchases = <ThrowOnError extends boolean = false>(
+  options?: Options<ListAgentPurchasesData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ListAgentPurchasesResponses,
+    ListAgentPurchasesErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/agent/purchases',
+    ...options,
+  });
+
+/**
+ * Buy a marketplace listing with the owner's money, within their limits
+ *
+ * Spends the API key owner's REAL money: charges the card they saved, only after they switched agent buying on and only within the per-purchase and per-day limits they set at https://oriva.io/settings/agent-buying. Use only when the owner has asked you to buy this listing; do not use to check a price (read the listing first) or to browse.
+ *
+ * - `expectedAmountCents` must be the exact current total; a different price is refused.
+ * - Always send an `Idempotency-Key` and reuse it when retrying the same purchase; a repeat returns the first attempt (200, `repeat: true`) instead of buying twice.
+ * - 201 bought. 202 not finished yet: it still counts against the limits, so do NOT buy again; check `listAgentPurchases` later.
+ * - 403 `refused: true` is final (switched off, over a limit, price changed, own listing...): do not retry; tell the owner the reason.
+ * - 402 the card was not charged.
+ *
+ * Authorised only by a personal access token (`Bearer oriva_pk_...`), never a browser session. Served by https://oriva.io, not api.oriva.io.
+ */
+export const buyListing = <ThrowOnError extends boolean = false>(
+  options: Options<BuyListingData, ThrowOnError>
+) =>
+  (options.client ?? client).post<BuyListingResponses, BuyListingErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/agent/purchases',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * List an item for sale in the marketplace in the owner's name
+ *
+ * Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to edit an existing listing.
+ *
+ * - 422: the content check refused it; `error` and `hint` say what to change before retrying.
+ * - 403: listing switched off, a paid listing needs a paid plan (retry with `publish: false` to save a draft), or the profile is not the owner's. Do not retry unchanged.
+ * - 429: over 20 listings an hour; wait before retrying.
+ *
+ * Served by https://oriva.io, not api.oriva.io.
+ */
+export const createListing = <ThrowOnError extends boolean = false>(
+  options: Options<CreateListingData, ThrowOnError>
+) =>
+  (options.client ?? client).post<CreateListingResponses, CreateListingErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/agent/listings',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
     },
   });

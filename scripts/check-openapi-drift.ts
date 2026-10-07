@@ -124,11 +124,20 @@ for (const { file, prefix } of SCANNED_SUBROUTERS) {
 // ── Extract spec paths ────────────────────────────────────────────────────────
 
 const specEntries = new Set<string>();
+// Operations with their own `servers` entry are served by ANOTHER host (the
+// agent-commerce routes live on o-core at https://oriva.io). No Express route
+// here can match them, so they are listed separately and never reported stale.
+const otherHostEntries: string[] = [];
 const methods = ['get', 'post', 'put', 'patch', 'delete'];
 
 for (const [specPath, pathItem] of Object.entries(openApiDocument.paths ?? {})) {
   for (const method of methods) {
     if (method in (pathItem as object)) {
+      const op = (pathItem as Record<string, { servers?: unknown[] }>)[method];
+      if (Array.isArray(op?.servers) && op.servers.length > 0) {
+        otherHostEntries.push(`${method.toUpperCase()} ${specPath}`);
+        continue;
+      }
       specEntries.add(`${method.toUpperCase()} ${specPath}`);
     }
   }
@@ -180,7 +189,8 @@ if (undocumented.length > 0) {
 if (!drift) {
   console.log(
     `✅ OpenAPI spec in sync — ${specEntries.size} spec paths, ` +
-      `${expressRoutes.size} Express routes (${EXCLUDED_EXPRESS_ROUTES.size} excluded).`
+      `${expressRoutes.size} Express routes (${EXCLUDED_EXPRESS_ROUTES.size} excluded), ` +
+      `${otherHostEntries.length} served by another host.`
   );
   process.exit(0);
 } else {

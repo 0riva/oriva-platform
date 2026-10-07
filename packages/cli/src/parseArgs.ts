@@ -20,6 +20,7 @@
  * Global flags (apply before OR after the command — forgiving UX):
  *   --spec=<url|path>     Override OpenAPI spec source
  *   --base-url=<url>      Override server base URL
+ *   --app-base-url=<url>  Override the host of operations with their own `servers`
  *   --show-status         Print HTTP status to stderr alongside body
  *   --raw                 Print response body unchanged (no JSON pretty-print)
  *   --json                Emit envelope { ok, status, data, error, request_id }
@@ -39,6 +40,7 @@ export interface ParsedArgs {
   global: {
     spec?: string;
     baseUrl?: string;
+    appBaseUrl?: string;
     showStatus?: boolean;
     raw?: boolean;
     json?: boolean;
@@ -51,6 +53,7 @@ export interface ParsedArgs {
 const GLOBAL_FLAGS = new Set([
   'spec',
   'base-url',
+  'app-base-url',
   'show-status',
   'raw',
   'json',
@@ -97,6 +100,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
       }
       if (key === 'spec') global.spec = value;
       else if (key === 'base-url') global.baseUrl = value;
+      else if (key === 'app-base-url') global.appBaseUrl = value;
       else if (key === 'show-status') global.showStatus = value === 'true' || value === '';
       else if (key === 'raw') global.raw = value === 'true' || value === '';
       else if (key === 'json') global.json = value === 'true' || value === '';

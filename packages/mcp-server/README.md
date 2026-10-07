@@ -73,6 +73,7 @@ Restart the client after editing the config. The Oriva tools appear in the clien
 | -------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ORIVA_API_KEY`      | yes      | `oriva_pk_live_*` Personal Access Token used as the `Authorization: Bearer …` header. Generate at https://oriva.io/settings/personal-access-tokens (see "Get a Personal Access Token" above). |
 | `ORIVA_API_BASE_URL` | no       | Override the API base URL (default `https://api.oriva.io`). Useful for local development against a tunnel.                                                                                    |
+| `ORIVA_APP_BASE_URL` | no       | Override the web-app host that serves the agent buying and listing tools (default `https://oriva.io`). `ORIVA_API_BASE_URL` does not move them.                                               |
 
 ## What's exposed
 
@@ -80,9 +81,36 @@ Every public Oriva API endpoint that the OpenAPI spec marks with an `operationId
 
 ### Coverage
 
-- 46 operations across 40 paths
+- Every operation in the bundled spec except the three token-management ones (see below)
 - Read + write surfaces: profiles, groups, sessions, marketplace, developer, entries, events, auth/profile, analytics, users
 - v1 supports `application/json` requests + responses only. Multipart, octet-stream, and server-sent events are **not** wired (the projector throws at boot if the spec adds them).
+
+### Agent buying and listing
+
+| Tool                 | What it does                                                                                                                                                                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `buyListing`         | Buys a listing with the key owner's **real money**, within the limits they set at https://oriva.io/settings/agent-buying. Inputs: `listingId`, `expectedAmountCents` (the exact current total), optional `variantIndex`, and `idempotencyKey`. |
+| `listAgentPurchases` | The owner's 50 most recent agent purchases, refused ones included. Use to check on a purchase that answered 202.                                                                                                                               |
+| `createListing`      | Lists an item for sale in the owner's name. Inputs: `title`, `description`, `price`, optional `currency`, `itemType`, `profileId`, `publish`.                                                                                                  |
+
+These are served by `https://oriva.io`, not `api.oriva.io`; the server sends them there.
+`buyListing` always carries an Idempotency-Key: pass `idempotencyKey` and reuse it when retrying,
+or one is generated and reported in a second text block of the result. A 403 with
+`"refused": true` is final; a 202 means not finished yet (do not buy again). A 422 from
+`createListing` keeps its `hint`.
+
+Example call an agent makes:
+
+```json
+{
+  "name": "buyListing",
+  "arguments": {
+    "listingId": "11111111-2222-4333-8444-555555555555",
+    "expectedAmountCents": 1200,
+    "idempotencyKey": "order-42"
+  }
+}
+```
 
 ### Excluded by design
 

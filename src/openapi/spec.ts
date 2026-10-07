@@ -14,6 +14,7 @@ import './schemas/events';
 import './schemas/me-tokens';
 import './schemas/payments';
 import './schemas/bridge';
+import './schemas/agent-commerce';
 
 const generator = new OpenApiGeneratorV31(registry.definitions);
 

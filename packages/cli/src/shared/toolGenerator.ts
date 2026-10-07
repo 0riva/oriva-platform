@@ -17,6 +17,7 @@ interface RawOp {
   summary?: string;
   description?: string;
   tags?: string[];
+  servers?: Array<{ url: string }>;
   parameters?: Array<{
     name: string;
     in: 'path' | 'query' | 'header' | 'cookie';
@@ -50,6 +51,14 @@ function deriveToolName(method: string, path: string): string {
   );
 }
 
+/** `Idempotency-Key` → `idempotencyKey`; `X-Request-Id` → `xRequestId`. */
+export function headerArgName(header: string): string {
+  const words = header.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return words
+    .map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+    .join('');
+}
+
 function capitalize(s: string): string {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
@@ -72,6 +81,9 @@ export function extractOperations(
       const params = op.parameters ?? [];
       const pathParams = params.filter((p) => p.in === 'path').map((p) => p.name);
       const queryParams = params.filter((p) => p.in === 'query').map((p) => p.name);
+      const headerParams = params
+        .filter((p) => p.in === 'header')
+        .map((p) => ({ name: p.name, arg: headerArgName(p.name) }));
 
       const properties: Record<string, unknown> = {};
       const required: string[] = [];
@@ -81,6 +93,16 @@ export function extractOperations(
         const schema = (p.schema ?? { type: 'string' }) as Record<string, unknown>;
         properties[p.name] = p.description ? { ...schema, description: p.description } : schema;
         if (p.required) required.push(p.name);
+      }
+      for (const p of params) {
+        if (p.in !== 'header') continue;
+        const arg = headerArgName(p.name);
+        const schema = (p.schema ?? { type: 'string' }) as Record<string, unknown>;
+        const description = [p.description, `Sent as the \`${p.name}\` header.`]
+          .filter(Boolean)
+          .join(' ');
+        properties[arg] = { ...schema, description };
+        if (p.required) required.push(arg);
       }
 
       let hasBody = false;
@@ -112,6 +134,8 @@ export function extractOperations(
         inputSchema,
         pathParams,
         queryParams,
+        headerParams,
+        ...(op.servers?.length ? { servers: op.servers.map((sv) => sv.url) } : {}),
         hasBody,
         bodyContentType,
         tags: opTags,
