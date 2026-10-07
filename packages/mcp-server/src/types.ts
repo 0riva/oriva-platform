@@ -33,6 +33,8 @@ export interface ProjectedOperation {
   method: HttpMethod;
   pathParams: string[];
   queryParams: string[];
+  /** Header params: `arg` is the tool input name, `flag` the CLI flag it is sent as. */
+  headerParams?: Array<{ arg: string; flag: string }>;
   bodyFields: Array<{ alias: string; original: string }>;
 }
 

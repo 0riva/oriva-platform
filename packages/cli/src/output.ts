@@ -25,7 +25,17 @@ export interface Envelope {
   request_id?: string;
   url?: string;
   method?: string;
+  /**
+   * Other top-level fields of an error body besides `error` (e.g. `refused`,
+   * `hint`, `purchaseId`), so they are not lost when `error` is a string.
+   */
+  details?: Record<string, unknown>;
+  /** The Idempotency-Key the request carried, when the operation takes one. */
+  idempotency_key?: string;
 }
+
+/** Envelope-level keys already represented by `ok`/`error`. */
+const ERROR_BODY_SKIP = new Set(['error', 'ok', 'success']);
 
 export function renderEnvelope(result: ExecuteResult): Envelope {
   const ok = result.status >= 200 && result.status < 300;
@@ -33,15 +43,22 @@ export function renderEnvelope(result: ExecuteResult): Envelope {
   // Heuristic: if body has an `error` field AND we got a 4xx/5xx, surface that as `error`.
   let data: unknown = null;
   let error: unknown = null;
+  let details: Record<string, unknown> | undefined;
   if (ok) {
     data = result.body;
   } else {
-    error =
+    const isErrorObject =
       result.body &&
       typeof result.body === 'object' &&
-      'error' in (result.body as Record<string, unknown>)
-        ? (result.body as Record<string, unknown>).error
-        : result.body;
+      !Array.isArray(result.body) &&
+      'error' in (result.body as Record<string, unknown>);
+    error = isErrorObject ? (result.body as Record<string, unknown>).error : result.body;
+    if (isErrorObject) {
+      const rest = Object.entries(result.body as Record<string, unknown>).filter(
+        ([k]) => !ERROR_BODY_SKIP.has(k)
+      );
+      if (rest.length) details = Object.fromEntries(rest);
+    }
   }
   return {
     ok,
@@ -51,6 +68,8 @@ export function renderEnvelope(result: ExecuteResult): Envelope {
     request_id: result.request_id,
     url: result.url,
     method: result.method,
+    ...(details ? { details } : {}),
+    ...(result.idempotency_key ? { idempotency_key: result.idempotency_key } : {}),
   };
 }
 

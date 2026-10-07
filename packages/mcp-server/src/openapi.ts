@@ -89,7 +89,18 @@ function preserveAnnotations(schema: JsonSchema, param?: OpenApiParameter): Json
 
 interface BuiltSchema {
   schema: JsonSchema;
-  operation: Pick<ProjectedOperation, 'pathParams' | 'queryParams' | 'bodyFields'>;
+  operation: Pick<ProjectedOperation, 'pathParams' | 'queryParams' | 'headerParams' | 'bodyFields'>;
+}
+
+/**
+ * `Idempotency-Key` → `idempotencyKey`. Must match @oriva/cli's
+ * `headerArgName`, because that is the flag name the CLI accepts.
+ */
+export function headerArgName(header: string): string {
+  const words = header.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return words
+    .map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+    .join('');
 }
 
 function buildInputSchema(op: OpenApiOperation): BuiltSchema {
@@ -97,6 +108,7 @@ function buildInputSchema(op: OpenApiOperation): BuiltSchema {
   const required: string[] = [];
   const pathParams: string[] = [];
   const queryParams: string[] = [];
+  const headerParams: Array<{ arg: string; flag: string }> = [];
   const bodyFields: Array<{ alias: string; original: string }> = [];
 
   for (const p of op.parameters ?? []) {
@@ -110,6 +122,16 @@ function buildInputSchema(op: OpenApiOperation): BuiltSchema {
       queryParams.push(p.name);
       if (p.required && !required.includes(p.name)) required.push(p.name);
     }
+  }
+
+  for (const p of op.parameters ?? []) {
+    if (p.in !== 'header') continue;
+    const arg = headerArgName(p.name);
+    if (arg in properties) continue;
+    const resolved = p.schema ? resolveRef(p.schema) : {};
+    properties[arg] = preserveAnnotations(resolved, p);
+    headerParams.push({ arg, flag: arg });
+    if (p.required && !required.includes(arg)) required.push(arg);
   }
 
   const bodySchema = op.requestBody?.content?.['application/json']?.schema;
@@ -129,7 +151,7 @@ function buildInputSchema(op: OpenApiOperation): BuiltSchema {
 
   return {
     schema: { type: 'object', properties, required, additionalProperties: false },
-    operation: { pathParams, queryParams, bodyFields },
+    operation: { pathParams, queryParams, headerParams, bodyFields },
   };
 }
 

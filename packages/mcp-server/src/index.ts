@@ -62,10 +62,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     const result = await callOperation(op, request.params.arguments ?? {}, { apiKey });
     const prefix = result.ok ? '' : `HTTP ${result.status}\n`;
-    return {
-      content: [{ type: 'text', text: `${prefix}${result.text}` }],
-      isError: !result.ok,
-    };
+    const content = [{ type: 'text' as const, text: `${prefix}${result.text}` }];
+    if (result.idempotencyKey) {
+      content.push({
+        type: 'text' as const,
+        text:
+          `Idempotency-Key: ${result.idempotencyKey} — pass it as idempotencyKey to retry ` +
+          'this same request without repeating it.',
+      });
+    }
+    return { content, isError: !result.ok };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return {

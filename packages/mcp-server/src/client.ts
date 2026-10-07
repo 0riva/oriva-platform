@@ -21,6 +21,8 @@ export interface CallResult {
   status: number;
   text: string;
   ok: boolean;
+  /** The Idempotency-Key the request carried, when the tool takes one. */
+  idempotencyKey?: string;
 }
 
 export interface ClientOptions {
@@ -64,6 +66,11 @@ export async function callOperation(
       toolName: op.toolName,
       pathParams: pickByKeys(args, op.pathParams),
       queryParams: pickByKeys(args, op.queryParams),
+      headerParams: Object.fromEntries(
+        (op.headerParams ?? [])
+          .filter(({ arg }) => args[arg] !== undefined)
+          .map(({ arg, flag }) => [flag, args[arg]])
+      ),
       body: buildBody(args, op.bodyFields),
     },
     {
@@ -72,5 +79,10 @@ export async function callOperation(
     }
   );
 
-  return { status: result.status, text: result.text, ok: result.ok };
+  return {
+    status: result.status,
+    text: result.text,
+    ok: result.ok,
+    ...(result.envelope.idempotency_key ? { idempotencyKey: result.envelope.idempotency_key } : {}),
+  };
 }

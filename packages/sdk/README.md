@@ -57,6 +57,57 @@ if (result.data) {
 }
 ```
 
+### Agent buying and listing
+
+`buyListing`, `createListing` and `listAgentPurchases` are served by the Oriva web app at
+`https://oriva.io` (not `api.oriva.io`); the client sends them there. Override with the
+`appBaseUrl` option or `ORIVA_APP_BASE_URL`.
+
+**`buyListing` spends the key owner's real money**, only after they saved a card and switched
+agent buying on at https://oriva.io/settings/agent-buying, and only within the limits they set
+there.
+
+```ts
+const oriva = createOrivaClient({ apiKey: process.env.ORIVA_API_KEY! });
+
+const result = await oriva.buyListing({
+  body: {
+    listingId: '11111111-2222-4333-8444-555555555555',
+    expectedAmountCents: 1200,
+  },
+  headers: { 'Idempotency-Key': 'order-42' }, // reuse it to retry this same purchase
+});
+
+// The key actually sent (yours, or a fresh one generated when you pass none):
+console.log(result.idempotencyKey);
+
+switch (result.response?.status) {
+  case 201: // bought — result.data.purchase
+  case 200: // repeat of an earlier key — nothing new bought
+    break;
+  case 202: // not finished — still counts; do NOT buy again, check listAgentPurchases later
+    break;
+  case 403: // refused, final — result.error.refused === true; do not retry
+  case 402: // the card was not charged
+    console.error(result.error);
+}
+
+const { data } = await oriva.listAgentPurchases(); // { purchases: [...] }, newest first
+
+const listed = await oriva.createListing({
+  body: {
+    title: 'Notion planning template',
+    description: 'A weekly planner.',
+    price: 12,
+  },
+});
+// 201 listed · 422 content check refused (error + hint) · 403 switched off / paid plan needed · 429 hourly limit
+```
+
+`expectedAmountCents` must be the exact current total: a different price is refused before any
+charge. With the raw generated client, use `makeAgentOperations(appBaseUrl)` to get the same
+wrappers; the raw `rawSdk.buyListing` would otherwise go to `api.oriva.io` and send no key.
+
 ### Error handling
 
 Every SDK method returns `{ data, error, response }`. Check `response.ok` for HTTP-level success, or check `error` for structured error payloads:

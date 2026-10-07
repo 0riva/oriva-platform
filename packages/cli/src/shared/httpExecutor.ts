@@ -5,6 +5,7 @@
  * key deviation: API-key regex swapped to Oriva's `oriva_pk_(live|test)_*` format
  * matching @oriva/sdk's documented convention.
  */
+import { randomUUID } from 'node:crypto';
 import type { ExtractedOperation } from './types.js';
 
 export interface ExecuteOptions {
@@ -20,7 +21,16 @@ export interface ExecuteResult {
   /** Reconstructed for envelope output. */
   url: string;
   method: string;
+  /**
+   * The Idempotency-Key sent, when the operation takes one — the caller's, or
+   * one generated here because the caller sent none. Reuse it to retry the
+   * same attempt (a purchase) without repeating it.
+   */
+  idempotency_key?: string;
 }
+
+/** Header names whose value is generated when the caller supplies none. */
+const AUTO_GENERATED_HEADERS = new Set(['idempotency-key']);
 
 const ORIVA_KEY_PATTERN = /^oriva_pk_(live|test)_[A-Za-z0-9_-]+$/;
 
@@ -68,6 +78,20 @@ export async function executeOperation(
     headers.Authorization = `Bearer ${opts.apiKey}`;
   }
 
+  let idempotencyKey: string | undefined;
+  for (const { name, arg } of op.headerParams ?? []) {
+    let v = args[arg];
+    if (
+      (v === undefined || v === null || v === '') &&
+      AUTO_GENERATED_HEADERS.has(name.toLowerCase())
+    ) {
+      v = randomUUID();
+    }
+    if (v === undefined || v === null || v === '') continue;
+    headers[name] = String(v);
+    if (name.toLowerCase() === 'idempotency-key') idempotencyKey = String(v);
+  }
+
   let body: string | undefined;
   if (op.hasBody && args.body !== undefined) {
     headers['Content-Type'] = op.bodyContentType || 'application/json';
@@ -88,5 +112,6 @@ export async function executeOperation(
     request_id: res.headers.get('x-request-id') ?? undefined,
     url: url.toString(),
     method,
+    ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
   };
 }

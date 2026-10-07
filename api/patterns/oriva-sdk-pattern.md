@@ -54,6 +54,27 @@ The MCP server's `packages/mcp-server/src/openapi.ts` projects MCP tools dynamic
 8. If MCP server should expose the new tool, bump MCP version too — same auto-publish.
 9. If CLI should bundle the new op, bump CLI version too — same auto-publish (needs `NPM_TOKEN` to be a Granular Automation token with 2FA bypass; rotated 2026-05-16).
 
+## An operation served by ANOTHER host (operation-level `servers`)
+
+Some operations in the public spec are not served by this repo's Express app. The agent
+commerce operations (`buyListing`, `listAgentPurchases`, `createListing`,
+`src/openapi/schemas/agent-commerce.ts`) live on o-core at `https://oriva.io`. They are
+registered with an operation-level `servers: [{ url: 'https://oriva.io' }]`, and each layer
+honours it differently — so a new operation of this kind needs all four:
+
+| Layer       | What reads `servers`                                                                                                                                        | Where                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Drift check | Skips the op for the stale-entry check (no Express route can match it) and counts it as "served by another host"                                            | `scripts/check-openapi-drift.ts`                          |
+| CLI         | Sends the op to `servers[0]`; `--base-url` / `ORIVA_API_BASE_URL` / profile `baseUrl` do NOT move it — `--app-base-url` / `ORIVA_APP_BASE_URL` do           | `packages/cli/src/cli.ts`                                 |
+| MCP server  | Nothing — it shells out to the CLI, which routes it. It must require a CLI version that knows (`^0.4.0`), or an older CLI sends the call to `api.oriva.io`  | `packages/mcp-server/package.json`                        |
+| SDK         | **hey-api ignores operation-level servers** — the generated function uses the client's `baseUrl` (`api.oriva.io`). A hand-written wrapper supplies the host | `packages/sdk/src/agent.ts`, wired in `createOrivaClient` |
+
+Header parameters (e.g. `Idempotency-Key`) become inputs named in camelCase (`idempotencyKey`) in
+both the CLI (`headerArgName` in `toolGenerator.ts`) and the MCP projection (`headerArgName` in
+`openapi.ts`). The two must agree: the MCP server passes the input to the CLI as `--<name>`. An
+`Idempotency-Key` that the caller omits is generated (CLI `httpExecutor.ts`, SDK `agent.ts`) and
+reported back, so a retry can reuse it.
+
 ## @hey-api/openapi-ts config gotchas
 
 **Symptom → fix table:**

@@ -19,6 +19,17 @@ export interface ExtractedOperation {
   /** Param-name buckets so the executor knows where each input goes. */
   pathParams: string[];
   queryParams: string[];
+  /**
+   * Header parameters. `arg` is the input/flag name (camelCase of the header,
+   * e.g. `Idempotency-Key` → `idempotencyKey`); `name` is the header sent.
+   */
+  headerParams?: Array<{ name: string; arg: string }>;
+  /**
+   * Operation-level `servers` URLs. When present the operation is served by a
+   * different host than the document's default (e.g. agent commerce on
+   * https://oriva.io), and the executor sends it there.
+   */
+  servers?: string[];
   hasBody: boolean;
   bodyContentType?: string;
   /** OpenAPI tags. First tag drives help-grouping. */

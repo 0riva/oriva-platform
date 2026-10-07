@@ -4,6 +4,18 @@ All notable changes to `@oriva/mcp-server` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-10-07
+
+### Added
+
+- `buyListing`, `listAgentPurchases` and `createListing` tools — an agent buys and lists in the Oriva marketplace for the key owner (o-platform#76). They are served by `https://oriva.io` (override: `ORIVA_APP_BASE_URL`), not `api.oriva.io`.
+- Header parameters become tool inputs (`Idempotency-Key` → `idempotencyKey`). `buyListing` always sends a key; one is generated when the agent passes none, and the key used is returned in a second text block.
+- Error results keep every field of the error body (`refused`, `purchaseId`, `hint`), not only `error`.
+
+### Changed
+
+- Requires `@oriva/cli` `^0.4.0`, which routes these operations to the web-app host and sends header parameters.
+
 ## [0.1.3] — 2026-05-16
 
 ### Documentation

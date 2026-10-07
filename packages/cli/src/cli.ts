@@ -140,12 +140,18 @@ export async function run(deps: RunDeps = {}): Promise<number> {
     return 3;
   }
 
-  const baseUrl =
-    parsed.global.baseUrl ||
-    (env.ORIVA_API_BASE_URL || '').trim() ||
-    auth.baseUrl ||
-    doc.servers?.[0]?.url ||
-    DEFAULT_BASE_URL;
+  // An operation with its own `servers` entry lives on another host (the agent
+  // commerce operations are served by https://oriva.io, not api.oriva.io), so
+  // the api-host overrides (--base-url, ORIVA_API_BASE_URL, profile baseUrl)
+  // must NOT redirect it. It has its own override: --app-base-url /
+  // ORIVA_APP_BASE_URL.
+  const baseUrl = op.servers?.length
+    ? parsed.global.appBaseUrl || (env.ORIVA_APP_BASE_URL || '').trim() || op.servers[0]
+    : parsed.global.baseUrl ||
+      (env.ORIVA_API_BASE_URL || '').trim() ||
+      auth.baseUrl ||
+      doc.servers?.[0]?.url ||
+      DEFAULT_BASE_URL;
 
   let result: Awaited<ReturnType<typeof executeOperation>>;
   try {
@@ -176,6 +182,12 @@ export async function run(deps: RunDeps = {}): Promise<number> {
   if (parsed.global.showStatus && !parsed.global.quiet) {
     stderr.write(
       `HTTP ${result.status}${result.request_id ? ` (request_id=${result.request_id})` : ''}\n`
+    );
+  }
+
+  if (result.idempotency_key && !parsed.global.json && !parsed.global.quiet) {
+    stderr.write(
+      `[oriva] Idempotency-Key: ${result.idempotency_key} — pass --idempotencyKey=${result.idempotency_key} to retry this same request without repeating it.\n`
     );
   }
 
