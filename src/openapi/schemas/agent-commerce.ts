@@ -229,6 +229,39 @@ registry.registerPath({
 
 // ── List for sale ─────────────────────────────────────────────────────────────
 
+/**
+ * The marketplace's own topics, in the order oriva.io lists them. Must equal
+ * `MARKETPLACE_TOPIC_IDS` in o-core `packages/shared/types/marketplace/topics.ts`, which the
+ * listing route and the database check against (o-core#1825; oriva-platform#78).
+ */
+export const MARKETPLACE_TOPIC_IDS = [
+  'topic-parent-productivity',
+  'topic-parent-business',
+  'topic-parent-social',
+  'topic-parent-health',
+  'topic-parent-money',
+  'topic-parent-lifestyle',
+  'topic-parent-humanity',
+  'topic-social-relationships',
+  'topic-social-communication',
+  'topic-health-nutrition',
+  'topic-health-exercise',
+  'topic-health-longevity',
+  'topic-health-skincare',
+  'topic-money-investment',
+  'topic-money-savings',
+  'topic-money-crypto',
+  'topic-lifestyle-travel',
+  'topic-lifestyle-gadgets',
+  'topic-lifestyle-parenting',
+  'topic-lifestyle-home',
+  'topic-lifestyle-entertainment',
+  'topic-lifestyle-technology',
+  'topic-humanity-history',
+  'topic-humanity-futurism',
+  'topic-humanity-personal-growth',
+] as const;
+
 export const CreateListingBodySchema = registry.register(
   'CreateListingBody',
   z.object({
@@ -247,6 +280,15 @@ export const CreateListingBodySchema = registry.register(
       .enum(['digital', 'physical', 'service', 'course', 'app', 'event'])
       .optional()
       .describe('Kind of item. Defaults to digital.'),
+    topics: z
+      .array(z.enum(MARKETPLACE_TOPIC_IDS))
+      .max(4)
+      .optional()
+      .describe(
+        'Up to 4 of the marketplace\'s topics the listing is filed under, so buyers find it under ' +
+          'that topic. Publishing needs at least one; a draft may have none. A subtopic id ' +
+          '(topic-health-nutrition) is best sent with its parent (topic-parent-health).'
+      ),
     profileId: z
       .string()
       .uuid()
@@ -275,8 +317,11 @@ registry.registerPath({
     'in the browser. Works only once the owner has switched agent listing on at ' +
     'https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. ' +
     'Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to ' +
-    'edit an existing listing.\n\n' +
-    '- 422: the content check refused it; `error` and `hint` say what to change before retrying.\n' +
+    'edit an existing listing. Choose `topics` from the marketplace\'s own list (see the field); ' +
+    'publishing needs at least one.\n\n' +
+    '- 400: a field is out of range; for `topics`, the error lists the topics to choose from.\n' +
+    '- 422: the content check refused it, or the listing has no marketplace topic; `error` and ' +
+    '`hint` say what to change before retrying.\n' +
     '- 403: listing switched off, a paid listing needs a paid plan (retry with `publish: false` ' +
     "to save a draft), or the profile is not the owner's. Do not retry unchanged.\n" +
     '- 429: over 20 listings an hour; wait before retrying.\n\n' +
