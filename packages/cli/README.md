@@ -124,11 +124,13 @@ Returns the owner's 50 most recent agent purchases, refused ones included, with 
 
 ```bash
 oriva createListing --json \
-  --body='{"title":"Notion planning template","description":"A weekly planner.","price":12,"publish":false}'
+  --body='{"title":"Notion planning template","description":"A weekly planner.","price":12,"topics":["topic-parent-productivity"]}'
 ```
 
 Works only once the owner has switched agent listing on (separately from buying), at most 20 an
-hour. 201 returns `data.listing`. 422 means the content check refused it: `error` and
+hour. Publishing needs at least one of the marketplace's 25 `topics` (a draft, `"publish": false`,
+may have none); a missing or unknown topic answers 400 with the list to choose from. 201 returns
+`data.listing`. 422 means the content check refused it: `error` and
 `details.hint` say what to change. 403: switched off, a paid listing on a free plan (retry with
 `"publish": false`), or a profile that is not the owner's. 429: over the hourly limit.
 

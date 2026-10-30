@@ -91,7 +91,7 @@ Every public Oriva API endpoint that the OpenAPI spec marks with an `operationId
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `buyListing`         | Buys a listing with the key owner's **real money**, within the limits they set at https://oriva.io/settings/agent-buying. Inputs: `listingId`, `expectedAmountCents` (the exact current total), optional `variantIndex`, and `idempotencyKey`. |
 | `listAgentPurchases` | The owner's 50 most recent agent purchases, refused ones included. Use to check on a purchase that answered 202.                                                                                                                               |
-| `createListing`      | Lists an item for sale in the owner's name. Inputs: `title`, `description`, `price`, optional `currency`, `itemType`, `profileId`, `publish`.                                                                                                  |
+| `createListing`      | Lists an item for sale in the owner's name. Inputs: `title`, `description`, `price`, `topics` (needed to publish; up to 4 of the marketplace's 25), optional `currency`, `itemType`, `profileId`, `publish`.                                                                                                  |
 
 These are served by `https://oriva.io`, not `api.oriva.io`; the server sends them there.
 `buyListing` always carries an Idempotency-Key: pass `idempotencyKey` and reuse it when retrying,

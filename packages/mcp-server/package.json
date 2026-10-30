@@ -1,6 +1,6 @@
 {
   "name": "@oriva/mcp-server",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Model Context Protocol server for the Oriva public API. Exposes the public endpoints, including agent buying and listing, as MCP tools for use in Claude Code, Cursor, Continue, and Claude Desktop.",
   "license": "MIT",
   "type": "module",

@@ -99,9 +99,10 @@ const listed = await oriva.createListing({
     title: 'Notion planning template',
     description: 'A weekly planner.',
     price: 12,
+    topics: ['topic-parent-productivity'], // publishing needs at least one marketplace topic
   },
 });
-// 201 listed · 422 content check refused (error + hint) · 403 switched off / paid plan needed · 429 hourly limit
+// 201 listed · 400 no or unknown topic (the error lists the 25) · 422 content check refused (error + hint) · 403 switched off / paid plan needed · 429 hourly limit
 ```
 
 `expectedAmountCents` must be the exact current total: a different price is refused before any

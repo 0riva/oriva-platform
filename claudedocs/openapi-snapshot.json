@@ -1712,6 +1712,41 @@
             ],
             "description": "Kind of item. Defaults to digital."
           },
+          "topics": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "topic-parent-productivity",
+                "topic-parent-business",
+                "topic-parent-social",
+                "topic-parent-health",
+                "topic-parent-money",
+                "topic-parent-lifestyle",
+                "topic-parent-humanity",
+                "topic-social-relationships",
+                "topic-social-communication",
+                "topic-health-nutrition",
+                "topic-health-exercise",
+                "topic-health-longevity",
+                "topic-health-skincare",
+                "topic-money-investment",
+                "topic-money-savings",
+                "topic-money-crypto",
+                "topic-lifestyle-travel",
+                "topic-lifestyle-gadgets",
+                "topic-lifestyle-parenting",
+                "topic-lifestyle-home",
+                "topic-lifestyle-entertainment",
+                "topic-lifestyle-technology",
+                "topic-humanity-history",
+                "topic-humanity-futurism",
+                "topic-humanity-personal-growth"
+              ]
+            },
+            "maxItems": 4,
+            "description": "Up to 4 of the marketplace's topics the listing is filed under, so buyers find it under that topic. Publishing needs at least one; a draft may have none. A subtopic id (topic-health-nutrition) is best sent with its parent (topic-parent-health)."
+          },
           "profileId": {
             "type": "string",
             "format": "uuid",
@@ -5672,7 +5707,7 @@
           }
         ],
         "summary": "List an item for sale in the marketplace in the owner's name",
-        "description": "Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to edit an existing listing.\n\n- 422: the content check refused it; `error` and `hint` say what to change before retrying.\n- 403: listing switched off, a paid listing needs a paid plan (retry with `publish: false` to save a draft), or the profile is not the owner's. Do not retry unchanged.\n- 429: over 20 listings an hour; wait before retrying.\n\nServed by https://oriva.io, not api.oriva.io.",
+        "description": "Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to edit an existing listing. Choose `topics` from the marketplace's own list (see the field); publishing needs at least one.\n\n- 400: a field is out of range; for `topics`, the error lists the topics to choose from.\n- 422: the content check refused it, or the listing has no marketplace topic; `error` and `hint` say what to change before retrying.\n- 403: listing switched off, a paid listing needs a paid plan (retry with `publish: false` to save a draft), or the profile is not the owner's. Do not retry unchanged.\n- 429: over 20 listings an hour; wait before retrying.\n\nServed by https://oriva.io, not api.oriva.io.",
         "security": [
           {
             "ApiKeyAuth": []

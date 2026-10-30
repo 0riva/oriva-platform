@@ -1163,9 +1163,10 @@ export const buyListing = <ThrowOnError extends boolean = false>(
 /**
  * List an item for sale in the marketplace in the owner's name
  *
- * Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to edit an existing listing.
+ * Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to edit an existing listing. Choose `topics` from the marketplace's own list (see the field); publishing needs at least one.
  *
- * - 422: the content check refused it; `error` and `hint` say what to change before retrying.
+ * - 400: a field is out of range; for `topics`, the error lists the topics to choose from.
+ * - 422: the content check refused it, or the listing has no marketplace topic; `error` and `hint` say what to change before retrying.
  * - 403: listing switched off, a paid listing needs a paid plan (retry with `publish: false` to save a draft), or the profile is not the owner's. Do not retry unchanged.
  * - 429: over 20 listings an hour; wait before retrying.
  *

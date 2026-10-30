@@ -86,9 +86,14 @@ describe('agent tool projection', () => {
   it('createListing takes the listing fields and no Idempotency-Key', () => {
     const s = tool('createListing').inputSchema;
     expect(Object.keys(s.properties ?? {}).sort()).toEqual(
-      ['currency', 'description', 'itemType', 'price', 'profileId', 'publish', 'title'].sort()
+      ['currency', 'description', 'itemType', 'price', 'profileId', 'publish', 'title', 'topics'].sort()
     );
+    // topics is optional (a draft may have none) but restricted to the marketplace's own list.
     expect([...(s.required ?? [])].sort()).toEqual(['description', 'price', 'title']);
+    const topics = s.properties?.topics as { items?: { enum?: string[] }; maxItems?: number };
+    expect(topics.items?.enum).toHaveLength(25);
+    expect(topics.items?.enum).toContain('topic-parent-productivity');
+    expect(topics.maxItems).toBe(4);
     expect(index.get('createListing')?.headerParams).toEqual([]);
     expect(tool('createListing').description).toMatch(/422/);
   });

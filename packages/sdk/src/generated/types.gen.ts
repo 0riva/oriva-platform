@@ -474,6 +474,36 @@ export type CreateListingBody = {
    */
   itemType?: 'digital' | 'physical' | 'service' | 'course' | 'app' | 'event';
   /**
+   * Up to 4 of the marketplace's topics the listing is filed under, so buyers find it under that topic. Publishing needs at least one; a draft may have none. A subtopic id (topic-health-nutrition) is best sent with its parent (topic-parent-health).
+   */
+  topics?: Array<
+    | 'topic-parent-productivity'
+    | 'topic-parent-business'
+    | 'topic-parent-social'
+    | 'topic-parent-health'
+    | 'topic-parent-money'
+    | 'topic-parent-lifestyle'
+    | 'topic-parent-humanity'
+    | 'topic-social-relationships'
+    | 'topic-social-communication'
+    | 'topic-health-nutrition'
+    | 'topic-health-exercise'
+    | 'topic-health-longevity'
+    | 'topic-health-skincare'
+    | 'topic-money-investment'
+    | 'topic-money-savings'
+    | 'topic-money-crypto'
+    | 'topic-lifestyle-travel'
+    | 'topic-lifestyle-gadgets'
+    | 'topic-lifestyle-parenting'
+    | 'topic-lifestyle-home'
+    | 'topic-lifestyle-entertainment'
+    | 'topic-lifestyle-technology'
+    | 'topic-humanity-history'
+    | 'topic-humanity-futurism'
+    | 'topic-humanity-personal-growth'
+  >;
+  /**
    * One of the owner's named profiles to list under. Defaults to their default profile.
    */
   profileId?: string;
