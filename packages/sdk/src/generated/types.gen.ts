@@ -638,6 +638,7 @@ export type UpdateProfileData = {
     avatar?: string;
     bio?: string | null;
     location?: string | null;
+    [key: string]: unknown;
   };
   path: {
     profileId: string;
@@ -777,6 +778,7 @@ export type RegisterData = {
     name?: string;
     username?: string;
     preferences?: unknown;
+    [key: string]: unknown;
   };
   path?: never;
   query?: never;
@@ -807,6 +809,7 @@ export type LoginData = {
   body?: {
     email: string;
     password: string;
+    [key: string]: unknown;
   };
   path?: never;
   query?: never;
@@ -915,6 +918,7 @@ export type PatchAuthProfileData = {
     avatar_url?: string;
     location?: string;
     website_url?: string;
+    [key: string]: unknown;
   };
   path?: never;
   query?: never;
@@ -952,6 +956,7 @@ export type PutAuthProfileData = {
       [key: string]: unknown;
     };
     data_retention_days?: number;
+    [key: string]: unknown;
   };
   path?: never;
   query?: never;
@@ -1301,6 +1306,7 @@ export type InstallMarketplaceAppData = {
     settings?: {
       [key: string]: unknown;
     };
+    [key: string]: unknown;
   };
   path: {
     appId: string;
@@ -1450,6 +1456,7 @@ export type SearchMarketplaceData = {
     };
     limit?: number;
     offset?: number;
+    [key: string]: unknown;
   };
   path?: never;
   query?: never;
@@ -1577,6 +1584,7 @@ export type CreateDeveloperAppData = {
       [key: string]: unknown;
     };
     supported_audience?: Array<string>;
+    [key: string]: unknown;
   };
   path?: never;
   query?: never;
@@ -1686,6 +1694,7 @@ export type UpdateDeveloperAppData = {
       [key: string]: unknown;
     };
     supported_audience?: Array<string>;
+    [key: string]: unknown;
   };
   path: {
     appId: string;
@@ -1773,6 +1782,7 @@ export type ResubmitDeveloperAppData = {
       [key: string]: unknown;
     };
     supported_audience?: Array<string>;
+    [key: string]: unknown;
   };
   path: {
     appId: string;
@@ -1989,6 +1999,7 @@ export type CreateEventData = {
     price?: number;
     tags?: Array<string>;
     imageUrl?: string | null;
+    [key: string]: unknown;
   };
   path?: never;
   query?: never;
