@@ -2,14 +2,6 @@
   "_comment": "Advisories the production audit gate accepts (scripts/check-audit.mjs). Each needs the reason it cannot be reached and the ticket that removes it. The gate fails when an entry stops appearing, so remove it then.",
   "accepted": [
     {
-      "id": "GHSA-mrhx-c7xc-m3w5",
-      "package": "zod",
-      "severity": "high",
-      "reason": "Memory exhaustion needs a large array checked against an array schema with no length cap. No zod check of request input has an array schema (validateRequestData's schemas, CreateTokenBodySchema, PaymentLinkBodySchema), and the deployed app caps JSON bodies at express's default 100 KB (api/index.ts). Fixed only in zod 4.6.6; 3.x has no patch.",
-      "removedBy": "https://github.com/0riva/oriva-platform/issues/84",
-      "reviewed": "2026-11-03"
-    },
-    {
       "id": "GHSA-gcqx-w48m-w2h4",
       "package": "deepmerge",
       "severity": "low",

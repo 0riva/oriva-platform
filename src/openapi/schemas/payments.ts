@@ -32,12 +32,12 @@ export const PaymentLinkBodySchema = z.object({
     ),
   oriva_manifest_id: z
     .string()
-    .uuid()
+    .guid()
     .optional()
     .describe('REA manifest UUID for skill royalty attribution.'),
   oriva_invocation_id: z
     .string()
-    .uuid()
+    .guid()
     .optional()
     .describe('Unique invocation UUID for analytics and deduplication.'),
   success_url: z
@@ -49,7 +49,7 @@ export const PaymentLinkBodySchema = z.object({
     .url()
     .describe('URL the buyer is redirected to if they abandon the checkout. Must use https://.'),
   metadata: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe('Arbitrary key-value pairs forwarded to the Stripe Checkout Session metadata.'),
 });

@@ -29,7 +29,9 @@ export const MyResponseSchema = registry.register(
 
 // For path params, export the schema for use in the handler too
 export const MyParamSchema = z.object({
-  id: z.string().uuid(),
+  // .guid(), not .uuid(): zod 4's .uuid() refuses ids without RFC version bits, which zod 3
+  // accepted and some stored ids have. Both write format: uuid into the spec (#84).
+  id: z.string().guid(),
 });
 
 registry.registerPath({
