@@ -5,7 +5,7 @@ import { MarketplaceAppSchema } from './marketplace';
 // ── Path param ───────────────────────────────────────────────────────────────
 
 export const AppIdParamSchema = z.object({
-  appId: z.string().uuid(),
+  appId: z.string().guid(),
 });
 
 // ── Request body ─────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ export const CreateAppBodySchema = z
     screenshots: z.array(z.string().url()).optional(),
     version: z.string().default('1.0.0'),
     pricing_model: z.string().default('free'),
-    pricing_config: z.record(z.unknown()).optional(),
+    pricing_config: z.record(z.string(), z.unknown()).optional(),
     supported_audience: z.array(z.string()).optional(),
   })
   .passthrough();
@@ -39,7 +39,7 @@ export const UpdateAppBodySchema = z
     screenshots: z.array(z.string().url()).optional(),
     version: z.string().optional(),
     pricing_model: z.string().optional(),
-    pricing_config: z.record(z.unknown()).optional(),
+    pricing_config: z.record(z.string(), z.unknown()).optional(),
     supported_audience: z.array(z.string()).optional(),
   })
   .passthrough();
