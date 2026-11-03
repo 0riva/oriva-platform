@@ -4,12 +4,6 @@ All notable changes to `@oriva/mcp-server` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.2] — 2026-11-03
-
-### Changed
-
-- The API moved to zod 4 (oriva-platform#84). Eleven request bodies that already accepted extra fields now say so explicitly in the spec (`additionalProperties: {}`); JSON Schema allowed them before too, so no tool input changes meaning. Validation error codes are unchanged.
-
 ## [0.6.1] — 2026-10-30
 
 ### Changed

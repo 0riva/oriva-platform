@@ -13,7 +13,7 @@ export const CreatePersonalTokenBodySchema = z.object({
 });
 
 export const TokenIdParamSchema = z.object({
-  id: z.string().guid(),
+  id: z.string().uuid(),
 });
 
 // ── Response schemas ──────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ export const CreatedPersonalTokenSchema = registry.register(
       token: z
         .string()
         .describe('Full token value — displayed ONCE. Store it now; it cannot be retrieved again.'),
-      id: z.string().guid(),
+      id: z.string().uuid(),
       name: z.string(),
       prefix: z.string().describe('First 20 characters of the token, safe to display later.'),
       created_at: z.string().datetime(),
@@ -39,7 +39,7 @@ export const CreatedPersonalTokenSchema = registry.register(
 export const PersonalTokenSummarySchema = registry.register(
   'PersonalTokenSummary',
   z.object({
-    id: z.string().guid(),
+    id: z.string().uuid(),
     name: z.string(),
     prefix: z.string(),
     created_at: z.string().datetime(),

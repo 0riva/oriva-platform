@@ -27,7 +27,7 @@ export const CreateBridgeConnectionBodySchema = registry.register(
 export const TriggerBridgeSyncBodySchema = registry.register(
   'TriggerBridgeSyncBody',
   z.object({
-    bridgeGroupId: z.string().guid(),
+    bridgeGroupId: z.string().uuid(),
   })
 );
 
@@ -48,7 +48,7 @@ export const BridgeConnectionSchema = registry.register(
 export const BridgeGroupSchema = registry.register(
   'BridgeGroup',
   z.object({
-    id: z.string().guid(),
+    id: z.string().uuid(),
     name: z.string(),
     description: z.string().nullable(),
     participantCount: z.number().int(),
@@ -59,8 +59,8 @@ export const BridgeGroupSchema = registry.register(
 export const BridgeTaskSchema = registry.register(
   'BridgeTask',
   z.object({
-    id: z.string().guid(),
-    bridgeGroupId: z.string().guid(),
+    id: z.string().uuid(),
+    bridgeGroupId: z.string().uuid(),
     sourcePlatform: z.string(),
     sourceId: z.string(),
     title: z.string(),
@@ -165,7 +165,7 @@ registry.registerPath({
   security: [{ ApiKeyAuth: [] }],
   request: {
     query: z.object({
-      bridgeGroupId: z.string().guid(),
+      bridgeGroupId: z.string().uuid(),
       limit: z.coerce.number().int().min(1).max(200).optional(),
     }),
   },
@@ -196,7 +196,7 @@ registry.registerPath({
       description: 'Sync enqueued',
       content: {
         'application/json': {
-          schema: okEnvelope(z.object({ bridgeGroupId: z.string().guid(), enqueued: z.boolean() })),
+          schema: okEnvelope(z.object({ bridgeGroupId: z.string().uuid(), enqueued: z.boolean() })),
         },
       },
     },

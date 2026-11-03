@@ -20,7 +20,7 @@ const PaginationQuerySchema = z.object({
 export const MarketplaceAppSchema = registry.register(
   'MarketplaceApp',
   z.object({
-    id: z.string().guid(),
+    id: z.string().uuid(),
     external_id: z.string().optional(),
     name: z.string(),
     slug: z.string(),
@@ -31,9 +31,9 @@ export const MarketplaceAppSchema = registry.register(
     screenshots: z.array(z.string().url()).nullable().optional(),
     version: z.string(),
     pricing_model: z.string(),
-    pricing_config: z.record(z.string(), z.unknown()).nullable().optional(),
+    pricing_config: z.record(z.unknown()).nullable().optional(),
     install_count: z.number().int(),
-    developer_id: z.string().guid(),
+    developer_id: z.string().uuid(),
     developer_name: z.string(),
     status: z.enum(['draft', 'pending_review', 'approved', 'rejected']),
     is_active: z.boolean(),
@@ -48,10 +48,10 @@ export const MarketplaceAppSchema = registry.register(
 export const InstalledAppSchema = registry.register(
   'InstalledApp',
   z.object({
-    installationId: z.string().guid(),
+    installationId: z.string().uuid(),
     installedAt: z.string().datetime(),
     isActive: z.boolean(),
-    settings: z.record(z.string(), z.unknown()).nullable(),
+    settings: z.record(z.unknown()).nullable(),
     app: MarketplaceAppSchema,
   })
 );
@@ -61,12 +61,12 @@ export const InstalledAppSchema = registry.register(
 export const MarketplaceItemSchema = registry.register(
   'MarketplaceItem',
   z.object({
-    id: z.string().guid(),
+    id: z.string().uuid(),
     title: z.string(),
     content: z.string().nullable().optional(),
-    profile_id: z.string().guid(),
+    profile_id: z.string().uuid(),
     entry_type: z.string(),
-    marketplace_metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+    marketplace_metadata: z.record(z.unknown()).nullable().optional(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime(),
   })
@@ -77,11 +77,11 @@ export const MarketplaceItemSchema = registry.register(
 export const CategorySchema = registry.register(
   'Category',
   z.object({
-    id: z.string().guid(),
+    id: z.string().uuid(),
     name: z.string(),
     description: z.string().nullable().optional(),
     collection_type: z.string(),
-    organization_rules: z.record(z.string(), z.unknown()).nullable().optional(),
+    organization_rules: z.record(z.unknown()).nullable().optional(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime(),
   })
@@ -89,9 +89,9 @@ export const CategorySchema = registry.register(
 
 // ── App param ─────────────────────────────────────────────────────────────────
 
-const AppIdParamSchema = z.object({ appId: z.string().guid() });
-const ItemIdParamSchema = z.object({ id: z.string().guid() });
-const CategoryIdParamSchema = z.object({ id: z.string().guid() });
+const AppIdParamSchema = z.object({ appId: z.string().uuid() });
+const ItemIdParamSchema = z.object({ id: z.string().uuid() });
+const CategoryIdParamSchema = z.object({ id: z.string().uuid() });
 
 // ── Path registrations — Plugin Apps (validateApiKey) ─────────────────────────
 
@@ -277,7 +277,7 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: z.object({ settings: z.record(z.string(), z.unknown()).optional() }).passthrough(),
+          schema: z.object({ settings: z.record(z.unknown()).optional() }).passthrough(),
         },
       },
     },
@@ -342,10 +342,10 @@ registry.registerPath({
     query: PaginationQuerySchema.extend({
       item_type: z.string().optional(),
       earner_type: z.string().optional(),
-      category_id: z.string().guid().optional(),
+      category_id: z.string().uuid().optional(),
       min_price: z.number().optional(),
       max_price: z.number().optional(),
-      seller_id: z.string().guid().optional(),
+      seller_id: z.string().uuid().optional(),
       search: z.string().optional(),
     }),
   },
@@ -405,7 +405,7 @@ registry.registerPath({
           schema: z
             .object({
               query: z.string().min(1),
-              filters: z.record(z.string(), z.unknown()).optional(),
+              filters: z.record(z.unknown()).optional(),
               limit: z.number().int().max(100).optional(),
               offset: z.number().int().optional(),
             })
@@ -449,7 +449,7 @@ registry.registerPath({
             success: z.boolean(),
             data: z.array(
               CategorySchema.extend({
-                children: z.array(z.record(z.string(), z.unknown())).optional(),
+                children: z.array(z.record(z.unknown())).optional(),
               })
             ),
           }),

@@ -6,10 +6,10 @@ import { registry } from '../registry';
 export const EntrySchema = registry.register(
   'Entry',
   z.object({
-    id: z.string().guid(),
+    id: z.string().uuid(),
     title: z.string(),
     content: z.string(),
-    profile_id: z.string().guid(),
+    profile_id: z.string().uuid(),
     audience_type: z.string(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime(),
@@ -101,7 +101,7 @@ registry.registerPath({
           schema: z.object({
             ok: z.boolean(),
             success: z.boolean(),
-            data: z.record(z.string(), z.unknown()),
+            data: z.record(z.unknown()),
           }),
         },
       },

@@ -2,13 +2,13 @@ import { z } from 'zod';
 import { registry } from '../registry';
 
 export const GroupIdParamSchema = z.object({
-  groupId: z.string().guid().openapi({ example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' }),
+  groupId: z.string().uuid().openapi({ example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' }),
 });
 
 export const GroupSummarySchema = registry.register(
   'GroupSummary',
   z.object({
-    groupId: z.string().guid(),
+    groupId: z.string().uuid(),
     groupName: z.string(),
     memberCount: z.number().int(),
     isActive: z.boolean(),
@@ -22,7 +22,7 @@ export const GroupSummarySchema = registry.register(
 export const GroupMemberSchema = registry.register(
   'GroupMember',
   z.object({
-    memberId: z.string().guid(),
+    memberId: z.string().uuid(),
     displayName: z.string(),
     role: z.string(),
     joinedAt: z.string().datetime(),

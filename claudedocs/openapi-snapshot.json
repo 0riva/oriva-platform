@@ -2026,8 +2026,7 @@
                       "null"
                     ]
                   }
-                },
-                "additionalProperties": {}
+                }
               }
             }
           }
@@ -2278,8 +2277,7 @@
                 "required": [
                   "email",
                   "password"
-                ],
-                "additionalProperties": {}
+                ]
               }
             }
           }
@@ -2329,8 +2327,7 @@
                 "required": [
                   "email",
                   "password"
-                ],
-                "additionalProperties": {}
+                ]
               }
             }
           }
@@ -2489,8 +2486,7 @@
                     "type": "string",
                     "format": "uri"
                   }
-                },
-                "additionalProperties": {}
+                }
               }
             }
           }
@@ -2557,8 +2553,7 @@
                     "type": "integer",
                     "minimum": 30
                   }
-                },
-                "additionalProperties": {}
+                }
               }
             }
           }
@@ -3276,8 +3271,7 @@
                     "type": "object",
                     "additionalProperties": {}
                   }
-                },
-                "additionalProperties": {}
+                }
               }
             }
           }
@@ -3620,8 +3614,7 @@
                 },
                 "required": [
                   "query"
-                ],
-                "additionalProperties": {}
+                ]
               }
             }
           }
@@ -3917,8 +3910,7 @@
                   "name",
                   "slug",
                   "category"
-                ],
-                "additionalProperties": {}
+                ]
               }
             }
           }
@@ -4086,8 +4078,7 @@
                       "type": "string"
                     }
                   }
-                },
-                "additionalProperties": {}
+                }
               }
             }
           }
@@ -4307,8 +4298,7 @@
                       "type": "string"
                     }
                   }
-                },
-                "additionalProperties": {}
+                }
               }
             }
           }
@@ -4822,8 +4812,7 @@
                   "endDate",
                   "isOnline",
                   "category"
-                ],
-                "additionalProperties": {}
+                ]
               }
             }
           }

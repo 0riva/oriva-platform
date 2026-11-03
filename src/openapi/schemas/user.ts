@@ -4,7 +4,7 @@ import { registry } from '../registry';
 const ApiKeyInfoSchema = z.object({
   keyId: z.string(),
   name: z.string(),
-  userId: z.string().guid(),
+  userId: z.string().uuid(),
   permissions: z.array(z.string()),
   usageCount: z.number().int(),
 });
@@ -15,7 +15,7 @@ export const UserMeSchema = registry.register(
     ok: z.boolean(),
     success: z.boolean(),
     data: z.object({
-      id: z.string().guid(),
+      id: z.string().uuid(),
       username: z.string().nullable(),
       displayName: z.string(),
       email: z.string().email().nullable(),

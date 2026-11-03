@@ -58,7 +58,7 @@ export const PutProfileBodySchema = z
     avatar_url: z.string().url().optional(),
     location: z.string().optional(),
     website_url: z.string().url().optional(),
-    preferences: z.record(z.string(), z.unknown()).optional(),
+    preferences: z.record(z.unknown()).optional(),
     data_retention_days: z.number().int().min(30).optional(),
   })
   .passthrough();
@@ -93,7 +93,7 @@ export const AuthProfileResponseSchema = registry.register(
     ok: z.boolean(),
     success: z.boolean(),
     data: z.object({
-      id: z.string().guid(),
+      id: z.string().uuid(),
       email: z.string().email().nullable(),
       displayName: z.string(),
       avatar: z.string().url().nullable(),

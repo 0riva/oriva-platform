@@ -15,14 +15,14 @@ const PaginationMetaSchema = z.object({
 export const TeamMemberSchema = registry.register(
   'TeamMember',
   z.object({
-    profileId: z.string().guid(),
+    profileId: z.string().uuid(),
     displayName: z.string().nullable(),
     username: z.string().nullable(),
     avatarUrl: z.string().url().nullable(),
     role: z.string(),
     joinedAt: z.string().datetime(),
     group: z.object({
-      id: z.string().guid(),
+      id: z.string().uuid(),
       name: z.string(),
     }),
   })
