@@ -38,7 +38,9 @@
     "monitor": "ts-node api/monitoring/check-api-health.ts --detailed",
     "prepare": "node -e \"try { require('husky/lib/install') } catch (e) { /* Skip husky install if module not found */ }\"",
     "check:workspace-versions": "node scripts/check-workspace-versions.mjs",
-    "check:undeclared-imports": "node scripts/check-undeclared-imports.mjs"
+    "check:undeclared-imports": "node scripts/check-undeclared-imports.mjs",
+    "check:audit": "node scripts/check-audit.mjs",
+    "test:audit-gate": "node --test scripts/check-audit.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",

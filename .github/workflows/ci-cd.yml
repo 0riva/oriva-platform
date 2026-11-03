@@ -97,14 +97,14 @@ jobs:
         uses: actions/checkout@v4
 
       # Hard gate: the production dependency tree must be free of moderate+
-      # advisories. --omit=dev excludes build/test tooling (e.g. @vercel/node,
-      # which is types-only and erased at compile time) — those are never
-      # part of the deployed runtime.
-      # Accepted advisory: aws-sdk v2 (GHSA-j965-2qgj-vjmq, low severity) sits
-      # below this gate. The only "fix" npm offers is a downgrade to v1.x;
-      # the real remediation is migrating to AWS SDK v3, tracked separately.
+      # advisories, except those accepted in scripts/audit-accepted.json, each
+      # with the reason it cannot be reached and the ticket that removes it.
+      # --omit=dev excludes build/test tooling, which is never deployed.
+      # The gate also fails when an accepted advisory stops appearing (#82).
+      - name: Test the audit gate
+        run: node --test scripts/check-audit.test.mjs
       - name: Run security audit (production dependencies)
-        run: npm audit --omit=dev --audit-level=moderate
+        run: node scripts/check-audit.mjs
 
   deploy-staging:
     name: Deploy to Staging
