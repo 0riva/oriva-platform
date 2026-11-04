@@ -50,6 +50,10 @@ function getStripe(): Stripe {
     if (!key) {
       throw new Error('LIMOHAWK_STRIPE_SECRET_KEY is not configured');
     }
+    // LimoHawk's webhooks stay on the API version they were built against. The SDK's types
+    // allow only its own pinned version (2025-10-29.clover in stripe 19.2+), so this line uses
+    // Stripe's documented override for an older version (README, "older API version").
+    // @ts-expect-error stripe-version-2025-09-30.clover
     stripeClient = new Stripe(key, { apiVersion: '2025-09-30.clover' });
   }
   return stripeClient;
