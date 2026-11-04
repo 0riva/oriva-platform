@@ -164,17 +164,23 @@ export interface SyncResponse {
 // MerlinAI Service Class
 export class MerlinAIService {
   private logger: Logger;
-  private openai: OpenAI;
+  private openaiClient: OpenAI | null = null;
   private supabase: SupabaseClient;
   private modelCache: Map<string, any> = new Map();
 
+  /**
+   * The OpenAI client, created on first use (#84). openai 6 refuses a missing key in its
+   * constructor, and this service is built while api/index loads, so an eager client took the
+   * whole function down in a deployment with no OPENAI_API_KEY. A missing key now fails only
+   * the request that needs the model, as it did under openai 5.
+   */
+  private get openai(): OpenAI {
+    if (!this.openaiClient) this.openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    return this.openaiClient;
+  }
+
   constructor(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient;
-
-    // Initialize OpenAI
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || '',
-    });
 
     // Setup logger
     this.logger = winston.createLogger({

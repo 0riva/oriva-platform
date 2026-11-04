@@ -31,7 +31,7 @@ const AgentErrorSchema = registry.register(
 export const BuyListingBodySchema = registry.register(
   'BuyListingBody',
   z.object({
-    listingId: z.string().uuid().describe('The marketplace listing (entry) id to buy.'),
+    listingId: z.string().guid().describe('The marketplace listing (entry) id to buy.'),
     expectedAmountCents: z
       .number()
       .int()
@@ -291,7 +291,7 @@ export const CreateListingBodySchema = registry.register(
       ),
     profileId: z
       .string()
-      .uuid()
+      .guid()
       .optional()
       .describe(
         "One of the owner's named profiles to list under. Defaults to their default profile."

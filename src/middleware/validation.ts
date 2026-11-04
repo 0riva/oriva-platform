@@ -12,8 +12,18 @@ export function formatZodErrors(error: z.ZodError) {
   return error.issues.map((issue) => ({
     field: issue.path.length > 0 ? issue.path.join('.') : 'unknown',
     message: issue.message,
-    code: issue.code,
+    code: publicIssueCode(issue.code),
   }));
+}
+
+/**
+ * The `code` the API has always sent for a validation error. zod 4 renamed
+ * `invalid_string` (a malformed email, id or URL) to `invalid_format`; callers
+ * may branch on the code, so it is sent under its old name (#84). The message
+ * text is zod's own and is not part of the contract.
+ */
+export function publicIssueCode(code: string): string {
+  return code === 'invalid_format' ? 'invalid_string' : code;
 }
 
 /**
@@ -70,7 +80,7 @@ export class ValidationError extends Error {
  * const validatedData = validateRequest({
  *   body: UserCreateSchema,
  *   query: PaginationSchema.optional(),
- *   params: { userId: z.string().uuid() }
+ *   params: { userId: z.string().guid() }
  * }, {
  *   body: req.body,
  *   query: req.query,

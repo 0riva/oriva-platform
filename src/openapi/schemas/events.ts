@@ -6,7 +6,7 @@ import { registry } from '../registry';
 export const EventSchema = registry.register(
   'Event',
   z.object({
-    id: z.string().uuid(),
+    id: z.string().guid(),
     title: z.string(),
     description: z.string(),
     startDate: z.string().datetime(),
@@ -14,7 +14,7 @@ export const EventSchema = registry.register(
     location: z.string().nullable(),
     isOnline: z.boolean(),
     category: z.string(),
-    organizer: z.string().uuid(),
+    organizer: z.string().guid(),
     maxAttendees: z.number().int().nullable(),
     currentAttendees: z.number().int().nullable(),
     price: z.number().min(0),
@@ -25,7 +25,7 @@ export const EventSchema = registry.register(
   })
 );
 
-const EventIdParamSchema = z.object({ eventId: z.string().uuid() });
+const EventIdParamSchema = z.object({ eventId: z.string().guid() });
 
 // POST body — required fields validated inline by handler
 export const CreateEventBodySchema = z
