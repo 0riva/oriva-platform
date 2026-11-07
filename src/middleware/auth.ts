@@ -104,17 +104,25 @@ export async function authenticate(
 
     // If no profile from header, fetch user profile from profiles table
     if (!userProfile) {
-      // Note: Only select columns that exist in production schema
-      const { data: foundProfile, error: profileError } = await supabase
+      // Note: Only select columns that exist in production schema.
+      // A member can own several profiles. `.single()` answers PGRST116 for MORE than one row as
+      // well as for none, so every multi-profile member was sent down the auto-create branch, the
+      // insert failed, and every route behind this middleware answered 500 PROFILE_CREATE_FAILED
+      // (o-core#2151). Take their default profile, else their oldest; create one only when they
+      // genuinely have none.
+      const { data: ownProfiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, account_id')
         .eq('account_id', user.id)
-        .single();
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: true })
+        .limit(1);
+      const foundProfile = ownProfiles?.[0] ?? null;
 
       if (foundProfile) {
         userProfile = foundProfile;
-      } else if (profileError?.code === 'PGRST116') {
-        // PGRST116 = "No rows returned" - auto-create profile for new users via magic link
+      } else if (!profileError) {
+        // No profile at all - auto-create profile for new users via magic link
         const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
         const anonSuffix = Math.floor(Math.random() * 100000000)
           .toString()

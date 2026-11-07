@@ -25,7 +25,7 @@ The shared `validateAuth` middleware (`src/middleware/auth.ts`) does TWO things:
 1. JWT verify via `supabase.auth.getUser(token)`
 2. **Profile lookup + auto-create** in `public.profiles` keyed by `account_id = user.id`
 
-The auto-create branch fails with `Failed to create user profile` (500) for users whose profile row doesn't exist or has a schema mismatch. We hit this during the May 16 launch — the user's signed-in JWT was valid but the profile insert failed (likely a NOT NULL column without default, or RLS denying the service-role-key insert).
+The auto-create branch used to fail with `Failed to create user profile` (500) for every member who owns MORE THAN ONE profile. Cause (measured 2026-11-07, o-core#2151): the lookup ended in `.single()`, which answers PGRST116 for several rows as well as for none, so a multi-profile member was sent down the auto-create branch and the insert failed — 16 of the 118 accounts with an active profile, on every route behind `validateAuth` (e.g. `/api/v1/marketplace/installed`). The lookup now orders by `is_default` then `created_at` and takes one row; it creates a profile only when the member has none. Guarded by `tests/unit/auth-profile-resolution.test.ts`. (The May 16 launch hit this same error; the cause then recorded here — a NOT NULL column or RLS — was a guess.)
 
 **PATs are account-scoped, not profile-scoped.** A PAT belongs to an `auth.users` row, not a profile. Forcing profile load on the management routes is a wrong dependency that:
 
