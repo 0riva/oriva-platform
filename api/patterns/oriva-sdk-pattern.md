@@ -57,7 +57,7 @@ The MCP server's `packages/mcp-server/src/openapi.ts` projects MCP tools dynamic
 ## An operation served by ANOTHER host (operation-level `servers`)
 
 Some operations in the public spec are not served by this repo's Express app. The agent
-commerce operations (`buyListing`, `listAgentPurchases`, `createListing`,
+commerce operations (`buyListing`, `listAgentPurchases`, `createListing`, `updateListing`,
 `src/openapi/schemas/agent-commerce.ts`) live on o-core at `https://oriva.io`. They are
 registered with an operation-level `servers: [{ url: 'https://oriva.io' }]`, and each layer
 honours it differently — so a new operation of this kind needs all four:
@@ -74,6 +74,23 @@ both the CLI (`headerArgName` in `toolGenerator.ts`) and the MCP projection (`he
 `openapi.ts`). The two must agree: the MCP server passes the input to the CLI as `--<name>`. An
 `Idempotency-Key` that the caller omits is generated (CLI `httpExecutor.ts`, SDK `agent.ts`) and
 reported back, so a retry can reuse it.
+
+### Three traps when a body grows nested shapes (oriva-platform#79, the sales page)
+
+- **Never `.describe()` a REGISTERED schema where you use it.** zod-to-openapi then writes
+  `allOf: [{ $ref }, { description }]`, and the MCP server's `resolveRef` (`packages/mcp-server/src/openapi.ts`)
+  opens `properties`, `items` and `additionalProperties` but not `allOf`/`anyOf`/`oneOf`, so the tool input
+  reaches AI clients with a dangling `$ref`. Put the description inside the registered schema instead.
+  Guarded by `agentTools.test.ts` ("leaves no unresolved $ref in any agent tool input"). Find any with a walk
+  over `claudedocs/openapi-snapshot.json` for an `allOf`/`anyOf`/`oneOf` containing `$ref`.
+- **A body whose fields are all optional must say so by listing none as required — and the MCP
+  projection now honours that.** It used to treat "body required, no `required` list" as "every field
+  required", which would have told AI clients to send all thirteen fields of `updateListing`. Only the
+  schema's own `required` list counts now (measured: no other operation had a required body with no list).
+- **Planting a fault for an MCP test? Plant it in `claudedocs/openapi-snapshot.json`, not
+  `packages/mcp-server/src/spec.json`.** jest's `globalSetup` re-runs `copy-spec.mjs` before every run and
+  silently overwrites `src/spec.json`, so a fault planted there never reaches the test and reads as "the test
+  would not catch it".
 
 ## @hey-api/openapi-ts config gotchas
 

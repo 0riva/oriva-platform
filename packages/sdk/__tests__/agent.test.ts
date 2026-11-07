@@ -1,6 +1,6 @@
 /**
  * Contract tests for the SDK's agent-commerce methods (o-platform#76):
- * buyListing, listAgentPurchases, createListing.
+ * buyListing, listAgentPurchases, createListing, updateListing.
  *
  * They are served by https://oriva.io (o-core), not api.oriva.io, so the
  * wrappers in src/agent.ts must send them there; buyListing must always carry
@@ -257,6 +257,81 @@ describe('createOrivaClient().createListing', () => {
     async (status, body) => {
       const result = await createOrivaClient({ apiKey: API_KEY }).createListing({
         body: LISTING,
+        fetch: fetchReturning(status, body),
+      });
+      expect(result.response?.status).toBe(status);
+      expect(result.error).toEqual(body);
+    }
+  );
+});
+
+describe('createOrivaClient().createListing with a sales page', () => {
+  it('sends the sales page, its theme and the search text in the body', async () => {
+    const body = {
+      title: 'Notion template',
+      description: 'A planning template.',
+      price: 12,
+      salesSections: [
+        { id: 'hero', type: 'hero' as const, content: { heading: 'Plan your week in ten minutes' } },
+      ],
+      salesTheme: { ground: 'black' as const, accent: '#F26B1F' as const, typeface: 'manrope' as const },
+      seoTitle: 'Weekly planning template',
+      seoDescription: 'Plan the week in ten minutes.',
+    };
+    const fetchMock = fetchReturning(201, { listing: { id: 'e1', title: body.title, price: 12, currency: 'USD', published: true } });
+    await createOrivaClient({ apiKey: API_KEY }).createListing({ body, fetch: fetchMock });
+    expect((await requestOf(fetchMock)).body).toEqual(body);
+  });
+
+  it('hands back every problem with a sales page', async () => {
+    const refused = { error: 'The sales page did not pass the check.', problems: ['Section 1: its id is missing or repeated.', 'Section 2: that kind of section is not available.'] };
+    const result = await createOrivaClient({ apiKey: API_KEY }).createListing({
+      body: { title: 'T', description: 'D', price: 12, salesSections: [] },
+      fetch: fetchReturning(400, refused),
+    });
+    expect(result.error).toEqual(refused);
+  });
+});
+
+describe('createOrivaClient().updateListing', () => {
+  const ID = '0a9f1555-0000-4000-8000-00000000000c';
+
+  it('PATCHes https://oriva.io/api/agent/listings/<id> with auth and only the fields sent', async () => {
+    const updated = { listing: { id: ID, title: 'Notion template', price: 15, currency: 'USD', published: true, salesPage: true } };
+    const fetchMock = fetchReturning(200, updated);
+    const result = await createOrivaClient({ apiKey: API_KEY }).updateListing({
+      path: { id: ID },
+      body: { price: 15, publish: true },
+      fetch: fetchMock,
+    });
+    const r = await requestOf(fetchMock);
+    expect(r.url).toBe(`https://oriva.io/api/agent/listings/${ID}`);
+    expect(r.method).toBe('PATCH');
+    expect(r.headers.get('authorization')).toBe(`Bearer ${API_KEY}`);
+    expect(r.body).toEqual({ price: 15, publish: true });
+    expect(result.response?.status).toBe(200);
+    expect(result.data).toEqual(updated);
+  });
+
+  it('sends null to remove the sales page', async () => {
+    const fetchMock = fetchReturning(200, { listing: { id: ID, title: 'T', price: 15, currency: 'USD', published: false, salesPage: false } });
+    await createOrivaClient({ apiKey: API_KEY }).updateListing({ path: { id: ID }, body: { salesSections: null }, fetch: fetchMock });
+    expect((await requestOf(fetchMock)).body).toEqual({ salesSections: null });
+  });
+
+  it.each([
+    [400, { error: 'The sales page did not pass the check.', problems: ['Section 1: its id is missing or repeated.'] }],
+    [403, { error: 'Agent listing is switched off for this account.' }],
+    [404, { error: 'No listing of yours has that id.' }],
+    [409, { error: 'This listing has price options, which are charged at checkout. Change its prices in the offer form.' }],
+    [422, { error: 'The sales page cannot go live yet.', problems: ['The page has no way to buy.'] }],
+    [429, { error: 'At most 60 agent listing changes an hour; try again later.' }],
+  ] as Array<[number, Record<string, unknown>]>)(
+    'maps HTTP %i to error with every field',
+    async (status, body) => {
+      const result = await createOrivaClient({ apiKey: API_KEY }).updateListing({
+        path: { id: ID },
+        body: { title: 'New title' },
         fetch: fetchReturning(status, body),
       });
       expect(result.response?.status).toBe(status);

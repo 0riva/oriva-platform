@@ -1,7 +1,7 @@
 /**
  * Agent commerce — an owner's AI agent buys and lists in the Oriva marketplace.
  *
- * These three operations are served by the Oriva web app at https://oriva.io
+ * These four operations are served by the Oriva web app at https://oriva.io
  * (o-core), NOT by the public API host api.oriva.io. The OpenAPI spec marks
  * them with an operation-level `servers` entry, but the generated client
  * ignores per-operation servers, so these wrappers supply the right base URL.
@@ -18,6 +18,7 @@ import type {
   BuyListingData,
   CreateListingData,
   ListAgentPurchasesData,
+  UpdateListingData,
 } from './generated/types.gen.js';
 
 export const DEFAULT_APP_BASE_URL = 'https://oriva.io';
@@ -57,7 +58,7 @@ function readIdempotencyKey(headers: unknown): string | undefined {
 }
 
 /**
- * Build the three agent operations bound to an app base URL.
+ * Build the four agent operations bound to an app base URL.
  * `createOrivaClient` calls this; use it directly with the raw client.
  */
 export function makeAgentOperations(appBaseUrl: string = defaultAppBaseUrl()) {
@@ -87,6 +88,20 @@ export function makeAgentOperations(appBaseUrl: string = defaultAppBaseUrl()) {
       options: Options<CreateListingData, ThrowOnError>
     ) {
       return sdk.createListing<ThrowOnError>({
+        ...options,
+        baseUrl: options.baseUrl ?? appBaseUrl,
+      });
+    },
+
+    /**
+     * Change one of the owner's listings: send only what changes. Takes the
+     * sales page (`salesSections`, null removes it; `salesTheme` alone restyles
+     * it), price, topics, search text, an add-on, the sales chat, or `publish`.
+     */
+    updateListing<ThrowOnError extends boolean = false>(
+      options: Options<UpdateListingData, ThrowOnError>
+    ) {
+      return sdk.updateListing<ThrowOnError>({
         ...options,
         baseUrl: options.baseUrl ?? appBaseUrl,
       });

@@ -7,6 +7,7 @@ export type ClientOptions = {
     | 'https://oriva.io'
     | 'https://oriva.io'
     | 'https://oriva.io'
+    | 'https://oriva.io'
     | (string & {});
 };
 
@@ -452,6 +453,324 @@ export type AgentPurchaseList = {
   purchases: Array<AgentPurchaseRecord>;
 };
 
+export type SalesImage = {
+  /**
+   * An https address on cdn.oriva.io (images must be uploaded to Oriva first).
+   */
+  url: string;
+  /**
+   * What the image shows, for screen readers and search. A published page refuses a shown image without one, unless `decorative`.
+   */
+  alt?: string;
+  /**
+   * True for a purely decorative image, which needs no `alt`.
+   */
+  decorative?: boolean;
+};
+
+export type SalesItem = {
+  title?: string;
+  /**
+   * Plain text; a blank line starts a new paragraph.
+   */
+  text?: string;
+  /**
+   * A short second value: a price, a time, or the other column of a comparison.
+   */
+  note?: string;
+  /**
+   * Bullet points under the item, one line each (What you get).
+   */
+  points?: Array<string>;
+  /**
+   * A link to another Oriva offer only: `/item/<id>`, `/checkout/<id>`, or the same on https://oriva.io.
+   */
+  href?: string;
+  image?: SalesImage;
+  /**
+   * "wide": the image spans the item; otherwise it sits beside the text.
+   */
+  imageSize?: 'wide';
+  /**
+   * An animated self-assessment that sorts the areas by score (What you get).
+   */
+  survey?: {
+    /**
+     * 3 to 12 named areas, each up to 40 characters.
+     */
+    areas: Array<string>;
+    /**
+     * Index into `areas` of the weakest one.
+     */
+    weakest: number;
+  };
+  /**
+   * 3 to 9 card names fanned out at the top of the item (What you get).
+   */
+  fan?: Array<string>;
+  /**
+   * A "Preview" button that opens an excerpt (What you get).
+   */
+  preview?: {
+    text: string;
+    /**
+     * Headings inside, shown as a short contents list.
+     */
+    contents?: Array<string>;
+  };
+  /**
+   * Callout position across, in percent (annotated screenshot).
+   */
+  x?: number;
+  /**
+   * Callout position down, in percent (annotated screenshot).
+   */
+  y?: number;
+};
+
+/**
+ * The cost calculator section, worked out in the visitor's browser and never stored.
+ */
+export type SalesCalculator = {
+  /**
+   * Up to 3 sliders, each a percentage from 0 to 100.
+   */
+  sliders: Array<{
+    /**
+     * Unique short name: starts with a letter, lowercase letters and digits only, up to 12.
+     */
+    id: string;
+    /**
+     * The question.
+     */
+    label: string;
+    help?: string;
+    min: number;
+    max: number;
+    step: number;
+    /**
+     * Where the slider starts, inside the range.
+     */
+    start: number;
+  }>;
+  /**
+   * Label of the income box; leave out for no income box.
+   */
+  incomeLabel?: string;
+  /**
+   * One line under the buy button.
+   */
+  note?: string;
+  /**
+   * Working days in a year, for `{<id>_days}`.
+   */
+  daysPerYear: number;
+  /**
+   * Up to 4 result lines.
+   */
+  results: Array<{
+    label: string;
+    /**
+     * May name `{<id>}` and `{<id>_days}` for any slider id.
+     */
+    sentence: string;
+    /**
+     * Used once the visitor enters an income; may also name `{<id>_money}`. Needs `incomeLabel`.
+     */
+    withIncome?: string;
+  }>;
+};
+
+/**
+ * The same fields serve every section type; each type draws the ones that suit it. In outline: the hero uses eyebrow, heading, body, image or videoUrl, buyNote, calendar, packageValue; problem uses heading, body, quote, wheel; how_it_works, what_you_get, proof, questions and most library components use heading plus items (what_you_get items may carry points, fan, preview, survey, image; proof uses quote cards and oneRow); comparison_table uses labels and items with note as the other column; annotated_screenshot uses image plus items with x and y; video uses videoUrl; calculator uses calculator; related_offers uses items with href.
+ */
+export type SalesSectionContent = {
+  eyebrow?: string;
+  heading?: string;
+  /**
+   * Plain text, never HTML; a blank line starts a new paragraph.
+   */
+  body?: string;
+  quote?: string;
+  image?: SalesImage;
+  /**
+   * An https video on cdn.oriva.io, YouTube or Vimeo.
+   */
+  videoUrl?: string;
+  /**
+   * Column headings, for the comparison table.
+   */
+  labels?: Array<string>;
+  items?: Array<SalesItem>;
+  calculator?: SalesCalculator;
+  /**
+   * Proof quote cards in one sideways-scrolling row.
+   */
+  oneRow?: boolean;
+  /**
+   * One short line under the hero's buy button.
+   */
+  buyNote?: string;
+  /**
+   * "Add to calendar" under the next live session (hero).
+   */
+  calendar?: {
+    description: string;
+    hours: number;
+  };
+  /**
+   * A video card that opens the video in a window.
+   */
+  videoCard?: {
+    /**
+     * A YouTube link.
+     */
+    url: string;
+    caption: string;
+  };
+  /**
+   * A giveaway for the first buyers (What you get); the page shows how many are left.
+   */
+  giveaway?: {
+    heading: string;
+    text: string;
+    /**
+     * How many places there are.
+     */
+    total: number;
+    /**
+     * Count paid orders from this moment (ISO 8601); all of them when absent.
+     */
+    since?: string;
+    /**
+     * The full-price offer, on Oriva.
+     */
+    href?: string;
+    linkLabel?: string;
+    /**
+     * Words after the number of places left.
+     */
+    leftNote?: string;
+  };
+  /**
+   * What everything in the offer costs bought separately (hero); each buy button then shows the saving.
+   */
+  packageValue?: number;
+  /**
+   * A wheel that spins and stops on the weakest area (problem).
+   */
+  wheel?: {
+    /**
+     * 3 to 12 named areas, each up to 40 characters.
+     */
+    areas: Array<string>;
+    /**
+     * Index into `areas` of the weakest one.
+     */
+    weakest: number;
+  };
+};
+
+export type SalesSection = {
+  /**
+   * Your own id for the section, unique on the page: letters, digits, _ or -, up to 40.
+   */
+  id: string;
+  /**
+   * The kind of section. The page's own sections (hero, buy_box, problem, general_solution, specific_solution, how_it_works, what_you_get, proof, questions, guarantee, creator) may each appear once; the library components (module_showcase, preview_gallery, demonstration, look_inside, annotated_screenshot, icon_row, multicolumn, image_with_text, rich_text, comparison_table, video, testimonials, collapsible_questions, related_offers, order_box, whole_path, what_this_is_not, card_grid, creator_quote, final_cta, calculator) as often as wanted. A page sells only through a shown checkout hero (design "a"), buy_box, order_box or final_cta.
+   */
+  type:
+    | 'hero'
+    | 'buy_box'
+    | 'problem'
+    | 'general_solution'
+    | 'specific_solution'
+    | 'how_it_works'
+    | 'what_you_get'
+    | 'proof'
+    | 'questions'
+    | 'guarantee'
+    | 'creator'
+    | 'module_showcase'
+    | 'preview_gallery'
+    | 'demonstration'
+    | 'look_inside'
+    | 'annotated_screenshot'
+    | 'icon_row'
+    | 'multicolumn'
+    | 'image_with_text'
+    | 'rich_text'
+    | 'comparison_table'
+    | 'video'
+    | 'testimonials'
+    | 'collapsible_questions'
+    | 'related_offers'
+    | 'order_box'
+    | 'whole_path'
+    | 'what_this_is_not'
+    | 'card_grid'
+    | 'creator_quote'
+    | 'final_cta'
+    | 'calculator';
+  /**
+   * The page's own sections have two designs (default a); for hero, a has the checkout and b an image or video. Library components have one.
+   */
+  design?: 'a' | 'b';
+  /**
+   * Keep the section but do not show it.
+   */
+  hidden?: boolean;
+  content: SalesSectionContent;
+};
+
+/**
+ * How the sales page looks. Sent alone on updateListing, it restyles the page the listing already has.
+ */
+export type SalesTheme = {
+  /**
+   * The background. Defaults to white.
+   */
+  ground?: 'white' | 'black';
+  /**
+   * One of the offered accent colours. Defaults to #4B58D6.
+   */
+  accent?: '#4B58D6' | '#6E7BFF' | '#F26B1F' | '#C2410C' | '#21703F' | '#0B0B0B';
+  /**
+   * Defaults to archivo.
+   */
+  typeface?: 'archivo' | 'manrope';
+};
+
+export type AgentListingContentRefused = {
+  /**
+   * Why, in plain words.
+   */
+  error: string;
+  /**
+   * What to change, when the content check refused it.
+   */
+  hint?: string | null;
+  /**
+   * Every reason the sales page cannot go live yet, when that is the refusal.
+   */
+  problems?: Array<string>;
+};
+
+export type AgentProblems = {
+  /**
+   * What went wrong, in plain words.
+   */
+  error: string;
+  /**
+   * Each problem found, when there are several (the sales page, the add-on or the sales chat).
+   */
+  problems?: Array<string>;
+  /**
+   * What to change, when the content check refused it.
+   */
+  hint?: string | null;
+};
+
 export type CreateListingBody = {
   /**
    * Listing title, up to 200 characters.
@@ -511,6 +830,19 @@ export type CreateListingBody = {
    * Publish now (default true). Send false to save a draft; publishing a paid listing needs a paid Oriva plan.
    */
   publish?: boolean;
+  /**
+   * The offer's sales page, top to bottom, up to 40 sections: the same page the offer form builds. Checked by the offer form's rules (400 with `problems`). A published listing's page must also be able to go live: a way to buy, no [placeholder] text, and every shown image described (422 with `problems`).
+   */
+  salesSections?: Array<SalesSection>;
+  salesTheme?: SalesTheme;
+  /**
+   * How the offer is titled in search results, link previews and the browser tab, up to 60 characters. Null or empty uses the automatic title.
+   */
+  seoTitle?: string | null;
+  /**
+   * The line under the title in search results and link previews, up to 160 characters. Null or empty uses the automatic text.
+   */
+  seoDescription?: string | null;
 };
 
 export type AgentListingCreated = {
@@ -526,9 +858,121 @@ export type AgentListingCreated = {
   };
 };
 
-export type AgentListingContentRefused = {
-  error: string;
-  hint: string | null;
+/**
+ * Send only what changes; at least one field.
+ */
+export type UpdateListingBody = {
+  /**
+   * Up to 200 characters; cannot be empty.
+   */
+  title?: string;
+  /**
+   * Up to 20,000 characters. Runs through the content check.
+   */
+  description?: string;
+  /**
+   * Price in currency units, 0 to 10000; a paid listing is at least 1. Refused (409) for a listing with price options, which are changed in the offer form.
+   */
+  price?: number;
+  /**
+   * Only USD is supported.
+   */
+  currency?: 'USD';
+  itemType?: 'digital' | 'physical' | 'service' | 'course' | 'app' | 'event';
+  /**
+   * Replaces the listing's topics: up to 4 of the marketplace's own. A published listing needs at least one.
+   */
+  topics?: Array<
+    | 'topic-parent-productivity'
+    | 'topic-parent-business'
+    | 'topic-parent-social'
+    | 'topic-parent-health'
+    | 'topic-parent-money'
+    | 'topic-parent-lifestyle'
+    | 'topic-parent-humanity'
+    | 'topic-social-relationships'
+    | 'topic-social-communication'
+    | 'topic-health-nutrition'
+    | 'topic-health-exercise'
+    | 'topic-health-longevity'
+    | 'topic-health-skincare'
+    | 'topic-money-investment'
+    | 'topic-money-savings'
+    | 'topic-money-crypto'
+    | 'topic-lifestyle-travel'
+    | 'topic-lifestyle-gadgets'
+    | 'topic-lifestyle-parenting'
+    | 'topic-lifestyle-home'
+    | 'topic-lifestyle-entertainment'
+    | 'topic-lifestyle-technology'
+    | 'topic-humanity-history'
+    | 'topic-humanity-futurism'
+    | 'topic-humanity-personal-growth'
+  >;
+  /**
+   * True publishes the listing, false takes it back to a draft. Leave out to keep it as it is.
+   */
+  publish?: boolean;
+  /**
+   * Replaces the whole sales page, top to bottom (the same shape as on createListing). Null removes the page. Checked as on createListing: 400 with `problems` when it fails, 422 with `problems` when the listing is or goes live and the page cannot.
+   */
+  salesSections?: Array<SalesSection> | null;
+  salesTheme?: SalesTheme;
+  /**
+   * An extra the buyer can tick at checkout. Null removes it. 400 with `problems` when it fails the check.
+   */
+  addOn?: {
+    name: string;
+    /**
+     * One line under the tick box at checkout.
+     */
+    description?: string;
+    /**
+     * In the offer's currency.
+     */
+    price: number;
+    kind: 'physical' | 'digital';
+    /**
+     * Two-letter country codes (US, GB); at least one for a physical add-on.
+     */
+    shipTo?: Array<string>;
+  } | null;
+  /**
+   * The sales page's chat assistant. Null removes its settings. 400 with `problems` when it fails the check.
+   */
+  salesChat?: {
+    enabled: boolean;
+    /**
+     * What the sales assistant may tell visitors beyond the page.
+     */
+    notes?: string;
+    /**
+     * Where a visitor reaches the seller when the assistant cannot answer: an https:// link or a mailto: address.
+     */
+    contactUrl?: string;
+  } | null;
+  /**
+   * How the offer is titled in search results, link previews and the browser tab, up to 60 characters. Null or empty uses the automatic title.
+   */
+  seoTitle?: string | null;
+  /**
+   * The line under the title in search results and link previews, up to 160 characters. Null or empty uses the automatic text.
+   */
+  seoDescription?: string | null;
+};
+
+export type AgentListingUpdated = {
+  listing: {
+    id: string;
+    title: string;
+    price: number;
+    currency: string;
+    published: boolean;
+    /**
+     * Whether the listing now has a sales page.
+     */
+    salesPage: boolean;
+  };
 };
 
 export type GetCurrentUserData = {
@@ -2524,19 +2968,19 @@ export type CreateListingData = {
 
 export type CreateListingErrors = {
   /**
-   * Invalid input — the message names the field.
+   * Invalid input — the message names the field; for a sales page, `problems` lists every fault.
    */
-  400: AgentError;
+  400: AgentProblems;
   /**
    * Missing or invalid personal access token.
    */
   401: AgentError;
   /**
-   * Agent listing switched off, paid listing on a free plan, no named profile, or a profile that is not the owner's.
+   * Agent listing switched off, this token may not list, paid listing on a free plan, no named profile, or a profile that is not the owner's.
    */
   403: AgentError;
   /**
-   * Refused by the content check. Change what `hint` says and retry.
+   * Refused by the content check (change what `hint` says), a sales page that cannot go live yet (`problems`), or a free listing with nothing to get.
    */
   422: AgentListingContentRefused;
   /**
@@ -2555,3 +2999,57 @@ export type CreateListingResponses = {
 };
 
 export type CreateListingResponse = CreateListingResponses[keyof CreateListingResponses];
+
+export type UpdateListingData = {
+  body: UpdateListingBody;
+  path: {
+    /**
+     * The listing (entry) id, as createListing returned it. Only the owner's own listings.
+     */
+    id: string;
+  };
+  query?: never;
+  url: '/api/agent/listings/{id}';
+};
+
+export type UpdateListingErrors = {
+  /**
+   * Invalid input or a failed check; `problems` lists every fault.
+   */
+  400: AgentProblems;
+  /**
+   * Missing or invalid personal access token.
+   */
+  401: AgentError;
+  /**
+   * Agent listing switched off, this token may not list, or a paid listing on a free plan.
+   */
+  403: AgentError;
+  /**
+   * No listing of the owner's has that id.
+   */
+  404: AgentError;
+  /**
+   * The listing has price options, which are changed in the offer form.
+   */
+  409: AgentError;
+  /**
+   * Refused by the content check, a sales page that cannot go live yet, or a free listing with nothing to get.
+   */
+  422: AgentListingContentRefused;
+  /**
+   * More than 60 agent listing actions in the last hour. Try again later.
+   */
+  429: AgentError;
+};
+
+export type UpdateListingError = UpdateListingErrors[keyof UpdateListingErrors];
+
+export type UpdateListingResponses = {
+  /**
+   * Changed. The listing as it now stands.
+   */
+  200: AgentListingUpdated;
+};
+
+export type UpdateListingResponse = UpdateListingResponses[keyof UpdateListingResponses];

@@ -138,13 +138,15 @@ function buildInputSchema(op: OpenApiOperation): BuiltSchema {
   if (bodySchema) {
     const resolvedBody = resolveRef(bodySchema);
     const bodyRequired = new Set(resolvedBody.required ?? []);
-    const bodyIsRequired = op.requestBody?.required === true;
     for (const [key, sub] of Object.entries(resolvedBody.properties ?? {})) {
       const collision = key in properties;
       const alias = collision ? `body_${key}` : key;
       properties[alias] = resolveRef(sub);
       bodyFields.push({ alias, original: key });
-      const isRequired = bodyRequired.has(key) || (bodyIsRequired && bodyRequired.size === 0);
+      // Only the fields the schema lists as required. A required body whose schema lists none has all
+      // its fields optional (JSON Schema's own reading): updateListing takes "send only what changes",
+      // and treating every field as required told AI clients to send all thirteen (oriva-platform#79).
+      const isRequired = bodyRequired.has(key);
       if (isRequired && !required.includes(alias)) required.push(alias);
     }
   }

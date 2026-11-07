@@ -4,6 +4,17 @@ All notable changes to `@oriva/mcp-server` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] — 2026-11-07
+
+### Added
+
+- `updateListing`: change one of the owner's listings, sending only what changes: text, price, topics, `publish`, the sales page (`salesSections`, null removes it; `salesTheme` alone restyles it), an add-on, the sales chat, and search text. Its refusals are described: 400 and 422 with `problems`, 404, 409 for a listing with price options (oriva-platform#79, o-core#1911).
+- `createListing` takes the sales page (`salesSections`, every section type and its fields; `salesTheme`) and search text (`seoTitle`, `seoDescription`).
+
+### Fixed
+
+- A tool's body fields are required only when the spec lists them as required. Before, a required body that listed none made every field required, which would have told AI clients to send all thirteen fields of `updateListing`.
+
 ## [0.6.2] — 2026-11-03
 
 ### Changed

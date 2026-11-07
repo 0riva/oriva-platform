@@ -173,6 +173,9 @@ import type {
   UpdateDeveloperAppData,
   UpdateDeveloperAppErrors,
   UpdateDeveloperAppResponses,
+  UpdateListingData,
+  UpdateListingErrors,
+  UpdateListingResponses,
   UpdateProfileData,
   UpdateProfileErrors,
   UpdateProfileResponses,
@@ -1163,10 +1166,12 @@ export const buyListing = <ThrowOnError extends boolean = false>(
 /**
  * List an item for sale in the marketplace in the owner's name
  *
- * Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to edit an existing listing. Choose `topics` from the marketplace's own list (see the field); publishing needs at least one.
+ * Creates a marketplace listing as the API key owner, under the same content check as one made in the browser. Works only once the owner has switched agent listing on at https://oriva.io/settings/agent-buying (off by default); at most 20 agent listings an hour. Use when the owner asks you to sell something. Do not use to buy (use `buyListing`) or to change an existing listing (use `updateListing`). Choose `topics` from the marketplace's own list (see the field); publishing needs at least one.
  *
- * - 400: a field is out of range; for `topics`, the error lists the topics to choose from.
- * - 422: the content check refused it, or the listing has no marketplace topic; `error` and `hint` say what to change before retrying.
+ * Send `salesSections` (and optionally `salesTheme`) to give the offer its sales page, the same page the offer form builds; `seoTitle` and `seoDescription` set how it reads in search results.
+ *
+ * - 400: a field is out of range (for `topics`, the error lists the topics to choose from), or the sales page failed the check; `problems` lists every fault, fix them all before retrying.
+ * - 422: the content check refused it (`hint` says what to change); the sales page cannot go live yet (`problems`: no way to buy, [placeholder] text, an image without a description; or save a draft); or a free listing has nothing for a visitor to get, since this route sets no delivery.
  * - 403: listing switched off, a paid listing needs a paid plan (retry with `publish: false` to save a draft), or the profile is not the owner's. Do not retry unchanged.
  * - 429: over 20 listings an hour; wait before retrying.
  *
@@ -1178,6 +1183,35 @@ export const createListing = <ThrowOnError extends boolean = false>(
   (options.client ?? client).post<CreateListingResponses, CreateListingErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/agent/listings',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Change a listing in the owner's name: its text, price, sales page, or whether it is live
+ *
+ * Changes one of the API key owner's own listings, as an edit in the offer form would, under the same content check. Send only the fields that change. Needs agent listing switched on at https://oriva.io/settings/agent-buying; creating and changing listings share 60 actions an hour. Use when the owner asks you to revise a listing or its sales page, publish a draft, or take a listing down. Do not use to create one (use `createListing`).
+ *
+ * The rules for a live listing apply to the RESULT: publishing needs a topic and, for a paid listing, a paid Oriva plan; its sales page must have a way to buy, no [placeholder] text, and every shown image described; and it must be something a visitor can get (paid, or free with a delivery the seller set). A sales page you write is marked as written by an agent, and the offer form tells the seller so.
+ *
+ * - 400: a field is wrong, nothing was sent, or the sales page, add-on or sales chat failed its check; `problems` lists every fault.
+ * - 404: no listing of the owner's has that id (the same answer for someone else's).
+ * - 409: the listing has price options; change its prices in the offer form.
+ * - 422: the content check refused it (`hint`), the sales page cannot go live (`problems`; or keep it a draft with `publish: false`), or a free listing has nothing to get.
+ * - 403: listing switched off, this token may not list, or a paid listing on a free plan. Do not retry unchanged.
+ * - 429: over 60 listing actions an hour; wait before retrying.
+ *
+ * Served by https://oriva.io, not api.oriva.io.
+ */
+export const updateListing = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateListingData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<UpdateListingResponses, UpdateListingErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/agent/listings/{id}',
     ...options,
     headers: {
       'Content-Type': 'application/json',

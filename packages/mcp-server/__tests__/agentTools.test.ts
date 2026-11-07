@@ -51,8 +51,8 @@ describe('agent tool projection', () => {
     return t;
   };
 
-  it('exposes buyListing, createListing and listAgentPurchases', () => {
-    for (const name of ['buyListing', 'createListing', 'listAgentPurchases']) {
+  it('exposes buyListing, createListing, updateListing and listAgentPurchases', () => {
+    for (const name of ['buyListing', 'createListing', 'updateListing', 'listAgentPurchases']) {
       expect(index.has(name)).toBe(true);
     }
   });
@@ -86,7 +86,10 @@ describe('agent tool projection', () => {
   it('createListing takes the listing fields and no Idempotency-Key', () => {
     const s = tool('createListing').inputSchema;
     expect(Object.keys(s.properties ?? {}).sort()).toEqual(
-      ['currency', 'description', 'itemType', 'price', 'profileId', 'publish', 'title', 'topics'].sort()
+      [
+        'currency', 'description', 'itemType', 'price', 'profileId', 'publish', 'title', 'topics',
+        'salesSections', 'salesTheme', 'seoTitle', 'seoDescription',
+      ].sort()
     );
     // topics is optional (a draft may have none) but restricted to the marketplace's own list.
     expect([...(s.required ?? [])].sort()).toEqual(['description', 'price', 'title']);
@@ -96,6 +99,44 @@ describe('agent tool projection', () => {
     expect(topics.maxItems).toBe(4);
     expect(index.get('createListing')?.headerParams).toEqual([]);
     expect(tool('createListing').description).toMatch(/422/);
+  });
+
+  it('createListing describes the sales page: every section type, its content, and the theme', () => {
+    const s = tool('createListing').inputSchema;
+    const sections = s.properties?.salesSections as { items?: { properties?: Record<string, any>; required?: string[] }; maxItems?: number };
+    expect(sections.maxItems).toBe(40);
+    const section = sections.items!;
+    expect(section.properties?.type?.enum).toHaveLength(32);
+    expect(section.properties?.type?.enum).toEqual(expect.arrayContaining(['hero', 'buy_box', 'final_cta', 'calculator']));
+    expect([...(section.required ?? [])].sort()).toEqual(['content', 'id', 'type']);
+    expect(Object.keys(section.properties?.content?.properties ?? {})).toEqual(
+      expect.arrayContaining(['heading', 'body', 'image', 'items', 'calculator', 'packageValue'])
+    );
+    const theme = s.properties?.salesTheme as { properties?: Record<string, { enum?: string[] }> };
+    expect(theme.properties?.accent?.enum).toEqual(['#4B58D6', '#6E7BFF', '#F26B1F', '#C2410C', '#21703F', '#0B0B0B']);
+    expect(theme.properties?.typeface?.enum).toEqual(['archivo', 'manrope']);
+    expect(theme.properties?.ground?.enum).toEqual(['white', 'black']);
+    expect((s.properties?.seoTitle as { maxLength?: number }).maxLength).toBe(60);
+    expect(tool('createListing').description).toMatch(/updateListing/);
+  });
+
+  it('updateListing takes the listing id and only optional fields, and says how each refusal reads', () => {
+    const s = tool('updateListing').inputSchema;
+    expect(s.required).toEqual(['id']);
+    expect(Object.keys(s.properties ?? {})).toEqual(
+      expect.arrayContaining(['id', 'title', 'price', 'publish', 'salesSections', 'salesTheme', 'addOn', 'salesChat', 'seoTitle', 'seoDescription'])
+    );
+    expect((s.properties?.salesSections as { type?: unknown }).type).toEqual(['array', 'null']);
+    expect(index.get('updateListing')?.headerParams).toEqual([]);
+    const d = tool('updateListing').description;
+    for (const status of ['400', '404', '409', '422', '403', '429']) expect(d).toContain(`- ${status}:`);
+    expect(d).toMatch(/Served by https:\/\/oriva\.io/);
+  });
+
+  it('leaves no unresolved $ref in any agent tool input, so an AI client gets a whole schema', () => {
+    for (const name of ['buyListing', 'createListing', 'updateListing', 'listAgentPurchases']) {
+      expect(JSON.stringify(tool(name).inputSchema)).not.toContain('$ref');
+    }
   });
 
   it('listAgentPurchases takes no input', () => {

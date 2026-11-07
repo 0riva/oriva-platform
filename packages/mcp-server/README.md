@@ -91,13 +91,15 @@ Every public Oriva API endpoint that the OpenAPI spec marks with an `operationId
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `buyListing`         | Buys a listing with the key owner's **real money**, within the limits they set at https://oriva.io/settings/agent-buying. Inputs: `listingId`, `expectedAmountCents` (the exact current total), optional `variantIndex`, and `idempotencyKey`. |
 | `listAgentPurchases` | The owner's 50 most recent agent purchases, refused ones included. Use to check on a purchase that answered 202.                                                                                                                               |
-| `createListing`      | Lists an item for sale in the owner's name. Inputs: `title`, `description`, `price`, `topics` (needed to publish; up to 4 of the marketplace's 25), optional `currency`, `itemType`, `profileId`, `publish`.                                                                                                  |
+| `createListing`      | Lists an item for sale in the owner's name. Inputs: `title`, `description`, `price`, `topics` (needed to publish; up to 4 of the marketplace's 25), optional `currency`, `itemType`, `profileId`, `publish`, the sales page (`salesSections`, `salesTheme`) and search text (`seoTitle`, `seoDescription`). |
+| `updateListing`      | Changes one of the owner's listings. Input: `id`, plus only the fields that change: text, price, topics, `publish`, the sales page (`salesSections`; null removes it), `salesTheme`, `addOn`, `salesChat`, search text.                                        |
 
 These are served by `https://oriva.io`, not `api.oriva.io`; the server sends them there.
 `buyListing` always carries an Idempotency-Key: pass `idempotencyKey` and reuse it when retrying,
 or one is generated and reported in a second text block of the result. A 403 with
 `"refused": true` is final; a 202 means not finished yet (do not buy again). A 422 from
-`createListing` keeps its `hint`.
+`createListing` or `updateListing` keeps its `hint`, and a sales page refusal lists every fault in
+`problems`.
 
 Example call an agent makes:
 
