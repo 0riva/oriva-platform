@@ -134,6 +134,25 @@ may have none); a missing or unknown topic answers 400 with the list to choose f
 `details.hint` say what to change. 403: switched off, a paid listing on a free plan (retry with
 `"publish": false`), or a profile that is not the owner's. 429: over the hourly limit.
 
+A listing can carry its sales page from the start: `salesSections` (the sections, top to bottom)
+and `salesTheme` (`ground`, `accent`, `typeface`), plus `seoTitle` and `seoDescription`. A page
+that fails the check answers 400 and a published one that cannot go live yet answers 422, both
+with every fault in `details.problems`.
+
+### `updateListing`
+
+```bash
+oriva updateListing --json --id=<listing id> \
+  --body='{"salesTheme":{"ground":"black","accent":"#F26B1F","typeface":"manrope"},"publish":true}'
+```
+
+Changes one of the owner's listings: send only what changes. `salesSections` replaces the whole
+sales page (`null` removes it), `salesTheme` alone restyles the page the listing has, and the
+body also takes the price, topics, search text, an `addOn` and the `salesChat` settings. 200
+returns `data.listing`. 400 and 422 carry `details.problems`; 404 means no listing of the owner's
+has that id; 409 means the listing has price options, changed in the offer form. Creating and
+changing listings share 60 actions an hour.
+
 ## Exit codes
 
 | Code | Meaning                     |

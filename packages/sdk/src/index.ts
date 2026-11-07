@@ -44,7 +44,7 @@ export interface OrivaClientOptions {
   baseUrl?: string;
   /**
    * Base URL of the Oriva web app, which serves the agent operations
-   * (`buyListing`, `createListing`, `listAgentPurchases`). Defaults to
+   * (`buyListing`, `createListing`, `updateListing`, `listAgentPurchases`). Defaults to
    * `ORIVA_APP_BASE_URL` or `https://oriva.io`.
    */
   appBaseUrl?: string;
@@ -55,7 +55,7 @@ export interface OrivaClientOptions {
 }
 
 /**
- * Every generated operation, with the three agent operations replaced by
+ * Every generated operation, with the four agent operations replaced by
  * wrappers that target the web app and (for `buyListing`) always send an
  * Idempotency-Key.
  */

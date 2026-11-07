@@ -59,7 +59,7 @@ if (result.data) {
 
 ### Agent buying and listing
 
-`buyListing`, `createListing` and `listAgentPurchases` are served by the Oriva web app at
+`buyListing`, `createListing`, `updateListing` and `listAgentPurchases` are served by the Oriva web app at
 `https://oriva.io` (not `api.oriva.io`); the client sends them there. Override with the
 `appBaseUrl` option or `ORIVA_APP_BASE_URL`.
 
@@ -102,7 +102,22 @@ const listed = await oriva.createListing({
     topics: ['topic-parent-productivity'], // publishing needs at least one marketplace topic
   },
 });
-// 201 listed · 400 no or unknown topic (the error lists the 25) · 422 content check refused (error + hint) · 403 switched off / paid plan needed · 429 hourly limit
+// 201 listed · 400 no or unknown topic (the error lists the 25), or a sales page that failed the check (error + problems) · 422 content check refused (error + hint), or a sales page that cannot go live yet (problems) · 403 switched off / paid plan needed · 429 hourly limit
+
+// Give it a sales page (the same page the offer form builds), then change it later: send only what changes.
+await oriva.updateListing({
+  path: { id: listed.data!.listing.id },
+  body: {
+    salesSections: [
+      { id: 'hero', type: 'hero', content: { heading: 'Plan your week in ten minutes', body: 'A planner for Sunday evenings.' } },
+      { id: 'buy', type: 'buy_box', content: {} },
+    ],
+    salesTheme: { ground: 'white', accent: '#F26B1F', typeface: 'manrope' },
+    seoTitle: 'Weekly planning template',
+  },
+});
+// 200 changed · 400 a failed check (problems) · 404 not one of the owner's listings · 409 a listing with price options (change prices in the offer form) · 422 cannot go live yet (problems) · 429 60 listing actions an hour
+// salesSections: null removes the page; salesTheme alone restyles the page the listing has.
 ```
 
 `expectedAmountCents` must be the exact current total: a different price is refused before any
